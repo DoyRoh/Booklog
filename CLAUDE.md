@@ -541,6 +541,12 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - Next.js 16부터 `middleware.ts`가 `proxy.ts`로 이름이 바뀌었습니다(기능은 동일). 세션 쿠키 갱신 로직은 `proxy.ts`에 있습니다.
 - `legacy/index.html`은 서비스형으로 확장하기 전의 개인용 프로토타입으로, 디자인/아이콘 참고용으로만 보존되며 Next.js 빌드에는 포함되지 않습니다.
 - `AGENTS.md`는 `next dev`/`next build`가 자동 생성하는 Next.js 16 관련 에이전트 안내이며, 이 파일 하단의 `@AGENTS.md` 참조를 통해 계속 포함됩니다.
-- "디자인 컨셉 & 비주얼 가이드 V1" 반영으로 색상 토큰이 `--plum`/`--red`에서 `--point`/`--lantern`/`--berry`로 교체되었습니다. `app/globals.css`, `app/layout.tsx`(`themeColor`), `public/manifest.webmanifest`, `public/icon.svg`가 함께 갱신되었습니다. 캐릭터 일러스트·발자국 도장·숲 지도·아바타 선택 화면은 아직 구현하지 않았습니다(위 "Phase 1 이후 반영 필요" 참고).
+- "디자인 컨셉 & 비주얼 가이드 V1" 반영으로 색상 토큰이 `--plum`/`--red`에서 `--point`/`--lantern`/`--berry`로 교체되었습니다. `app/globals.css`, `app/layout.tsx`(`themeColor`), `public/manifest.webmanifest`, `public/icon.svg`가 함께 갱신되었습니다.
+
+## Phase 1 구현 참고사항
+
+- `app/onboarding`에 역할 선택(부모/교사/큐레이터) → 약관 동의(`consents`) → 아이 등록(부모만, `children.avatar`에 토끼/강아지/고양이 저장)까지 이어지는 온보딩 마법사를 구현했습니다. 캐릭터 일러스트는 아직 없고 `components/icons/avatar-icons.tsx`의 stroke 라인 아이콘으로 임시 대체했습니다(정식 일러스트는 이후 Phase에서 제작).
+- `users.onboarding_completed` 컬럼(기본값 `false`)으로 온보딩 완료 여부를 추적하며, `proxy.ts`가 이 값을 기준으로 라우팅을 강제합니다: 미로그인 상태로 탭 경로 접근 시 `/login`, 로그인은 했지만 온보딩 미완료 시 `/onboarding`, 온보딩 완료 후 `/login`·`/signup`·`/onboarding` 재방문 시 `/today`로 보냅니다.
+- 온보딩에서 사용자가 자기 `role`을 저장할 수 있어야 하므로, `users` 테이블의 self-update RLS 정책을 `role in ('parent','teacher','curator')`로 제한했습니다(`admin`으로의 자기 승격 차단). 로컬 Postgres에서 실제로 우회 시도가 막히는지 검증했습니다.
 
 @AGENTS.md
