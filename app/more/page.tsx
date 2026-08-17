@@ -25,7 +25,7 @@ export default async function MorePage() {
             <SignOutButton />
           </div>
         ) : (
-          <Link href="/login" className="text-sm" style={{ color: "var(--plum)" }}>
+          <Link href="/login" className="text-sm" style={{ color: "var(--point)" }}>
             로그인하기
           </Link>
         )}

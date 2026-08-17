@@ -54,7 +54,7 @@ export default function BottomNav() {
               {active && (
                 <span
                   className="absolute -bottom-1 left-[-3px] right-[-3px] h-[3px] rounded-full"
-                  style={{ background: "var(--plum)" }}
+                  style={{ background: "var(--point)" }}
                 />
               )}
             </span>

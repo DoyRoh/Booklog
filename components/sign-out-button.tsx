@@ -17,7 +17,7 @@ export default function SignOutButton() {
     <button
       onClick={handleClick}
       className="d rounded-[14px] px-4 py-2 text-sm text-white"
-      style={{ background: "var(--red)" }}
+      style={{ background: "var(--berry)" }}
     >
       로그아웃
     </button>

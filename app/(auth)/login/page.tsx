@@ -57,7 +57,7 @@ export default function LoginPage() {
         />
 
         {error && (
-          <p className="text-sm" style={{ color: "var(--red)" }}>
+          <p className="text-sm" style={{ color: "var(--berry)" }}>
             {error}
           </p>
         )}
@@ -66,7 +66,7 @@ export default function LoginPage() {
           type="submit"
           disabled={loading}
           className="d mt-2 rounded-[14px] py-3 text-sm text-white disabled:opacity-60"
-          style={{ background: "var(--plum)" }}
+          style={{ background: "var(--point)" }}
         >
           {loading ? "로그인 중..." : "로그인"}
         </button>
@@ -74,7 +74,7 @@ export default function LoginPage() {
 
       <p className="mt-6 text-center text-sm" style={{ color: "var(--ink-2)" }}>
         계정이 없으신가요?{" "}
-        <Link href="/signup" style={{ color: "var(--plum)" }}>
+        <Link href="/signup" style={{ color: "var(--point)" }}>
           회원가입
         </Link>
       </p>

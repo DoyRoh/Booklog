@@ -34,7 +34,7 @@ export default function SignupPage() {
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           가입 확인 이메일을 보냈어요. 메일함을 확인한 뒤 로그인해 주세요.
         </p>
-        <Link href="/login" className="mt-6 text-sm" style={{ color: "var(--plum)" }}>
+        <Link href="/login" className="mt-6 text-sm" style={{ color: "var(--point)" }}>
           로그인으로 이동
         </Link>
       </div>
@@ -70,7 +70,7 @@ export default function SignupPage() {
         />
 
         {error && (
-          <p className="text-sm" style={{ color: "var(--red)" }}>
+          <p className="text-sm" style={{ color: "var(--berry)" }}>
             {error}
           </p>
         )}
@@ -79,7 +79,7 @@ export default function SignupPage() {
           type="submit"
           disabled={loading}
           className="d mt-2 rounded-[14px] py-3 text-sm text-white disabled:opacity-60"
-          style={{ background: "var(--plum)" }}
+          style={{ background: "var(--point)" }}
         >
           {loading ? "가입 중..." : "회원가입"}
         </button>
@@ -87,7 +87,7 @@ export default function SignupPage() {
 
       <p className="mt-6 text-center text-sm" style={{ color: "var(--ink-2)" }}>
         이미 계정이 있으신가요?{" "}
-        <Link href="/login" style={{ color: "var(--plum)" }}>
+        <Link href="/login" style={{ color: "var(--point)" }}>
           로그인
         </Link>
       </p>
