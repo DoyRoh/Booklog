@@ -72,10 +72,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    const { error: roleError } = await supabase
-      .from("users")
-      .update({ role, onboarding_completed: true })
-      .eq("id", user.id);
+    const { error: roleError } = await supabase.from("users").update({ role }).eq("id", user.id);
     if (roleError) {
       setError(roleError.message);
       setSaving(false);
@@ -122,6 +119,21 @@ export default function OnboardingPage() {
         setSaving(false);
         return;
       }
+    }
+
+    // Marked last, only once every step above has actually succeeded --
+    // otherwise a failure partway through (e.g. child registration) would
+    // still leave onboarding_completed=true, and proxy.ts would then bounce
+    // the user straight past /onboarding into an empty /today with no
+    // child ever created.
+    const { error: completeError } = await supabase
+      .from("users")
+      .update({ onboarding_completed: true })
+      .eq("id", user.id);
+    if (completeError) {
+      setError(completeError.message);
+      setSaving(false);
+      return;
     }
 
     router.replace("/today");
