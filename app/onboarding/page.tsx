@@ -22,6 +22,19 @@ const AVATARS: { value: Avatar; label: string; Icon: typeof RabbitIcon }[] = [
   { value: "cat", label: "고양이", Icon: CatIcon },
 ];
 
+function toDateInputValue(date: Date): string {
+  return date.toISOString().split("T")[0];
+}
+
+// Bounds the native date picker's year to a sensible range for a child's
+// birth date (today, and up to 18 years back) -- this also keeps the
+// browser's year segment to 4 digits instead of letting it accept up to 6.
+const TODAY = new Date();
+const MAX_BIRTH_DATE = toDateInputValue(TODAY);
+const MIN_BIRTH_DATE = toDateInputValue(
+  new Date(TODAY.getFullYear() - 18, TODAY.getMonth(), TODAY.getDate())
+);
+
 const cardStyle = (selected: boolean): React.CSSProperties => ({
   borderColor: selected ? "var(--point)" : "var(--rule)",
   background: selected ? "rgba(47,168,79,0.08)" : "var(--card)",
@@ -271,6 +284,8 @@ export default function OnboardingPage() {
             type="date"
             value={childBirthDate}
             onChange={(e) => setChildBirthDate(e.target.value)}
+            min={MIN_BIRTH_DATE}
+            max={MAX_BIRTH_DATE}
             className="rounded-[14px] border px-4 py-3 text-sm outline-none"
             style={{ borderColor: "var(--rule)", background: "var(--card)" }}
           />
