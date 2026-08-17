@@ -396,8 +396,8 @@ body.nofont .sp .t{font-size:11px;font-weight:800;letter-spacing:-.6px}
 .saidrow:last-child{border-bottom:none}
 .saidrow .sh{font-family:var(--disp);font-size:13px;font-weight:400;display:flex;justify-content:space-between;gap:10px}
 .saidrow .sh span{font-weight:700;color:var(--ink-2);font-size:11px;flex:0 0 auto}
-.saidrow .sq{font-family:var(--disp);font-size:12.5px;color:var(--ink-2);margin-top:5px;line-height:1.45}
-.saidrow .sa{font-size:19px;line-height:1.35;margin-top:3px}
+.saidrow .sq{font-family:var(--disp);font-size:11.5px;color:var(--ink-2);opacity:.85;margin-top:4px;line-height:1.4}
+.saidrow .sa{font-size:19px;line-height:1.3;margin-top:2px}
 
 /* --- 시트 --- */
 .scrim{position:fixed;inset:0;background:rgba(30,36,32,.45);z-index:60;opacity:0;transition:opacity .25s;pointer-events:none}
@@ -550,6 +550,11 @@ body.nofont .sp .t{font-size:11px;font-weight:800;letter-spacing:-.6px}
 .qbox .talk.on{background:#3FAE4E;color:#fff;border-color:transparent}
 .ansIn{width:100%;height:48px;margin-bottom:10px;border-radius:12px;border:1.5px solid rgba(255,255,255,.32);
   background:rgba(255,255,255,.12);color:#fff;padding:0 14px;outline:none;font-size:16px;font-family:var(--hand);font-weight:700}
+.qn{font-size:10px;opacity:.65;margin-left:4px}
+.qalist{margin-top:12px;border-top:1px solid rgba(255,255,255,.18);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.qa .qq{display:block;font-size:11px;color:rgba(255,255,255,.62);font-weight:700;line-height:1.35}
+.qa .aa{display:block;font-size:17px;line-height:1.3;margin-top:1px}
+.qa2{margin-top:7px}
 .ansIn::placeholder{color:rgba(255,253,246,.55);font-family:-apple-system,sans-serif;font-size:13px;font-weight:700}
 .ansIn:focus{border-color:#fff;background:rgba(255,253,246,.16)}
 .qbox .swap{width:46px;height:46px;border-radius:12px;background:rgba(255,253,246,.14);color:#FFFDF6;font-size:17px;
@@ -670,7 +675,7 @@ details.parent .pad .memo{margin-bottom:2px}
 <div class="croplayer" id="cropLayer"></div>
 <div class="dlg" id="dlg"></div>
 <input type="file" id="camIn" accept="image/*" class="hidden" />
-<input type="file" id="fileIn" accept="application/json,.json" class="hidden" />
+<input type="file" id="fileIn" accept=".json,.html,application/json,text/html" class="hidden" />
 
 <script>
 "use strict";
@@ -833,6 +838,9 @@ const READ_WITH = [
   {v:"readTo",   l:"읽어 주었어요", ic:"chat"}
 ];
 const RW = v => READ_WITH.find(r => r.v === v);
+const answersOf = e => Array.isArray(e.answers) ? e.answers
+  : (e.answer && e.answerQ ? [{q:e.answerQ, a:e.answer}] : []);
+const answerFor = (e, q) => { const f = answersOf(e).find(x => x.q === q); return f ? f.a : ""; };
 
 const BADGE_COLORS = ["#E8380D","#FFC93C","#3FAE4E","#5AC0DE","#E86D93","#7C5CF0"];
 const BADGE_BLOBS = [
@@ -1118,8 +1126,9 @@ function sheetBlank(e){
       <div class="fld"><i>재미있었어? (동그라미)</i><div class="faces">${faces}</div></div>
       <div class="fld"><i>${esc(adW())} 이야기했어요</i><div class="chk">${e && e.talked ? "☑ 이야기했어요" : "☐ 이야기했어요"}</div></div>
     </div>
-    <div class="fld"><i>${e && e.answerQ ? "질문 — " + esc(e.answerQ) : "기억하고 싶은 문장"}</i>
-      <div class="lines"><div class="w">${e ? esc(e.answer || e.sceneNote || "") : ""}</div><div></div><div></div></div></div>
+    <div class="fld"><i>${e && answersOf(e)[0] ? "질문 — " + esc(answersOf(e)[0].q) : "기억하고 싶은 문장"}</i>
+      <div class="lines"><div class="w">${e ? esc((answersOf(e)[0]||{}).a || e.sceneNote || "") : ""}</div>
+        <div class="w">${e && answersOf(e)[1] ? esc(answersOf(e)[1].a) : ""}</div><div></div></div></div>
     <div class="fld draw"><i>기억에 남는 장면 그리기</i><div class="canvas">${note}</div></div>
     <div class="foot">읽고 · 이야기하고 · 도장 찍기 — ${esc(nmI())}의 독서 기록</div>
   </div>`;
@@ -1156,6 +1165,64 @@ function sheetHaba(){
     ${body}
     <div class="foot">HABA 7세·초등 1학년 추천도서 · 초1 필독 20권 포함</div>
   </div>`;
+}
+function shareHTML(){
+  const s = stats();
+  const data = JSON.stringify({app:"yuan-reading-bank", version:3, exportedAt:new Date().toISOString(),
+    entries:S.entries, badges:S.badges, profile:S.profile, covers:COVERS});
+  const rows = S.entries.map(e => {
+    const cs = catsOf(e).map(c => c.short).join(" · ");
+    const img = e.hasCover && COVERS[e.id] ? `<img src="${COVERS[e.id]}">` : `<i>📗</i>`;
+    const qa = answersOf(e).map(x => `<p class="q">${esc(x.q)}</p><p class="a">“${esc(x.a)}”</p>`).join("");
+    return `<li>
+      <div class="th">${img}</div>
+      <div class="m">
+        <b>${esc(e.title)}</b>${e.author?`<span class="au"> · ${esc(e.author)}</span>`:""}
+        <p class="meta">${esc((e.date||"").replace(/-/g,"."))}${cs?" · "+esc(cs):""}${habaIdsOf(e).length?" · HABA 100":""}${(e.reads||1)>1?` · ${e.reads}번 읽음`:""}</p>
+        ${e.sceneNote?`<p class="a">“${esc(e.sceneNote)}”</p>`:""}
+        ${qa}
+        ${e.memo?`<p class="memo">${esc(ad())} 메모 · ${esc(e.memo)}</p>`:""}
+      </div>
+      <div class="rt">${e.rating?RATE_FACES[5-e.rating]:""}</div>
+    </li>`;
+  }).join("");
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(nmI())}의 독서기록</title>
+<style>
+:root{--paper:#F3EFE9;--card:#fff;--ink:#2B2A33;--ink2:#7A7686;--plum:#4A4363;--red:#D94A32}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);
+ font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.5}
+.wrap{max-width:640px;margin:0 auto;padding:24px 18px 60px}
+header{background:var(--plum);color:#fff;border-radius:22px;padding:22px}
+header h1{margin:0;font-size:21px}
+header p{margin:6px 0 0;font-size:13px;opacity:.75}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:16px;background:rgba(255,255,255,.14);border-radius:14px;overflow:hidden}
+.sum div{padding:12px 4px;text-align:center;border-right:1px solid rgba(255,255,255,.18)}
+.sum div:last-child{border:none}.sum b{display:block;font-size:20px}.sum span{font-size:10.5px;opacity:.8}
+ul{list-style:none;margin:18px 0 0;padding:0}
+li{display:flex;gap:12px;background:var(--card);border-radius:18px;padding:14px;margin-bottom:10px}
+.th{width:52px;height:68px;flex:0 0 auto;border-radius:6px;overflow:hidden;background:#EFEAE1;display:flex;align-items:center;justify-content:center}
+.th img{width:100%;height:100%;object-fit:cover}
+.m{flex:1;min-width:0}.m b{font-size:15.5px}.au{font-size:12px;color:var(--ink2)}
+.meta{margin:4px 0 0;font-size:11.5px;color:var(--ink2)}
+.a{margin:6px 0 0;font-size:14.5px}
+.q{margin:8px 0 0;font-size:11.5px;color:var(--ink2)}
+.memo{margin:7px 0 0;font-size:12px;color:var(--ink2);border-top:1px dashed #E7E2DA;padding-top:6px}
+.rt{font-size:18px}
+.foot{margin-top:22px;text-align:center;font-size:11.5px;color:var(--ink2);line-height:1.8}
+.foot b{color:var(--red)}
+</style></head><body><div class="wrap">
+<header><h1>${esc(nmI())}의 독서기록</h1>
+<p>${esc((S.entries[S.entries.length-1]||{}).date||"")} ~ ${esc((S.entries[0]||{}).date||"")}</p>
+<div class="sum"><div><b>${s.total}</b><span>기록한 책</span></div>
+<div><b>${s.haba}</b><span>HABA 100</span></div>
+<div><b>${s.days}</b><span>읽은 날</span></div></div></header>
+<ul>${rows || "<li><div class='m'>아직 기록이 없어요</div></li>"}</ul>
+<p class="foot">이 파일을 <b>독서기록 앱</b>에서 “백업 불러오기”로 열면<br>그대로 이어서 기록할 수 있어요</p>
+</div>
+<script type="application/json" id="reading-data">${data.replace(/</g,"\\u003c")}<\/script>
+</body></html>`;
 }
 function doPrint(html){
   const p = $("printArea");
@@ -1225,8 +1292,8 @@ function viewHome(){
   ${!(S.profile && S.profile.set) ? `
   <section class="card" style="border-color:var(--red)">
     <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--red)">시작하기</div>
-    <h2 class="d" style="margin:6px 0 12px;font-size:20px">누구의 수첩인가요?</h2>
-    <input class="search" id="firstChild" placeholder="아이 이름 (예: 유안)" maxlength="8" style="height:48px;margin-bottom:12px" />
+    <h2 class="d" style="margin:6px 0 12px;font-size:20px">누구의 기록인가요?</h2>
+    <input class="search" id="firstChild" placeholder="아이 이름 (예: 유안)" maxlength="8" value="${esc((S.profile&&S.profile.child)||"")}" style="height:48px;margin-bottom:12px" />
     <p style="font-size:12px;font-weight:800;color:var(--ink-2);margin:0 0 8px">같이 기록하는 어른</p>
     <div class="chips wrapped" style="padding-bottom:10px">
       ${["엄마","아빠","할머니","할아버지","이모","삼촌","선생님"].map(a =>
@@ -1359,7 +1426,7 @@ function rowPB(e){
   if((e.reads||1) > 1) meta.push(e.reads + "번 읽음");
   if(e.talked) meta.push("이야기함");
   if(e.hasNote) meta.push("스캔");
-  if(e.answer) meta.push("대답 기록");
+  if(answersOf(e).length) meta.push("대답 " + answersOf(e).length);
   if(e.readWith) meta.push(RW(e.readWith).l.replace(" 읽었어요","").replace(" 주었어요"," 읽어줌"));
   if(twin) meta.push("기록 중복");
   return `<button class="pbrow" data-entry="${e.id}">
@@ -1367,7 +1434,7 @@ function rowPB(e){
     <span class="m">
       <span class="t">${esc(e.title)}</span>
       <span class="s">${tag}${esc(meta.join(" · "))}</span>
-      ${e.sceneNote || e.answer ? `<span class="said">“${esc(e.sceneNote || e.answer)}”</span>` : ""}
+      ${(e.sceneNote || answersOf(e)[0]) ? `<span class="said">“${esc(e.sceneNote || answersOf(e)[0].a)}”</span>` : ""}
     </span>
     <span class="rt">
       ${e.hasVoice ? `<span class="vplay" data-play="${e.id}" role="button" aria-label="녹음 듣기">${ic("mic",14,2.3)}</span>` : ""}
@@ -1556,14 +1623,13 @@ function viewBadge(){
   ${listSection({
     key:"said",
     title:esc(nmI())+"가 한 말",
-    items:S.entries.filter(e => e.sceneNote || e.answer),
+    items:S.entries.filter(e => e.sceneNote || answersOf(e).length),
     open:saidOpen, month:saidMonth,
     empty:esc(ad())+" 질문에 대한 대답이나<br>기억나는 장면을 적어두면 여기에 모여요",
     row:e => `<div class="saidrow" data-entry="${e.id}">
         <div class="sh">${esc(e.title)}<span>${esc((e.date||"").slice(2).replace(/-/g,"."))}</span></div>
-        ${e.answerQ ? `<div class="sq">${esc(e.answerQ)}</div>` : ""}
-        ${e.answer ? `<div class="sa hand">“${esc(e.answer)}”</div>` : ""}
-        ${e.sceneNote ? `<div class="sa hand">“${esc(e.sceneNote)}”</div>` : ""}
+        ${answersOf(e).map(x => `<div class="qa2"><div class="sq">${esc(x.q)}</div><div class="sa hand">“${esc(x.a)}”</div></div>`).join("")}
+        ${e.sceneNote ? `<div class="sa hand" style="margin-top:6px">“${esc(e.sceneNote)}”</div>` : ""}
       </div>`
   })}
 
@@ -1598,15 +1664,15 @@ function viewBadge(){
 
   <div class="sec"><h2>기록 관리</h2><span class="ln"></span><span>백업 · 복원</span></div>
   <section class="plain">
-    <button class="prbtn" id="doShare">${ic("share",18,2.1)} 가족에게 보내기 (카톡·에어드롭)</button>
+    <button class="prbtn" id="doShare">${ic("share",18,2.1)} 가족에게 보내기 (바로 열리는 파일)</button>
     <div class="row2" style="margin-bottom:10px">
       <button class="btn pale" id="doExport">${ic("download",17,2.1)} 전체 백업</button>
       <button class="btn pale" id="doExportLite">${ic("download",17,2.1)} 가벼운 백업</button>
     </div>
-    <button class="prbtn" id="doImport" style="margin-bottom:4px">${ic("folder",18,2.1)} 백업 불러오기</button>
+    <button class="prbtn" id="doImport" style="margin-bottom:4px">${ic("folder",18,2.1)} 백업 불러오기 (json·html)</button>
     <div class="kv" style="border-bottom:none;padding-bottom:2px"><span class="k">저장 용량</span><span class="v" id="usage">확인 중…</span></div>
     <p style="font-size:11.5px;color:var(--ink-2);font-weight:700;margin:6px 0 0;line-height:1.5">
-      전체 백업에는 사진·녹음이 모두 들어가 파일이 커요. 가벼운 백업은 기록만 담아 카톡으로 보내기 좋아요.</p>
+      가족에게 보내기는 폰에서 바로 열어볼 수 있는 HTML이에요. 받은 사람이 “백업 불러오기”로 열면 기록이 그대로 옮겨집니다.</p>
     <button class="undo" id="doReset">기록 전체 지우기</button>
   </section>
 
@@ -1623,11 +1689,11 @@ function newDraft(habaId){
   const lk = b ? habaLookup(b.title) : null;
   return {id:"e"+Date.now()+Math.floor(Math.random()*900), title:b?b.title:"", author:"", categories: b?[b.category]:[], date:today(),
     rating:0, favoriteType:null, talked:false, memo:"", habaId:b?b.id:null, habaIds:lk?lk.ids:[],
-    must20:b?b.must20:false, sceneNote:"", answer:"", answerQ:"", readWith:null, hasCover:false, cover:null, hasNote:false, note:null, hasVoice:false, voice:null, reads:1, qIndex:0, isNew:true};
+    must20:b?b.must20:false, sceneNote:"", answers:[], readWith:null, hasCover:false, cover:null, hasNote:false, note:null, hasVoice:false, voice:null, reads:1, qIndex:0, isNew:true};
 }
 function openEntry(id){
   const e = S.entries.find(x => x.id === id);
-  draft = e ? Object.assign({}, e, {isNew:false, reads: e.reads || 1, categories: catsOf(e).map(c => c.id),
+  draft = e ? Object.assign({}, e, {isNew:false, reads: e.reads || 1, answers: answersOf(e).slice(), categories: catsOf(e).map(c => c.id),
     cover: COVERS[e.id] || null, note: COVERS[e.id+"::note"] || null, voice: COVERS[e.id+"::voice"] || null}) : newDraft(null);
   paintSheet(true);
 }
@@ -1676,14 +1742,6 @@ function paintSheet(resetScroll){
     </div>
 
     <div class="blk">
-      <p class="q">${ic("tag",17,2.2)} 어떤 분야의 책이야?
-        <span class="qs">${d.habaIds && d.habaIds.length ? "HABA 분야는 자동" : "여러 개 골라도 돼요"}</span></p>
-      <div class="cchips" id="catPick">${ALL_CATS.map(c => `
-        <button class="cc ${(d.categories||[]).includes(c.id)?'on':''}" data-cc="${c.id}" style="--cc:${c.color}">
-          ${cicon(c,16)}${c.short}</button>`).join("")}</div>
-    </div>
-
-    <div class="blk">
       <p class="q">${ic("star",17,2.2)} 재미있었어?</p>
       <div class="opts">${RATINGS.map((x,i) => `<button class="opt ${d.rating===x.v?'on':''}" data-rate="${x.v}">${blobIcon(x,46,i)}<span class="l">${x.l}</span></button>`).join("")}</div>
     </div>
@@ -1696,13 +1754,17 @@ function paintSheet(resetScroll){
 
     <div class="blk">
       <div class="qbox">
-        <div class="lb">오늘의 ${esc(ad())} 질문</div>
+        <div class="lb">오늘의 ${esc(ad())} 질문 <span class="qn">${(d.qIndex||0)+1} / ${qs.length}</span></div>
         <div class="txt" id="qText">${esc(q)}</div>
-        <input class="ansIn" id="ansIn" placeholder="${esc(nmI())}의 대답을 적어둘까요? (선택)" value="${esc(d.answer||"")}" autocomplete="off" />
+        <input class="ansIn" id="ansIn" placeholder="${esc(nmI())}의 대답을 적어둘까요? (선택)" value="${esc(answerFor(d, q))}" autocomplete="off" />
         <div class="btns">
           <button class="talk ${d.talked?'on':''}" id="talkBtn">${d.talked?"✓ 이야기했어요":ic("bubble",17,2.1)+" 이야기했어요"}</button>
           <button class="swap" id="qSwap" aria-label="다른 질문">${ic("repeat",19,2.1)}</button>
         </div>
+        ${(d.answers||[]).filter(x => x.a && x.q !== q).length ? `<div class="qalist">
+          ${(d.answers||[]).filter(x => x.a && x.q !== q).map(x => `
+            <div class="qa"><span class="qq">${esc(x.q)}</span><span class="aa hand">“${esc(x.a)}”</span></div>`).join("")}
+        </div>` : ""}
       </div>
     </div>
 
@@ -1728,6 +1790,12 @@ function paintSheet(resetScroll){
         <p class="ql first"><svg class="ic sprite" viewBox="0 0 24 24"><use href="#i-person"></use></svg> 어떻게 읽었나요?</p>
         <div class="cchips">${READ_WITH.map(r => `
           <button class="cc rw ${d.readWith===r.v?'on':''}" data-rw="${r.v}"><svg viewBox="0 0 24 24"><use href="#i-${r.ic}"></use></svg>${r.l}</button>`).join("")}</div>
+
+        <p class="ql">${ic("tag",15,2.2)} 어떤 분야의 책인가요?
+          <span class="qs">${d.habaIds && d.habaIds.length ? "HABA 분야는 자동" : "여러 개 골라도 돼요"}</span></p>
+        <div class="cchips" id="catPick">${ALL_CATS.map(c => `
+          <button class="cc ${(d.categories||[]).includes(c.id)?'on':''}" data-cc="${c.id}" style="--cc:${c.color}">
+            ${cicon(c,16)}${c.short}</button>`).join("")}</div>
 
         <p class="ql">${ic("pencil",15,2.2)} ${esc(ad())} 메모</p>
         <textarea class="memo" id="memo" rows="2" placeholder="민들레 이야기를 재미있어함">${esc(d.memo||"")}</textarea>
@@ -1806,9 +1874,10 @@ function openCrop(src, kind){
   const img = new Image();
   img.onload = () => {
     crop = {src, kind, img, ratio: kind === "note" ? 4/3 : 3/4, scale:1, x:0, y:0, W:0, H:0, base:1};
-    paintCrop(); fitCrop();
     $("cropLayer").classList.add("show");
     document.body.style.overflow = "hidden";
+    paintCrop();
+    requestAnimationFrame(() => { fitCrop(); requestAnimationFrame(fitCrop); });
   };
   img.onerror = () => toast("사진을 열 수 없어요");
   img.src = src;
@@ -1829,7 +1898,8 @@ function fitCrop(){
   const c = crop; if(!c) return;
   const box = document.querySelector(".cropbox"); const fr = $("cropFrame");
   if(!box || !fr) return;
-  const bw = box.clientWidth, bh = box.clientHeight || 320;
+  const bw = box.clientWidth || (window.innerWidth - 36), bh = box.clientHeight || Math.round(window.innerHeight * .5);
+  if(bw < 60) { requestAnimationFrame(fitCrop); return; }
   let W = bw, H = W / c.ratio;
   if(H > bh){ H = bh; W = H * c.ratio; }
   c.W = W; c.H = H;
@@ -1928,7 +1998,7 @@ document.addEventListener("click", async e => {
   if(t.id === "cropCancel"){ closeCrop(); return; }
   if(t.dataset.ratio){
     const r = RATIOS.find(x => x.k === t.dataset.ratio); if(!r || !crop) return;
-    crop.ratio = r.r; crop.scale = 1; paintCrop(); fitCrop(); return;
+    crop.ratio = r.r; crop.scale = 1; paintCrop(); requestAnimationFrame(fitCrop); return;
   }
   if(t.id === "cropOk"){
     if(!crop || !draft){ closeCrop(); return; }
@@ -2059,7 +2129,7 @@ document.addEventListener("click", async e => {
     if(t.id === "qSwap"){
       const qs = questionsFor(draft.habaId ? BOOK(draft.habaId).title : draft.title);
       draft.qIndex = ((draft.qIndex||0)+1) % qs.length;
-      $("qText").textContent = qs[draft.qIndex];
+      paintSheet();
       return;
     }
     if(t.id === "saveBtn"){
@@ -2069,10 +2139,7 @@ document.addEventListener("click", async e => {
       const authEl = $("aIn");
       const rec = {id:draft.id, title, author: authEl ? authEl.value.trim() : (draft.author||""), category: draft.category || null,
         reads: draft.reads || 1, categories: (draft.categories||[]).slice(), readWith: draft.readWith || null, sceneNote: (($("sceneIn")||{}).value || draft.sceneNote || "").trim(),
-        answer: (($("ansIn")||{}).value || draft.answer || "").trim(),
-        answerQ: ((($("ansIn")||{}).value || draft.answer || "").trim())
-          ? (questionsFor(draft.habaId ? BOOK(draft.habaId).title : draft.title)[(draft.qIndex||0) % questionsFor(draft.habaId ? BOOK(draft.habaId).title : draft.title).length] || "")
-          : "",
+        answers: (draft.answers || []).filter(x => x.a && x.a.trim()).map(x => ({q:x.q, a:x.a.trim()})),
         date:(dateEl && dateEl.value) || draft.date || today(),
         rating:draft.rating, favoriteType:draft.favoriteType, talked:draft.talked,
         memo: memoEl ? memoEl.value.trim() : (draft.memo||""),
@@ -2135,22 +2202,28 @@ document.addEventListener("click", async e => {
     }
   }
 
-  if(t.id === "doExport" || t.id === "doExportLite" || t.id === "doShare"){
+  if(t.id === "doShare"){
+    const name = `${nm()}-독서기록-${today()}.html`;
+    const blob = new Blob([shareHTML()], {type:"text/html"});
+    try{
+      const file = new File([blob], name, {type:"text/html"});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:nmI()+"의 독서기록", text:"바로 열어볼 수 있는 독서기록이에요"});
+        toast("보냈어요"); return;
+      }
+    }catch(err){ if(err && err.name === "AbortError") return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+    toast("HTML 파일로 저장했어요"); return;
+  }
+  if(t.id === "doExport" || t.id === "doExportLite"){
     const lite = t.id === "doExportLite";
     const data = JSON.stringify({app:"yuan-reading-bank", version:3, exportedAt:new Date().toISOString(),
       entries:S.entries, badges:S.badges, profile:S.profile, covers: lite ? {} : COVERS});
     const name = `${nm()}-독서기록-${today()}${lite?"-가벼운":""}.json`;
     const blob = new Blob([data], {type:"application/json"});
-    if(t.id === "doShare"){
-      try{
-        const file = new File([blob], name, {type:"application/json"});
-        if(navigator.canShare && navigator.canShare({files:[file]})){
-          await navigator.share({files:[file], title:nmI()+"의 독서기록", text:"독서 기록 백업 파일이에요"});
-          toast("📤 보냈어요"); return;
-        }
-      }catch(err){ if(err && err.name === "AbortError") return; }
-      toast("공유가 안 되면 백업 파일로 저장해 보내주세요");
-    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
@@ -2168,7 +2241,9 @@ document.addEventListener("click", async e => {
   if(t.id === "openSet"){ S.tab = "badge"; render();
     setTimeout(()=>{ const el = $("settings"); if(el && el.scrollIntoView) el.scrollIntoView({behavior:"smooth", block:"start"}); }, 120); return; }
   if(t.dataset.adult){
+    const typed = (($("firstChild")||{}).value || ($("setChild")||{}).value || "").trim();
     S.profile = Object.assign({}, S.profile, {adult: t.dataset.adult});
+    if(typed) S.profile.child = typed.slice(0,8);
     save(); render();
     if(S.tab === "badge") setTimeout(()=>{ const el = $("settings"); if(el && el.scrollIntoView) el.scrollIntoView({block:"start"}); }, 60);
     return;
@@ -2217,8 +2292,18 @@ document.addEventListener("input", e => {
   }
   if(e.target.id === "memo" && draft){ draft.memo = e.target.value; return; }
   if(e.target.id === "aIn" && draft){ draft.author = e.target.value; return; }
+  if(e.target.id === "firstChild" || e.target.id === "setChild"){
+    S.profile = Object.assign({}, S.profile, {child: e.target.value.trim().slice(0,8)});
+    return;
+  }
   if(e.target.id === "sceneIn" && draft){ draft.sceneNote = e.target.value; return; }
-  if(e.target.id === "ansIn" && draft){ draft.answer = e.target.value; return; }
+  if(e.target.id === "ansIn" && draft){
+    const qs = questionsFor(draft.habaId ? BOOK(draft.habaId).title : draft.title);
+    const cq = qs[(draft.qIndex||0) % qs.length];
+    draft.answers = (draft.answers || []).filter(x => x.q !== cq);
+    if(e.target.value.trim()) draft.answers.push({q:cq, a:e.target.value});
+    return;
+  }
   if(e.target.id === "habaSearch"){
     habaQ = e.target.value;
     const box = $("habaList"); if(box) box.innerHTML = habaListHTML();
@@ -2260,7 +2345,10 @@ document.addEventListener("change", async e => {
     const fr = new FileReader();
     fr.onload = async () => {
       try{
-        const d = JSON.parse(fr.result);
+        let raw = fr.result;
+        const m = String(raw).match(/<script type="application\/json" id="reading-data">([\s\S]*?)<\/script>/);
+        if(m) raw = m[1].replace(/\\u003c/g, "<");
+        const d = JSON.parse(raw);
         if(!d || !Array.isArray(d.entries)) throw new Error("형식 오류");
         S.entries = d.entries; S.badges = Array.isArray(d.badges) ? d.badges : [];
         if(d.profile && d.profile.child) S.profile = Object.assign({set:true}, d.profile);
@@ -2354,6 +2442,7 @@ function checkFonts(){
   // 예전에 기록한 책도 현재 HABA 목록과 다시 연결 (필독 8권 추가분 반영)
   let relinked = 0;
   S.entries.forEach(e => {
+    if(!Array.isArray(e.answers)){ e.answers = (e.answer && e.answerQ) ? [{q:e.answerQ, a:e.answer}] : []; delete e.answer; delete e.answerQ; }
     const lk = habaLookup(e.title);
     if(lk.exact){
       const ids = lk.ids;
