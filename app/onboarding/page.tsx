@@ -93,23 +93,27 @@ export default function OnboardingPage() {
     }
 
     if (role === "parent") {
-      const { data: child, error: childError } = await supabase
-        .from("children")
-        .insert({
-          name: childName.trim(),
-          birth_date: childBirthDate || null,
-          avatar: childAvatar,
-        })
-        .select("id")
-        .single();
-      if (childError || !child) {
-        setError(childError?.message ?? "아이 등록에 실패했어요.");
+      // Insert the id ourselves instead of asking Postgres to hand it back
+      // (.select().single() after insert): the "children" SELECT policy
+      // only allows rows the caller is already linked to via
+      // child_guardians, and that link doesn't exist until the next insert
+      // below, so requesting the row back right after creating it always
+      // fails RLS ("new row violates row-level security policy").
+      const childId = crypto.randomUUID();
+      const { error: childError } = await supabase.from("children").insert({
+        id: childId,
+        name: childName.trim(),
+        birth_date: childBirthDate || null,
+        avatar: childAvatar,
+      });
+      if (childError) {
+        setError(childError.message);
         setSaving(false);
         return;
       }
 
       const { error: guardianError } = await supabase.from("child_guardians").insert({
-        child_id: child.id,
+        child_id: childId,
         user_id: user.id,
         role: "owner",
       });
