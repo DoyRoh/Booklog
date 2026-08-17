@@ -549,4 +549,9 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - `users.onboarding_completed` 컬럼(기본값 `false`)으로 온보딩 완료 여부를 추적하며, `proxy.ts`가 이 값을 기준으로 라우팅을 강제합니다: 미로그인 상태로 탭 경로 접근 시 `/login`, 로그인은 했지만 온보딩 미완료 시 `/onboarding`, 온보딩 완료 후 `/login`·`/signup`·`/onboarding` 재방문 시 `/today`로 보냅니다.
 - 온보딩에서 사용자가 자기 `role`을 저장할 수 있어야 하므로, `users` 테이블의 self-update RLS 정책을 `role in ('parent','teacher','curator')`로 제한했습니다(`admin`으로의 자기 승격 차단). 로컬 Postgres에서 실제로 우회 시도가 막히는지 검증했습니다.
 
+## Phase 2 구현 참고사항
+
+- `app/library/add`에 바코드 스캔(`components/barcode-scanner.tsx`, `@zxing/browser`, EAN-13/EAN-8) 또는 ISBN 직접 입력 → 카카오 책 검색 API 조회(`app/api/books/lookup/route.ts`, `KAKAO_REST_API_KEY`는 서버 전용) → 미리보기 → `books`/`book_isbns` 저장 흐름을 구현했습니다. `book_isbns`에 이미 있는 ISBN이면 카카오 API를 부르지 않고 기존 책 정보를 바로 보여줍니다(중복 방지). `books`/`book_isbns`는 인증된 사용자 전체가 읽고 쓰는 공유 카탈로그라 RLS의 `guardians select own children` 같은 소유권 검사가 없고, Phase 0 때 겪었던 "INSERT 직후 RETURNING이 RLS에 막히는" 문제도 여기선 발생하지 않습니다(SELECT 정책이 `to authenticated using(true)`라 누구나 즉시 조회 가능).
+- **Phase 4에 반영 필요** (교사가 추천도서 목록을 올릴 때): 지금 카카오 조회는 `target=isbn`으로 ISBN 전용이지만, 교사는 책을 손에 들고 바코드를 하나씩 찍기보다 **책 제목으로 검색**해서 여러 권을 목록에 올리는 흐름이 필요합니다. 카카오 책 검색 API는 `target` 파라미터를 빼면 제목/저자 키워드 검색도 지원하므로, `/api/books/lookup`을 확장하거나 별도 라우트로 "제목 검색 → 후보(표지 여러 개) 목록 → 선택" UI를 Phase 4에서 만들어야 합니다. 카카오 DB에 없는 책(절판·독립출판 등)도 있을 수 있으므로, 검색 결과 없음 → 수동 입력(제목/저자 직접 타이핑) 경로도 함께 필요합니다.
+
 @AGENTS.md
