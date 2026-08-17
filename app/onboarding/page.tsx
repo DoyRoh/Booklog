@@ -11,7 +11,7 @@ type Avatar = "rabbit" | "dog" | "cat";
 type Step = "role" | "consent" | "child";
 
 const ROLES: { value: Role; label: string; description: string }[] = [
-  { value: "parent", label: "부모", description: "아이의 독서를 기록해요" },
+  { value: "parent", label: "아이 & 부모", description: "아이와 독서를 기록해요" },
   { value: "teacher", label: "교사", description: "학급 추천도서·숙제를 관리해요" },
   { value: "curator", label: "큐레이터", description: "기관·크리에이터로 추천도서를 발행해요" },
 ];
