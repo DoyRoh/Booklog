@@ -63,6 +63,13 @@ npm run dev
 - 부모 B 계정으로 부모 A의 아이 데이터에 접근하면 빈 결과(RLS에 의해 차단)여야 합니다.
 - 교사 계정으로 학급형 그룹을 만들고 부모 계정이 가입 승인을 받은 뒤, `teacher_reading_view`를 통해서만 최소한의 독서기록 컬럼이 보이는지 확인합니다.
 
+이 시나리오는 실제로 로컬 Postgres(mock auth 스키마)에 두 마이그레이션을 적용해 부모A/부모B/교사 세 계정으로 검증했습니다. 그 과정에서 다음 두 가지 버그를 실제로 발견해 고쳤습니다:
+
+1. **RLS 무한 재귀**: `child_guardians`와 `group_members`가 "같은 그룹/아이의 다른 보호자 보기" 같은 정책에서 자기 자신을 다시 조회하고, `groups` ↔ `group_members`가 서로를 참조하면서 순환이 생겨 `infinite recursion detected in policy` 오류가 났습니다. → `SECURITY DEFINER` 헬퍼 함수(`is_child_guardian`, `has_group_role`, `is_approved_group_participant`)로 내부 조회가 RLS를 다시 타지 않도록 고쳤습니다.
+2. **가입 신청 자체가 막히는 문제**: `group_members` INSERT 정책이 `groups` 테이블을 직접 조회해 `join_policy`를 확인했는데, approval형 그룹은 승인되기 전엔 애초에 SELECT로 보이지 않아 신청 자체가 거부됐습니다. → `group_join_policy()` 헬퍼 함수로 RLS를 우회해 `join_policy`만 조회하도록 고쳤습니다. (그룹 존재 여부·가입방식만 노출되며 민감 정보는 아닙니다.)
+
+**알려진 한계(Phase 3~4에서 다룰 것)**: `reading_records.group_id`는 보호자가 자유롭게 값을 넣을 수 있고, 실제로 그 그룹에 승인된 상태인지는 검증하지 않습니다. 즉 이론적으로 부모가 자신의 독서기록에 임의의 `group_id`를 지정하면, 그 그룹의 교사가 `teacher_reading_view`로 승인되지 않은 아이의 기록까지 볼 수 있습니다. 독서기록에 그룹을 연결하는 실제 기능이 들어오는 Phase 3~4에서, 승인된 멤버십을 검증하는 트리거나 서버 로직으로 막아야 합니다.
+
 ## 폴더 구조
 
 ```text
