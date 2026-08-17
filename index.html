@@ -1210,6 +1210,11 @@ li{display:flex;gap:12px;background:var(--card);border-radius:18px;padding:14px;
 .q{margin:8px 0 0;font-size:11.5px;color:var(--ink2)}
 .memo{margin:7px 0 0;font-size:12px;color:var(--ink2);border-top:1px dashed #E7E2DA;padding-top:6px}
 .rt{font-size:18px}
+.notice{background:#FFF4EC;border:1.5px solid #F0D9C8;border-radius:16px;padding:15px 16px;margin-top:16px}
+.notice b{font-size:13.5px}
+.notice p{margin:6px 0 11px;font-size:12.5px;color:var(--ink2);line-height:1.55}
+.notice button{width:100%;height:44px;border-radius:12px;border:none;background:var(--plum);color:#fff;
+ font-size:13.5px;font-weight:700}
 .foot{margin-top:22px;text-align:center;font-size:11.5px;color:var(--ink2);line-height:1.8}
 .foot b{color:var(--red)}
 </style></head><body><div class="wrap">
@@ -1218,10 +1223,28 @@ li{display:flex;gap:12px;background:var(--card);border-radius:18px;padding:14px;
 <div class="sum"><div><b>${s.total}</b><span>기록한 책</span></div>
 <div><b>${s.haba}</b><span>HABA 100</span></div>
 <div><b>${s.days}</b><span>읽은 날</span></div></div></header>
+<div class="notice">
+  <b>이 파일 안에 기록이 통째로 들어 있어요</b>
+  <p>앱에서 이어서 쓰려면 → <b>배지 탭 → 백업 불러오기</b> → 이 파일 선택</p>
+  <button id="dl">백업 파일(.json)로 내려받기</button>
+</div>
 <ul>${rows || "<li><div class='m'>아직 기록이 없어요</div></li>"}</ul>
 <p class="foot">이 파일을 <b>독서기록 앱</b>에서 “백업 불러오기”로 열면<br>그대로 이어서 기록할 수 있어요</p>
 </div>
 <script type="application/json" id="reading-data">${data.replace(/</g,"\\u003c")}<\/script>
+<script>
+(function(){
+  var el=document.getElementById("reading-data"), btn=document.getElementById("dl");
+  if(!el||!btn) return;
+  btn.onclick=function(){
+    var blob=new Blob([el.textContent],{type:"application/json"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=${JSON.stringify(nm()+"-독서기록-"+today()+".json")};
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+})();
+<\/script>
 </body></html>`;
 }
 function doPrint(html){
@@ -1672,7 +1695,7 @@ function viewBadge(){
     <button class="prbtn" id="doImport" style="margin-bottom:4px">${ic("folder",18,2.1)} 백업 불러오기 (json·html)</button>
     <div class="kv" style="border-bottom:none;padding-bottom:2px"><span class="k">저장 용량</span><span class="v" id="usage">확인 중…</span></div>
     <p style="font-size:11.5px;color:var(--ink-2);font-weight:700;margin:6px 0 0;line-height:1.5">
-      가족에게 보내기는 폰에서 바로 열어볼 수 있는 HTML이에요. 받은 사람이 “백업 불러오기”로 열면 기록이 그대로 옮겨집니다.</p>
+      가족에게 보내기는 <b>보기 + 데이터</b>가 한 파일에 들어간 HTML이에요. 그냥 열면 기록을 볼 수 있고, 앱에서 “백업 불러오기”로 열면 그대로 옮겨집니다.</p>
     <button class="undo" id="doReset">기록 전체 지우기</button>
   </section>
 
@@ -2208,8 +2231,8 @@ document.addEventListener("click", async e => {
     try{
       const file = new File([blob], name, {type:"text/html"});
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title:nmI()+"의 독서기록", text:"바로 열어볼 수 있는 독서기록이에요"});
-        toast("보냈어요"); return;
+        await navigator.share({files:[file], title:nmI()+"의 독서기록", text:"열어보면 기록이 보이고, 앱의 ‘백업 불러오기’로 열면 그대로 옮겨져요"});
+        toast("보냈어요 · 받은 사람은 백업 불러오기로 열면 돼요"); return;
       }
     }catch(err){ if(err && err.name === "AbortError") return; }
     const url = URL.createObjectURL(blob);
