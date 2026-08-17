@@ -1,0 +1,17 @@
+{
+  "name": "책숲",
+  "short_name": "책숲",
+  "description": "아이의 독서를 부모·교사와 함께 기록하고 넓혀가는 독서 플랫폼",
+  "start_url": "/today",
+  "display": "standalone",
+  "background_color": "#F3EFE9",
+  "theme_color": "#F3EFE9",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

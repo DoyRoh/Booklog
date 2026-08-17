@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #F3EFE9;
+  --card: #FFFFFF;
+  --ink: #2B2A33;
+  --ink-2: #7A7686;
+  --rule: #E7E2DA;
+  --edge: rgba(38, 48, 43, .15);
+  --edge-2: rgba(38, 48, 43, .10);
+  --red: #D94A32;
+  --red-deep: #B23A26;
+  --c-red: #E8380D;
+  --c-yellow: #FFC93C;
+  --c-green: #3FAE4E;
+  --c-blue: #5AC0DE;
+  --c-pink: #E86D93;
+  --c-purple: #7C5CF0;
+  --c-teal: #2E6E63;
+  --c-orange: #F2913C;
+  --plum: #4A4363;
+  --plum-2: #5B5280;
+  --teal: #4A4363;
+  --sun: #E8AB33;
+  --sky: #78A3C6;
+  --r: 22px;
+  --sb: env(safe-area-inset-bottom, 0px);
+  --st: env(safe-area-inset-top, 0px);
+  --disp: var(--font-gowun-dodum), "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --hand: var(--font-gamja-flower), "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-rule: var(--rule);
+  --color-plum: var(--plum);
+  --color-red: var(--red);
+  --font-disp: var(--disp);
+  --font-hand: var(--hand);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+}
+
+.d {
+  font-family: var(--disp);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.hand {
+  font-family: var(--hand);
+}
