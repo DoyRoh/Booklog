@@ -1,0 +1,236 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { RabbitIcon, DogIcon, CatIcon } from "@/components/icons/avatar-icons";
+
+type Avatar = "rabbit" | "dog" | "cat";
+type Child = {
+  id: string;
+  name: string;
+  avatar: Avatar | null;
+  birth_date: string | null;
+};
+
+const AVATAR_ICONS: Record<Avatar, typeof RabbitIcon> = {
+  rabbit: RabbitIcon,
+  dog: DogIcon,
+  cat: CatIcon,
+};
+
+const AVATAR_OPTIONS: { value: Avatar; label: string; Icon: typeof RabbitIcon }[] = [
+  { value: "rabbit", label: "토끼", Icon: RabbitIcon },
+  { value: "dog", label: "강아지", Icon: DogIcon },
+  { value: "cat", label: "고양이", Icon: CatIcon },
+];
+
+export default function ChildSwitcher({
+  userId,
+  childList: initialChildren,
+  activeChildId,
+}: {
+  userId: string;
+  childList: Child[];
+  activeChildId: string | null;
+}) {
+  const router = useRouter();
+  const [switching, setSwitching] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [avatar, setAvatar] = useState<Avatar | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function selectChild(childId: string) {
+    if (childId === activeChildId) return;
+    setSwitching(childId);
+    setError(null);
+
+    const supabase = createClient();
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ active_child_id: childId })
+      .eq("id", userId);
+
+    setSwitching(null);
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+    router.refresh();
+  }
+
+  async function addChild() {
+    if (!name.trim() || !avatar) return;
+    setSaving(true);
+    setError(null);
+
+    const supabase = createClient();
+    const childId = crypto.randomUUID();
+
+    const { error: childError } = await supabase.from("children").insert({
+      id: childId,
+      name: name.trim(),
+      birth_date: birthDate || null,
+      avatar,
+    });
+    if (childError) {
+      setError(childError.message);
+      setSaving(false);
+      return;
+    }
+
+    const { error: guardianError } = await supabase.from("child_guardians").insert({
+      child_id: childId,
+      user_id: userId,
+      role: "owner",
+    });
+    if (guardianError) {
+      setError(guardianError.message);
+      setSaving(false);
+      return;
+    }
+
+    // 새로 추가한 아이로 바로 전환.
+    const { error: activeError } = await supabase
+      .from("users")
+      .update({ active_child_id: childId })
+      .eq("id", userId);
+    if (activeError) {
+      setError(activeError.message);
+      setSaving(false);
+      return;
+    }
+
+    setSaving(false);
+    setAdding(false);
+    setName("");
+    setBirthDate("");
+    setAvatar(null);
+    router.refresh();
+  }
+
+  return (
+    <div className="mt-3 flex flex-col gap-3">
+      {initialChildren.map((child) => {
+        const Icon = child.avatar ? AVATAR_ICONS[child.avatar] : RabbitIcon;
+        const active = child.id === activeChildId;
+        return (
+          <button
+            key={child.id}
+            type="button"
+            onClick={() => selectChild(child.id)}
+            disabled={switching === child.id}
+            className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3 text-left disabled:opacity-60"
+            style={{
+              borderColor: active ? "var(--point)" : "var(--rule)",
+              background: active ? "rgba(47,168,79,0.08)" : "var(--card)",
+            }}
+          >
+            <Icon style={{ color: active ? "var(--point-deep)" : "var(--ink-2)" }} />
+            <div className="flex-1">
+              <p className="d text-sm">{child.name}</p>
+              {child.birth_date && (
+                <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                  {child.birth_date}
+                </p>
+              )}
+            </div>
+            {active && (
+              <span className="d text-xs" style={{ color: "var(--point-deep)" }}>
+                선택됨
+              </span>
+            )}
+          </button>
+        );
+      })}
+
+      {!adding && (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="d rounded-[var(--r)] border border-dashed px-4 py-3 text-sm"
+          style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
+        >
+          + 아이 추가
+        </button>
+      )}
+
+      {adding && (
+        <div
+          className="flex flex-col gap-3 rounded-[var(--r)] border p-4"
+          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+        >
+          <input
+            type="text"
+            placeholder="아이 이름"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+            style={{ borderColor: "var(--rule)" }}
+          />
+          <input
+            type="date"
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
+            max={new Date().toISOString().split("T")[0]}
+            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+            style={{ borderColor: "var(--rule)" }}
+          />
+          <div className="flex justify-between gap-3">
+            {AVATAR_OPTIONS.map(({ value, label, Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setAvatar(value)}
+                className="flex flex-1 flex-col items-center gap-1.5 rounded-[var(--r)] border py-3"
+                style={{
+                  borderColor: avatar === value ? "var(--point)" : "var(--rule)",
+                  background: avatar === value ? "rgba(47,168,79,0.08)" : "var(--card)",
+                  color: avatar === value ? "var(--point-deep)" : "var(--ink)",
+                }}
+              >
+                <Icon />
+                <span className="d text-xs">{label}</span>
+              </button>
+            ))}
+          </div>
+
+          {error && (
+            <p className="text-sm" style={{ color: "var(--berry)" }}>
+              {error}
+            </p>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setAdding(false)}
+              className="d flex-1 rounded-[14px] border py-3 text-sm"
+              style={{ borderColor: "var(--rule)" }}
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              disabled={!name.trim() || !avatar || saving}
+              onClick={addChild}
+              className="d flex-1 rounded-[14px] py-3 text-sm text-white disabled:opacity-40"
+              style={{ background: "var(--point)" }}
+            >
+              {saving ? "저장 중..." : "추가"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && !adding && (
+        <p className="text-sm" style={{ color: "var(--berry)" }}>
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}

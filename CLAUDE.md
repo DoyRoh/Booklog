@@ -556,4 +556,11 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - `app/library/add`에 바코드 스캔(`components/barcode-scanner.tsx`, `@zxing/browser`, EAN-13/EAN-8) 또는 ISBN 직접 입력 → 카카오 책 검색 API 조회(`app/api/books/lookup/route.ts`, `KAKAO_REST_API_KEY`는 서버 전용) → 미리보기 → `books`/`book_isbns` 저장 흐름을 구현했습니다. `book_isbns`에 이미 있는 ISBN이면 카카오 API를 부르지 않고 기존 책 정보를 바로 보여줍니다(중복 방지). `books`/`book_isbns`는 인증된 사용자 전체가 읽고 쓰는 공유 카탈로그라 RLS의 `guardians select own children` 같은 소유권 검사가 없고, Phase 0 때 겪었던 "INSERT 직후 RETURNING이 RLS에 막히는" 문제도 여기선 발생하지 않습니다(SELECT 정책이 `to authenticated using(true)`라 누구나 즉시 조회 가능).
 - **Phase 4에 반영 필요** (교사가 추천도서 목록을 올릴 때): 지금 카카오 조회는 `target=isbn`으로 ISBN 전용이지만, 교사는 책을 손에 들고 바코드를 하나씩 찍기보다 **책 제목으로 검색**해서 여러 권을 목록에 올리는 흐름이 필요합니다. 카카오 책 검색 API는 `target` 파라미터를 빼면 제목/저자 키워드 검색도 지원하므로, `/api/books/lookup`을 확장하거나 별도 라우트로 "제목 검색 → 후보(표지 여러 개) 목록 → 선택" UI를 Phase 4에서 만들어야 합니다. 카카오 DB에 없는 책(절판·독립출판 등)도 있을 수 있으므로, 검색 결과 없음 → 수동 입력(제목/저자 직접 타이핑) 경로도 함께 필요합니다.
 
+## Phase 3 구현 참고사항
+
+- **다자녀 지원**: `users.active_child_id`(마이그레이션 0004)로 "지금 보고 있는 아이"를 추적합니다. `lib/active-child.ts`의 `getActiveChild()`가 이 값을 우선 쓰고, 없으면 `child_guardians`에서 가장 먼저 등록한 아이로 대체합니다. 더보기 탭(`components/child-switcher.tsx`)에서 아이 카드를 탭해 전환하거나 "+ 아이 추가"로 둘째·셋째를 등록할 수 있습니다. `users` self-update RLS 정책에 `active_child_id`가 실제 본인이 보호자인 아이인지 확인하는 조건을 추가해, 다른 부모의 아이 ID로 바꿔치기하는 걸 막았습니다(로컬 Postgres에서 실제로 차단되는지 확인).
+- **책 등록 = 독서기록 생성으로 통합**: Phase 2까지는 "책 등록"이 공유 카탈로그(`books`/`book_isbns`)에만 저장되고 `reading_records`와 연결되지 않아서, 등록해도 책장에 안 보이는 문제가 있었습니다(실사용 중 발견). `app/library/add`의 마지막 단계를 평점·기분·즐겨찾기·부모메모를 입력하는 "기록 남기기" 화면으로 바꾸고, 여기서 `reading_records`를 `active_child_id` 기준으로 생성하도록 고쳤습니다. 이미 카탈로그에 있는 책(중복 감지)도 같은 화면으로 이어져서 새 책 등록과 동일하게 기록이 남습니다.
+- **책장/기록 탭**: `app/library`, `app/records`가 `getActiveChild()`로 아이를 정하고 `reading_records ⋈ books`를 그 아이 기준으로 조회해 각각 표지 그리드 / 상세 리스트로 보여줍니다. 아이가 없으면(교사·큐레이터 계정, 또는 온보딩 전) 안내 문구만 표시합니다.
+- **아직 없는 것**: `reading_records.photo_url`/`voice_url`은 스키마에는 있지만 실제 업로드 UI·Supabase Storage 버킷 설정은 아직입니다(다음 단계).
+
 @AGENTS.md
