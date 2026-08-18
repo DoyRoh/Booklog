@@ -35,7 +35,17 @@ export default function BarcodeScanner({ onDetected, onError }: Props) {
 
     reader
       .decodeFromConstraints(
-        { video: { facingMode: "environment" } },
+        {
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            // Not all cameras/browsers support this -- it's a best-effort
+            // "ideal" constraint, so unsupported ones just ignore it rather
+            // than failing the whole getUserMedia call.
+            advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet],
+          },
+        },
         videoRef.current ?? undefined,
         (result) => {
           if (cancelled || !result) return;
@@ -67,8 +77,30 @@ export default function BarcodeScanner({ onDetected, onError }: Props) {
   }, []);
 
   return (
-    <div className="overflow-hidden rounded-[var(--r)]" style={{ background: "#000" }}>
+    <div
+      className="relative overflow-hidden rounded-[var(--r)]"
+      style={{ background: "#000" }}
+    >
       <video ref={videoRef} className="w-full" playsInline muted />
+
+      {!permissionDenied && (
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <div
+            className="aspect-[8/3] w-[78%] rounded-lg"
+            style={{
+              border: "3px solid rgba(255,255,255,0.9)",
+              boxShadow: "0 0 0 999px rgba(0,0,0,0.35)",
+            }}
+          />
+          <p
+            className="d rounded-full px-3 py-1 text-xs text-white"
+            style={{ background: "rgba(0,0,0,0.55)" }}
+          >
+            바코드를 사각형 안에 맞춰주세요
+          </p>
+        </div>
+      )}
+
       {permissionDenied && (
         <p className="p-4 text-sm text-white">
           카메라 권한이 필요해요. 브라우저 설정에서 허용한 뒤 새로고침 해주세요.
