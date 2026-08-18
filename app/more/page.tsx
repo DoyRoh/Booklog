@@ -76,6 +76,19 @@ export default async function MorePage() {
           />
         </div>
       )}
+
+      {(profile?.role === "teacher" || profile?.role === "curator") && (
+        <div className="mt-8">
+          <p className="d text-lg">대시보드</p>
+          <Link
+            href={profile.role === "teacher" ? "/teacher" : "/curator"}
+            className="mt-2 block rounded-[var(--r)] border p-4 text-sm"
+            style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
+          >
+            {profile.role === "teacher" ? "교사 대시보드로 가기" : "큐레이터 대시보드로 가기"}
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

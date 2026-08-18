@@ -4,6 +4,7 @@ import { getActiveChild } from "@/lib/active-child";
 import GroupApprovals from "@/components/group-approvals";
 import AddBookToList from "@/components/add-book-to-list";
 import BrowseGroups from "@/components/browse-groups";
+import CreateAssignment from "@/components/create-assignment";
 
 const TYPE_LABELS: Record<string, string> = {
   kindergarten: "유치원",
@@ -92,14 +93,16 @@ export default async function GroupDetailPage({
   const { data: itemRows } = bookList
     ? await supabase
         .from("book_list_items")
-        .select("id, books(title, author, cover_url)")
+        .select("id, books(id, title, author, cover_url)")
         .eq("book_list_id", bookList.id)
     : { data: null };
 
   const items = (itemRows ?? [])
     .map((row) => ({
       id: row.id,
-      book: row.books as unknown as { title: string; author: string | null; cover_url: string | null } | null,
+      book: row.books as unknown as
+        | { id: string; title: string; author: string | null; cover_url: string | null }
+        | null,
     }))
     .filter((row) => row.book);
 
@@ -116,6 +119,34 @@ export default async function GroupDetailPage({
         childName: (row.children as unknown as { name: string } | null)?.name ?? "",
       }))
       .filter((row) => row.childName);
+  }
+
+  let assignments: {
+    id: string;
+    title: string;
+    description: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    bookTitles: string[];
+  }[] = [];
+  if (isOperator || isMember) {
+    const { data: assignmentRows } = await supabase
+      .from("assignments")
+      .select("id, title, description, start_date, end_date, assignment_books(books(title))")
+      .eq("group_id", groupId)
+      .order("created_at", { ascending: false });
+    assignments = (assignmentRows ?? []).map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      startDate: row.start_date,
+      endDate: row.end_date,
+      bookTitles: (
+        (row.assignment_books as unknown as { books: { title: string } | null }[] | null) ?? []
+      )
+        .map((ab) => ab.books?.title)
+        .filter((title): title is string => Boolean(title)),
+    }));
   }
 
   return (
@@ -201,6 +232,55 @@ export default async function GroupDetailPage({
       {isOperator && bookList && (
         <div className="mt-8">
           <AddBookToList bookListId={bookList.id} />
+        </div>
+      )}
+
+      {(isOperator || isMember) && (
+        <div className="mt-8">
+          <p className="d text-lg">숙제</p>
+          {assignments.length === 0 ? (
+            <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>
+              아직 등록된 숙제가 없어요.
+            </p>
+          ) : (
+            <div className="mt-3 flex flex-col gap-3">
+              {assignments.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="rounded-[var(--r)] border p-4"
+                  style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+                >
+                  <p className="d text-sm">{assignment.title}</p>
+                  {assignment.description && (
+                    <p className="mt-1 text-sm" style={{ color: "var(--ink)" }}>
+                      {assignment.description}
+                    </p>
+                  )}
+                  {(assignment.startDate || assignment.endDate) && (
+                    <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
+                      {assignment.startDate ?? "~"} ~ {assignment.endDate ?? ""}
+                    </p>
+                  )}
+                  {assignment.bookTitles.length > 0 && (
+                    <p className="mt-2 text-xs" style={{ color: "var(--ink-2)" }}>
+                      {assignment.bookTitles.join(", ")}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isOperator && (
+            <div className="mt-4">
+              <CreateAssignment
+                groupId={groupId}
+                books={items
+                  .filter((item) => item.book)
+                  .map((item) => ({ id: item.book!.id, title: item.book!.title }))}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
