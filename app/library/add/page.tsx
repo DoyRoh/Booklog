@@ -6,7 +6,15 @@ import { createClient } from "@/lib/supabase/client";
 import { getActiveChild } from "@/lib/active-child";
 import BarcodeScanner from "@/components/barcode-scanner";
 
-type Step = "choose" | "scan" | "manual" | "looking-up" | "record" | "no-child" | "saved";
+type Step =
+  | "choose"
+  | "scan"
+  | "manual"
+  | "manual-book"
+  | "looking-up"
+  | "record"
+  | "no-child"
+  | "saved";
 
 type ResolvedBook = {
   bookId: string | null; // null이면 아직 books에 없는 새 책
@@ -26,6 +34,8 @@ const RATINGS = [1, 2, 3, 4, 5];
 export default function AddBookPage() {
   const [step, setStep] = useState<Step>("choose");
   const [manualIsbn, setManualIsbn] = useState("");
+  const [manualTitle, setManualTitle] = useState("");
+  const [manualAuthor, setManualAuthor] = useState("");
   const [book, setBook] = useState<ResolvedBook | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -85,6 +95,22 @@ export default function AddBookPage() {
     }
   }
 
+  function confirmManualBook() {
+    if (!manualTitle.trim()) return;
+    setBook({
+      bookId: null,
+      title: manualTitle.trim(),
+      author: manualAuthor.trim(),
+      publisher: "",
+      coverUrl: null,
+      introduction: "",
+      publishDate: null,
+      isbn: "",
+      isNew: true,
+    });
+    setStep("record");
+  }
+
   async function save() {
     if (!book) return;
     setSaving(true);
@@ -118,7 +144,7 @@ export default function AddBookPage() {
         cover_url: book.coverUrl,
         introduction: book.introduction || null,
         publish_date: book.publishDate,
-        source: "kakao",
+        source: book.isbn ? "kakao" : "manual",
       });
       if (bookError) {
         setError(bookError.message);
@@ -126,13 +152,16 @@ export default function AddBookPage() {
         return;
       }
 
-      const { error: isbnError } = await supabase
-        .from("book_isbns")
-        .insert({ book_id: bookId, isbn: book.isbn });
-      if (isbnError) {
-        setError(isbnError.message);
-        setSaving(false);
-        return;
+      // ISBN 없이 등록한 책(오래된 책, 수제책 등)은 book_isbns에 남길 게 없다.
+      if (book.isbn) {
+        const { error: isbnError } = await supabase
+          .from("book_isbns")
+          .insert({ book_id: bookId, isbn: book.isbn });
+        if (isbnError) {
+          setError(isbnError.message);
+          setSaving(false);
+          return;
+        }
       }
     }
 
@@ -180,6 +209,14 @@ export default function AddBookPage() {
             style={{ borderColor: "var(--rule)", background: "var(--card)" }}
           >
             ISBN 직접 입력
+          </button>
+          <button
+            type="button"
+            onClick={() => setStep("manual-book")}
+            className="d rounded-[var(--r)] border px-4 py-4 text-left"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          >
+            ISBN 없이 제목만으로 등록
           </button>
         </div>
       )}
@@ -233,6 +270,47 @@ export default function AddBookPage() {
             style={{ background: "var(--point)" }}
           >
             조회하기
+          </button>
+          <button
+            type="button"
+            onClick={() => setStep("manual-book")}
+            className="d text-sm"
+            style={{ color: "var(--point)" }}
+          >
+            ISBN이 없는 책이에요
+          </button>
+        </div>
+      )}
+
+      {step === "manual-book" && (
+        <div className="mt-8 flex flex-col gap-3">
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+            카카오 책 검색에 없는 책(오래된 책, 수제책 등)은 제목만으로 바로 등록할 수 있어요.
+          </p>
+          <input
+            type="text"
+            placeholder="책 제목"
+            value={manualTitle}
+            onChange={(e) => setManualTitle(e.target.value)}
+            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          />
+          <input
+            type="text"
+            placeholder="지은이 (선택)"
+            value={manualAuthor}
+            onChange={(e) => setManualAuthor(e.target.value)}
+            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          />
+          <button
+            type="button"
+            disabled={!manualTitle.trim()}
+            onClick={confirmManualBook}
+            className="d rounded-[14px] py-3 text-sm text-white disabled:opacity-40"
+            style={{ background: "var(--point)" }}
+          >
+            다음
           </button>
         </div>
       )}
