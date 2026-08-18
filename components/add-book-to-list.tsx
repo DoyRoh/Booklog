@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import BarcodeScanner from "@/components/barcode-scanner";
 
 type Candidate = {
   title: string;
@@ -11,9 +12,13 @@ type Candidate = {
   isbn: string;
 };
 
+type Mode = "search" | "scan" | "isbn";
+
 export default function AddBookToList({ bookListId }: { bookListId: string }) {
   const router = useRouter();
+  const [mode, setMode] = useState<Mode>("search");
   const [query, setQuery] = useState("");
+  const [manualIsbn, setManualIsbn] = useState("");
   const [results, setResults] = useState<Candidate[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +26,13 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
   const [manualMode, setManualMode] = useState(false);
   const [manualTitle, setManualTitle] = useState("");
   const [manualAuthor, setManualAuthor] = useState("");
+
+  function switchMode(next: Mode) {
+    setMode(next);
+    setError(null);
+    setResults(null);
+    setManualMode(false);
+  }
 
   async function search() {
     if (!query.trim()) return;
@@ -39,6 +51,61 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
       setResults(data.results ?? []);
     } catch {
       setError("검색 중 문제가 생겼어요.");
+    }
+    setSearching(false);
+  }
+
+  async function lookupIsbn(isbn: string) {
+    if (!isbn) return;
+    setSearching(true);
+    setError(null);
+    setResults(null);
+
+    const supabase = createClient();
+
+    // 이미 등록된 책이면 카카오 API를 부르지 않고 바로 후보로 보여준다.
+    const { data: existingIsbn } = await supabase
+      .from("book_isbns")
+      .select("book_id, books(title, author, cover_url)")
+      .eq("isbn", isbn)
+      .maybeSingle();
+
+    if (existingIsbn?.books) {
+      const existingBook = existingIsbn.books as unknown as {
+        title: string;
+        author: string | null;
+        cover_url: string | null;
+      };
+      setResults([
+        {
+          title: existingBook.title,
+          author: existingBook.author ?? "",
+          coverUrl: existingBook.cover_url,
+          isbn,
+        },
+      ]);
+      setSearching(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/books/lookup?isbn=${encodeURIComponent(isbn)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "이 ISBN으로 책을 찾지 못했어요.");
+        setSearching(false);
+        return;
+      }
+      setResults([
+        {
+          title: data.title,
+          author: data.author ?? "",
+          coverUrl: data.coverUrl ?? null,
+          isbn: data.isbn || isbn,
+        },
+      ]);
+    } catch {
+      setError("책 정보를 불러오는 중 문제가 생겼어요.");
     }
     setSearching(false);
   }
@@ -106,6 +173,7 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
     setAdding(null);
     setResults(null);
     setQuery("");
+    setManualIsbn("");
     router.refresh();
   }
 
@@ -130,6 +198,32 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
       <p className="d text-sm">책 추가</p>
 
       {!manualMode && (
+        <div className="mt-2 flex gap-2">
+          {(
+            [
+              { key: "search", label: "제목 검색" },
+              { key: "scan", label: "바코드 스캔" },
+              { key: "isbn", label: "ISBN 입력" },
+            ] as { key: Mode; label: string }[]
+          ).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => switchMode(key)}
+              className="d rounded-full border px-3 py-1.5 text-xs"
+              style={{
+                borderColor: mode === key ? "var(--point)" : "var(--rule)",
+                background: mode === key ? "rgba(47,168,79,0.08)" : "transparent",
+                color: mode === key ? "var(--point-deep)" : "var(--ink-2)",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!manualMode && mode === "search" && (
         <>
           <div className="mt-2 flex gap-2">
             <input
@@ -151,7 +245,46 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
               검색
             </button>
           </div>
+        </>
+      )}
 
+      {!manualMode && mode === "scan" && (
+        <div className="mt-2 flex flex-col gap-3">
+          <BarcodeScanner
+            onDetected={(isbn) => lookupIsbn(isbn)}
+            onError={(message) => setError(message)}
+          />
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+            책 뒷면 바코드를 화면 안에 맞춰주세요.
+          </p>
+        </div>
+      )}
+
+      {!manualMode && mode === "isbn" && (
+        <div className="mt-2 flex gap-2">
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="ISBN 13자리 (예: 9788934942467)"
+            value={manualIsbn}
+            onChange={(e) => setManualIsbn(e.target.value.replace(/[^\d]/g, ""))}
+            className="flex-1 rounded-[14px] border px-4 py-2.5 text-sm outline-none"
+            style={{ borderColor: "var(--rule)" }}
+          />
+          <button
+            type="button"
+            disabled={(manualIsbn.length !== 10 && manualIsbn.length !== 13) || searching}
+            onClick={() => lookupIsbn(manualIsbn)}
+            className="d rounded-[14px] px-4 py-2.5 text-sm text-white disabled:opacity-40"
+            style={{ background: "var(--point)" }}
+          >
+            조회
+          </button>
+        </div>
+      )}
+
+      {!manualMode && (
+        <>
           {error && (
             <p className="mt-2 text-sm" style={{ color: "var(--berry)" }}>
               {error}
