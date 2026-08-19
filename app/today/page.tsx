@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveChild } from "@/lib/active-child";
+import { hasVoiceConsent } from "@/lib/consent";
+import { getSignedMediaUrl } from "@/lib/storage";
 import AssignmentToday, { type TodayAssignment } from "@/components/assignment-today";
 
 type AssignmentRow = {
@@ -106,7 +108,7 @@ export default async function TodayPage() {
     const { data: responseRows } = missionIds.length
       ? await supabase
           .from("assignment_mission_responses")
-          .select("mission_id, answer_text")
+          .select("mission_id, answer_text, voice_url")
           .eq("child_id", activeChild.id)
           .in("mission_id", missionIds)
       : { data: [] };
@@ -116,6 +118,17 @@ export default async function TodayPage() {
     );
     const answerByMission = new Map(
       (responseRows ?? []).map((row) => [row.mission_id, row.answer_text as string | null])
+    );
+    const voiceUrlByMission = new Map(
+      (responseRows ?? []).map((row) => [row.mission_id, row.voice_url as string | null])
+    );
+    const voiceSignedUrlByMission = new Map<string, string | null>(
+      await Promise.all(
+        Array.from(voiceUrlByMission.entries()).map(async ([missionId, voiceUrl]) => [
+          missionId,
+          voiceUrl ? await getSignedMediaUrl(supabase, voiceUrl) : null,
+        ] as const)
+      )
     );
 
     assignments = rows.map((row) => ({
@@ -138,9 +151,12 @@ export default async function TodayPage() {
         type: mission.type,
         question: mission.question,
         answerText: answerByMission.get(mission.id) ?? null,
+        voiceSignedUrl: voiceSignedUrlByMission.get(mission.id) ?? null,
       })),
     }));
   }
+
+  const voiceAllowed = await hasVoiceConsent(supabase, user.id);
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -154,7 +170,7 @@ export default async function TodayPage() {
           지금 진행 중인 숙제가 없어요. 책장에서 자유롭게 책을 기록해 보세요.
         </p>
       ) : (
-        <AssignmentToday childId={activeChild.id} assignments={assignments} />
+        <AssignmentToday childId={activeChild.id} assignments={assignments} voiceAllowed={voiceAllowed} />
       )}
     </div>
   );

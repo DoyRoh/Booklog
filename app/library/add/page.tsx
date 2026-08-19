@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getActiveChild } from "@/lib/active-child";
+import { hasVoiceConsent } from "@/lib/consent";
+import { uploadChildPhoto, uploadChildVoice } from "@/lib/storage";
 import BarcodeScanner from "@/components/barcode-scanner";
+import PhotoPicker from "@/components/photo-picker";
+import VoiceRecorder from "@/components/voice-recorder";
 
 type Step =
   | "choose"
@@ -44,6 +48,17 @@ export default function AddBookPage() {
   const [emotion, setEmotion] = useState<string | null>(null);
   const [favorite, setFavorite] = useState(false);
   const [memo, setMemo] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [voiceAllowed, setVoiceAllowed] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      hasVoiceConsent(supabase, user.id).then(setVoiceAllowed);
+    });
+  }, []);
 
   async function lookup(isbn: string) {
     setError(null);
@@ -165,6 +180,17 @@ export default function AddBookPage() {
       }
     }
 
+    let photoUrl: string | null = null;
+    let voiceUrl: string | null = null;
+    try {
+      if (photoFile) photoUrl = await uploadChildPhoto(supabase, activeChild.id, photoFile);
+      if (voiceBlob) voiceUrl = await uploadChildVoice(supabase, activeChild.id, voiceBlob);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "사진/음성 업로드에 실패했어요.");
+      setSaving(false);
+      return;
+    }
+
     const { error: recordError } = await supabase.from("reading_records").insert({
       child_id: activeChild.id,
       book_id: bookId,
@@ -172,6 +198,8 @@ export default function AddBookPage() {
       emotion,
       favorite,
       parent_memo: memo || null,
+      photo_url: photoUrl,
+      voice_url: voiceUrl,
     });
     if (recordError) {
       setError(recordError.message);
@@ -422,6 +450,22 @@ export default function AddBookPage() {
             className="rounded-[14px] border px-4 py-3 text-sm outline-none"
             style={{ borderColor: "var(--rule)", background: "var(--card)" }}
           />
+
+          <div>
+            <p className="d text-sm">사진 (선택)</p>
+            <div className="mt-2">
+              <PhotoPicker onSelect={setPhotoFile} />
+            </div>
+          </div>
+
+          {voiceAllowed && (
+            <div>
+              <p className="d text-sm">음성 기록 (선택)</p>
+              <div className="mt-2">
+                <VoiceRecorder onRecorded={setVoiceBlob} onClear={() => setVoiceBlob(null)} label="음성 기록" />
+              </div>
+            </div>
+          )}
 
           {error && (
             <p className="text-sm" style={{ color: "var(--berry)" }}>

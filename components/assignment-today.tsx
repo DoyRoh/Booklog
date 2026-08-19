@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { uploadMissionVoice } from "@/lib/storage";
+import VoiceRecorder from "@/components/voice-recorder";
 
 export type TodayMission = {
   id: string;
   type: "read" | "question" | "voice" | "drawing" | "photo";
   question: string | null;
   answerText: string | null;
+  voiceSignedUrl: string | null;
 };
 
 export type TodayBook = {
@@ -128,12 +131,75 @@ function QuestionMission({ childId, mission }: { childId: string; mission: Today
   );
 }
 
+function VoiceMission({
+  childId,
+  mission,
+  voiceAllowed,
+}: {
+  childId: string;
+  mission: TodayMission;
+  voiceAllowed: boolean;
+}) {
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleRecorded(blob: Blob) {
+    setSaving(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const path = await uploadMissionVoice(supabase, childId, mission.id, blob);
+      await supabase
+        .from("assignment_mission_responses")
+        .upsert(
+          { mission_id: mission.id, child_id: childId, voice_url: path },
+          { onConflict: "mission_id,child_id" }
+        );
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "저장에 실패했어요.");
+    }
+    setSaving(false);
+  }
+
+  return (
+    <div className="mt-2 rounded-[10px] p-3" style={{ background: "var(--paper)" }}>
+      <p className="text-sm">{mission.question ?? "소리 내어 읽어보아요"}</p>
+      {!voiceAllowed ? (
+        <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
+          온보딩에서 음성 녹음에 동의하지 않으셨어요.
+        </p>
+      ) : (
+        <div className="mt-2 flex flex-col gap-2">
+          {mission.voiceSignedUrl && (
+            <audio src={mission.voiceSignedUrl} controls className="h-9 w-full" />
+          )}
+          <VoiceRecorder onRecorded={handleRecorded} label="낭독" />
+          {saving && (
+            <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+              저장 중...
+            </p>
+          )}
+          {error && (
+            <p className="text-xs" style={{ color: "var(--berry)" }}>
+              {error}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AssignmentToday({
   childId,
   assignments,
+  voiceAllowed,
 }: {
   childId: string;
   assignments: TodayAssignment[];
+  voiceAllowed: boolean;
 }) {
   return (
     <div className="mt-4 flex flex-col gap-4">
@@ -176,12 +242,12 @@ export default function AssignmentToday({
             mission.type === "question" ? (
               <QuestionMission key={mission.id} childId={childId} mission={mission} />
             ) : mission.type === "voice" ? (
-              <div key={mission.id} className="mt-2 rounded-[10px] p-3" style={{ background: "var(--paper)" }}>
-                <p className="text-sm">{mission.question ?? "소리 내어 읽어보아요"}</p>
-                <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
-                  음성 녹음 기능은 준비 중이에요.
-                </p>
-              </div>
+              <VoiceMission
+                key={mission.id}
+                childId={childId}
+                mission={mission}
+                voiceAllowed={voiceAllowed}
+              />
             ) : null
           )}
         </div>

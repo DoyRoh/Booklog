@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveChild } from "@/lib/active-child";
+import { getSignedMediaUrl } from "@/lib/storage";
 
 export default async function RecordsPage() {
   const supabase = await createClient();
@@ -21,13 +22,25 @@ export default async function RecordsPage() {
 
   const activeChild = await getActiveChild(supabase, user.id);
 
-  const { data: records } = activeChild
+  const { data: rows } = activeChild
     ? await supabase
         .from("reading_records")
-        .select("id, rating, emotion, favorite, parent_memo, read_date, books(title, author, cover_url)")
+        .select(
+          "id, rating, emotion, favorite, parent_memo, read_date, photo_url, voice_url, books(title, author, cover_url)"
+        )
         .eq("child_id", activeChild.id)
         .order("read_date", { ascending: false })
     : { data: null };
+
+  const records = rows
+    ? await Promise.all(
+        rows.map(async (row) => ({
+          ...row,
+          photoSignedUrl: row.photo_url ? await getSignedMediaUrl(supabase, row.photo_url) : null,
+          voiceSignedUrl: row.voice_url ? await getSignedMediaUrl(supabase, row.voice_url) : null,
+        }))
+      )
+    : null;
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8">
@@ -96,6 +109,17 @@ export default async function RecordsPage() {
                     <p className="mt-2 text-sm" style={{ color: "var(--ink)" }}>
                       {record.parent_memo}
                     </p>
+                  )}
+                  {record.photoSignedUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={record.photoSignedUrl}
+                      alt=""
+                      className="mt-2 h-28 w-full rounded-[10px] object-cover"
+                    />
+                  )}
+                  {record.voiceSignedUrl && (
+                    <audio src={record.voiceSignedUrl} controls className="mt-2 h-9 w-full" />
                   )}
                 </div>
               </div>

@@ -32,7 +32,7 @@
 
 **책숲** — 아이의 독서를 부모·교사, 그리고 책을 추천하는 기관·크리에이터가 함께 기록하고 넓혀가는 어린이 독서 플랫폼. 기존 "유안이 독서기록" 개인용 웹앱(로컬 IndexedDB 기반, 책장/독서기록/HABA 100/배지/음성기록/PWA 구현됨)을 서비스형으로 확장하는 프로젝트입니다.
 
-**핵심 목표**: 부모가 책 한 권을 최소 기록하는 데 5초 이내.
+**핵심 목표**: 부모가 책 한 권을 최소 기록하는 데 30초 이내.
 
 **세 가지 사용자 유형**:
 - `parent` — 아이 독서 기록 (핵심 사용자)
@@ -524,6 +524,7 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 ❌ AI 독후감 자동 작성  ❌ AI 그림 분석  ❌ 게임화 과도 추가
 ❌ 복잡한 기관 ERP 기능  ❌ 큐레이터 정식 인증 심사 플로우
 ❌ Phase 0 범위를 벗어난 화면/기능 구현 (지금은 뼈대만)
+❌ 아이 간 비교·경쟁 (순위, 리더보드, 다른 아이와의 독서량 비교 등)
 ```
 
 ---
@@ -581,8 +582,8 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 ## Phase 5 구현 참고사항
 
 - **스키마는 이미 Phase 0에 있었지만 답변 저장소가 빠져 있었습니다**: `assignments`/`assignment_books`/`assignment_missions`와 그 RLS, `assignment_completion` 뷰(책 단위 완료 여부, `security_invoker=true`로 이미 안전하게 만들어져 있었음)는 마이그레이션 0001-0002에 이미 있었습니다. 하지만 `assignment_missions`의 `question`/`voice` 타입 미션에 대한 "아이의 답"을 저장할 테이블이 스키마에 없어서, 마이그레이션 0006(`assignment_mission_responses`)을 추가했습니다. `reading_records`(보호자 전체 CRUD)와 `teacher_reading_view`(교사는 조회만) 패턴을 그대로 따라 RLS를 작성했고, 로컬 Postgres에서 보호자 CRUD/교사 조회전용/타 부모 완전 차단을 모두 확인했습니다.
-- **MVP 범위**: `read` 타입은 별도 UI 없이 `assignment_books`(필독서)로만 다루고, 완료 여부는 `assignment_completion` 뷰(해당 책의 `reading_records` 존재 여부)로 그대로 판정합니다. `question` 타입은 텍스트 답변 입력/저장/수정이 실제로 동작합니다. `voice` 타입은 Storage 버킷이 아직 없어서(Phase 3 노트 참고) 오늘 탭에 미션 안내만 뜨고 "음성 녹음 기능은 준비 중이에요"로 표시됩니다 — 실제 녹음 UI는 Storage 버킷 설정 후 별도 작업 필요.
-- **"5초 기록" 목표를 살린 빠른 완료**: 오늘 탭에서 숙제 책 옆의 "다 읽었어요" 버튼은 평점/기분 없이 `reading_records`를 바로 생성합니다(`child_id`, `book_id`, `group_id`만). 나중에 기록 탭에서 채워 넣을 수 있습니다. 이건 정식 "책 등록" 플로우(`app/library/add`)와는 별개의 경량 경로입니다.
+- **MVP 범위**: `read` 타입은 별도 UI 없이 `assignment_books`(필독서)로만 다루고, 완료 여부는 `assignment_completion` 뷰(해당 책의 `reading_records` 존재 여부)로 그대로 판정합니다. `question` 타입은 텍스트 답변 입력/저장/수정이 실제로 동작합니다. `voice` 타입은 처음엔 Storage 버킷이 없어 "준비 중" 안내만 떴지만, 아래 "사진·음성 업로드" 절에서 실제 녹음 기능이 붙었습니다.
+- **"30초 기록" 목표를 살린 빠른 완료**: 오늘 탭에서 숙제 책 옆의 "다 읽었어요" 버튼은 평점/기분 없이 `reading_records`를 바로 생성합니다(`child_id`, `book_id`, `group_id`만). 나중에 기록 탭에서 채워 넣을 수 있습니다. 이건 정식 "책 등록" 플로우(`app/library/add`)와는 별개의 경량 경로입니다.
 - **교사가 숙제 만들기**: `components/create-assignment.tsx`(그룹 상세 화면, 운영자 전용)에서 제목/설명/기간 + 그룹의 추천도서 목록 중 필독서 선택 + 선택적 미션(질문/낭독) 추가까지 한 화면에서 처리합니다. `assignments`/`assignment_books`/`assignment_missions`를 클라이언트 생성 UUID로 순서대로 insert합니다(Phase 0부터 지켜온 RLS RETURNING 회피 패턴).
 - **오늘 탭**: `app/today/page.tsx`가 부모 역할일 때만 활성 숙제(오늘이 시작일~종료일 사이, 또는 기간 미설정)를 보여주고, 교사/큐레이터 역할이면 각자 대시보드로 안내합니다.
 
@@ -591,5 +592,13 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **교사 대시보드** (`app/teacher`): 역할이 `teacher`가 아니면 데이터 없이 안내 문구만 표시합니다. 운영 중인 그룹마다 승인된 멤버 수, 승인 대기 건수, 숙제별 완료 현황(`assignment_completion` 집계)을 보여줍니다. 그룹·숙제 수가 적은 MVP 규모를 가정하고 그룹당/숙제당 개별 쿼리(N+1)로 작성했습니다 — 그룹이 많아지면 집계 쿼리로 최적화가 필요합니다.
 - **큐레이터 대시보드** (`app/curator`): 발행한 그룹마다 팔로워 수(승인된 `child_id` 멤버 수)와 추천도서 권수를 보여줍니다. 큐레이터는 숙제 기능이 없으므로(원래 기획 그대로) 완료 현황 같은 섹션은 없습니다.
 - **더보기 탭 연결**: `profile.role`이 `teacher`/`curator`면 더보기 탭에 대시보드 링크가 뜨고, 오늘 탭도 같은 조건으로 대시보드로 안내합니다. `/teacher`·`/recommend/[groupId]` 등은 `proxy.ts`의 5탭 게이트 대상이 아니라 각 페이지가 자체적으로 로그인/역할 체크를 합니다(기존 탭 페이지들과 동일한 패턴).
+
+## 사진·음성 업로드 (Phase 6 이후, 사용자 요청)
+
+- **Storage 버킷**: 마이그레이션 0007이 비공개(`public=false`) 버킷 `reading-media`를 만듭니다. 오브젝트 이름은 항상 `{child_id}/...`로 시작하고, `storage.objects` RLS가 이 첫 폴더 세그먼트만으로 `child_guardians` 소유권을 판정합니다(`(storage.foldername(name))[1]::uuid`). 파일 종류는 파일명 접두사로 구분합니다 — `photo-{uuid}`(독서기록 사진), `voice-{uuid}`(독서기록 음성 메모), `mission-{mission_id}`(낭독 미션 녹음, 재녹음 시 upsert로 덮어씀).
+- **비공개 + 서명된 URL**: 사진·음성이 실제 아이 것이라 공개 버킷 대신 매번 `createSignedUrl()`로 만료시간 있는 URL을 발급합니다(`lib/storage.ts`의 `getSignedMediaUrl`). 화면에 표시할 때마다 서버 컴포넌트에서 새로 서명하므로, 링크를 복사해 공유해도 오래가지 않습니다.
+- **교사는 낭독 미션 녹음만 조회 가능**: `storage.objects`에 `assignment_mission_responses`와 조인하는 별도 SELECT 정책을 추가해, 교사가 자기 그룹 아이의 낭독 미션 녹음(`mission-*` 경로)만 들을 수 있게 했습니다. 독서기록 사진/음성 메모는 `teacher_reading_view`가 애초에 그 컬럼을 빼고 노출하므로 교사가 접근할 경로 자체가 없습니다. 로컬 Postgres에서 storage.objects를 최소 스키마로 모킹해 보호자 CRUD/교사의 미션 녹음 한정 조회/타 부모 완전 차단을 모두 확인했습니다.
+- **음성 녹음은 동의 게이트**: 온보딩에서 이미 수집하던 `consents.type='voice_recording'`(선택 항목)을 `lib/consent.ts`의 `hasVoiceConsent()`로 확인해, 동의 안 한 부모에게는 음성 녹음 UI 자체를 숨깁니다(사진은 동의 대상이 아니라 게이트 없음). 재동의를 바꾸는 화면은 아직 없습니다 — 온보딩 때 선택한 값이 계속 유지됩니다.
+- **컴포넌트**: `components/photo-picker.tsx`(파일 입력 + 미리보기), `components/voice-recorder.tsx`(`MediaRecorder`로 마이크 녹음, `barcode-scanner.tsx`와 동일한 권한 요청 패턴)를 새로 만들고, `app/library/add`의 기록 단계와 `components/assignment-today.tsx`의 낭독 미션 양쪽에서 재사용합니다.
 
 @AGENTS.md
