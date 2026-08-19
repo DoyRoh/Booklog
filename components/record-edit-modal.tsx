@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { ReadingStatus } from "@/lib/reading-status";
+import RatingPicker from "@/components/rating-picker";
+import ReadDatePicker from "@/components/read-date-picker";
 
 const EMOTIONS = ["재밌어요", "웃겼어요", "감동적이에요", "슬퍼요", "그저그래요"];
-const RATINGS = [1, 2, 3, 4, 5];
 const STATUS_LABELS: Record<ReadingStatus, string> = {
   want: "읽고 싶어요",
   reading: "읽는 중이에요",
@@ -23,6 +24,8 @@ export type EditableRecord = {
   emotion: string | null;
   favorite: boolean;
   memo: string;
+  readDate: string;
+  pagesRead: number | null;
 };
 
 export default function RecordEditModal({
@@ -38,6 +41,8 @@ export default function RecordEditModal({
   const [emotion, setEmotion] = useState(record.emotion);
   const [favorite, setFavorite] = useState(record.favorite);
   const [memo, setMemo] = useState(record.memo);
+  const [readDate, setReadDate] = useState(record.readDate);
+  const [pagesRead, setPagesRead] = useState(record.pagesRead ? String(record.pagesRead) : "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,6 +58,8 @@ export default function RecordEditModal({
         emotion,
         favorite,
         parent_memo: memo || null,
+        read_date: readDate,
+        pages_read: status === "reading" && pagesRead ? Number(pagesRead) : null,
       })
       .eq("id", record.id);
     if (updateError) {
@@ -77,7 +84,7 @@ export default function RecordEditModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <p className="d text-lg">기록 수정</p>
+          <p className="d text-lg">기록 고치기</p>
           <button type="button" onClick={onClose} className="text-sm" style={{ color: "var(--ink-2)" }}>
             닫기
           </button>
@@ -92,9 +99,9 @@ export default function RecordEditModal({
             <img src={record.coverUrl} alt="" className="h-20 w-14 rounded object-cover" />
           )}
           <div>
-            <p className="d text-sm">{record.title}</p>
+            <p className="d text-base">{record.title}</p>
             {record.author && (
-              <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+              <p className="text-sm" style={{ color: "var(--ink-2)" }}>
                 {record.author}
               </p>
             )}
@@ -122,63 +129,67 @@ export default function RecordEditModal({
           </div>
         </div>
 
-        {status === "done" && (
-          <>
-            <div className="mt-4">
-              <p className="d text-sm">평점</p>
-              <div className="mt-2 flex gap-2">
-                {RATINGS.map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setRating(value === rating ? null : value)}
-                    className="d flex h-10 w-10 items-center justify-center rounded-full border text-sm"
-                    style={{
-                      borderColor: rating === value ? "var(--point)" : "var(--rule)",
-                      background: rating === value ? "var(--point)" : "var(--card)",
-                      color: rating === value ? "#fff" : "var(--ink)",
-                    }}
-                  >
-                    {value}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="mt-4">
+          <ReadDatePicker value={readDate} onChange={setReadDate} />
+        </div>
 
-            <div className="mt-4">
-              <p className="d text-sm">기분</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {EMOTIONS.map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setEmotion(value === emotion ? null : value)}
-                    className="d rounded-full border px-3 py-1.5 text-sm"
-                    style={{
-                      borderColor: emotion === value ? "var(--point)" : "var(--rule)",
-                      background: emotion === value ? "rgba(47,168,79,0.08)" : "var(--card)",
-                      color: emotion === value ? "var(--point-deep)" : "var(--ink)",
-                    }}
-                  >
-                    {value}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <label
-              className="mt-4 flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"
+        {status === "reading" && (
+          <div className="mt-4">
+            <p className="d text-sm">몇 쪽까지 읽었어? (선택)</p>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              placeholder="예: 35"
+              value={pagesRead}
+              onChange={(e) => setPagesRead(e.target.value)}
+              className="mt-2 w-full rounded-[14px] border px-4 py-3 text-sm outline-none"
               style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-            >
-              <input
-                type="checkbox"
-                checked={favorite}
-                onChange={(e) => setFavorite(e.target.checked)}
-              />
-              <span className="text-sm">가장 좋아하는 책으로 남기기</span>
-            </label>
-          </>
+            />
+          </div>
         )}
+
+        {status !== "done" && (
+          <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
+            평점·기분 같은 나머지 기록은 다 읽고 나서 채워도 괜찮아요.
+          </p>
+        )}
+
+        <div className="mt-4">
+          <p className="d text-sm">재미있었어?</p>
+          <div className="mt-2">
+            <RatingPicker value={rating} onChange={setRating} />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <p className="d text-sm">기분</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {EMOTIONS.map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setEmotion(value === emotion ? null : value)}
+                className="d rounded-full border px-3 py-1.5 text-sm"
+                style={{
+                  borderColor: emotion === value ? "var(--point)" : "var(--rule)",
+                  background: emotion === value ? "rgba(47,168,79,0.08)" : "var(--card)",
+                  color: emotion === value ? "var(--point-deep)" : "var(--ink)",
+                }}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label
+          className="mt-4 flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"
+          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+        >
+          <input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} />
+          <span className="text-sm">가장 좋아하는 책으로 남기기</span>
+        </label>
 
         <textarea
           placeholder="부모 메모 (선택)"
@@ -202,7 +213,7 @@ export default function RecordEditModal({
           className="d mt-4 w-full rounded-[14px] py-3 text-sm text-white disabled:opacity-40"
           style={{ background: "var(--point)" }}
         >
-          {saving ? "저장 중..." : "저장"}
+          {saving ? "저장 중..." : "✓ 기록 저장하기"}
         </button>
       </div>
     </div>

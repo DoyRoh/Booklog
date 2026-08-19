@@ -27,7 +27,7 @@ export default async function RecordsPage() {
     ? await supabase
         .from("reading_records")
         .select(
-          "id, group_id, status, rating, emotion, favorite, parent_memo, read_date, photo_url, voice_url, books(title, author, cover_url), groups(name)"
+          "id, group_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, photo_url, voice_url, books(title, author, cover_url), groups(name)"
         )
         .eq("child_id", activeChild.id)
         .order("read_date", { ascending: false })
@@ -52,6 +52,7 @@ export default async function RecordsPage() {
             favorite: row.favorite,
             parentMemo: row.parent_memo,
             readDate: row.read_date,
+            pagesRead: row.pages_read,
             photoSignedUrl: row.photo_url ? await getSignedMediaUrl(supabase, row.photo_url) : null,
             voiceSignedUrl: row.voice_url ? await getSignedMediaUrl(supabase, row.voice_url) : null,
             bookTitle: book?.title ?? "",

@@ -28,6 +28,9 @@ export default function CreateAssignment({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedBookIds, setSelectedBookIds] = useState<Set<string>>(new Set());
+  // 선택된 책마다 "몇 쪽까지가 숙제인지" 텍스트 입력값을 따로 들고 있는다 --
+  // 비어 있으면 완독이 기준이다.
+  const [targetPages, setTargetPages] = useState<Record<string, string>>({});
   const [missions, setMissions] = useState<DraftMission[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +69,7 @@ export default function CreateAssignment({
     setStartDate("");
     setEndDate("");
     setSelectedBookIds(new Set());
+    setTargetPages({});
     setMissions([]);
     setError(null);
   }
@@ -106,6 +110,7 @@ export default function CreateAssignment({
         assignment_id: assignmentId,
         book_id: bookId,
         required: true,
+        target_page: targetPages[bookId] ? Number(targetPages[bookId]) : null,
       }))
     );
     if (booksError) {
@@ -214,20 +219,36 @@ export default function CreateAssignment({
         </p>
       ) : (
         <div className="mt-2 flex flex-col gap-1.5">
-          {books.map((book) => (
-            <label
-              key={book.id}
-              className="flex items-center gap-2 rounded-[10px] border px-3 py-2 text-sm"
-              style={{ borderColor: "var(--rule)" }}
-            >
-              <input
-                type="checkbox"
-                checked={selectedBookIds.has(book.id)}
-                onChange={() => toggleBook(book.id)}
-              />
-              {book.title}
-            </label>
-          ))}
+          {books.map((book) => {
+            const selected = selectedBookIds.has(book.id);
+            return (
+              <div key={book.id} className="rounded-[10px] border px-3 py-2" style={{ borderColor: "var(--rule)" }}>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={selected} onChange={() => toggleBook(book.id)} />
+                  {book.title}
+                </label>
+                {selected && (
+                  <div className="mt-1.5 flex items-center gap-2 pl-6">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      placeholder="완독"
+                      value={targetPages[book.id] ?? ""}
+                      onChange={(e) =>
+                        setTargetPages((prev) => ({ ...prev, [book.id]: e.target.value }))
+                      }
+                      className="w-20 rounded-[8px] border px-2 py-1.5 text-xs outline-none"
+                      style={{ borderColor: "var(--rule)" }}
+                    />
+                    <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+                      쪽까지 (비워두면 완독이 기준)
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

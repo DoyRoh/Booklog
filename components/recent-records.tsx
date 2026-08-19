@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
+import RecordEditModal from "@/components/record-edit-modal";
 import type { ReadingStatus } from "@/lib/reading-status";
 
 export type RecentRecord = {
@@ -15,6 +15,7 @@ export type RecentRecord = {
   favorite: boolean;
   memo: string;
   readDate: string;
+  pagesRead: number | null;
 };
 
 export default function RecentRecords({ records }: { records: RecentRecord[] }) {
@@ -55,19 +56,19 @@ export default function RecentRecords({ records }: { records: RecentRecord[] }) 
 
       {editing && (
         <RecordEditModal
-          record={
-            {
-              id: editing.id,
-              title: editing.title,
-              author: editing.author,
-              coverUrl: editing.coverUrl,
-              status: editing.status,
-              rating: editing.rating,
-              emotion: editing.emotion,
-              favorite: editing.favorite,
-              memo: editing.memo,
-            } as EditableRecord
-          }
+          record={{
+            id: editing.id,
+            title: editing.title,
+            author: editing.author,
+            coverUrl: editing.coverUrl,
+            status: editing.status,
+            rating: editing.rating,
+            emotion: editing.emotion,
+            favorite: editing.favorite,
+            memo: editing.memo,
+            readDate: editing.readDate,
+            pagesRead: editing.pagesRead,
+          }}
           onClose={() => setEditing(null)}
         />
       )}

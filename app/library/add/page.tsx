@@ -11,6 +11,8 @@ import BarcodeScanner from "@/components/barcode-scanner";
 import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
 import QuestionPrompt from "@/components/question-prompt";
+import RatingPicker from "@/components/rating-picker";
+import ReadDatePicker from "@/components/read-date-picker";
 
 type Step = "form" | "no-child" | "saved";
 type FindMode = "none" | "scan" | "isbn";
@@ -28,7 +30,6 @@ type Candidate = {
 type ReadingStatus = "want" | "reading" | "done";
 
 const EMOTIONS = ["재밌어요", "웃겼어요", "감동적이에요", "슬퍼요", "그저그래요"];
-const RATINGS = [1, 2, 3, 4, 5];
 const STATUS_LABELS: Record<ReadingStatus, string> = {
   want: "읽고 싶어요",
   reading: "읽는 중이에요",
@@ -78,9 +79,11 @@ function AddBookForm() {
   const [saving, setSaving] = useState(false);
 
   const [status, setStatus] = useState<ReadingStatus>("done");
+  const [readDate, setReadDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [rating, setRating] = useState<number | null>(null);
   const [emotion, setEmotion] = useState<string | null>(null);
   const [favorite, setFavorite] = useState(false);
+  const [pagesRead, setPagesRead] = useState("");
   const [memo, setMemo] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
@@ -299,9 +302,11 @@ function AddBookForm() {
       book_id: finalBookId,
       group_id: groupId,
       status,
+      read_date: readDate,
       rating,
       emotion,
       favorite,
+      pages_read: status === "reading" && pagesRead ? Number(pagesRead) : null,
       parent_memo: memo || null,
       photo_url: photoUrl,
       voice_url: voiceUrl,
@@ -500,65 +505,67 @@ function AddBookForm() {
             </div>
           </div>
 
-          {status === "done" && (
-            <>
-              <div>
-                <p className="d text-sm">평점</p>
-                <div className="mt-2 flex gap-2">
-                  {RATINGS.map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setRating(value === rating ? null : value)}
-                      className="d flex h-10 w-10 items-center justify-center rounded-full border text-sm"
-                      style={{
-                        borderColor: rating === value ? "var(--point)" : "var(--rule)",
-                        background: rating === value ? "var(--point)" : "var(--card)",
-                        color: rating === value ? "#fff" : "var(--ink)",
-                      }}
-                    >
-                      {value}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <ReadDatePicker value={readDate} onChange={setReadDate} />
 
-              <div>
-                <p className="d text-sm">기분</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {EMOTIONS.map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setEmotion(value === emotion ? null : value)}
-                      className="d rounded-full border px-3 py-1.5 text-sm"
-                      style={{
-                        borderColor: emotion === value ? "var(--point)" : "var(--rule)",
-                        background: emotion === value ? "rgba(47,168,79,0.08)" : "var(--card)",
-                        color: emotion === value ? "var(--point-deep)" : "var(--ink)",
-                      }}
-                    >
-                      {value}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <label
-                className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"
+          {status === "reading" && (
+            <div>
+              <p className="d text-sm">몇 쪽까지 읽었어? (선택)</p>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                placeholder="예: 35"
+                value={pagesRead}
+                onChange={(e) => setPagesRead(e.target.value)}
+                className="mt-2 w-full rounded-[14px] border px-4 py-3 text-sm outline-none"
                 style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-              >
-                <input
-                  type="checkbox"
-                  checked={favorite}
-                  onChange={(e) => setFavorite(e.target.checked)}
-                />
-                <span className="text-sm">가장 좋아하는 책으로 남기기</span>
-              </label>
-
-              <QuestionPrompt />
-            </>
+              />
+            </div>
           )}
+
+          {status !== "done" && (
+            <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+              평점·기분 같은 나머지 기록은 다 읽고 나서 채워도 괜찮아요.
+            </p>
+          )}
+
+          <div>
+            <p className="d text-sm">재미있었어?</p>
+            <div className="mt-2">
+              <RatingPicker value={rating} onChange={setRating} />
+            </div>
+          </div>
+
+          <div>
+            <p className="d text-sm">기분</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {EMOTIONS.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setEmotion(value === emotion ? null : value)}
+                  className="d rounded-full border px-3 py-1.5 text-sm"
+                  style={{
+                    borderColor: emotion === value ? "var(--point)" : "var(--rule)",
+                    background: emotion === value ? "rgba(47,168,79,0.08)" : "var(--card)",
+                    color: emotion === value ? "var(--point-deep)" : "var(--ink)",
+                  }}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label
+            className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          >
+            <input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} />
+            <span className="text-sm">가장 좋아하는 책으로 남기기</span>
+          </label>
+
+          <QuestionPrompt />
 
           <textarea
             placeholder="부모 메모 (선택)"

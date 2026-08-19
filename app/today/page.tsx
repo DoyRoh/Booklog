@@ -63,7 +63,9 @@ export default async function TodayPage() {
 
   const { data: allRecords } = await supabase
     .from("reading_records")
-    .select("id, status, rating, emotion, favorite, parent_memo, read_date, books(title, author, cover_url)")
+    .select(
+      "id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, books(title, author, cover_url)"
+    )
     .eq("child_id", activeChild.id)
     .order("read_date", { ascending: false });
 
@@ -100,6 +102,7 @@ export default async function TodayPage() {
       favorite: r.favorite,
       memo: r.parent_memo ?? "",
       readDate: r.read_date,
+      pagesRead: r.pages_read,
     };
   });
 

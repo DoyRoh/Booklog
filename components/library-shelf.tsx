@@ -20,6 +20,7 @@ export type ShelfInstance = {
   emotion: string | null;
   memo: string | null;
   readDate: string;
+  pagesRead: number | null;
 };
 
 export type ShelfBook = {
@@ -93,6 +94,8 @@ function toEditable(book: DedupedBook): EditableRecord {
     emotion: book.emotion,
     favorite: book.favorite,
     memo: book.memo ?? "",
+    readDate: book.readDate,
+    pagesRead: book.pagesRead,
   };
 }
 

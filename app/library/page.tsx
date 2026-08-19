@@ -27,7 +27,7 @@ export default async function LibraryPage() {
     ? await supabase
         .from("reading_records")
         .select(
-          "id, group_id, status, rating, emotion, favorite, parent_memo, read_date, books(id, title, author, cover_url), groups(name)"
+          "id, group_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, books(id, title, author, cover_url), groups(name)"
         )
         .eq("child_id", activeChild.id)
         .order("read_date", { ascending: false })
@@ -59,6 +59,7 @@ export default async function LibraryPage() {
       emotion: record.emotion,
       memo: record.parent_memo,
       readDate: record.read_date,
+      pagesRead: record.pages_read,
     };
 
     const existing = byBook.get(book.id);

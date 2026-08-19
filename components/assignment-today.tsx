@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { uploadMissionVoice } from "@/lib/storage";
 import VoiceRecorder from "@/components/voice-recorder";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
+import type { ReadingStatus } from "@/lib/reading-status";
 
 export type TodayMission = {
   id: string;
@@ -22,12 +23,17 @@ export type TodayBook = {
   author: string | null;
   coverUrl: string | null;
   completed: boolean;
+  // null이면 완독이 숙제, 값이 있으면 그 쪽수까지만 읽으면 되는 숙제다.
+  targetPage: number | null;
   // completed=true일 때만 채워진다 -- 이 자리에서 바로 기록을 고칠 수 있게 함.
   recordId: string | null;
+  status: ReadingStatus | null;
   rating: number | null;
   emotion: string | null;
   favorite: boolean;
   memo: string | null;
+  readDate: string | null;
+  pagesRead: number | null;
 };
 
 function toEditable(book: TodayBook): EditableRecord {
@@ -36,11 +42,13 @@ function toEditable(book: TodayBook): EditableRecord {
     title: book.title,
     author: book.author,
     coverUrl: book.coverUrl,
-    status: "done",
+    status: book.status ?? "done",
     rating: book.rating,
     emotion: book.emotion,
     favorite: book.favorite,
     memo: book.memo ?? "",
+    readDate: book.readDate ?? new Date().toISOString().slice(0, 10),
+    pagesRead: book.pagesRead,
   };
 }
 
@@ -53,6 +61,69 @@ export type TodayAssignment = {
   books: TodayBook[];
   missions: TodayMission[];
 };
+
+function QuestionMission({ childId, mission }: { childId: string; mission: TodayMission }) {
+  const router = useRouter();
+  const [editingAnswer, setEditingAnswer] = useState(!mission.answerText);
+  const [answer, setAnswer] = useState(mission.answerText ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    if (!answer.trim()) return;
+    setSaving(true);
+    const supabase = createClient();
+    await supabase
+      .from("assignment_mission_responses")
+      .upsert(
+        { mission_id: mission.id, child_id: childId, answer_text: answer.trim() },
+        { onConflict: "mission_id,child_id" }
+      );
+    setSaving(false);
+    setEditingAnswer(false);
+    router.refresh();
+  }
+
+  return (
+    <div className="mt-2 rounded-[10px] p-3" style={{ background: "var(--paper)" }}>
+      <p className="text-sm">{mission.question}</p>
+      {editingAnswer ? (
+        <div className="mt-2 flex gap-2">
+          <input
+            type="text"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="답을 적어 주세요"
+            className="flex-1 rounded-[10px] border px-3 py-2 text-sm outline-none"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          />
+          <button
+            type="button"
+            disabled={!answer.trim() || saving}
+            onClick={save}
+            className="d rounded-[10px] px-3 py-2 text-xs text-white disabled:opacity-40"
+            style={{ background: "var(--point)" }}
+          >
+            저장
+          </button>
+        </div>
+      ) : (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <p className="text-sm" style={{ color: "var(--point-deep)" }}>
+            {mission.answerText}
+          </p>
+          <button
+            type="button"
+            onClick={() => setEditingAnswer(true)}
+            className="d text-xs"
+            style={{ color: "var(--ink-2)" }}
+          >
+            수정
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function VoiceMission({
   childId,
@@ -189,7 +260,14 @@ export default function AssignmentToday({
                     className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5"
                     style={{ borderColor: "var(--rule)" }}
                   >
-                    <span className="text-base">{book.title}</span>
+                    <div>
+                      <span className="text-base">{book.title}</span>
+                      {book.targetPage && (
+                        <span className="ml-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
+                          {book.targetPage}쪽까지
+                        </span>
+                      )}
+                    </div>
                     <span className="d text-sm" style={{ color: "var(--point)" }}>
                       기록하기
                     </span>
@@ -198,16 +276,18 @@ export default function AssignmentToday({
               )}
             </div>
 
-            {assignment.missions
-              .filter((mission) => mission.type === "voice")
-              .map((mission) => (
+            {assignment.missions.map((mission) =>
+              mission.type === "question" ? (
+                <QuestionMission key={mission.id} childId={childId} mission={mission} />
+              ) : mission.type === "voice" ? (
                 <VoiceMission
                   key={mission.id}
                   childId={childId}
                   mission={mission}
                   voiceAllowed={voiceAllowed}
                 />
-              ))}
+              ) : null
+            )}
           </div>
         );
       })}

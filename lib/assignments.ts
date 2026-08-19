@@ -9,6 +9,7 @@ type AssignmentRow = {
   description: string | null;
   groups: { name: string } | null;
   assignment_books: {
+    target_page: number | null;
     books: { id: string; title: string; author: string | null; cover_url: string | null } | null;
   }[];
   assignment_missions: { id: string; type: TodayAssignment["missions"][number]["type"]; question: string | null }[];
@@ -36,7 +37,7 @@ export async function getTodayAssignments(
   const { data: assignmentRows } = await supabase
     .from("assignments")
     .select(
-      "id, group_id, title, description, groups(name), assignment_books(books(id, title, author, cover_url)), assignment_missions(id, type, question)"
+      "id, group_id, title, description, groups(name), assignment_books(target_page, books(id, title, author, cover_url)), assignment_missions(id, type, question)"
     )
     .in("group_id", groupIds)
     .or(`start_date.is.null,start_date.lte.${today}`)
@@ -81,23 +82,33 @@ export async function getTodayAssignments(
   type CompletedRecord = {
     id: string;
     book_id: string;
+    status: "reading" | "done";
     rating: number | null;
     emotion: string | null;
     favorite: boolean;
     parent_memo: string | null;
+    read_date: string;
+    pages_read: number | null;
   };
   const { data: recordRows } = bookIds.length
     ? await supabase
         .from("reading_records")
-        .select("id, book_id, rating, emotion, favorite, parent_memo")
+        .select("id, book_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read")
         .eq("child_id", childId)
-        .eq("status", "done")
+        .in("status", ["done", "reading"])
         .in("book_id", bookIds)
         .order("read_date", { ascending: false })
     : { data: [] };
+  // 완료로 잡힌 책마다 대표 기록 하나를 골라 그 자리에서 수정할 수 있게
+  // 한다 -- '완독' 숙제는 보통 status='done' 기록이지만, 부분 읽기(target_page)
+  // 숙제는 status='reading' 기록으로도 완료 처리되므로 done을 우선하되
+  // 없으면 가장 최근 reading 기록을 쓴다.
   const recordByBook = new Map<string, CompletedRecord>();
   for (const record of (recordRows ?? []) as CompletedRecord[]) {
-    if (!recordByBook.has(record.book_id)) recordByBook.set(record.book_id, record);
+    const existing = recordByBook.get(record.book_id);
+    if (!existing || (existing.status !== "done" && record.status === "done")) {
+      recordByBook.set(record.book_id, record);
+    }
   }
   const answerByMission = new Map(
     (responseRows ?? []).map((row) => [row.mission_id, row.answer_text as string | null])
@@ -121,12 +132,12 @@ export async function getTodayAssignments(
     title: row.title,
     description: row.description,
     books: row.assignment_books
-      .map((ab) => ab.books)
       .filter(
-        (book): book is { id: string; title: string; author: string | null; cover_url: string | null } =>
-          Boolean(book)
+        (ab): ab is typeof ab & { books: { id: string; title: string; author: string | null; cover_url: string | null } } =>
+          Boolean(ab.books)
       )
-      .map((book) => {
+      .map((ab) => {
+        const book = ab.books;
         const record = recordByBook.get(book.id) ?? null;
         return {
           id: book.id,
@@ -134,11 +145,15 @@ export async function getTodayAssignments(
           author: book.author,
           coverUrl: book.cover_url,
           completed: completedSet.has(`${row.id}:${book.id}`),
+          targetPage: ab.target_page,
           recordId: record?.id ?? null,
+          status: record?.status ?? null,
           rating: record?.rating ?? null,
           emotion: record?.emotion ?? null,
           favorite: record?.favorite ?? false,
           memo: record?.parent_memo ?? null,
+          readDate: record?.read_date ?? null,
+          pagesRead: record?.pages_read ?? null,
         };
       }),
     missions: row.assignment_missions.map((mission) => ({

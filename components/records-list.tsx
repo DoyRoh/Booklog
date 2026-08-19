@@ -15,6 +15,7 @@ export type RecordRow = {
   favorite: boolean;
   parentMemo: string | null;
   readDate: string;
+  pagesRead: number | null;
   photoSignedUrl: string | null;
   voiceSignedUrl: string | null;
   bookTitle: string;
@@ -109,6 +110,8 @@ export default function RecordsList({ childName, records }: { childName: string;
       emotion: r.emotion,
       favorite: r.favorite,
       memo: r.parentMemo ?? "",
+      readDate: r.readDate,
+      pagesRead: r.pagesRead,
     };
   }
 
