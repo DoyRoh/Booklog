@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import BarcodeScanner from "@/components/barcode-scanner";
+import { BOOK_CATEGORIES } from "@/lib/categories";
 
 type Candidate = {
   title: string;
@@ -22,10 +23,15 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
   const [results, setResults] = useState<Candidate[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [adding, setAdding] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const [manualMode, setManualMode] = useState(false);
   const [manualTitle, setManualTitle] = useState("");
   const [manualAuthor, setManualAuthor] = useState("");
+
+  // 후보를 고르면 바로 추가하지 않고, 분야·필독 여부를 정한 뒤 확정한다.
+  const [pending, setPending] = useState<Candidate | null>(null);
+  const [pendingCategories, setPendingCategories] = useState<Set<string>>(new Set());
+  const [pendingRequired, setPendingRequired] = useState(false);
 
   function switchMode(next: Mode) {
     setMode(next);
@@ -110,18 +116,34 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
     setSearching(false);
   }
 
-  async function addCandidate(candidate: Candidate) {
-    setAdding(candidate.isbn || candidate.title);
+  function pickCandidate(candidate: Candidate) {
+    setPending(candidate);
+    setPendingCategories(new Set());
+    setPendingRequired(false);
+  }
+
+  function toggleCategory(category: string) {
+    setPendingCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }
+
+  async function confirmAdd() {
+    if (!pending) return;
+    setAdding(true);
     setError(null);
 
     const supabase = createClient();
     let bookId: string | null = null;
 
-    if (candidate.isbn) {
+    if (pending.isbn) {
       const { data: existing } = await supabase
         .from("book_isbns")
         .select("book_id")
-        .eq("isbn", candidate.isbn)
+        .eq("isbn", pending.isbn)
         .maybeSingle();
       if (existing) bookId = existing.book_id;
     }
@@ -130,26 +152,32 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
       bookId = crypto.randomUUID();
       const { error: bookError } = await supabase.from("books").insert({
         id: bookId,
-        title: candidate.title,
-        author: candidate.author || null,
-        cover_url: candidate.coverUrl,
-        source: candidate.isbn ? "kakao" : "manual",
+        title: pending.title,
+        author: pending.author || null,
+        cover_url: pending.coverUrl,
+        source: pending.isbn ? "kakao" : "manual",
       });
       if (bookError) {
         setError(bookError.message);
-        setAdding(null);
+        setAdding(false);
         return;
       }
-      if (candidate.isbn) {
+      if (pending.isbn) {
         const { error: isbnError } = await supabase
           .from("book_isbns")
-          .insert({ book_id: bookId, isbn: candidate.isbn });
+          .insert({ book_id: bookId, isbn: pending.isbn });
         if (isbnError) {
           setError(isbnError.message);
-          setAdding(null);
+          setAdding(false);
           return;
         }
       }
+    }
+
+    if (pendingCategories.size > 0) {
+      await supabase
+        .from("book_categories")
+        .insert(Array.from(pendingCategories).map((category) => ({ book_id: bookId, category })));
     }
 
     const { data: already } = await supabase
@@ -162,24 +190,25 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
     if (!already) {
       const { error: itemError } = await supabase
         .from("book_list_items")
-        .insert({ book_list_id: bookListId, book_id: bookId });
+        .insert({ book_list_id: bookListId, book_id: bookId, required: pendingRequired });
       if (itemError) {
         setError(itemError.message);
-        setAdding(null);
+        setAdding(false);
         return;
       }
     }
 
-    setAdding(null);
+    setAdding(false);
+    setPending(null);
     setResults(null);
     setQuery("");
     setManualIsbn("");
     router.refresh();
   }
 
-  async function addManual() {
+  function addManual() {
     if (!manualTitle.trim()) return;
-    await addCandidate({
+    pickCandidate({
       title: manualTitle.trim(),
       author: manualAuthor.trim(),
       coverUrl: null,
@@ -188,6 +217,86 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
     setManualMode(false);
     setManualTitle("");
     setManualAuthor("");
+  }
+
+  if (pending) {
+    return (
+      <div
+        className="rounded-[var(--r)] border p-4"
+        style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+      >
+        <div className="flex items-center gap-3">
+          {pending.coverUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={pending.coverUrl} alt="" className="h-16 w-11 flex-none rounded object-cover" />
+          )}
+          <div>
+            <p className="d text-sm">{pending.title}</p>
+            {pending.author && (
+              <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                {pending.author}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <p className="d mt-3 text-xs" style={{ color: "var(--ink-2)" }}>
+          어느 분야인가요? (여러 개 선택 가능, 선택 안 해도 돼요)
+        </p>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {BOOK_CATEGORIES.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => toggleCategory(category)}
+              className="d rounded-full border px-3 py-1 text-xs"
+              style={{
+                borderColor: pendingCategories.has(category) ? "var(--point)" : "var(--rule)",
+                background: pendingCategories.has(category) ? "rgba(47,168,79,0.08)" : "transparent",
+                color: pendingCategories.has(category) ? "var(--point-deep)" : "var(--ink-2)",
+              }}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
+        <label className="mt-3 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={pendingRequired}
+            onChange={(e) => setPendingRequired(e.target.checked)}
+          />
+          필독 도서로 표시
+        </label>
+
+        {error && (
+          <p className="mt-2 text-sm" style={{ color: "var(--berry)" }}>
+            {error}
+          </p>
+        )}
+
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setPending(null)}
+            className="d flex-1 rounded-[14px] border py-2.5 text-sm"
+            style={{ borderColor: "var(--rule)" }}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            disabled={adding}
+            onClick={confirmAdd}
+            className="d flex-1 rounded-[14px] py-2.5 text-sm text-white disabled:opacity-40"
+            style={{ background: "var(--point)" }}
+          >
+            {adding ? "추가 중..." : "목록에 추가"}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -303,9 +412,8 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
                 <button
                   key={candidate.isbn || candidate.title}
                   type="button"
-                  disabled={adding !== null}
-                  onClick={() => addCandidate(candidate)}
-                  className="flex items-center gap-3 rounded-[10px] border p-2 text-left disabled:opacity-50"
+                  onClick={() => pickCandidate(candidate)}
+                  className="flex items-center gap-3 rounded-[10px] border p-2 text-left"
                   style={{ borderColor: "var(--rule)" }}
                 >
                   {candidate.coverUrl && (
@@ -358,11 +466,6 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
             className="rounded-[14px] border px-4 py-2.5 text-sm outline-none"
             style={{ borderColor: "var(--rule)" }}
           />
-          {error && (
-            <p className="text-sm" style={{ color: "var(--berry)" }}>
-              {error}
-            </p>
-          )}
           <div className="flex gap-2">
             <button
               type="button"
@@ -374,12 +477,12 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
             </button>
             <button
               type="button"
-              disabled={!manualTitle.trim() || adding !== null}
+              disabled={!manualTitle.trim()}
               onClick={addManual}
               className="d flex-1 rounded-[14px] py-2.5 text-sm text-white disabled:opacity-40"
               style={{ background: "var(--point)" }}
             >
-              추가
+              다음
             </button>
           </div>
         </div>

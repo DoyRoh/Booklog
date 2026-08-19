@@ -117,7 +117,9 @@ export default function RecordsList({ childName, records }: { childName: string;
 
   function renderRow(record: RecordRow, withTopBorder: boolean) {
     return (
-      <div key={record.id} className="p-4" style={withTopBorder ? { borderTop: "1px solid var(--rule)" } : undefined}>
+      <div key={record.id}>
+        {withTopBorder && <div className="mx-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />}
+        <div className="p-4">
         <button type="button" onClick={() => setEditing(record)} className="flex w-full gap-3 text-left">
           {record.bookCoverUrl && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -163,6 +165,7 @@ export default function RecordsList({ childName, records }: { childName: string;
           <img src={record.photoSignedUrl} alt="" className="mt-2 h-24 w-full rounded-[10px] object-cover" />
         )}
         {record.voiceSignedUrl && <audio src={record.voiceSignedUrl} controls className="mt-2 h-9 w-full" />}
+        </div>
       </div>
     );
   }

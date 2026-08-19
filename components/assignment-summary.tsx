@@ -19,8 +19,12 @@ export default function AssignmentSummary({ assignments }: { assignments: TodayA
       style={{ borderColor: "var(--rule)", background: "var(--card)" }}
     >
       {sections.map((section, sIndex) => (
-        <div key={section.groupName} style={sIndex > 0 ? { borderTop: "1px solid var(--rule)" } : undefined}>
-          <p className="px-4 pt-3 text-sm" style={{ color: "var(--lantern)" }}>
+        <div
+          key={section.groupName}
+          className={sIndex > 0 ? "mx-4" : undefined}
+          style={sIndex > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
+        >
+          <p className={`text-xs ${sIndex > 0 ? "pt-3" : "px-4 pt-3"}`} style={{ color: "var(--lantern)" }}>
             {section.groupName}
           </p>
           {section.assignments.map((assignment) => {
@@ -30,11 +34,11 @@ export default function AssignmentSummary({ assignments }: { assignments: TodayA
               <Link
                 key={assignment.id}
                 href={`/today/assignments#${assignment.id}`}
-                className="flex items-center justify-between gap-3 px-4 py-2.5"
+                className={`flex items-center justify-between gap-3 py-2 ${sIndex > 0 ? "" : "px-4"}`}
               >
-                <p className="d truncate text-base">{assignment.title}</p>
+                <p className="d truncate text-sm">{assignment.title}</p>
                 <span
-                  className="d flex-none rounded-full px-3 py-1 text-sm"
+                  className="d flex-none rounded-full px-2.5 py-0.5 text-xs"
                   style={{
                     background: allDone ? "rgba(47,168,79,0.12)" : "var(--paper)",
                     color: allDone ? "var(--point-deep)" : "var(--ink-2)",

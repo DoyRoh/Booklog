@@ -65,18 +65,15 @@ export default async function RecordsPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <div className="flex items-center justify-between">
-        <h1 className="d text-xl">기록</h1>
-        {activeChild && (
-          <Link
-            href="/library/add"
-            className="d rounded-[14px] px-4 py-2 text-sm text-white"
-            style={{ background: "var(--point)" }}
-          >
-            책 기록하기
-          </Link>
-        )}
-      </div>
+      {activeChild && (
+        <Link
+          href="/library/add"
+          className="d block rounded-[14px] py-3.5 text-center text-base text-white"
+          style={{ background: "var(--lantern)" }}
+        >
+          + 책 기록하기
+        </Link>
+      )}
 
       {!activeChild && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>

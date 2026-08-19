@@ -110,10 +110,17 @@ export default async function TodayPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <h1 className="d text-xl">오늘</h1>
-      <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+      <p className="text-sm" style={{ color: "var(--ink-2)" }}>
         {activeChild.name}, 오늘도 책숲을 걸어볼까요?
       </p>
+
+      <Link
+        href="/library/add"
+        className="d mt-3 block rounded-[14px] py-3.5 text-center text-base text-white"
+        style={{ background: "var(--lantern)" }}
+      >
+        + 책 기록하기
+      </Link>
 
       <div
         className="mt-4 flex items-center justify-around rounded-[var(--r)] border p-4"

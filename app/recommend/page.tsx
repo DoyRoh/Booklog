@@ -75,9 +75,8 @@ export default async function RecommendPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <div className="flex items-center justify-between">
-        <h1 className="d text-xl">추천</h1>
-        {isOperatorRole && (
+      {isOperatorRole && (
+        <div className="flex justify-end">
           <Link
             href="/recommend/create"
             className="d rounded-[14px] px-4 py-2 text-sm text-white"
@@ -85,8 +84,8 @@ export default async function RecommendPage() {
           >
             + 그룹 만들기
           </Link>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="mt-6">
         <p className="d text-lg">내 그룹</p>

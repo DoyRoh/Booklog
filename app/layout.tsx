@@ -43,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <TopBar />
-        <main className="flex-1 pt-[44px] pb-[64px]">{children}</main>
+        <main className="flex-1 pt-[56px] pb-[64px]">{children}</main>
         <BottomNav />
       </body>
     </html>

@@ -27,31 +27,32 @@ export default function RecentRecords({ records }: { records: RecentRecord[] }) 
       style={{ borderColor: "var(--rule)", background: "var(--card)" }}
     >
       {records.map((record, index) => (
-        <button
-          key={record.id}
-          type="button"
-          onClick={() => setEditing(record)}
-          className="flex w-full items-center gap-3 p-3 text-left"
-          style={index > 0 ? { borderTop: "1px solid var(--rule)" } : undefined}
-        >
-          {record.coverUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={record.coverUrl} alt="" className="h-14 w-10 flex-none rounded object-cover" />
-          ) : (
-            <div
-              className="flex h-14 w-10 flex-none items-center justify-center rounded"
-              style={{ background: "var(--paper)" }}
-            />
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="d truncate text-base">{record.title}</p>
-            <p className="truncate text-sm" style={{ color: "var(--ink-2)" }}>
-              {record.readDate}
-              {record.rating ? ` · 평점 ${record.rating}` : ""}
-              {record.emotion ? ` · ${record.emotion}` : ""}
-            </p>
-          </div>
-        </button>
+        <div key={record.id}>
+          {index > 0 && <div className="mx-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />}
+          <button
+            type="button"
+            onClick={() => setEditing(record)}
+            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left"
+          >
+            {record.coverUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={record.coverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
+            ) : (
+              <div
+                className="flex h-11 w-8 flex-none items-center justify-center rounded"
+                style={{ background: "var(--paper)" }}
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="d truncate text-sm">{record.title}</p>
+              <p className="truncate text-xs" style={{ color: "var(--ink-2)" }}>
+                {record.readDate}
+                {record.rating ? ` · 평점 ${record.rating}` : ""}
+                {record.emotion ? ` · ${record.emotion}` : ""}
+              </p>
+            </div>
+          </button>
+        </div>
       ))}
 
       {editing && (

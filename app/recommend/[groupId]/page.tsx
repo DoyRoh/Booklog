@@ -5,6 +5,7 @@ import GroupApprovals from "@/components/group-approvals";
 import AddBookToList from "@/components/add-book-to-list";
 import BrowseGroups from "@/components/browse-groups";
 import CreateAssignment from "@/components/create-assignment";
+import RecommendBookList, { type RecommendBook } from "@/components/recommend-book-list";
 
 const TYPE_LABELS: Record<string, string> = {
   kindergarten: "유치원",
@@ -93,18 +94,51 @@ export default async function GroupDetailPage({
   const { data: itemRows } = bookList
     ? await supabase
         .from("book_list_items")
-        .select("id, books(id, title, author, cover_url)")
+        .select("id, required, books(id, title, author, cover_url)")
         .eq("book_list_id", bookList.id)
     : { data: null };
 
   const items = (itemRows ?? [])
     .map((row) => ({
       id: row.id,
+      required: row.required,
       book: row.books as unknown as
         | { id: string; title: string; author: string | null; cover_url: string | null }
         | null,
     }))
     .filter((row) => row.book);
+
+  const listedBookIds = items.map((row) => row.book!.id);
+
+  const { data: categoryRows } = listedBookIds.length
+    ? await supabase.from("book_categories").select("book_id, category").in("book_id", listedBookIds)
+    : { data: [] };
+  const categoriesByBook = new Map<string, string[]>();
+  for (const row of categoryRows ?? []) {
+    const list = categoriesByBook.get(row.book_id) ?? [];
+    list.push(row.category);
+    categoriesByBook.set(row.book_id, list);
+  }
+
+  const { data: shelfRows } = activeChild && listedBookIds.length
+    ? await supabase
+        .from("reading_records")
+        .select("book_id")
+        .eq("child_id", activeChild.id)
+        .in("book_id", listedBookIds)
+    : { data: [] };
+  const shelvedBookIds = new Set((shelfRows ?? []).map((row) => row.book_id));
+
+  const recommendBooks: RecommendBook[] = items.map((row) => ({
+    itemId: row.id,
+    bookId: row.book!.id,
+    title: row.book!.title,
+    author: row.book!.author,
+    coverUrl: row.book!.cover_url,
+    categories: categoriesByBook.get(row.book!.id) ?? [],
+    required: row.required,
+    inShelf: shelvedBookIds.has(row.book!.id),
+  }));
 
   let pending: { id: string; childName: string }[] = [];
   if (isOperator) {
@@ -193,40 +227,14 @@ export default async function GroupDetailPage({
 
       <div className="mt-8">
         <p className="d text-lg">추천도서</p>
-        {items.length === 0 ? (
-          <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>
-            아직 추천도서가 없어요.
-          </p>
-        ) : (
-          <div className="mt-3 grid grid-cols-3 gap-4">
-            {items.map(({ id, book }) => (
-              <div key={id} className="flex flex-col gap-1.5">
-                <div
-                  className="aspect-[3/4] overflow-hidden rounded-[10px]"
-                  style={{ background: "var(--card)", border: "1px solid var(--rule)" }}
-                >
-                  {book?.cover_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={book.cover_url}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center p-2 text-center">
-                      <span className="d text-xs" style={{ color: "var(--ink-2)" }}>
-                        {book?.title}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <p className="truncate text-xs" style={{ color: "var(--ink-2)" }}>
-                  {book?.title}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="mt-3">
+          <RecommendBookList
+            groupId={groupId}
+            listName={bookList?.name ?? "추천도서"}
+            books={recommendBooks}
+            activeChildId={activeChild?.id ?? null}
+          />
+        </div>
       </div>
 
       {isOperator && bookList && (

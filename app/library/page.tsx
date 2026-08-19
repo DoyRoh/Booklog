@@ -85,25 +85,24 @@ export default async function LibraryPage() {
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="d text-xl">책장</h1>
-          {activeChild && (
-            <Link
-              href="/badges"
-              className="mt-0.5 flex items-center gap-1 text-xs"
-              style={{ color: "var(--ink-2)" }}
-            >
-              <FootprintIcon width={14} height={14} />
-              {activeChild.name}의 발자국 {footprintCount}개 · 배지 보기
-            </Link>
-          )}
-        </div>
+        {activeChild ? (
+          <Link
+            href="/badges"
+            className="flex items-center gap-1 text-xs"
+            style={{ color: "var(--ink-2)" }}
+          >
+            <FootprintIcon width={14} height={14} />
+            {activeChild.name}의 발자국 {footprintCount}개 · 배지 보기
+          </Link>
+        ) : (
+          <span />
+        )}
         <Link
           href="/library/add"
           className="d rounded-[14px] px-4 py-2 text-sm text-white"
           style={{ background: "var(--point)" }}
         >
-          + 기록 남기기
+          + 책장에 책 꽂기
         </Link>
       </div>
 
@@ -115,7 +114,7 @@ export default async function LibraryPage() {
 
       {activeChild && books.length === 0 && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
-          책장이 비었어요. &ldquo;+ 기록 남기기&rdquo;로 첫 책을 기록해 보세요.
+          책장이 비었어요. &ldquo;+ 책장에 책 꽂기&rdquo;로 첫 책을 기록해 보세요.
         </p>
       )}
 

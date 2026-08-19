@@ -45,14 +45,13 @@ export default async function BadgesPage() {
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <div className="flex items-center justify-between">
-        <h1 className="d text-xl">배지</h1>
-        <span className="text-sm" style={{ color: "var(--ink-2)" }}>
+        <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+          {activeChild.name}의 발자국이 모여 배지가 돼요.
+        </p>
+        <span className="d text-sm" style={{ color: "var(--ink-2)" }}>
           {achievedCount} / {badges.length}
         </span>
       </div>
-      <p className="mt-0.5 text-xs" style={{ color: "var(--ink-2)" }}>
-        {activeChild.name}의 발자국이 모여 배지가 돼요.
-      </p>
 
       <div className="mt-6 grid grid-cols-3 gap-3">
         {badges.map((badge) => (
