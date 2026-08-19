@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { uploadMissionVoice } from "@/lib/storage";
@@ -17,6 +18,7 @@ export type TodayMission = {
 export type TodayBook = {
   id: string;
   title: string;
+  author: string | null;
   coverUrl: string | null;
   completed: boolean;
 };
@@ -30,106 +32,6 @@ export type TodayAssignment = {
   books: TodayBook[];
   missions: TodayMission[];
 };
-
-function QuickReadButton({
-  childId,
-  groupId,
-  bookId,
-}: {
-  childId: string;
-  groupId: string;
-  bookId: string;
-}) {
-  const router = useRouter();
-  const [saving, setSaving] = useState(false);
-
-  async function markRead() {
-    setSaving(true);
-    const supabase = createClient();
-    await supabase.from("reading_records").insert({
-      child_id: childId,
-      book_id: bookId,
-      group_id: groupId,
-    });
-    setSaving(false);
-    router.refresh();
-  }
-
-  return (
-    <button
-      type="button"
-      disabled={saving}
-      onClick={markRead}
-      className="d rounded-full px-3 py-1.5 text-xs text-white disabled:opacity-40"
-      style={{ background: "var(--point)" }}
-    >
-      {saving ? "저장 중..." : "다 읽었어요"}
-    </button>
-  );
-}
-
-function QuestionMission({ childId, mission }: { childId: string; mission: TodayMission }) {
-  const router = useRouter();
-  const [editing, setEditing] = useState(!mission.answerText);
-  const [answer, setAnswer] = useState(mission.answerText ?? "");
-  const [saving, setSaving] = useState(false);
-
-  async function save() {
-    if (!answer.trim()) return;
-    setSaving(true);
-    const supabase = createClient();
-    await supabase
-      .from("assignment_mission_responses")
-      .upsert(
-        { mission_id: mission.id, child_id: childId, answer_text: answer.trim() },
-        { onConflict: "mission_id,child_id" }
-      );
-    setSaving(false);
-    setEditing(false);
-    router.refresh();
-  }
-
-  return (
-    <div className="mt-2 rounded-[10px] p-3" style={{ background: "var(--paper)" }}>
-      <p className="text-sm">{mission.question}</p>
-      {editing ? (
-        <div className="mt-2 flex gap-2">
-          <input
-            type="text"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            placeholder="답을 적어 주세요"
-            className="flex-1 rounded-[10px] border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          />
-          <button
-            type="button"
-            disabled={!answer.trim() || saving}
-            onClick={save}
-            className="d rounded-[10px] px-3 py-2 text-xs text-white disabled:opacity-40"
-            style={{ background: "var(--point)" }}
-          >
-            저장
-          </button>
-        </div>
-      ) : (
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <p className="text-sm" style={{ color: "var(--point-deep)" }}>
-            {mission.answerText}
-          </p>
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="d text-xs"
-            style={{ color: "var(--ink-2)" }}
-          >
-            수정
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function VoiceMission({
   childId,
@@ -203,55 +105,85 @@ export default function AssignmentToday({
 }) {
   return (
     <div className="mt-4 flex flex-col gap-4">
-      {assignments.map((assignment) => (
-        <div
-          key={assignment.id}
-          className="rounded-[var(--r)] border p-4"
-          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-        >
-          <p className="text-xs" style={{ color: "var(--lantern)" }}>
-            {assignment.groupName}
-          </p>
-          <p className="d mt-0.5 text-base">{assignment.title}</p>
-          {assignment.description && (
-            <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-              {assignment.description}
-            </p>
-          )}
-
-          <div className="mt-3 flex flex-col gap-2">
-            {assignment.books.map((book) => (
-              <div
-                key={book.id}
-                className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2"
-                style={{ borderColor: "var(--rule)" }}
-              >
-                <span className="text-sm">{book.title}</span>
-                {book.completed ? (
-                  <span className="text-xs" style={{ color: "var(--point-deep)" }}>
-                    읽었어요
-                  </span>
-                ) : (
-                  <QuickReadButton childId={childId} groupId={assignment.groupId} bookId={book.id} />
-                )}
+      {assignments.map((assignment) => {
+        const completedCount = assignment.books.filter((book) => book.completed).length;
+        return (
+          <div
+            key={assignment.id}
+            className="rounded-[var(--r)] border p-4"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-sm" style={{ color: "var(--lantern)" }}>
+                  {assignment.groupName}
+                </p>
+                <p className="d mt-0.5 text-lg">{assignment.title}</p>
               </div>
-            ))}
-          </div>
+              <span
+                className="d flex-none rounded-full px-3 py-1 text-sm"
+                style={{
+                  background:
+                    completedCount === assignment.books.length && assignment.books.length > 0
+                      ? "rgba(47,168,79,0.12)"
+                      : "var(--paper)",
+                  color:
+                    completedCount === assignment.books.length && assignment.books.length > 0
+                      ? "var(--point-deep)"
+                      : "var(--ink-2)",
+                }}
+              >
+                {completedCount}/{assignment.books.length} 완료
+              </span>
+            </div>
+            {assignment.description && (
+              <p className="mt-1 text-base" style={{ color: "var(--ink-2)" }}>
+                {assignment.description}
+              </p>
+            )}
 
-          {assignment.missions.map((mission) =>
-            mission.type === "question" ? (
-              <QuestionMission key={mission.id} childId={childId} mission={mission} />
-            ) : mission.type === "voice" ? (
-              <VoiceMission
-                key={mission.id}
-                childId={childId}
-                mission={mission}
-                voiceAllowed={voiceAllowed}
-              />
-            ) : null
-          )}
-        </div>
-      ))}
+            <div className="mt-3 flex flex-col gap-2">
+              {assignment.books.map((book) =>
+                book.completed ? (
+                  <div
+                    key={book.id}
+                    className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5"
+                    style={{ borderColor: "var(--rule)" }}
+                  >
+                    <span className="text-base">{book.title}</span>
+                    <span className="text-sm" style={{ color: "var(--point-deep)" }}>
+                      읽었어요
+                    </span>
+                  </div>
+                ) : (
+                  <Link
+                    key={book.id}
+                    href={`/library/add?bookId=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(assignment.groupId)}`}
+                    className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5"
+                    style={{ borderColor: "var(--rule)" }}
+                  >
+                    <span className="text-base">{book.title}</span>
+                    <span className="d text-sm" style={{ color: "var(--point)" }}>
+                      기록하기
+                    </span>
+                  </Link>
+                )
+              )}
+            </div>
+
+            {assignment.missions
+              .filter((mission) => mission.type === "voice")
+              .map((mission) => (
+                <VoiceMission
+                  key={mission.id}
+                  childId={childId}
+                  mission={mission}
+                  voiceAllowed={voiceAllowed}
+                />
+              ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

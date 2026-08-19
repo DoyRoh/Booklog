@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getActiveChild } from "@/lib/active-child";
 import { hasVoiceConsent } from "@/lib/consent";
@@ -40,10 +41,20 @@ const SAVE_LABELS: Record<ReadingStatus, string> = {
 };
 
 export default function AddBookPage() {
+  return (
+    <Suspense fallback={null}>
+      <AddBookForm />
+    </Suspense>
+  );
+}
+
+function AddBookForm() {
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("form");
 
   // 지금 기록 중인 책 -- 검색으로 채워지든, 바코드/ISBN 조회로 채워지든,
-  // 그냥 직접 타이핑하든 항상 이 필드들이 저장의 기준이다.
+  // 그냥 직접 타이핑하든, 오늘 탭 숙제 책 클릭으로 넘어오든 항상 이
+  // 필드들이 저장의 기준이다.
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [publisher, setPublisher] = useState("");
@@ -52,6 +63,7 @@ export default function AddBookPage() {
   const [publishDate, setPublishDate] = useState<string | null>(null);
   const [isbn, setIsbn] = useState("");
   const [bookId, setBookId] = useState<string | null>(null);
+  const [groupId, setGroupId] = useState<string | null>(null);
   const lastResolvedTitle = useRef("");
 
   const [candidates, setCandidates] = useState<Candidate[] | null>(null);
@@ -80,6 +92,24 @@ export default function AddBookPage() {
       if (!user) return;
       hasVoiceConsent(supabase, user.id).then(setVoiceAllowed);
     });
+  }, []);
+
+  // 오늘 탭 숙제 책의 "기록하기"로 넘어온 경우, 검색을 다시 거칠 필요
+  // 없이 그 책 정보로 곧장 채워둔다.
+  useEffect(() => {
+    const prefTitle = searchParams.get("title");
+    if (!prefTitle) return;
+    lastResolvedTitle.current = prefTitle;
+    // 마운트 시 URL 쿼리로 넘어온 책 정보를 한 번만 반영한다(검색
+    // 입력창의 로컬 state로는 서버 렌더 시점에 채울 수 없다).
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setTitle(prefTitle);
+    setAuthor(searchParams.get("author") ?? "");
+    setCoverUrl(searchParams.get("cover") || null);
+    setBookId(searchParams.get("bookId") || null);
+    setGroupId(searchParams.get("groupId") || null);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 책 제목을 입력할 때마다(2글자 이상) 카카오 키워드 검색으로 후보를
@@ -267,6 +297,7 @@ export default function AddBookPage() {
     const { error: recordError } = await supabase.from("reading_records").insert({
       child_id: activeChild.id,
       book_id: finalBookId,
+      group_id: groupId,
       status,
       rating,
       emotion,

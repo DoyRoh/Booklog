@@ -21,14 +21,17 @@ export default function RecentRecords({ records }: { records: RecentRecord[] }) 
   const [editing, setEditing] = useState<RecentRecord | null>(null);
 
   return (
-    <div className="flex flex-col gap-2">
-      {records.map((record) => (
+    <div
+      className="overflow-hidden rounded-[var(--r)] border"
+      style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+    >
+      {records.map((record, index) => (
         <button
           key={record.id}
           type="button"
           onClick={() => setEditing(record)}
-          className="flex items-center gap-3 rounded-[var(--r)] border p-3 text-left"
-          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          className="flex w-full items-center gap-3 p-3 text-left"
+          style={index > 0 ? { borderTop: "1px solid var(--rule)" } : undefined}
         >
           {record.coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -40,8 +43,8 @@ export default function RecentRecords({ records }: { records: RecentRecord[] }) 
             />
           )}
           <div className="min-w-0 flex-1">
-            <p className="d truncate text-sm">{record.title}</p>
-            <p className="truncate text-xs" style={{ color: "var(--ink-2)" }}>
+            <p className="d truncate text-base">{record.title}</p>
+            <p className="truncate text-sm" style={{ color: "var(--ink-2)" }}>
               {record.readDate}
               {record.rating ? ` · 평점 ${record.rating}` : ""}
               {record.emotion ? ` · ${record.emotion}` : ""}

@@ -12,7 +12,9 @@ type AssignmentRow = {
   title: string;
   description: string | null;
   groups: { name: string } | null;
-  assignment_books: { books: { id: string; title: string; cover_url: string | null } | null }[];
+  assignment_books: {
+    books: { id: string; title: string; author: string | null; cover_url: string | null } | null;
+  }[];
   assignment_missions: { id: string; type: TodayAssignment["missions"][number]["type"]; question: string | null }[];
 };
 
@@ -129,7 +131,7 @@ export default async function TodayPage() {
     const { data: assignmentRows } = await supabase
       .from("assignments")
       .select(
-        "id, group_id, title, description, groups(name), assignment_books(books(id, title, cover_url)), assignment_missions(id, type, question)"
+        "id, group_id, title, description, groups(name), assignment_books(books(id, title, author, cover_url)), assignment_missions(id, type, question)"
       )
       .in("group_id", groupIds)
       .or(`start_date.is.null,start_date.lte.${today}`)
@@ -182,10 +184,14 @@ export default async function TodayPage() {
       description: row.description,
       books: row.assignment_books
         .map((ab) => ab.books)
-        .filter((book): book is { id: string; title: string; cover_url: string | null } => Boolean(book))
+        .filter(
+          (book): book is { id: string; title: string; author: string | null; cover_url: string | null } =>
+            Boolean(book)
+        )
         .map((book) => ({
           id: book.id,
           title: book.title,
+          author: book.author,
           coverUrl: book.cover_url,
           completed: completedSet.has(`${row.id}:${book.id}`),
         })),
@@ -234,13 +240,16 @@ export default async function TodayPage() {
         </div>
       </div>
 
-      {assignments.length === 0 ? (
-        <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
-          지금 진행 중인 숙제가 없어요. 책장에서 자유롭게 책을 기록해 보세요.
-        </p>
-      ) : (
-        <AssignmentToday childId={activeChild.id} assignments={assignments} voiceAllowed={voiceAllowed} />
-      )}
+      <div className="mt-8">
+        <p className="d text-lg">오늘의 숙제</p>
+        {assignments.length === 0 ? (
+          <p className="mt-3 text-base" style={{ color: "var(--ink-2)" }}>
+            지금 진행 중인 숙제가 없어요. 책장에서 자유롭게 책을 기록해 보세요.
+          </p>
+        ) : (
+          <AssignmentToday childId={activeChild.id} assignments={assignments} voiceAllowed={voiceAllowed} />
+        )}
+      </div>
 
       {recentRecords.length > 0 && (
         <div className="mt-8">

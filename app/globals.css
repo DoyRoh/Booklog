@@ -56,6 +56,12 @@ html, body {
   padding: 0;
 }
 
+html {
+  /* 아이가 직접 기록할 때도 편하게 읽고 쓸 수 있도록, 기본 글자 크기(및
+     rem 기반 여백·터치 영역)를 전체적으로 조금 키운다. */
+  font-size: 112.5%;
+}
+
 body {
   background-color: var(--paper);
   color: var(--ink);
