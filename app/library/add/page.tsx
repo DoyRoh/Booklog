@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getActiveChild } from "@/lib/active-child";
@@ -11,20 +11,8 @@ import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
 import QuestionPrompt from "@/components/question-prompt";
 
-type Step = "search" | "manual-book" | "looking-up" | "record" | "no-child" | "saved";
-type SearchMode = "query" | "scan" | "isbn";
-
-type ResolvedBook = {
-  bookId: string | null; // null이면 아직 books에 없는 새 책
-  title: string;
-  author: string;
-  publisher: string;
-  coverUrl: string | null;
-  introduction: string;
-  publishDate: string | null;
-  isbn: string;
-  isNew: boolean;
-};
+type Step = "form" | "no-child" | "saved";
+type FindMode = "none" | "scan" | "isbn";
 
 type Candidate = {
   title: string;
@@ -36,10 +24,10 @@ type Candidate = {
   isbn: string;
 };
 
+type ReadingStatus = "want" | "reading" | "done";
+
 const EMOTIONS = ["재밌어요", "웃겼어요", "감동적이에요", "슬퍼요", "그저그래요"];
 const RATINGS = [1, 2, 3, 4, 5];
-
-type ReadingStatus = "want" | "reading" | "done";
 const STATUS_LABELS: Record<ReadingStatus, string> = {
   want: "읽고 싶어요",
   reading: "읽는 중이에요",
@@ -52,15 +40,28 @@ const SAVE_LABELS: Record<ReadingStatus, string> = {
 };
 
 export default function AddBookPage() {
-  const [step, setStep] = useState<Step>("search");
-  const [searchMode, setSearchMode] = useState<SearchMode>("query");
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Candidate[] | null>(null);
+  const [step, setStep] = useState<Step>("form");
+
+  // 지금 기록 중인 책 -- 검색으로 채워지든, 바코드/ISBN 조회로 채워지든,
+  // 그냥 직접 타이핑하든 항상 이 필드들이 저장의 기준이다.
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [publisher, setPublisher] = useState("");
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [introduction, setIntroduction] = useState("");
+  const [publishDate, setPublishDate] = useState<string | null>(null);
+  const [isbn, setIsbn] = useState("");
+  const [bookId, setBookId] = useState<string | null>(null);
+  const lastResolvedTitle = useRef("");
+
+  const [candidates, setCandidates] = useState<Candidate[] | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searching, setSearching] = useState(false);
+
+  const [findMode, setFindMode] = useState<FindMode>("none");
   const [manualIsbn, setManualIsbn] = useState("");
-  const [manualTitle, setManualTitle] = useState("");
-  const [manualAuthor, setManualAuthor] = useState("");
-  const [book, setBook] = useState<ResolvedBook | null>(null);
+  const [isbnLookingUp, setIsbnLookingUp] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -81,118 +82,125 @@ export default function AddBookPage() {
     });
   }, []);
 
-  async function findExistingByIsbn(
-    supabase: ReturnType<typeof createClient>,
-    isbn: string
-  ): Promise<ResolvedBook | null> {
+  // 책 제목을 입력할 때마다(2글자 이상) 카카오 키워드 검색으로 후보를
+  // 찾아 입력창 아래 드롭다운으로 보여준다 -- 별도 "검색 화면"을 거치지
+  // 않고 기록 남기기 화면 안에서 바로 찾을 수 있게 하기 위함이다.
+  useEffect(() => {
+    const q = title.trim();
+    if (q.length < 2 || q === lastResolvedTitle.current) {
+      setCandidates(null);
+      setDropdownOpen(false);
+      return;
+    }
+    const handle = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/books/lookup?query=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if (res.ok) {
+          setCandidates(data.results ?? []);
+          setDropdownOpen(true);
+        }
+      } catch {
+        // 자동완성 실패는 조용히 무시 -- 사용자는 그냥 직접 입력을 이어가면 된다.
+      }
+      setSearching(false);
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [title]);
+
+  async function findExistingByIsbn(supabase: ReturnType<typeof createClient>, value: string) {
     const { data: existingIsbn } = await supabase
       .from("book_isbns")
-      .select("book_id, books(title, author, cover_url)")
-      .eq("isbn", isbn)
+      .select("book_id, books(title, author, publisher, cover_url)")
+      .eq("isbn", value)
       .maybeSingle();
     if (!existingIsbn?.books) return null;
     const existingBook = existingIsbn.books as unknown as {
       title: string;
       author: string | null;
+      publisher: string | null;
       cover_url: string | null;
     };
     return {
-      bookId: existingIsbn.book_id,
+      bookId: existingIsbn.book_id as string,
       title: existingBook.title,
       author: existingBook.author ?? "",
-      publisher: "",
+      publisher: existingBook.publisher ?? "",
       coverUrl: existingBook.cover_url,
       introduction: "",
       publishDate: null,
-      isbn,
-      isNew: false,
+      isbn: value,
     };
   }
 
-  async function lookupByIsbn(isbn: string) {
-    setError(null);
-    setStep("looking-up");
-
-    const supabase = createClient();
-
-    // 이미 등록된 책이면 카카오 API를 부르지 않고 바로 기록 단계로 넘어간다.
-    const existing = await findExistingByIsbn(supabase, isbn);
-    if (existing) {
-      setBook(existing);
-      setStep("record");
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/books/lookup?isbn=${encodeURIComponent(isbn)}`);
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "책을 찾지 못했어요.");
-        setStep("search");
-        return;
-      }
-      setBook({ ...data, bookId: null, isNew: true } as ResolvedBook);
-      setStep("record");
-    } catch {
-      setError("책 정보를 불러오는 중 문제가 생겼어요.");
-      setStep("search");
-    }
-  }
-
-  async function search() {
-    if (!query.trim()) return;
-    setSearching(true);
-    setError(null);
-    setResults(null);
-    try {
-      const res = await fetch(`/api/books/lookup?query=${encodeURIComponent(query.trim())}`);
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "검색에 실패했어요.");
-        setSearching(false);
-        return;
-      }
-      setResults(data.results ?? []);
-    } catch {
-      setError("검색 중 문제가 생겼어요.");
-    }
-    setSearching(false);
+  function applyResolved(resolved: {
+    bookId: string | null;
+    title: string;
+    author: string;
+    publisher: string;
+    coverUrl: string | null;
+    introduction: string;
+    publishDate: string | null;
+    isbn: string;
+  }) {
+    lastResolvedTitle.current = resolved.title;
+    setTitle(resolved.title);
+    setAuthor(resolved.author);
+    setPublisher(resolved.publisher);
+    setCoverUrl(resolved.coverUrl);
+    setIntroduction(resolved.introduction);
+    setPublishDate(resolved.publishDate);
+    setIsbn(resolved.isbn);
+    setBookId(resolved.bookId);
+    setCandidates(null);
+    setDropdownOpen(false);
   }
 
   async function selectCandidate(candidate: Candidate) {
     setError(null);
-    setStep("looking-up");
     const supabase = createClient();
     if (candidate.isbn) {
       const existing = await findExistingByIsbn(supabase, candidate.isbn);
       if (existing) {
-        setBook(existing);
-        setStep("record");
+        applyResolved(existing);
         return;
       }
     }
-    setBook({ ...candidate, bookId: null, isNew: true });
-    setStep("record");
+    applyResolved({ ...candidate, bookId: null });
   }
 
-  function confirmManualBook() {
-    if (!manualTitle.trim()) return;
-    setBook({
-      bookId: null,
-      title: manualTitle.trim(),
-      author: manualAuthor.trim(),
-      publisher: "",
-      coverUrl: null,
-      introduction: "",
-      publishDate: null,
-      isbn: "",
-      isNew: true,
-    });
-    setStep("record");
+  async function lookupByIsbn(value: string) {
+    setError(null);
+    setIsbnLookingUp(true);
+    const supabase = createClient();
+
+    const existing = await findExistingByIsbn(supabase, value);
+    if (existing) {
+      applyResolved(existing);
+      setIsbnLookingUp(false);
+      setFindMode("none");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/books/lookup?isbn=${encodeURIComponent(value)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "책을 찾지 못했어요.");
+        setIsbnLookingUp(false);
+        return;
+      }
+      applyResolved({ ...data, bookId: null, isbn: data.isbn || value });
+    } catch {
+      setError("책 정보를 불러오는 중 문제가 생겼어요.");
+    }
+    setIsbnLookingUp(false);
+    setFindMode("none");
   }
 
   async function save() {
-    if (!book) return;
+    if (!title.trim()) return;
     setSaving(true);
     setError(null);
 
@@ -213,18 +221,18 @@ export default function AddBookPage() {
       return;
     }
 
-    let bookId = book.bookId;
-    if (!bookId) {
-      bookId = crypto.randomUUID();
+    let finalBookId = bookId;
+    if (!finalBookId) {
+      finalBookId = crypto.randomUUID();
       const { error: bookError } = await supabase.from("books").insert({
-        id: bookId,
-        title: book.title,
-        author: book.author || null,
-        publisher: book.publisher || null,
-        cover_url: book.coverUrl,
-        introduction: book.introduction || null,
-        publish_date: book.publishDate,
-        source: book.isbn ? "kakao" : "manual",
+        id: finalBookId,
+        title: title.trim(),
+        author: author.trim() || null,
+        publisher: publisher.trim() || null,
+        cover_url: coverUrl,
+        introduction: introduction || null,
+        publish_date: publishDate,
+        source: isbn ? "kakao" : "manual",
       });
       if (bookError) {
         setError(bookError.message);
@@ -233,10 +241,10 @@ export default function AddBookPage() {
       }
 
       // ISBN 없이 등록한 책(오래된 책, 수제책 등)은 book_isbns에 남길 게 없다.
-      if (book.isbn) {
+      if (isbn) {
         const { error: isbnError } = await supabase
           .from("book_isbns")
-          .insert({ book_id: bookId, isbn: book.isbn });
+          .insert({ book_id: finalBookId, isbn });
         if (isbnError) {
           setError(isbnError.message);
           setSaving(false);
@@ -258,7 +266,7 @@ export default function AddBookPage() {
 
     const { error: recordError } = await supabase.from("reading_records").insert({
       child_id: activeChild.id,
-      book_id: bookId,
+      book_id: finalBookId,
       status,
       rating,
       emotion,
@@ -286,188 +294,6 @@ export default function AddBookPage() {
         </Link>
       </div>
 
-      {step === "search" && (
-        <div className="mt-8 flex flex-col gap-4">
-          <div className="flex gap-2">
-            {(
-              [
-                { key: "query", label: "제목·저자 검색" },
-                { key: "scan", label: "바코드 스캔" },
-                { key: "isbn", label: "ISBN 입력" },
-              ] as { key: SearchMode; label: string }[]
-            ).map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => {
-                  setSearchMode(key);
-                  setError(null);
-                }}
-                className="d flex-1 rounded-[14px] border py-2.5 text-xs"
-                style={{
-                  borderColor: searchMode === key ? "var(--point)" : "var(--rule)",
-                  background: searchMode === key ? "rgba(47,168,79,0.08)" : "var(--card)",
-                  color: searchMode === key ? "var(--point-deep)" : "var(--ink-2)",
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {searchMode === "query" && (
-            <>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="책 제목이나 지은이"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && search()}
-                  className="flex-1 rounded-[14px] border px-4 py-3 text-sm outline-none"
-                  style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-                />
-                <button
-                  type="button"
-                  disabled={!query.trim() || searching}
-                  onClick={search}
-                  className="d rounded-[14px] px-4 py-3 text-sm text-white disabled:opacity-40"
-                  style={{ background: "var(--point)" }}
-                >
-                  검색
-                </button>
-              </div>
-
-              {results && results.length === 0 && (
-                <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-                  검색 결과가 없어요.
-                </p>
-              )}
-
-              {results && results.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  {results.map((candidate) => (
-                    <button
-                      key={candidate.isbn || candidate.title}
-                      type="button"
-                      onClick={() => selectCandidate(candidate)}
-                      className="flex items-center gap-3 rounded-[10px] border p-2 text-left"
-                      style={{ borderColor: "var(--rule)" }}
-                    >
-                      {candidate.coverUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={candidate.coverUrl}
-                          alt=""
-                          className="h-14 w-10 rounded object-cover"
-                        />
-                      )}
-                      <div>
-                        <p className="text-sm">{candidate.title}</p>
-                        {candidate.author && (
-                          <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                            {candidate.author}
-                          </p>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {searchMode === "scan" && (
-            <>
-              <BarcodeScanner
-                onDetected={(isbn) => lookupByIsbn(isbn)}
-                onError={(message) => setError(message)}
-              />
-              <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-                책 뒷면 바코드를 화면 안에 맞춰주세요.
-              </p>
-            </>
-          )}
-
-          {searchMode === "isbn" && (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="ISBN 13자리 (예: 9788934942467)"
-                value={manualIsbn}
-                onChange={(e) => setManualIsbn(e.target.value.replace(/[^\d]/g, ""))}
-                className="flex-1 rounded-[14px] border px-4 py-3 text-sm outline-none"
-                style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-              />
-              <button
-                type="button"
-                disabled={manualIsbn.length !== 10 && manualIsbn.length !== 13}
-                onClick={() => lookupByIsbn(manualIsbn)}
-                className="d rounded-[14px] px-4 py-3 text-sm text-white disabled:opacity-40"
-                style={{ background: "var(--point)" }}
-              >
-                조회
-              </button>
-            </div>
-          )}
-
-          {error && (
-            <p className="text-sm" style={{ color: "var(--berry)" }}>
-              {error}
-            </p>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setStep("manual-book")}
-            className="d text-sm"
-            style={{ color: "var(--point)" }}
-          >
-            검색에 안 나오는 책이에요 (ISBN 없이 등록)
-          </button>
-        </div>
-      )}
-
-      {step === "manual-book" && (
-        <div className="mt-8 flex flex-col gap-3">
-          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-            카카오 책 검색에 없는 책(오래된 책, 수제책 등)은 제목만으로 바로 등록할 수 있어요.
-          </p>
-          <input
-            type="text"
-            placeholder="책 제목"
-            value={manualTitle}
-            onChange={(e) => setManualTitle(e.target.value)}
-            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          />
-          <input
-            type="text"
-            placeholder="지은이 (선택)"
-            value={manualAuthor}
-            onChange={(e) => setManualAuthor(e.target.value)}
-            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          />
-          <button
-            type="button"
-            disabled={!manualTitle.trim()}
-            onClick={confirmManualBook}
-            className="d rounded-[14px] py-3 text-sm text-white disabled:opacity-40"
-            style={{ background: "var(--point)" }}
-          >
-            다음
-          </button>
-        </div>
-      )}
-
-      {step === "looking-up" && (
-        <p className="mt-8 text-sm" style={{ color: "var(--ink-2)" }}>
-          책 정보를 찾는 중...
-        </p>
-      )}
-
       {step === "no-child" && (
         <div className="mt-8 flex flex-col gap-4">
           <p className="d text-lg">먼저 아이를 등록해 주세요</p>
@@ -484,27 +310,142 @@ export default function AddBookPage() {
         </div>
       )}
 
-      {step === "record" && book && (
-        <div className="mt-8 flex flex-col gap-4">
-          <div
-            className="flex gap-3 rounded-[var(--r)] border p-4"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
-            {book.coverUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={book.coverUrl} alt="" className="h-24 w-16 rounded object-cover" />
-            )}
-            <div>
-              <p className="d">{book.title}</p>
-              {book.author && (
-                <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-                  {book.author}
+      {step === "form" && (
+        <div className="mt-6 flex flex-col gap-4">
+          <div>
+            <p className="d text-sm">무슨 책을 읽었어?</p>
+            <div className="relative mt-2">
+              <input
+                type="text"
+                placeholder="책 제목"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full rounded-[14px] border px-4 py-3 text-sm outline-none"
+                style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+              />
+              {dropdownOpen && candidates && candidates.length > 0 && (
+                <div
+                  className="absolute inset-x-0 top-[calc(100%+4px)] z-10 flex max-h-64 flex-col gap-1 overflow-y-auto rounded-[14px] border p-1.5"
+                  style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+                >
+                  {candidates.map((candidate) => (
+                    <button
+                      key={candidate.isbn || candidate.title}
+                      type="button"
+                      onClick={() => selectCandidate(candidate)}
+                      className="flex items-center gap-3 rounded-[10px] p-1.5 text-left"
+                    >
+                      {candidate.coverUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={candidate.coverUrl}
+                          alt=""
+                          className="h-12 w-9 flex-none rounded object-cover"
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm">{candidate.title}</p>
+                        {candidate.author && (
+                          <p className="truncate text-xs" style={{ color: "var(--ink-2)" }}>
+                            {candidate.author}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {dropdownOpen && candidates && candidates.length === 0 && !searching && (
+                <p className="mt-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
+                  검색 결과가 없어요. 이 제목 그대로 기록해도 괜찮아요.
                 </p>
               )}
-              <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
-                {book.isNew ? "새로 등록하는 책이에요" : "이미 책장에 있는 책이에요"}
-              </p>
             </div>
+
+            <input
+              type="text"
+              placeholder="지은이 (선택)"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              className="mt-2 w-full rounded-[14px] border px-4 py-3 text-sm outline-none"
+              style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+            />
+
+            <div className="mt-2 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setFindMode(findMode === "scan" ? "none" : "scan")}
+                className="d text-xs"
+                style={{ color: findMode === "scan" ? "var(--point-deep)" : "var(--point)" }}
+              >
+                바코드로 찾기
+              </button>
+              <button
+                type="button"
+                onClick={() => setFindMode(findMode === "isbn" ? "none" : "isbn")}
+                className="d text-xs"
+                style={{ color: findMode === "isbn" ? "var(--point-deep)" : "var(--point)" }}
+              >
+                ISBN으로 찾기
+              </button>
+            </div>
+
+            {findMode === "scan" && (
+              <div className="mt-2">
+                <BarcodeScanner
+                  onDetected={(value) => lookupByIsbn(value)}
+                  onError={(message) => setError(message)}
+                />
+                <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
+                  책 뒷면 바코드를 화면 안에 맞춰주세요.
+                </p>
+              </div>
+            )}
+
+            {findMode === "isbn" && (
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="ISBN 13자리"
+                  value={manualIsbn}
+                  onChange={(e) => setManualIsbn(e.target.value.replace(/[^\d]/g, ""))}
+                  className="flex-1 rounded-[14px] border px-4 py-3 text-sm outline-none"
+                  style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+                />
+                <button
+                  type="button"
+                  disabled={
+                    (manualIsbn.length !== 10 && manualIsbn.length !== 13) || isbnLookingUp
+                  }
+                  onClick={() => lookupByIsbn(manualIsbn)}
+                  className="d rounded-[14px] px-4 py-3 text-sm text-white disabled:opacity-40"
+                  style={{ background: "var(--point)" }}
+                >
+                  {isbnLookingUp ? "조회 중" : "조회"}
+                </button>
+              </div>
+            )}
+
+            {title.trim() && (
+              <div
+                className="mt-3 flex items-center gap-3 rounded-[var(--r)] border p-3"
+                style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+              >
+                {coverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={coverUrl} alt="" className="h-16 w-11 flex-none rounded object-cover" />
+                ) : (
+                  <div
+                    className="h-16 w-11 flex-none rounded"
+                    style={{ background: "var(--paper)" }}
+                  />
+                )}
+                <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                  {bookId ? "이미 책장에 있는 책이에요" : "새로 등록하는 책이에요"}
+                </p>
+              </div>
+            )}
           </div>
 
           <div>
@@ -621,7 +562,7 @@ export default function AddBookPage() {
 
           <button
             type="button"
-            disabled={saving}
+            disabled={saving || !title.trim()}
             onClick={save}
             className="d rounded-[14px] py-3 text-sm text-white disabled:opacity-40"
             style={{ background: "var(--point)" }}

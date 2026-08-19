@@ -119,12 +119,15 @@ export default function RecordsList({ childName, records }: { childName: string;
                 {rows.length}권
               </span>
             </div>
-            <div className="mt-2 flex flex-col gap-3">
-              {rows.map((record) => (
+            <div
+              className="mt-2 overflow-hidden rounded-[var(--r)] border"
+              style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+            >
+              {rows.map((record, index) => (
                 <div
                   key={record.id}
-                  className="rounded-[var(--r)] border p-4"
-                  style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+                  className="p-4"
+                  style={index > 0 ? { borderTop: "1px solid var(--rule)" } : undefined}
                 >
                   <button
                     type="button"
