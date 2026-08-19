@@ -597,7 +597,7 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 
 - **Storage 버킷**: 마이그레이션 0007이 비공개(`public=false`) 버킷 `reading-media`를 만듭니다. 오브젝트 이름은 항상 `{child_id}/...`로 시작하고, `storage.objects` RLS가 이 첫 폴더 세그먼트만으로 `child_guardians` 소유권을 판정합니다(`(storage.foldername(name))[1]::uuid`). 파일 종류는 파일명 접두사로 구분합니다 — `photo-{uuid}`(독서기록 사진), `voice-{uuid}`(독서기록 음성 메모), `mission-{mission_id}`(낭독 미션 녹음, 재녹음 시 upsert로 덮어씀).
 - **비공개 + 서명된 URL**: 사진·음성이 실제 아이 것이라 공개 버킷 대신 매번 `createSignedUrl()`로 만료시간 있는 URL을 발급합니다(`lib/storage.ts`의 `getSignedMediaUrl`). 화면에 표시할 때마다 서버 컴포넌트에서 새로 서명하므로, 링크를 복사해 공유해도 오래가지 않습니다.
-- **교사는 낭독 미션 녹음만 조회 가능**: `storage.objects`에 `assignment_mission_responses`와 조인하는 별도 SELECT 정책을 추가해, 교사가 자기 그룹 아이의 낭독 미션 녹음(`mission-*` 경로)만 들을 수 있게 했습니다. 독서기록 사진/음성 메모는 `teacher_reading_view`가 애초에 그 컬럼을 빼고 노출하므로 교사가 접근할 경로 자체가 없습니다. 로컬 Postgres에서 storage.objects를 최소 스키마로 모킹해 보호자 CRUD/교사의 미션 녹음 한정 조회/타 부모 완전 차단을 모두 확인했습니다.
+- **교사는 어떤 녹음에도 접근할 수 없습니다**: 처음엔 교사가 자기 그룹 아이의 낭독 미션 녹음만 들을 수 있게 별도 SELECT 정책을 뒀었지만(0007), 사용자 판단으로 다시 뺐습니다(0008) — 교사는 "무엇을 언제 읽었는지"만 알면 충분하고(`assignment_completion` 뷰로 이미 판정됨), 아이 목소리 녹음까지 들을 필요는 없다는 프라이버시 원칙입니다. 독서기록 사진/음성 메모도 `teacher_reading_view`가 애초에 그 컬럼을 빼고 노출하므로 교사가 접근할 경로 자체가 없습니다. 로컬 Postgres에서 storage.objects를 최소 스키마로 모킹해 보호자 CRUD/교사 완전 차단/타 부모 완전 차단을 모두 확인했습니다.
 - **음성 녹음은 동의 게이트**: 온보딩에서 이미 수집하던 `consents.type='voice_recording'`(선택 항목)을 `lib/consent.ts`의 `hasVoiceConsent()`로 확인해, 동의 안 한 부모에게는 음성 녹음 UI 자체를 숨깁니다(사진은 동의 대상이 아니라 게이트 없음). 재동의를 바꾸는 화면은 아직 없습니다 — 온보딩 때 선택한 값이 계속 유지됩니다.
 - **컴포넌트**: `components/photo-picker.tsx`(파일 입력 + 미리보기), `components/voice-recorder.tsx`(`MediaRecorder`로 마이크 녹음, `barcode-scanner.tsx`와 동일한 권한 요청 패턴)를 새로 만들고, `app/library/add`의 기록 단계와 `components/assignment-today.tsx`의 낭독 미션 양쪽에서 재사용합니다.
 
