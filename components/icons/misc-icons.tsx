@@ -64,3 +64,14 @@ export function SearchIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+// 배지 모티프 — 리본 달린 메달. 배지마다 다른 그림 대신 이 하나로 통일하고
+// 달성/미달성은 색으로만 구분한다(개별 배지 일러스트는 이후 제작).
+export function BadgeIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="9.5" r="5.5" />
+      <path d="M8.7 14.2 7 21l5-2.4 5 2.4-1.7-6.8" />
+    </IconBase>
+  );
+}

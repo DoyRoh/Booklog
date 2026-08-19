@@ -69,3 +69,37 @@ export function MoreIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+export function DashboardIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M3.5 11.2 12 4l8.5 7.2" />
+      <path d="M6 10.2V20h12v-9.8" />
+      <path d="M9.5 14.5h5" />
+      <path d="M9.5 17.5h5" />
+    </IconBase>
+  );
+}
+
+export function AssignmentIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <rect x="4.5" y="3.5" width="15" height="17" rx="2" />
+      <path d="M8.5 9.5l1.5 1.5 2.5-2.8" />
+      <path d="M14 9.7h3.5" />
+      <path d="M8.5 15.5l1.5 1.5 2.5-2.8" />
+      <path d="M14 15.7h3.5" />
+    </IconBase>
+  );
+}
+
+export function ChildrenIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <circle cx="8.5" cy="8" r="2.6" />
+      <circle cx="16" cy="9" r="2.1" />
+      <path d="M3.5 19.5c.6-3.2 2.6-5 5-5s4.4 1.8 5 5" />
+      <path d="M14.3 14.8c1.8.3 3.2 1.9 3.7 4.7" />
+    </IconBase>
+  );
+}

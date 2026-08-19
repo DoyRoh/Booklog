@@ -26,7 +26,9 @@ export default async function LibraryPage() {
   const { data: records } = activeChild
     ? await supabase
         .from("reading_records")
-        .select("id, status, favorite, read_date, books(id, title, author, cover_url)")
+        .select(
+          "id, status, rating, emotion, favorite, parent_memo, read_date, books(id, title, author, cover_url)"
+        )
         .eq("child_id", activeChild.id)
         .order("read_date", { ascending: false })
     : { data: null };
@@ -41,12 +43,16 @@ export default async function LibraryPage() {
       } | null;
       if (!book) return null;
       return {
-        id: book.id,
+        recordId: record.id,
         title: book.title,
         author: book.author,
         coverUrl: book.cover_url,
         favorite: record.favorite,
         status: record.status as ShelfBook["status"],
+        rating: record.rating,
+        emotion: record.emotion,
+        memo: record.parent_memo,
+        readDate: record.read_date,
       };
     })
     .filter((book): book is ShelfBook => Boolean(book));
@@ -61,10 +67,14 @@ export default async function LibraryPage() {
         <div>
           <h1 className="d text-xl">책장</h1>
           {activeChild && (
-            <p className="mt-0.5 flex items-center gap-1 text-xs" style={{ color: "var(--ink-2)" }}>
+            <Link
+              href="/badges"
+              className="mt-0.5 flex items-center gap-1 text-xs"
+              style={{ color: "var(--ink-2)" }}
+            >
               <FootprintIcon width={14} height={14} />
-              {activeChild.name}의 발자국 {footprintCount}개
-            </p>
+              {activeChild.name}의 발자국 {footprintCount}개 · 배지 보기
+            </Link>
           )}
         </div>
         <Link

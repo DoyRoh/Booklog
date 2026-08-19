@@ -2,19 +2,25 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { SearchIcon, SpineViewIcon, CoverViewIcon } from "@/components/icons/misc-icons";
-import type { ReadingStatus } from "@/components/record-status";
+import type { ReadingStatus } from "@/lib/reading-status";
+import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 
 export type ShelfBook = {
-  id: string;
+  recordId: string;
   title: string;
   author: string | null;
   coverUrl: string | null;
   favorite: boolean;
   status: ReadingStatus;
+  rating: number | null;
+  emotion: string | null;
+  memo: string | null;
+  readDate: string;
 };
 
 type ViewMode = "cover" | "spine";
 type StatusFilter = "all" | ReadingStatus;
+type SortMode = "new" | "title" | "author";
 
 const STORAGE_KEY = "chaeksup:library-view";
 
@@ -31,6 +37,12 @@ const STATUS_BADGE_LABELS: Record<ReadingStatus, string> = {
   done: "다 읽음",
 };
 
+const SORT_LABELS: Record<SortMode, string> = {
+  new: "최신순",
+  title: "제목순",
+  author: "작가순",
+};
+
 // 책등 색상 — 세이지그린 숲 컨셉과 어울리는 팔레트(이끼/나무껍질/등불/흙빛)에서
 // 책 제목 해시로 고정 배정해, 같은 책은 항상 같은 색으로 보이게 한다.
 const SPINE_COLORS = ["#6B8F71", "#A6763F", "#D9A441", "#7C9C82", "#B5654A", "#5E7A6B", "#C9A66B"];
@@ -43,10 +55,26 @@ function spineColor(title: string) {
   return SPINE_COLORS[hash % SPINE_COLORS.length];
 }
 
+function toEditable(book: ShelfBook): EditableRecord {
+  return {
+    id: book.recordId,
+    title: book.title,
+    author: book.author,
+    coverUrl: book.coverUrl,
+    status: book.status,
+    rating: book.rating,
+    emotion: book.emotion,
+    favorite: book.favorite,
+    memo: book.memo ?? "",
+  };
+}
+
 export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
   const [mode, setMode] = useState<ViewMode>("cover");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [sort, setSort] = useState<SortMode>("new");
+  const [editing, setEditing] = useState<ShelfBook | null>(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -65,7 +93,7 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return books
+    const list = books
       .filter((book) => statusFilter === "all" || book.status === statusFilter)
       .filter(
         (book) =>
@@ -73,7 +101,16 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
           book.title.toLowerCase().includes(q) ||
           (book.author ?? "").toLowerCase().includes(q)
       );
-  }, [books, query, statusFilter]);
+    const sorted = [...list];
+    if (sort === "title") {
+      sorted.sort((a, b) => a.title.localeCompare(b.title, "ko"));
+    } else if (sort === "author") {
+      sorted.sort((a, b) => (a.author ?? "").localeCompare(b.author ?? "", "ko"));
+    } else {
+      sorted.sort((a, b) => (a.readDate < b.readDate ? 1 : -1));
+    }
+    return sorted;
+  }, [books, query, statusFilter, sort]);
 
   return (
     <div className="mt-6">
@@ -122,22 +159,36 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
         </div>
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {(Object.keys(STATUS_FILTER_LABELS) as StatusFilter[]).map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setStatusFilter(value)}
-            className="d rounded-full border px-3 py-1 text-xs"
-            style={{
-              borderColor: statusFilter === value ? "var(--point)" : "var(--rule)",
-              background: statusFilter === value ? "rgba(47,168,79,0.08)" : "var(--card)",
-              color: statusFilter === value ? "var(--point-deep)" : "var(--ink-2)",
-            }}
-          >
-            {STATUS_FILTER_LABELS[value]}
-          </button>
-        ))}
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {(Object.keys(STATUS_FILTER_LABELS) as StatusFilter[]).map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setStatusFilter(value)}
+              className="d rounded-full border px-3 py-1 text-xs"
+              style={{
+                borderColor: statusFilter === value ? "var(--point)" : "var(--rule)",
+                background: statusFilter === value ? "rgba(47,168,79,0.08)" : "var(--card)",
+                color: statusFilter === value ? "var(--point-deep)" : "var(--ink-2)",
+              }}
+            >
+              {STATUS_FILTER_LABELS[value]}
+            </button>
+          ))}
+        </div>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortMode)}
+          className="d flex-none rounded-full border px-2.5 py-1 text-xs outline-none"
+          style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
+        >
+          {(Object.keys(SORT_LABELS) as SortMode[]).map((value) => (
+            <option key={value} value={value}>
+              {SORT_LABELS[value]}
+            </option>
+          ))}
+        </select>
       </div>
 
       {filtered.length === 0 && (
@@ -149,7 +200,12 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
       {filtered.length > 0 && mode === "cover" && (
         <div className="mt-5 grid grid-cols-3 gap-4">
           {filtered.map((book) => (
-            <div key={book.id} className="flex flex-col gap-1.5">
+            <button
+              key={book.recordId}
+              type="button"
+              onClick={() => setEditing(book)}
+              className="flex flex-col gap-1.5 text-left"
+            >
               <div
                 className="aspect-[3/4] overflow-hidden rounded-[10px]"
                 style={{ background: "var(--card)", border: "1px solid var(--rule)" }}
@@ -176,7 +232,7 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
                   {STATUS_BADGE_LABELS[book.status]}
                 </span>
               )}
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -187,8 +243,10 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
           style={{ background: "var(--card)", borderColor: "var(--rule)" }}
         >
           {filtered.map((book) => (
-            <div
-              key={book.id}
+            <button
+              key={book.recordId}
+              type="button"
+              onClick={() => setEditing(book)}
               className="flex h-40 w-8 flex-none items-start justify-center overflow-hidden rounded-[4px] pt-2 shadow-sm"
               style={{ background: spineColor(book.title) }}
               title={book.title}
@@ -204,10 +262,12 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
               >
                 {book.title}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       )}
+
+      {editing && <RecordEditModal record={toEditable(editing)} onClose={() => setEditing(null)} />}
     </div>
   );
 }

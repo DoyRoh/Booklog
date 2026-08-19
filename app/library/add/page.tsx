@@ -11,15 +11,8 @@ import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
 import QuestionPrompt from "@/components/question-prompt";
 
-type Step =
-  | "choose"
-  | "scan"
-  | "manual"
-  | "manual-book"
-  | "looking-up"
-  | "record"
-  | "no-child"
-  | "saved";
+type Step = "search" | "manual-book" | "looking-up" | "record" | "no-child" | "saved";
+type SearchMode = "query" | "scan" | "isbn";
 
 type ResolvedBook = {
   bookId: string | null; // null이면 아직 books에 없는 새 책
@@ -31,6 +24,16 @@ type ResolvedBook = {
   publishDate: string | null;
   isbn: string;
   isNew: boolean;
+};
+
+type Candidate = {
+  title: string;
+  author: string;
+  publisher: string;
+  coverUrl: string | null;
+  introduction: string;
+  publishDate: string | null;
+  isbn: string;
 };
 
 const EMOTIONS = ["재밌어요", "웃겼어요", "감동적이에요", "슬퍼요", "그저그래요"];
@@ -49,7 +52,11 @@ const SAVE_LABELS: Record<ReadingStatus, string> = {
 };
 
 export default function AddBookPage() {
-  const [step, setStep] = useState<Step>("choose");
+  const [step, setStep] = useState<Step>("search");
+  const [searchMode, setSearchMode] = useState<SearchMode>("query");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Candidate[] | null>(null);
+  const [searching, setSearching] = useState(false);
   const [manualIsbn, setManualIsbn] = useState("");
   const [manualTitle, setManualTitle] = useState("");
   const [manualAuthor, setManualAuthor] = useState("");
@@ -74,36 +81,44 @@ export default function AddBookPage() {
     });
   }, []);
 
-  async function lookup(isbn: string) {
+  async function findExistingByIsbn(
+    supabase: ReturnType<typeof createClient>,
+    isbn: string
+  ): Promise<ResolvedBook | null> {
+    const { data: existingIsbn } = await supabase
+      .from("book_isbns")
+      .select("book_id, books(title, author, cover_url)")
+      .eq("isbn", isbn)
+      .maybeSingle();
+    if (!existingIsbn?.books) return null;
+    const existingBook = existingIsbn.books as unknown as {
+      title: string;
+      author: string | null;
+      cover_url: string | null;
+    };
+    return {
+      bookId: existingIsbn.book_id,
+      title: existingBook.title,
+      author: existingBook.author ?? "",
+      publisher: "",
+      coverUrl: existingBook.cover_url,
+      introduction: "",
+      publishDate: null,
+      isbn,
+      isNew: false,
+    };
+  }
+
+  async function lookupByIsbn(isbn: string) {
     setError(null);
     setStep("looking-up");
 
     const supabase = createClient();
 
     // 이미 등록된 책이면 카카오 API를 부르지 않고 바로 기록 단계로 넘어간다.
-    const { data: existingIsbn } = await supabase
-      .from("book_isbns")
-      .select("book_id, books(title, author, cover_url)")
-      .eq("isbn", isbn)
-      .maybeSingle();
-
-    if (existingIsbn?.books) {
-      const existingBook = existingIsbn.books as unknown as {
-        title: string;
-        author: string | null;
-        cover_url: string | null;
-      };
-      setBook({
-        bookId: existingIsbn.book_id,
-        title: existingBook.title,
-        author: existingBook.author ?? "",
-        publisher: "",
-        coverUrl: existingBook.cover_url,
-        introduction: "",
-        publishDate: null,
-        isbn,
-        isNew: false,
-      });
+    const existing = await findExistingByIsbn(supabase, isbn);
+    if (existing) {
+      setBook(existing);
       setStep("record");
       return;
     }
@@ -113,15 +128,51 @@ export default function AddBookPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "책을 찾지 못했어요.");
-        setStep("manual");
+        setStep("search");
         return;
       }
       setBook({ ...data, bookId: null, isNew: true } as ResolvedBook);
       setStep("record");
     } catch {
       setError("책 정보를 불러오는 중 문제가 생겼어요.");
-      setStep("manual");
+      setStep("search");
     }
+  }
+
+  async function search() {
+    if (!query.trim()) return;
+    setSearching(true);
+    setError(null);
+    setResults(null);
+    try {
+      const res = await fetch(`/api/books/lookup?query=${encodeURIComponent(query.trim())}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "검색에 실패했어요.");
+        setSearching(false);
+        return;
+      }
+      setResults(data.results ?? []);
+    } catch {
+      setError("검색 중 문제가 생겼어요.");
+    }
+    setSearching(false);
+  }
+
+  async function selectCandidate(candidate: Candidate) {
+    setError(null);
+    setStep("looking-up");
+    const supabase = createClient();
+    if (candidate.isbn) {
+      const existing = await findExistingByIsbn(supabase, candidate.isbn);
+      if (existing) {
+        setBook(existing);
+        setStep("record");
+        return;
+      }
+    }
+    setBook({ ...candidate, bookId: null, isNew: true });
+    setStep("record");
   }
 
   function confirmManualBook() {
@@ -235,92 +286,145 @@ export default function AddBookPage() {
         </Link>
       </div>
 
-      {step === "choose" && (
-        <div className="mt-8 flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={() => setStep("scan")}
-            className="d rounded-[var(--r)] border px-4 py-4 text-left"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
-            카메라로 바코드 스캔
-          </button>
-          <button
-            type="button"
-            onClick={() => setStep("manual")}
-            className="d rounded-[var(--r)] border px-4 py-4 text-left"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
-            ISBN 직접 입력
-          </button>
-          <button
-            type="button"
-            onClick={() => setStep("manual-book")}
-            className="d rounded-[var(--r)] border px-4 py-4 text-left"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
-            ISBN 없이 제목만으로 등록
-          </button>
-        </div>
-      )}
-
-      {step === "scan" && (
+      {step === "search" && (
         <div className="mt-8 flex flex-col gap-4">
-          <BarcodeScanner
-            onDetected={(isbn) => lookup(isbn)}
-            onError={(message) => setError(message)}
-          />
-          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-            책 뒷면 바코드를 화면 안에 맞춰주세요.
-          </p>
-          {error && (
-            <p className="text-sm" style={{ color: "var(--berry)" }}>
-              {error}
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={() => setStep("manual")}
-            className="d text-sm"
-            style={{ color: "var(--point)" }}
-          >
-            대신 직접 입력할게요
-          </button>
-        </div>
-      )}
+          <div className="flex gap-2">
+            {(
+              [
+                { key: "query", label: "제목·저자 검색" },
+                { key: "scan", label: "바코드 스캔" },
+                { key: "isbn", label: "ISBN 입력" },
+              ] as { key: SearchMode; label: string }[]
+            ).map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => {
+                  setSearchMode(key);
+                  setError(null);
+                }}
+                className="d flex-1 rounded-[14px] border py-2.5 text-xs"
+                style={{
+                  borderColor: searchMode === key ? "var(--point)" : "var(--rule)",
+                  background: searchMode === key ? "rgba(47,168,79,0.08)" : "var(--card)",
+                  color: searchMode === key ? "var(--point-deep)" : "var(--ink-2)",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-      {step === "manual" && (
-        <div className="mt-8 flex flex-col gap-3">
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="ISBN 13자리 (예: 9788934942467)"
-            value={manualIsbn}
-            onChange={(e) => setManualIsbn(e.target.value.replace(/[^\d]/g, ""))}
-            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          />
+          {searchMode === "query" && (
+            <>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="책 제목이나 지은이"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && search()}
+                  className="flex-1 rounded-[14px] border px-4 py-3 text-sm outline-none"
+                  style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+                />
+                <button
+                  type="button"
+                  disabled={!query.trim() || searching}
+                  onClick={search}
+                  className="d rounded-[14px] px-4 py-3 text-sm text-white disabled:opacity-40"
+                  style={{ background: "var(--point)" }}
+                >
+                  검색
+                </button>
+              </div>
+
+              {results && results.length === 0 && (
+                <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                  검색 결과가 없어요.
+                </p>
+              )}
+
+              {results && results.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {results.map((candidate) => (
+                    <button
+                      key={candidate.isbn || candidate.title}
+                      type="button"
+                      onClick={() => selectCandidate(candidate)}
+                      className="flex items-center gap-3 rounded-[10px] border p-2 text-left"
+                      style={{ borderColor: "var(--rule)" }}
+                    >
+                      {candidate.coverUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={candidate.coverUrl}
+                          alt=""
+                          className="h-14 w-10 rounded object-cover"
+                        />
+                      )}
+                      <div>
+                        <p className="text-sm">{candidate.title}</p>
+                        {candidate.author && (
+                          <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                            {candidate.author}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {searchMode === "scan" && (
+            <>
+              <BarcodeScanner
+                onDetected={(isbn) => lookupByIsbn(isbn)}
+                onError={(message) => setError(message)}
+              />
+              <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                책 뒷면 바코드를 화면 안에 맞춰주세요.
+              </p>
+            </>
+          )}
+
+          {searchMode === "isbn" && (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="ISBN 13자리 (예: 9788934942467)"
+                value={manualIsbn}
+                onChange={(e) => setManualIsbn(e.target.value.replace(/[^\d]/g, ""))}
+                className="flex-1 rounded-[14px] border px-4 py-3 text-sm outline-none"
+                style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+              />
+              <button
+                type="button"
+                disabled={manualIsbn.length !== 10 && manualIsbn.length !== 13}
+                onClick={() => lookupByIsbn(manualIsbn)}
+                className="d rounded-[14px] px-4 py-3 text-sm text-white disabled:opacity-40"
+                style={{ background: "var(--point)" }}
+              >
+                조회
+              </button>
+            </div>
+          )}
+
           {error && (
             <p className="text-sm" style={{ color: "var(--berry)" }}>
               {error}
             </p>
           )}
-          <button
-            type="button"
-            disabled={manualIsbn.length !== 10 && manualIsbn.length !== 13}
-            onClick={() => lookup(manualIsbn)}
-            className="d rounded-[14px] py-3 text-sm text-white disabled:opacity-40"
-            style={{ background: "var(--point)" }}
-          >
-            조회하기
-          </button>
+
           <button
             type="button"
             onClick={() => setStep("manual-book")}
             className="d text-sm"
             style={{ color: "var(--point)" }}
           >
-            ISBN이 없는 책이에요
+            검색에 안 나오는 책이에요 (ISBN 없이 등록)
           </button>
         </div>
       )}

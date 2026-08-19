@@ -4,6 +4,7 @@ import { getActiveChild } from "@/lib/active-child";
 import { hasVoiceConsent } from "@/lib/consent";
 import { getSignedMediaUrl } from "@/lib/storage";
 import AssignmentToday, { type TodayAssignment } from "@/components/assignment-today";
+import RecentRecords, { type RecentRecord } from "@/components/recent-records";
 
 type AssignmentRow = {
   id: string;
@@ -70,6 +71,48 @@ export default async function TodayPage() {
       </div>
     );
   }
+
+  const { data: allRecords } = await supabase
+    .from("reading_records")
+    .select("id, status, rating, emotion, favorite, parent_memo, read_date, books(title, author, cover_url)")
+    .eq("child_id", activeChild.id)
+    .order("read_date", { ascending: false });
+
+  const doneRecords = (allRecords ?? []).filter((r) => r.status === "done");
+  const totalDone = doneRecords.length;
+  const thisMonthKey = new Date().toISOString().slice(0, 7);
+  const monthCount = doneRecords.filter((r) => r.read_date.startsWith(thisMonthKey)).length;
+
+  const uniqDates = Array.from(new Set(doneRecords.map((r) => r.read_date))).sort();
+  let run = 0;
+  let bestStreak = 0;
+  let prevTime: number | null = null;
+  for (const d of uniqDates) {
+    const t = new Date(`${d}T00:00:00`).getTime();
+    run = prevTime !== null && t - prevTime === 86400000 ? run + 1 : 1;
+    bestStreak = Math.max(bestStreak, run);
+    prevTime = t;
+  }
+
+  const recentRecords: RecentRecord[] = (allRecords ?? []).slice(0, 5).map((r) => {
+    const book = r.books as unknown as {
+      title: string;
+      author: string | null;
+      cover_url: string | null;
+    } | null;
+    return {
+      id: r.id,
+      title: book?.title ?? "",
+      author: book?.author ?? null,
+      coverUrl: book?.cover_url ?? null,
+      status: r.status,
+      rating: r.rating,
+      emotion: r.emotion,
+      favorite: r.favorite,
+      memo: r.parent_memo ?? "",
+      readDate: r.read_date,
+    };
+  });
 
   const { data: memberGroupRows } = await supabase
     .from("group_members")
@@ -165,12 +208,52 @@ export default async function TodayPage() {
         {activeChild.name}, 오늘도 책숲을 걸어볼까요?
       </p>
 
+      <div
+        className="mt-4 flex items-center justify-around rounded-[var(--r)] border p-4"
+        style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+      >
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="d text-xl" style={{ color: "var(--point-deep)" }}>
+            {totalDone}
+          </span>
+          <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+            읽은 책
+          </span>
+        </div>
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="d text-xl">{monthCount}</span>
+          <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+            이번 달
+          </span>
+        </div>
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="d text-xl">{bestStreak}</span>
+          <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+            최장 연속
+          </span>
+        </div>
+      </div>
+
       {assignments.length === 0 ? (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
           지금 진행 중인 숙제가 없어요. 책장에서 자유롭게 책을 기록해 보세요.
         </p>
       ) : (
         <AssignmentToday childId={activeChild.id} assignments={assignments} voiceAllowed={voiceAllowed} />
+      )}
+
+      {recentRecords.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between">
+            <p className="d text-lg">최근 기록</p>
+            <Link href="/records" className="text-xs" style={{ color: "var(--ink-2)" }}>
+              전체 보기 ›
+            </Link>
+          </div>
+          <div className="mt-3">
+            <RecentRecords records={recentRecords} />
+          </div>
+        </div>
       )}
     </div>
   );
