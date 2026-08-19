@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { uploadMissionVoice } from "@/lib/storage";
 import VoiceRecorder from "@/components/voice-recorder";
+import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 
 export type TodayMission = {
   id: string;
@@ -21,7 +22,27 @@ export type TodayBook = {
   author: string | null;
   coverUrl: string | null;
   completed: boolean;
+  // completed=true일 때만 채워진다 -- 이 자리에서 바로 기록을 고칠 수 있게 함.
+  recordId: string | null;
+  rating: number | null;
+  emotion: string | null;
+  favorite: boolean;
+  memo: string | null;
 };
+
+function toEditable(book: TodayBook): EditableRecord {
+  return {
+    id: book.recordId as string,
+    title: book.title,
+    author: book.author,
+    coverUrl: book.coverUrl,
+    status: "done",
+    rating: book.rating,
+    emotion: book.emotion,
+    favorite: book.favorite,
+    memo: book.memo ?? "",
+  };
+}
 
 export type TodayAssignment = {
   id: string;
@@ -103,6 +124,8 @@ export default function AssignmentToday({
   assignments: TodayAssignment[];
   voiceAllowed: boolean;
 }) {
+  const [editing, setEditing] = useState<TodayBook | null>(null);
+
   return (
     <div className="mt-4 flex flex-col gap-4">
       {assignments.map((assignment) => {
@@ -146,16 +169,19 @@ export default function AssignmentToday({
             <div className="mt-3 flex flex-col gap-2">
               {assignment.books.map((book) =>
                 book.completed ? (
-                  <div
+                  <button
                     key={book.id}
-                    className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5"
+                    type="button"
+                    disabled={!book.recordId}
+                    onClick={() => setEditing(book)}
+                    className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5 text-left"
                     style={{ borderColor: "var(--rule)" }}
                   >
                     <span className="text-base">{book.title}</span>
                     <span className="text-sm" style={{ color: "var(--point-deep)" }}>
                       읽었어요
                     </span>
-                  </div>
+                  </button>
                 ) : (
                   <Link
                     key={book.id}
@@ -185,6 +211,8 @@ export default function AssignmentToday({
           </div>
         );
       })}
+
+      {editing && <RecordEditModal record={toEditable(editing)} onClose={() => setEditing(null)} />}
     </div>
   );
 }

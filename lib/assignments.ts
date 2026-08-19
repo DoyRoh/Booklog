@@ -68,6 +68,37 @@ export async function getTodayAssignments(
   const completedSet = new Set(
     (completionRows ?? []).filter((row) => row.completed).map((row) => `${row.assignment_id}:${row.book_id}`)
   );
+
+  // 완료된 숙제 책은 "읽었어요" 표시만이 아니라 실제 독서기록을 그 자리에서
+  // 수정할 수 있어야 하므로, 책마다 붙는 reading_records를 미리 찾아둔다
+  // (같은 책을 여러 그룹 숙제로 완독했을 수 있어 여러 개일 수 있는데, 가장
+  // 최근 기록을 대표로 쓴다).
+  const bookIds = Array.from(
+    new Set(
+      rows.flatMap((row) => row.assignment_books.map((ab) => ab.books?.id).filter((id): id is string => Boolean(id)))
+    )
+  );
+  type CompletedRecord = {
+    id: string;
+    book_id: string;
+    rating: number | null;
+    emotion: string | null;
+    favorite: boolean;
+    parent_memo: string | null;
+  };
+  const { data: recordRows } = bookIds.length
+    ? await supabase
+        .from("reading_records")
+        .select("id, book_id, rating, emotion, favorite, parent_memo")
+        .eq("child_id", childId)
+        .eq("status", "done")
+        .in("book_id", bookIds)
+        .order("read_date", { ascending: false })
+    : { data: [] };
+  const recordByBook = new Map<string, CompletedRecord>();
+  for (const record of (recordRows ?? []) as CompletedRecord[]) {
+    if (!recordByBook.has(record.book_id)) recordByBook.set(record.book_id, record);
+  }
   const answerByMission = new Map(
     (responseRows ?? []).map((row) => [row.mission_id, row.answer_text as string | null])
   );
@@ -95,13 +126,21 @@ export async function getTodayAssignments(
         (book): book is { id: string; title: string; author: string | null; cover_url: string | null } =>
           Boolean(book)
       )
-      .map((book) => ({
-        id: book.id,
-        title: book.title,
-        author: book.author,
-        coverUrl: book.cover_url,
-        completed: completedSet.has(`${row.id}:${book.id}`),
-      })),
+      .map((book) => {
+        const record = recordByBook.get(book.id) ?? null;
+        return {
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          coverUrl: book.cover_url,
+          completed: completedSet.has(`${row.id}:${book.id}`),
+          recordId: record?.id ?? null,
+          rating: record?.rating ?? null,
+          emotion: record?.emotion ?? null,
+          favorite: record?.favorite ?? false,
+          memo: record?.parent_memo ?? null,
+        };
+      }),
     missions: row.assignment_missions.map((mission) => ({
       id: mission.id,
       type: mission.type,

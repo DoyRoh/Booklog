@@ -670,4 +670,9 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **책장/기록에 정렬 추가**: 책장은 기존 정렬(최신순/제목순/작가순) 그대로 두고 중복 제거된 목록에 적용합니다. 기록 탭에는 정렬 드롭다운이 없었는데, "최신순"을 고르면 기존처럼 월별 박스+구분선 그대로, "제목순"/"작가순"을 고르면 월 구분 없이 전체를 한 박스에 정렬해서 보여주도록 `records-list.tsx`를 고쳤습니다.
 - **오늘 탭은 숙제 요약만, 상세는 `/today/assignments`로 분리**: "오늘의 숙제가 요약 형태여야 하는데 거기에 (책 목록·낭독 녹음까지 있는) 숙제카드를 왜 보여주냐"는 지적을 반영해, `app/today/page.tsx`의 "오늘의 숙제" 섹션을 `components/assignment-summary.tsx`(그룹명+제목+"N/M 완료" 배지만 있는 한 줄짜리 행, 박스 안에 구분선, 그룹명 기준으로 정렬해 같은 그룹끼리 붙어 보이게 함)로 바꿨습니다. 각 행을 누르면 `/today/assignments#{assignmentId}`로 이동해, 기존에 오늘 탭에 있던 상세 카드(책마다 "기록하기" 링크, 낭독 미션 녹음 등 — `components/assignment-today.tsx`, 그대로 유지)가 있는 전용 페이지로 넘어가고 해당 숙제 카드로 스크롤됩니다. 두 화면이 같은 데이터를 쓰므로 조회 로직은 `lib/assignments.ts`의 `getTodayAssignments()`로 뽑아 공유합니다.
 
+## 오늘의 숙제 요약 그룹핑 + 완료된 숙제 책도 수정 가능 (실사용 피드백 반영)
+
+- **같은 그룹 숙제는 구분선 없이 한 섹션으로**: "Haba 7세반"처럼 같은 그룹의 숙제 두 개가 각자 구분선으로 나뉘어 그룹명이 반복 표시되던 걸 지적받아, `components/assignment-summary.tsx`를 그룹명 기준 섹션 구조로 다시 짰습니다. 그룹명은 섹션당 한 번만 뜨고, 그 그룹의 숙제 제목들은 구분선 없이 바로 이어지며, **다른 그룹으로 넘어갈 때만** `border-top` 구분선이 들어갑니다.
+- **`/today/assignments`(전체 보기)에서 완료된 숙제 책도 클릭해 수정 가능**: 이전엔 "읽었어요"로 완료 표시된 책이 그냥 정적 텍스트라 클릭해도 아무 일이 없었는데, 이제 눌러서 `RecordEditModal`이 뜨고 평점·기분·즐겨찾기·메모를 바로 고칠 수 있습니다. `lib/assignments.ts`의 `getTodayAssignments()`가 숙제 책마다 대응하는 `reading_records`(가장 최근 `status='done'` 기록 하나, 같은 책을 여러 그룹 숙제로 완독했다면 그중 가장 최근 것을 대표로 씀)를 함께 조회해 `TodayBook`에 `recordId`/`rating`/`emotion`/`favorite`/`memo`로 실어 보내고, `components/assignment-today.tsx`가 이 데이터로 수정 모달을 채웁니다.
+
 @AGENTS.md
