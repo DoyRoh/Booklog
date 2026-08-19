@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getQuestions, addQuestion, type BookQuestion } from "@/lib/questions";
 
 type BookOption = { id: string; title: string };
 type MissionType = "question" | "voice";
@@ -30,6 +31,13 @@ export default function CreateAssignment({
   const [missions, setMissions] = useState<DraftMission[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bankQuestions, setBankQuestions] = useState<BookQuestion[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    const supabase = createClient();
+    getQuestions(supabase).then(setBankQuestions);
+  }, [open]);
 
   function toggleBook(id: string) {
     setSelectedBookIds((prev) => {
@@ -120,6 +128,20 @@ export default function CreateAssignment({
         setError(missionsError.message);
         setSaving(false);
         return;
+      }
+
+      // 교사가 직접 쓴 새 질문은 다른 교사도 다음에 골라 쓸 수 있게 질문
+      // 은행에 조용히 추가한다(이미 있는 질문이면 건너뜀, 실패해도 숙제
+      // 생성 자체는 이미 끝났으니 막지 않는다).
+      const bankTexts = new Set(bankQuestions.map((q) => q.text));
+      for (const mission of validMissions) {
+        if (mission.type === "question" && !bankTexts.has(mission.question.trim())) {
+          try {
+            await addQuestion(supabase, user.id, mission.question);
+          } catch {
+            // best-effort
+          }
+        }
       }
     }
 
@@ -229,14 +251,35 @@ export default function CreateAssignment({
               </button>
             </div>
             {mission.type === "question" && (
-              <input
-                type="text"
-                placeholder="질문 내용"
-                value={mission.question}
-                onChange={(e) => updateMissionQuestion(index, e.target.value)}
-                className="mt-2 w-full rounded-[10px] border px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "var(--rule)" }}
-              />
+              <>
+                <input
+                  type="text"
+                  placeholder="질문 내용"
+                  value={mission.question}
+                  onChange={(e) => updateMissionQuestion(index, e.target.value)}
+                  className="mt-2 w-full rounded-[10px] border px-3 py-2 text-sm outline-none"
+                  style={{ borderColor: "var(--rule)" }}
+                />
+                {bankQuestions.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {bankQuestions.map((q) => (
+                      <button
+                        key={q.id}
+                        type="button"
+                        onClick={() => updateMissionQuestion(index, q.text)}
+                        className="rounded-full border px-2.5 py-1 text-xs"
+                        style={{
+                          borderColor: mission.question === q.text ? "var(--point)" : "var(--rule)",
+                          background: mission.question === q.text ? "rgba(47,168,79,0.08)" : "transparent",
+                          color: mission.question === q.text ? "var(--point-deep)" : "var(--ink-2)",
+                        }}
+                      >
+                        {q.text}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         ))}

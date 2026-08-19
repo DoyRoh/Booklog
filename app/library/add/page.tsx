@@ -9,6 +9,7 @@ import { uploadChildPhoto, uploadChildVoice } from "@/lib/storage";
 import BarcodeScanner from "@/components/barcode-scanner";
 import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
+import QuestionPrompt from "@/components/question-prompt";
 
 type Step =
   | "choose"
@@ -441,6 +442,8 @@ export default function AddBookPage() {
             />
             <span className="text-sm">가장 좋아하는 책으로 남기기</span>
           </label>
+
+          <QuestionPrompt />
 
           <textarea
             placeholder="부모 메모 (선택)"
