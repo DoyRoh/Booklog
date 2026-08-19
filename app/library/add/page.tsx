@@ -565,16 +565,7 @@ function AddBookForm() {
             <span className="text-sm">가장 좋아하는 책으로 남기기</span>
           </label>
 
-          <QuestionPrompt />
-
-          <textarea
-            placeholder="부모 메모 (선택)"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            rows={3}
-            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          />
+          <QuestionPrompt answer={memo} onAnswerChange={setMemo} />
 
           <div>
             <p className="d text-sm">사진 (선택)</p>
