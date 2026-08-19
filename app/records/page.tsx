@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveChild } from "@/lib/active-child";
 import { getSignedMediaUrl } from "@/lib/storage";
+import RecordStatus, { type ReadingStatus } from "@/components/record-status";
 
 export default async function RecordsPage() {
   const supabase = await createClient();
@@ -26,7 +27,7 @@ export default async function RecordsPage() {
     ? await supabase
         .from("reading_records")
         .select(
-          "id, rating, emotion, favorite, parent_memo, read_date, photo_url, voice_url, books(title, author, cover_url)"
+          "id, status, rating, emotion, favorite, parent_memo, read_date, photo_url, voice_url, books(title, author, cover_url)"
         )
         .eq("child_id", activeChild.id)
         .order("read_date", { ascending: false })
@@ -104,6 +105,9 @@ export default async function RecordsPage() {
                     <span>{record.read_date}</span>
                     {record.rating && <span>· 평점 {record.rating}</span>}
                     {record.emotion && <span>· {record.emotion}</span>}
+                  </div>
+                  <div className="mt-2">
+                    <RecordStatus recordId={record.id} status={record.status as ReadingStatus} />
                   </div>
                   {record.parent_memo && (
                     <p className="mt-2 text-sm" style={{ color: "var(--ink)" }}>

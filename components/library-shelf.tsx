@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { SearchIcon, SpineViewIcon, CoverViewIcon } from "@/components/icons/misc-icons";
+import type { ReadingStatus } from "@/components/record-status";
 
 export type ShelfBook = {
   id: string;
@@ -9,11 +10,26 @@ export type ShelfBook = {
   author: string | null;
   coverUrl: string | null;
   favorite: boolean;
+  status: ReadingStatus;
 };
 
 type ViewMode = "cover" | "spine";
+type StatusFilter = "all" | ReadingStatus;
 
 const STORAGE_KEY = "chaeksup:library-view";
+
+const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
+  all: "전체",
+  want: "읽고 싶어요",
+  reading: "읽는 중",
+  done: "다 읽음",
+};
+
+const STATUS_BADGE_LABELS: Record<ReadingStatus, string> = {
+  want: "읽고 싶어요",
+  reading: "읽는 중",
+  done: "다 읽음",
+};
 
 // 책등 색상 — 세이지그린 숲 컨셉과 어울리는 팔레트(이끼/나무껍질/등불/흙빛)에서
 // 책 제목 해시로 고정 배정해, 같은 책은 항상 같은 색으로 보이게 한다.
@@ -30,6 +46,7 @@ function spineColor(title: string) {
 export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
   const [mode, setMode] = useState<ViewMode>("cover");
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -48,12 +65,15 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return books;
-    return books.filter(
-      (book) =>
-        book.title.toLowerCase().includes(q) || (book.author ?? "").toLowerCase().includes(q)
-    );
-  }, [books, query]);
+    return books
+      .filter((book) => statusFilter === "all" || book.status === statusFilter)
+      .filter(
+        (book) =>
+          !q ||
+          book.title.toLowerCase().includes(q) ||
+          (book.author ?? "").toLowerCase().includes(q)
+      );
+  }, [books, query, statusFilter]);
 
   return (
     <div className="mt-6">
@@ -102,6 +122,24 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
         </div>
       </div>
 
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {(Object.keys(STATUS_FILTER_LABELS) as StatusFilter[]).map((value) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setStatusFilter(value)}
+            className="d rounded-full border px-3 py-1 text-xs"
+            style={{
+              borderColor: statusFilter === value ? "var(--point)" : "var(--rule)",
+              background: statusFilter === value ? "rgba(47,168,79,0.08)" : "var(--card)",
+              color: statusFilter === value ? "var(--point-deep)" : "var(--ink-2)",
+            }}
+          >
+            {STATUS_FILTER_LABELS[value]}
+          </button>
+        ))}
+      </div>
+
       {filtered.length === 0 && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
           검색 결과가 없어요.
@@ -130,6 +168,14 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
               <p className="truncate text-xs" style={{ color: "var(--ink-2)" }}>
                 {book.title}
               </p>
+              {book.status !== "done" && (
+                <span
+                  className="d self-start rounded-full px-2 py-0.5 text-[10px]"
+                  style={{ background: "rgba(232,163,61,0.16)", color: "var(--lantern)" }}
+                >
+                  {STATUS_BADGE_LABELS[book.status]}
+                </span>
+              )}
             </div>
           ))}
         </div>

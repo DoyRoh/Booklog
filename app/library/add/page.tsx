@@ -36,6 +36,18 @@ type ResolvedBook = {
 const EMOTIONS = ["재밌어요", "웃겼어요", "감동적이에요", "슬퍼요", "그저그래요"];
 const RATINGS = [1, 2, 3, 4, 5];
 
+type ReadingStatus = "want" | "reading" | "done";
+const STATUS_LABELS: Record<ReadingStatus, string> = {
+  want: "읽고 싶어요",
+  reading: "읽는 중이에요",
+  done: "다 읽었어요",
+};
+const SAVE_LABELS: Record<ReadingStatus, string> = {
+  want: "읽고 싶은 책으로 저장",
+  reading: "읽는 중으로 저장",
+  done: "기록 남기기",
+};
+
 export default function AddBookPage() {
   const [step, setStep] = useState<Step>("choose");
   const [manualIsbn, setManualIsbn] = useState("");
@@ -45,6 +57,7 @@ export default function AddBookPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const [status, setStatus] = useState<ReadingStatus>("done");
   const [rating, setRating] = useState<number | null>(null);
   const [emotion, setEmotion] = useState<string | null>(null);
   const [favorite, setFavorite] = useState(false);
@@ -195,6 +208,7 @@ export default function AddBookPage() {
     const { error: recordError } = await supabase.from("reading_records").insert({
       child_id: activeChild.id,
       book_id: bookId,
+      status,
       rating,
       emotion,
       favorite,
@@ -390,60 +404,85 @@ export default function AddBookPage() {
           </div>
 
           <div>
-            <p className="d text-sm">평점</p>
+            <p className="d text-sm">지금 상태</p>
             <div className="mt-2 flex gap-2">
-              {RATINGS.map((value) => (
+              {(Object.keys(STATUS_LABELS) as ReadingStatus[]).map((value) => (
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setRating(value === rating ? null : value)}
-                  className="d flex h-10 w-10 items-center justify-center rounded-full border text-sm"
+                  onClick={() => setStatus(value)}
+                  className="d flex-1 rounded-[14px] border py-2.5 text-sm"
                   style={{
-                    borderColor: rating === value ? "var(--point)" : "var(--rule)",
-                    background: rating === value ? "var(--point)" : "var(--card)",
-                    color: rating === value ? "#fff" : "var(--ink)",
+                    borderColor: status === value ? "var(--point)" : "var(--rule)",
+                    background: status === value ? "rgba(47,168,79,0.08)" : "var(--card)",
+                    color: status === value ? "var(--point-deep)" : "var(--ink)",
                   }}
                 >
-                  {value}
+                  {STATUS_LABELS[value]}
                 </button>
               ))}
             </div>
           </div>
 
-          <div>
-            <p className="d text-sm">기분</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {EMOTIONS.map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setEmotion(value === emotion ? null : value)}
-                  className="d rounded-full border px-3 py-1.5 text-sm"
-                  style={{
-                    borderColor: emotion === value ? "var(--point)" : "var(--rule)",
-                    background: emotion === value ? "rgba(47,168,79,0.08)" : "var(--card)",
-                    color: emotion === value ? "var(--point-deep)" : "var(--ink)",
-                  }}
-                >
-                  {value}
-                </button>
-              ))}
-            </div>
-          </div>
+          {status === "done" && (
+            <>
+              <div>
+                <p className="d text-sm">평점</p>
+                <div className="mt-2 flex gap-2">
+                  {RATINGS.map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setRating(value === rating ? null : value)}
+                      className="d flex h-10 w-10 items-center justify-center rounded-full border text-sm"
+                      style={{
+                        borderColor: rating === value ? "var(--point)" : "var(--rule)",
+                        background: rating === value ? "var(--point)" : "var(--card)",
+                        color: rating === value ? "#fff" : "var(--ink)",
+                      }}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          <label
-            className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
-            <input
-              type="checkbox"
-              checked={favorite}
-              onChange={(e) => setFavorite(e.target.checked)}
-            />
-            <span className="text-sm">가장 좋아하는 책으로 남기기</span>
-          </label>
+              <div>
+                <p className="d text-sm">기분</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {EMOTIONS.map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setEmotion(value === emotion ? null : value)}
+                      className="d rounded-full border px-3 py-1.5 text-sm"
+                      style={{
+                        borderColor: emotion === value ? "var(--point)" : "var(--rule)",
+                        background: emotion === value ? "rgba(47,168,79,0.08)" : "var(--card)",
+                        color: emotion === value ? "var(--point-deep)" : "var(--ink)",
+                      }}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          <QuestionPrompt />
+              <label
+                className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"
+                style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={favorite}
+                  onChange={(e) => setFavorite(e.target.checked)}
+                />
+                <span className="text-sm">가장 좋아하는 책으로 남기기</span>
+              </label>
+
+              <QuestionPrompt />
+            </>
+          )}
 
           <textarea
             placeholder="부모 메모 (선택)"
@@ -483,7 +522,7 @@ export default function AddBookPage() {
             className="d rounded-[14px] py-3 text-sm text-white disabled:opacity-40"
             style={{ background: "var(--point)" }}
           >
-            {saving ? "저장 중..." : "기록 남기기"}
+            {saving ? "저장 중..." : SAVE_LABELS[status]}
           </button>
         </div>
       )}

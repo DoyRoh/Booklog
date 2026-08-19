@@ -26,7 +26,7 @@ export default async function LibraryPage() {
   const { data: records } = activeChild
     ? await supabase
         .from("reading_records")
-        .select("id, favorite, read_date, books(id, title, author, cover_url)")
+        .select("id, status, favorite, read_date, books(id, title, author, cover_url)")
         .eq("child_id", activeChild.id)
         .order("read_date", { ascending: false })
     : { data: null };
@@ -46,9 +46,14 @@ export default async function LibraryPage() {
         author: book.author,
         coverUrl: book.cover_url,
         favorite: record.favorite,
+        status: record.status as ShelfBook["status"],
       };
     })
     .filter((book): book is ShelfBook => Boolean(book));
+
+  // 발자국은 "다 읽은 책"에만 찍힌다 -- 읽고 싶은 책/읽는 중인 책까지 세면
+  // 탐험 수첩 모티프의 의미가 흐려진다.
+  const footprintCount = books.filter((book) => book.status === "done").length;
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -58,7 +63,7 @@ export default async function LibraryPage() {
           {activeChild && (
             <p className="mt-0.5 flex items-center gap-1 text-xs" style={{ color: "var(--ink-2)" }}>
               <FootprintIcon width={14} height={14} />
-              {activeChild.name}의 발자국 {books.length}개
+              {activeChild.name}의 발자국 {footprintCount}개
             </p>
           )}
         </div>
