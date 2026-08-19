@@ -82,19 +82,19 @@ export default async function LibraryPage() {
           className="d rounded-[14px] px-4 py-2 text-sm text-white"
           style={{ background: "var(--point)" }}
         >
-          + 책 등록
+          + 기록 남기기
         </Link>
       </div>
 
       {!activeChild && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
-          아이를 등록하면 책장이 시작돼요. 더보기 탭에서 아이를 추가해 주세요.
+          아이를 등록하면 책장이 시작돼요. 더보기에서 아이를 추가해 주세요.
         </p>
       )}
 
       {activeChild && books.length === 0 && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
-          책장이 비었어요. &ldquo;+ 책 등록&rdquo;으로 첫 책을 등록해 보세요.
+          책장이 비었어요. &ldquo;+ 기록 남기기&rdquo;로 첫 책을 기록해 보세요.
         </p>
       )}
 

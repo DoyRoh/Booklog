@@ -280,7 +280,7 @@ export default function AddBookPage() {
   return (
     <div className="mx-auto flex min-h-screen max-w-[420px] flex-col px-6 pt-8 pb-10">
       <div className="flex items-center justify-between">
-        <h1 className="d text-xl">책 등록</h1>
+        <h1 className="d text-xl">기록 남기기</h1>
         <Link href="/library" className="text-sm" style={{ color: "var(--ink-2)" }}>
           닫기
         </Link>
@@ -479,7 +479,7 @@ export default function AddBookPage() {
             className="d rounded-[14px] py-3 text-center text-sm text-white"
             style={{ background: "var(--point)" }}
           >
-            더보기에서 아이 등록하기
+            아이 등록하러 가기
           </Link>
         </div>
       )}

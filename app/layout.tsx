@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Gowun_Dodum, Gamja_Flower } from "next/font/google";
 import BottomNav from "@/components/bottom-nav";
+import TopBar from "@/components/top-bar";
 import "./globals.css";
 
 const gowunDodum = Gowun_Dodum({
@@ -41,7 +42,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${gowunDodum.variable} ${gamjaFlower.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
-        <main className="flex-1 pb-[64px]">{children}</main>
+        <TopBar />
+        <main className="flex-1 pt-[44px] pb-[64px]">{children}</main>
         <BottomNav />
       </body>
     </html>

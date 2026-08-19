@@ -9,18 +9,20 @@ import {
   LibraryIcon,
   RecordsIcon,
   RecommendIcon,
-  MoreIcon,
+  BadgeIcon,
   DashboardIcon,
   AssignmentIcon,
   ChildrenIcon,
 } from "@/components/icons/tab-icons";
 
+// '더보기'는 하단 탭이 아니라 상단 우측 상시 아이콘(TopBar)으로 옮겼다 --
+// 부모/교사/큐레이터 탭 어디에도 더 이상 포함하지 않는다.
 const PARENT_TABS = [
   { href: "/today", label: "오늘", Icon: TodayIcon },
   { href: "/library", label: "책장", Icon: LibraryIcon },
   { href: "/records", label: "기록", Icon: RecordsIcon },
   { href: "/recommend", label: "추천", Icon: RecommendIcon },
-  { href: "/more", label: "더보기", Icon: MoreIcon },
+  { href: "/badges", label: "배지", Icon: BadgeIcon },
 ] as const;
 
 const TEACHER_TABS = [
@@ -28,13 +30,11 @@ const TEACHER_TABS = [
   { href: "/teacher/children", label: "아이 관리", Icon: ChildrenIcon },
   { href: "/teacher/assignments", label: "숙제", Icon: AssignmentIcon },
   { href: "/recommend", label: "그룹", Icon: RecommendIcon },
-  { href: "/more", label: "더보기", Icon: MoreIcon },
 ] as const;
 
 const CURATOR_TABS = [
   { href: "/curator", label: "대시보드", Icon: DashboardIcon },
   { href: "/recommend", label: "그룹", Icon: RecommendIcon },
-  { href: "/more", label: "더보기", Icon: MoreIcon },
 ] as const;
 
 const HIDDEN_PREFIXES = ["/login", "/signup", "/onboarding"];

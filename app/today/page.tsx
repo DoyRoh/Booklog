@@ -66,7 +66,7 @@ export default async function TodayPage() {
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">오늘</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-          아이를 등록하면 오늘의 숙제가 여기에 표시돼요. 더보기 탭에서 아이를 추가해 주세요.
+          아이를 등록하면 오늘의 숙제가 여기에 표시돼요. 더보기에서 아이를 추가해 주세요.
         </p>
       </div>
     );

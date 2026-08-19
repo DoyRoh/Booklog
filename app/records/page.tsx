@@ -76,7 +76,7 @@ export default async function RecordsPage() {
 
       {!activeChild && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
-          아이를 등록하면 독서기록이 시작돼요. 더보기 탭에서 아이를 추가해 주세요.
+          아이를 등록하면 독서기록이 시작돼요. 더보기에서 아이를 추가해 주세요.
         </p>
       )}
 

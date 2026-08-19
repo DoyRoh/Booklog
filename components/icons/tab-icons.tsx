@@ -103,3 +103,15 @@ export function ChildrenIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+// 탐험 수첩 모티프 — 배지 탭 전용. components/icons/misc-icons.tsx의
+// BadgeIcon과 같은 모양이지만, 하단 내비게이션 아이콘 크기(22px)에
+// 맞춘 버전이다.
+export function BadgeIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="9.5" r="5.5" />
+      <path d="M8.7 14.2 7 21l5-2.4 5 2.4-1.7-6.8" />
+    </IconBase>
+  );
+}
