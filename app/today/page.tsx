@@ -1,22 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveChild } from "@/lib/active-child";
-import { hasVoiceConsent } from "@/lib/consent";
-import { getSignedMediaUrl } from "@/lib/storage";
-import AssignmentToday, { type TodayAssignment } from "@/components/assignment-today";
+import { getTodayAssignments } from "@/lib/assignments";
+import AssignmentSummary from "@/components/assignment-summary";
 import RecentRecords, { type RecentRecord } from "@/components/recent-records";
-
-type AssignmentRow = {
-  id: string;
-  group_id: string;
-  title: string;
-  description: string | null;
-  groups: { name: string } | null;
-  assignment_books: {
-    books: { id: string; title: string; author: string | null; cover_url: string | null } | null;
-  }[];
-  assignment_missions: { id: string; type: TodayAssignment["missions"][number]["type"]; question: string | null }[];
-};
 
 export default async function TodayPage() {
   const supabase = await createClient();
@@ -116,96 +103,7 @@ export default async function TodayPage() {
     };
   });
 
-  const { data: memberGroupRows } = await supabase
-    .from("group_members")
-    .select("group_id")
-    .eq("child_id", activeChild.id)
-    .eq("status", "approved");
-
-  const groupIds = (memberGroupRows ?? []).map((row) => row.group_id);
-
-  const today = new Date().toISOString().slice(0, 10);
-  let assignments: TodayAssignment[] = [];
-
-  if (groupIds.length > 0) {
-    const { data: assignmentRows } = await supabase
-      .from("assignments")
-      .select(
-        "id, group_id, title, description, groups(name), assignment_books(books(id, title, author, cover_url)), assignment_missions(id, type, question)"
-      )
-      .in("group_id", groupIds)
-      .or(`start_date.is.null,start_date.lte.${today}`)
-      .or(`end_date.is.null,end_date.gte.${today}`)
-      .order("created_at", { ascending: false });
-
-    const rows = (assignmentRows ?? []) as unknown as AssignmentRow[];
-    const assignmentIds = rows.map((row) => row.id);
-    const missionIds = rows.flatMap((row) => row.assignment_missions.map((m) => m.id));
-
-    const { data: completionRows } = assignmentIds.length
-      ? await supabase
-          .from("assignment_completion")
-          .select("assignment_id, book_id, completed")
-          .eq("child_id", activeChild.id)
-          .in("assignment_id", assignmentIds)
-      : { data: [] };
-
-    const { data: responseRows } = missionIds.length
-      ? await supabase
-          .from("assignment_mission_responses")
-          .select("mission_id, answer_text, voice_url")
-          .eq("child_id", activeChild.id)
-          .in("mission_id", missionIds)
-      : { data: [] };
-
-    const completedSet = new Set(
-      (completionRows ?? []).filter((row) => row.completed).map((row) => `${row.assignment_id}:${row.book_id}`)
-    );
-    const answerByMission = new Map(
-      (responseRows ?? []).map((row) => [row.mission_id, row.answer_text as string | null])
-    );
-    const voiceUrlByMission = new Map(
-      (responseRows ?? []).map((row) => [row.mission_id, row.voice_url as string | null])
-    );
-    const voiceSignedUrlByMission = new Map<string, string | null>(
-      await Promise.all(
-        Array.from(voiceUrlByMission.entries()).map(async ([missionId, voiceUrl]) => [
-          missionId,
-          voiceUrl ? await getSignedMediaUrl(supabase, voiceUrl) : null,
-        ] as const)
-      )
-    );
-
-    assignments = rows.map((row) => ({
-      id: row.id,
-      groupId: row.group_id,
-      groupName: row.groups?.name ?? "",
-      title: row.title,
-      description: row.description,
-      books: row.assignment_books
-        .map((ab) => ab.books)
-        .filter(
-          (book): book is { id: string; title: string; author: string | null; cover_url: string | null } =>
-            Boolean(book)
-        )
-        .map((book) => ({
-          id: book.id,
-          title: book.title,
-          author: book.author,
-          coverUrl: book.cover_url,
-          completed: completedSet.has(`${row.id}:${book.id}`),
-        })),
-      missions: row.assignment_missions.map((mission) => ({
-        id: mission.id,
-        type: mission.type,
-        question: mission.question,
-        answerText: answerByMission.get(mission.id) ?? null,
-        voiceSignedUrl: voiceSignedUrlByMission.get(mission.id) ?? null,
-      })),
-    }));
-  }
-
-  const voiceAllowed = await hasVoiceConsent(supabase, user.id);
+  const assignments = await getTodayAssignments(supabase, activeChild.id);
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -241,13 +139,20 @@ export default async function TodayPage() {
       </div>
 
       <div className="mt-8">
-        <p className="d text-lg">오늘의 숙제</p>
+        <div className="flex items-center justify-between">
+          <p className="d text-lg">오늘의 숙제</p>
+          {assignments.length > 0 && (
+            <Link href="/today/assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
+              전체 보기 ›
+            </Link>
+          )}
+        </div>
         {assignments.length === 0 ? (
           <p className="mt-3 text-base" style={{ color: "var(--ink-2)" }}>
             지금 진행 중인 숙제가 없어요. 책장에서 자유롭게 책을 기록해 보세요.
           </p>
         ) : (
-          <AssignmentToday childId={activeChild.id} assignments={assignments} voiceAllowed={voiceAllowed} />
+          <AssignmentSummary assignments={assignments} />
         )}
       </div>
 

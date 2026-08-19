@@ -110,7 +110,8 @@ export default function AssignmentToday({
         return (
           <div
             key={assignment.id}
-            className="rounded-[var(--r)] border p-4"
+            id={assignment.id}
+            className="rounded-[var(--r)] border p-4 scroll-mt-4"
             style={{ borderColor: "var(--rule)", background: "var(--card)" }}
           >
             <div className="flex items-center justify-between gap-2">

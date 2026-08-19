@@ -27,39 +27,59 @@ export default async function LibraryPage() {
     ? await supabase
         .from("reading_records")
         .select(
-          "id, status, rating, emotion, favorite, parent_memo, read_date, books(id, title, author, cover_url)"
+          "id, group_id, status, rating, emotion, favorite, parent_memo, read_date, books(id, title, author, cover_url), groups(name)"
         )
         .eq("child_id", activeChild.id)
         .order("read_date", { ascending: false })
     : { data: null };
 
-  const books: ShelfBook[] = (records ?? [])
-    .map((record) => {
-      const book = record.books as unknown as {
-        id: string;
-        title: string;
-        author: string | null;
-        cover_url: string | null;
-      } | null;
-      if (!book) return null;
-      return {
-        recordId: record.id,
+  // 같은 책을 여러 그룹의 숙제로 각각 기록했을 수 있으므로(child_id+book_id
+  // 조합이 중복될 수 있음), 책 단위로 묶어 책장에는 책마다 한 장만 뜨게 한다
+  // -- 그룹별 기록은 ShelfBook.instances 안에 전부 들어있어 필터로 골라볼 수 있다.
+  const byBook = new Map<string, ShelfBook>();
+  const doneBookIds = new Set<string>();
+  for (const record of records ?? []) {
+    const book = record.books as unknown as {
+      id: string;
+      title: string;
+      author: string | null;
+      cover_url: string | null;
+    } | null;
+    if (!book) continue;
+    if (record.status === "done") doneBookIds.add(book.id);
+
+    const group = record.groups as unknown as { name: string } | null;
+    const instance = {
+      recordId: record.id,
+      groupId: record.group_id,
+      groupName: group?.name ?? null,
+      favorite: record.favorite,
+      status: record.status as ShelfBook["instances"][number]["status"],
+      rating: record.rating,
+      emotion: record.emotion,
+      memo: record.parent_memo,
+      readDate: record.read_date,
+    };
+
+    const existing = byBook.get(book.id);
+    if (existing) {
+      existing.instances.push(instance);
+    } else {
+      byBook.set(book.id, {
+        bookId: book.id,
         title: book.title,
         author: book.author,
         coverUrl: book.cover_url,
-        favorite: record.favorite,
-        status: record.status as ShelfBook["status"],
-        rating: record.rating,
-        emotion: record.emotion,
-        memo: record.parent_memo,
-        readDate: record.read_date,
-      };
-    })
-    .filter((book): book is ShelfBook => Boolean(book));
+        instances: [instance],
+      });
+    }
+  }
+  const books: ShelfBook[] = Array.from(byBook.values());
 
   // 발자국은 "다 읽은 책"에만 찍힌다 -- 읽고 싶은 책/읽는 중인 책까지 세면
-  // 탐험 수첩 모티프의 의미가 흐려진다.
-  const footprintCount = books.filter((book) => book.status === "done").length;
+  // 탐험 수첩 모티프의 의미가 흐려지고, 같은 책을 여러 그룹 숙제로 두 번
+  // 완독 기록해도 책 자체는 한 권이므로 중복 집계하지 않는다.
+  const footprintCount = doneBookIds.size;
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">

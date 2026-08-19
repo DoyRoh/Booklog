@@ -27,7 +27,7 @@ export default async function RecordsPage() {
     ? await supabase
         .from("reading_records")
         .select(
-          "id, status, rating, emotion, favorite, parent_memo, read_date, photo_url, voice_url, books(title, author, cover_url)"
+          "id, group_id, status, rating, emotion, favorite, parent_memo, read_date, photo_url, voice_url, books(title, author, cover_url), groups(name)"
         )
         .eq("child_id", activeChild.id)
         .order("read_date", { ascending: false })
@@ -41,8 +41,11 @@ export default async function RecordsPage() {
             author: string | null;
             cover_url: string | null;
           } | null;
+          const group = row.groups as unknown as { name: string } | null;
           return {
             id: row.id,
+            groupId: row.group_id,
+            groupName: group?.name ?? null,
             status: row.status,
             rating: row.rating,
             emotion: row.emotion,

@@ -5,11 +5,15 @@ import { SearchIcon, SpineViewIcon, CoverViewIcon } from "@/components/icons/mis
 import type { ReadingStatus } from "@/lib/reading-status";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 
-export type ShelfBook = {
+// 같은 책이 여러 그룹의 숙제로 겹쳐서 나올 수 있으므로(child_id+book_id
+// 기준으로 reading_records가 여러 개 있을 수 있다), 책 한 권 = ShelfBook
+// 하나로 묶고 그 아래 instances에 그룹별/직접기록 기록들을 모아둔다.
+// 기본 화면(전체)에서는 책마다 대표 기록 하나만 카드로 보여줘 중복을 없애고,
+// 그룹으로 필터하면 그 그룹에서의 기록을 대표로 보여준다.
+export type ShelfInstance = {
   recordId: string;
-  title: string;
-  author: string | null;
-  coverUrl: string | null;
+  groupId: string | null;
+  groupName: string | null;
   favorite: boolean;
   status: ReadingStatus;
   rating: number | null;
@@ -18,8 +22,17 @@ export type ShelfBook = {
   readDate: string;
 };
 
+export type ShelfBook = {
+  bookId: string;
+  title: string;
+  author: string | null;
+  coverUrl: string | null;
+  instances: ShelfInstance[];
+};
+
 type ViewMode = "cover" | "spine";
 type StatusFilter = "all" | ReadingStatus;
+type GroupFilter = "all" | "direct" | string;
 type SortMode = "new" | "title" | "author";
 
 const STORAGE_KEY = "chaeksup:library-view";
@@ -43,6 +56,8 @@ const SORT_LABELS: Record<SortMode, string> = {
   author: "작가순",
 };
 
+const STATUS_RANK: Record<ReadingStatus, number> = { done: 2, reading: 1, want: 0 };
+
 // 책등 색상 — 세이지그린 숲 컨셉과 어울리는 팔레트(이끼/나무껍질/등불/흙빛)에서
 // 책 제목 해시로 고정 배정해, 같은 책은 항상 같은 색으로 보이게 한다.
 const SPINE_COLORS = ["#6B8F71", "#A6763F", "#D9A441", "#7C9C82", "#B5654A", "#5E7A6B", "#C9A66B"];
@@ -55,7 +70,19 @@ function spineColor(title: string) {
   return SPINE_COLORS[hash % SPINE_COLORS.length];
 }
 
-function toEditable(book: ShelfBook): EditableRecord {
+// 필터로 좁혀진 기록들 중 카드에 대표로 보여줄 하나를 고른다 --
+// 다 읽음 > 읽는 중 > 읽고 싶어요 순, 그 안에서는 최신 기록 우선.
+function pickRepresentative(instances: ShelfInstance[]): ShelfInstance {
+  return [...instances].sort((a, b) => {
+    const rankDiff = STATUS_RANK[b.status] - STATUS_RANK[a.status];
+    if (rankDiff !== 0) return rankDiff;
+    return a.readDate < b.readDate ? 1 : -1;
+  })[0];
+}
+
+type DedupedBook = ShelfBook & ShelfInstance;
+
+function toEditable(book: DedupedBook): EditableRecord {
   return {
     id: book.recordId,
     title: book.title,
@@ -73,8 +100,9 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
   const [mode, setMode] = useState<ViewMode>("cover");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [groupFilter, setGroupFilter] = useState<GroupFilter>("all");
   const [sort, setSort] = useState<SortMode>("new");
-  const [editing, setEditing] = useState<ShelfBook | null>(null);
+  const [editing, setEditing] = useState<DedupedBook | null>(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -91,9 +119,36 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
     window.localStorage.setItem(STORAGE_KEY, next);
   }
 
+  const groupOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    let hasDirect = false;
+    for (const book of books) {
+      for (const inst of book.instances) {
+        if (inst.groupId) byId.set(inst.groupId, inst.groupName ?? "그룹");
+        else hasDirect = true;
+      }
+    }
+    return { hasDirect, groups: Array.from(byId.entries()) };
+  }, [books]);
+
+  const deduped = useMemo<DedupedBook[]>(() => {
+    return books
+      .map((book) => {
+        const matching = book.instances.filter((inst) => {
+          if (groupFilter === "all") return true;
+          if (groupFilter === "direct") return inst.groupId === null;
+          return inst.groupId === groupFilter;
+        });
+        if (matching.length === 0) return null;
+        const rep = pickRepresentative(matching);
+        return { ...book, ...rep };
+      })
+      .filter((book): book is DedupedBook => Boolean(book));
+  }, [books, groupFilter]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = books
+    const list = deduped
       .filter((book) => statusFilter === "all" || book.status === statusFilter)
       .filter(
         (book) =>
@@ -110,7 +165,7 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
       sorted.sort((a, b) => (a.readDate < b.readDate ? 1 : -1));
     }
     return sorted;
-  }, [books, query, statusFilter, sort]);
+  }, [deduped, query, statusFilter, sort]);
 
   return (
     <div className="mt-6">
@@ -159,6 +214,52 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
         </div>
       </div>
 
+      {(groupOptions.hasDirect || groupOptions.groups.length > 0) && (
+        <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+          <button
+            type="button"
+            onClick={() => setGroupFilter("all")}
+            className="d flex-none rounded-full border px-3 py-1 text-xs"
+            style={{
+              borderColor: groupFilter === "all" ? "var(--point)" : "var(--rule)",
+              background: groupFilter === "all" ? "rgba(47,168,79,0.08)" : "var(--card)",
+              color: groupFilter === "all" ? "var(--point-deep)" : "var(--ink-2)",
+            }}
+          >
+            전체 출처
+          </button>
+          {groupOptions.hasDirect && (
+            <button
+              type="button"
+              onClick={() => setGroupFilter("direct")}
+              className="d flex-none rounded-full border px-3 py-1 text-xs"
+              style={{
+                borderColor: groupFilter === "direct" ? "var(--point)" : "var(--rule)",
+                background: groupFilter === "direct" ? "rgba(47,168,79,0.08)" : "var(--card)",
+                color: groupFilter === "direct" ? "var(--point-deep)" : "var(--ink-2)",
+              }}
+            >
+              직접 기록
+            </button>
+          )}
+          {groupOptions.groups.map(([id, name]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setGroupFilter(id)}
+              className="d flex-none rounded-full border px-3 py-1 text-xs"
+              style={{
+                borderColor: groupFilter === id ? "var(--point)" : "var(--rule)",
+                background: groupFilter === id ? "rgba(47,168,79,0.08)" : "var(--card)",
+                color: groupFilter === id ? "var(--point-deep)" : "var(--ink-2)",
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="mt-2 flex items-center justify-between gap-2">
         <div className="flex flex-wrap gap-1.5">
           {(Object.keys(STATUS_FILTER_LABELS) as StatusFilter[]).map((value) => (
@@ -201,7 +302,7 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
         <div className="mt-5 grid grid-cols-3 gap-4">
           {filtered.map((book) => (
             <button
-              key={book.recordId}
+              key={book.bookId}
               type="button"
               onClick={() => setEditing(book)}
               className="flex flex-col gap-1.5 text-left"
@@ -244,7 +345,7 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
         >
           {filtered.map((book) => (
             <button
-              key={book.recordId}
+              key={book.bookId}
               type="button"
               onClick={() => setEditing(book)}
               className="flex h-40 w-8 flex-none items-start justify-center overflow-hidden rounded-[4px] pt-2 shadow-sm"
