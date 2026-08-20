@@ -169,7 +169,7 @@ function VoiceMission({
           {mission.voiceSignedUrl && (
             <audio src={mission.voiceSignedUrl} controls className="h-9 w-full" />
           )}
-          <VoiceRecorder onRecorded={handleRecorded} label="낭독" />
+          <VoiceRecorder onRecorded={handleRecorded} label="낭독 시작" />
           {saving && (
             <p className="text-xs" style={{ color: "var(--ink-2)" }}>
               저장 중...

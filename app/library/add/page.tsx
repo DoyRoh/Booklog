@@ -88,12 +88,14 @@ function AddBookForm() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [voiceAllowed, setVoiceAllowed] = useState(false);
+  const [childName, setChildName] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       hasVoiceConsent(supabase, user.id).then(setVoiceAllowed);
+      getActiveChild(supabase, user.id).then((child) => setChildName(child?.name ?? null));
     });
   }, []);
 
@@ -484,6 +486,8 @@ function AddBookForm() {
             )}
           </div>
 
+          <div className="mx-1" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+
           <div>
             <p className="d text-sm">지금 상태</p>
             <div className="mt-2 flex gap-2">
@@ -529,6 +533,8 @@ function AddBookForm() {
             </p>
           )}
 
+          <div className="mx-1" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+
           <div>
             <p className="d text-sm">재미있었어?</p>
             <div className="mt-2">
@@ -567,21 +573,41 @@ function AddBookForm() {
 
           <QuestionPrompt answer={memo} onAnswerChange={setMemo} />
 
-          <div>
-            <p className="d text-sm">사진 (선택)</p>
-            <div className="mt-2">
-              <PhotoPicker onSelect={setPhotoFile} />
-            </div>
-          </div>
+          <div className="mx-1" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
 
-          {voiceAllowed && (
-            <div>
-              <p className="d text-sm">음성 기록 (선택)</p>
+          <div
+            className="rounded-[var(--r)] border p-4"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          >
+            <p className="d text-base">{childName ? `${childName}의 기록` : "우리 아이의 기록"}</p>
+
+            <div className="mt-3">
+              <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                인상 깊었던 장면을 사진으로 남겨보세요
+              </p>
               <div className="mt-2">
-                <VoiceRecorder onRecorded={setVoiceBlob} onClear={() => setVoiceBlob(null)} label="음성 기록" />
+                <PhotoPicker onSelect={setPhotoFile} label="장면 찍어 담기" />
               </div>
             </div>
-          )}
+
+            {voiceAllowed && (
+              <>
+                <div className="mx-0 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+                <div className="mt-4">
+                  <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                    오늘 읽은 소감을 목소리로 남겨보세요
+                  </p>
+                  <div className="mt-2">
+                    <VoiceRecorder
+                      onRecorded={setVoiceBlob}
+                      onClear={() => setVoiceBlob(null)}
+                      label={childName ? `${childName}의 목소리로 남기기` : "목소리로 남기기"}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           {error && (
             <p className="text-sm" style={{ color: "var(--berry)" }}>

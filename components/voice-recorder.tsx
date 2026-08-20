@@ -8,7 +8,7 @@ type Props = {
   label?: string;
 };
 
-export default function VoiceRecorder({ onRecorded, onClear, label = "음성 녹음" }: Props) {
+export default function VoiceRecorder({ onRecorded, onClear, label = "음성 녹음 시작" }: Props) {
   const [recording, setRecording] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -71,7 +71,7 @@ export default function VoiceRecorder({ onRecorded, onClear, label = "음성 녹
           className="d self-start rounded-[14px] border px-4 py-2.5 text-sm"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         >
-          {label} 시작
+          {label}
         </button>
       )}
 
