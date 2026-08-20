@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { getActiveChild } from "@/lib/active-child";
 import { MoreIcon } from "@/components/icons/tab-icons";
+import { useProfile } from "@/components/profile-context";
 
 const HIDDEN_PREFIXES = ["/login", "/signup", "/onboarding"];
 
@@ -14,27 +12,13 @@ const HIDDEN_PREFIXES = ["/login", "/signup", "/onboarding"];
 // 하단 탭 강조 표시로 이미 알 수 있다. '더보기'도 같은 줄 우측에 둔다.
 export default function TopBar() {
   const pathname = usePathname();
-  const [title, setTitle] = useState("책숲");
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return;
-      const { data: profile } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      if (profile?.role !== "parent") return;
-      const child = await getActiveChild(supabase, user.id);
-      if (child) setTitle(`${child.name}의 책숲`);
-    });
-  }, []);
+  const { role, childName } = useProfile();
 
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return null;
   }
 
+  const title = role === "parent" && childName ? `${childName}의 책숲` : "책숲";
   const active = pathname === "/more" || pathname.startsWith("/more/");
 
   return (

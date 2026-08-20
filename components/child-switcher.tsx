@@ -59,6 +59,10 @@ export default function ChildSwitcher({
       setError(updateError.message);
       return;
     }
+    // 상단 "OO의 책숲" 제목은 router.refresh()로는 안 바뀐다(서버 컴포넌트만
+    // 다시 그리고, 이 제목은 클라이언트에서 따로 들고 있는 상태라서) --
+    // 전역으로 이벤트를 쏴서 즉시 다시 불러오게 한다.
+    window.dispatchEvent(new Event("chaeksup:profile-changed"));
     router.refresh();
   }
 
@@ -109,6 +113,7 @@ export default function ChildSwitcher({
     setName("");
     setBirthDate("");
     setAvatar(null);
+    window.dispatchEvent(new Event("chaeksup:profile-changed"));
     router.refresh();
   }
 

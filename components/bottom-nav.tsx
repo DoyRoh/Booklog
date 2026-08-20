@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useProfile } from "@/components/profile-context";
 import {
   TodayIcon,
   LibraryIcon,
@@ -41,32 +40,15 @@ const HIDDEN_PREFIXES = ["/login", "/signup", "/onboarding"];
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const [tabs, setTabs] = useState<
-    readonly { href: string; label: string; Icon: typeof TodayIcon }[]
-  >(PARENT_TABS);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return;
-      const { data: profile } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      // 로그인 직후 기본값(부모 탭)에서 시작해, 역할을 확인한 뒤에만
-      // 필요하면 바꾼다 -- 탭이 매번 깜빡이지 않도록.
-      if (profile?.role === "teacher") {
-        setTabs(TEACHER_TABS);
-      } else if (profile?.role === "curator") {
-        setTabs(CURATOR_TABS);
-      }
-    });
-  }, []);
+  const { role } = useProfile();
 
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return null;
   }
+
+  // 역할 조회가 끝나기 전(role===null)에는 부모 탭을 기본값으로 보여준다 --
+  // 로그인 직후 탭이 매번 깜빡이지 않도록.
+  const tabs = role === "teacher" ? TEACHER_TABS : role === "curator" ? CURATOR_TABS : PARENT_TABS;
 
   return (
     <nav
