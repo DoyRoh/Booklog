@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import { computeBadges } from "@/lib/badges";
 import { BadgeIcon } from "@/components/icons/misc-icons";
 
 export default async function BadgesPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getVerifiedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">배지</h1>
@@ -21,7 +20,7 @@ export default async function BadgesPage() {
     );
   }
 
-  const activeChild = await getActiveChild(supabase, user.id);
+  const activeChild = await getActiveChild(supabase, userId);
 
   if (!activeChild) {
     return (

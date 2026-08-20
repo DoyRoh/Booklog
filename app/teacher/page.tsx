@@ -1,14 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-
-const TYPE_LABELS: Record<string, string> = {
-  kindergarten: "유치원",
-  school: "학교",
-  library: "도서관",
-  family: "가족",
-  community: "커뮤니티",
-  creator: "크리에이터",
-};
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
+import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 
 type GroupCard = {
   id: string;
@@ -21,11 +14,9 @@ type GroupCard = {
 
 export default async function TeacherDashboardPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getVerifiedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">교사 대시보드</h1>
@@ -36,7 +27,7 @@ export default async function TeacherDashboardPage() {
     );
   }
 
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("users").select("role").eq("id", userId).single();
 
   if (profile?.role !== "teacher") {
     return (
@@ -52,7 +43,7 @@ export default async function TeacherDashboardPage() {
   const { data: operatorRows } = await supabase
     .from("group_members")
     .select("groups(id, name, type)")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("role", "teacher")
     .eq("status", "approved");
 
@@ -60,47 +51,58 @@ export default async function TeacherDashboardPage() {
   const groups = (operatorRows ?? [])
     .map((row) => row.groups as unknown as GroupRow | null)
     .filter((g): g is GroupRow => Boolean(g));
+  const groupIds = groups.map((g) => g.id);
 
-  const cards: GroupCard[] = [];
-  for (const group of groups) {
-    const { count: memberCount } = await supabase
-      .from("group_members")
-      .select("id", { count: "exact", head: true })
-      .eq("group_id", group.id)
-      .eq("status", "approved")
-      .not("child_id", "is", null);
+  // 그룹마다 멤버수/승인대기/숙제/완료현황을 따로따로 물어보던 걸(N+1),
+  // 그룹 id 목록으로 한 번씩만 물어보고 자바스크립트에서 그룹별로 묶는
+  // 방식으로 바꿨다 -- 그룹이 몇 개든 왕복 횟수는 그대로다.
+  const [{ data: memberRows }, { data: pendingRows }, { data: assignmentRows }] = groupIds.length
+    ? await Promise.all([
+        supabase
+          .from("group_members")
+          .select("group_id")
+          .in("group_id", groupIds)
+          .eq("status", "approved")
+          .not("child_id", "is", null),
+        supabase.from("group_members").select("group_id").in("group_id", groupIds).eq("status", "pending"),
+        supabase.from("assignments").select("id, group_id, title").in("group_id", groupIds),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }];
 
-    const { count: pendingCount } = await supabase
-      .from("group_members")
-      .select("id", { count: "exact", head: true })
-      .eq("group_id", group.id)
-      .eq("status", "pending");
+  const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
+  const { data: completionRows } = assignmentIds.length
+    ? await supabase.from("assignment_completion").select("assignment_id, completed").in("assignment_id", assignmentIds)
+    : { data: [] };
 
-    const { data: assignmentRows } = await supabase
-      .from("assignments")
-      .select("id, title")
-      .eq("group_id", group.id);
-
-    const assignmentProgress: GroupCard["assignmentProgress"] = [];
-    for (const assignment of assignmentRows ?? []) {
-      const { data: completionRows } = await supabase
-        .from("assignment_completion")
-        .select("completed")
-        .eq("assignment_id", assignment.id);
-      const total = completionRows?.length ?? 0;
-      const completed = (completionRows ?? []).filter((row) => row.completed).length;
-      assignmentProgress.push({ title: assignment.title, completed, total });
-    }
-
-    cards.push({
-      id: group.id,
-      name: group.name,
-      type: group.type,
-      memberCount: memberCount ?? 0,
-      pendingCount: pendingCount ?? 0,
-      assignmentProgress,
-    });
+  const memberCountByGroup = new Map<string, number>();
+  for (const row of memberRows ?? []) {
+    memberCountByGroup.set(row.group_id, (memberCountByGroup.get(row.group_id) ?? 0) + 1);
   }
+  const pendingCountByGroup = new Map<string, number>();
+  for (const row of pendingRows ?? []) {
+    pendingCountByGroup.set(row.group_id, (pendingCountByGroup.get(row.group_id) ?? 0) + 1);
+  }
+  const completionByAssignment = new Map<string, { completed: number; total: number }>();
+  for (const row of completionRows ?? []) {
+    const stat = completionByAssignment.get(row.assignment_id) ?? { completed: 0, total: 0 };
+    stat.total++;
+    if (row.completed) stat.completed++;
+    completionByAssignment.set(row.assignment_id, stat);
+  }
+
+  const cards: GroupCard[] = groups.map((group) => ({
+    id: group.id,
+    name: group.name,
+    type: group.type,
+    memberCount: memberCountByGroup.get(group.id) ?? 0,
+    pendingCount: pendingCountByGroup.get(group.id) ?? 0,
+    assignmentProgress: (assignmentRows ?? [])
+      .filter((a) => a.group_id === group.id)
+      .map((a) => {
+        const stat = completionByAssignment.get(a.id) ?? { completed: 0, total: 0 };
+        return { title: a.title, completed: stat.completed, total: stat.total };
+      }),
+  }));
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -130,7 +132,7 @@ export default async function TeacherDashboardPage() {
                 <div>
                   <p className="d text-sm">{card.name}</p>
                   <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                    {TYPE_LABELS[card.type] ?? card.type}
+                    {GROUP_TYPE_LABELS[card.type] ?? card.type}
                   </p>
                 </div>
                 <Link href={`/recommend/${card.id}`} className="text-xs" style={{ color: "var(--point)" }}>

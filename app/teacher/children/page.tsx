@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { RabbitIcon, DogIcon, CatIcon } from "@/components/icons/avatar-icons";
 
 const AVATAR_ICONS = { rabbit: RabbitIcon, dog: DogIcon, cat: CatIcon } as const;
@@ -20,11 +21,9 @@ type GroupSection = {
 
 export default async function TeacherChildrenPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getVerifiedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">아이 관리</h1>
@@ -35,7 +34,7 @@ export default async function TeacherChildrenPage() {
     );
   }
 
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("users").select("role").eq("id", userId).single();
 
   if (profile?.role !== "teacher") {
     return (
@@ -51,7 +50,7 @@ export default async function TeacherChildrenPage() {
   const { data: operatorRows } = await supabase
     .from("group_members")
     .select("groups(id, name)")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("role", "teacher")
     .eq("status", "approved");
 
@@ -59,39 +58,48 @@ export default async function TeacherChildrenPage() {
   const groups = (operatorRows ?? [])
     .map((row) => row.groups as unknown as GroupRow | null)
     .filter((g): g is GroupRow => Boolean(g));
+  const groupIds = groups.map((g) => g.id);
 
-  const sections: GroupSection[] = [];
-  for (const group of groups) {
-    const { data: memberRows } = await supabase
-      .from("group_members")
-      .select("children(id, name, avatar)")
-      .eq("group_id", group.id)
-      .eq("status", "approved")
-      .not("child_id", "is", null);
+  // 그룹마다 아이 목록/숙제/완료현황을 따로 물어보던 걸(N+1), 그룹 id
+  // 목록으로 한 번씩만 물어보고 자바스크립트에서 묶는 방식으로 바꿨다.
+  type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null };
+  const [{ data: memberRows }, { data: assignmentRows }] = groupIds.length
+    ? await Promise.all([
+        supabase
+          .from("group_members")
+          .select("group_id, children(id, name, avatar)")
+          .in("group_id", groupIds)
+          .eq("status", "approved")
+          .not("child_id", "is", null),
+        supabase.from("assignments").select("id, group_id").in("group_id", groupIds),
+      ])
+    : [{ data: [] }, { data: [] }];
 
-    type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null };
+  const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
+  // 완료 통계를 그룹별로 정확히 나누려면(같은 아이가 여러 그룹에 속해
+  // 있을 수 있으므로 child_id만으로 필터링하면 다른 그룹 숙제까지 섞인다)
+  // assignment_id → group_id 매핑이 필요하다.
+  const groupIdByAssignment = new Map((assignmentRows ?? []).map((a) => [a.id, a.group_id]));
+  const { data: completionRows } = assignmentIds.length
+    ? await supabase
+        .from("assignment_completion")
+        .select("assignment_id, child_id, completed")
+        .in("assignment_id", assignmentIds)
+    : { data: [] };
+
+  const sections: GroupSection[] = groups.map((group) => {
     const children = (memberRows ?? [])
+      .filter((row) => row.group_id === group.id)
       .map((row) => row.children as unknown as ChildRow | null)
       .filter((c): c is ChildRow => Boolean(c));
 
-    const { data: assignmentRows } = await supabase
-      .from("assignments")
-      .select("id")
-      .eq("group_id", group.id);
-    const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
-
-    const { data: completionRows } = assignmentIds.length
-      ? await supabase
-          .from("assignment_completion")
-          .select("child_id, completed")
-          .in("assignment_id", assignmentIds)
-      : { data: [] };
-
-    sections.push({
+    return {
       id: group.id,
       name: group.name,
       children: children.map((child) => {
-        const rows = (completionRows ?? []).filter((row) => row.child_id === child.id);
+        const rows = (completionRows ?? []).filter(
+          (row) => row.child_id === child.id && groupIdByAssignment.get(row.assignment_id) === group.id
+        );
         return {
           id: child.id,
           name: child.name,
@@ -100,8 +108,8 @@ export default async function TeacherChildrenPage() {
           total: rows.length,
         };
       }),
-    });
-  }
+    };
+  });
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">

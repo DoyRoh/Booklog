@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import SignOutButton from "@/components/sign-out-button";
 import ChildSwitcher from "@/components/child-switcher";
 
@@ -11,11 +12,9 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default async function MorePage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getVerifiedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">더보기</h1>
@@ -26,16 +25,13 @@ export default async function MorePage() {
     );
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("role, active_child_id")
-    .eq("id", user.id)
-    .single();
-
-  const { data: guardianRows } = await supabase
-    .from("child_guardians")
-    .select("children(id, name, avatar, birth_date)")
-    .eq("user_id", user.id);
+  // 화면에 이메일도 보여줘야 하는데, users 테이블에 이미 email이 복제돼
+  // 있어서(가입 시 트리거) auth.getUser()로 다시 왕복하지 않고 이 조회에
+  // 같이 얹는다.
+  const [{ data: profile }, { data: guardianRows }] = await Promise.all([
+    supabase.from("users").select("email, role, active_child_id").eq("id", userId).single(),
+    supabase.from("child_guardians").select("children(id, name, avatar, birth_date)").eq("user_id", userId),
+  ]);
 
   type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null; birth_date: string | null };
   const children = (guardianRows ?? [])
@@ -52,7 +48,7 @@ export default async function MorePage() {
       >
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm">{user.email}</p>
+            <p className="text-sm">{profile?.email}</p>
             {profile?.role && (
               <p className="mt-0.5 text-xs" style={{ color: "var(--ink-2)" }}>
                 {ROLE_LABELS[profile.role] ?? profile.role}
@@ -70,7 +66,7 @@ export default async function MorePage() {
             선택한 아이 기준으로 책장·기록이 표시돼요.
           </p>
           <ChildSwitcher
-            userId={user.id}
+            userId={userId}
             childList={children}
             activeChildId={profile?.active_child_id ?? null}
           />

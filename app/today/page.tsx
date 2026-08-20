@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import { getTodayAssignments } from "@/lib/assignments";
 import AssignmentSummary from "@/components/assignment-summary";
@@ -7,11 +8,9 @@ import RecentRecords, { type RecentRecord } from "@/components/recent-records";
 
 export default async function TodayPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getVerifiedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">오늘</h1>
@@ -22,12 +21,12 @@ export default async function TodayPage() {
     );
   }
 
-  // role과 활성 아이는 둘 다 user.id에만 의존하고 서로 무관하므로 동시에
+  // role과 활성 아이는 둘 다 userId에만 의존하고 서로 무관하므로 동시에
   // 물어본다(role이 parent가 아니면 activeChild 조회는 버려지지만, 흔한
   // 부모 계정 쪽에서 왕복 하나를 아끼는 게 더 이득이다).
   const [{ data: profile }, activeChild] = await Promise.all([
-    supabase.from("users").select("role").eq("id", user.id).single(),
-    getActiveChild(supabase, user.id),
+    supabase.from("users").select("role").eq("id", userId).single(),
+    getActiveChild(supabase, userId),
   ]);
 
   if (profile?.role !== "parent") {

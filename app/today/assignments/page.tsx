@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import { hasVoiceConsent } from "@/lib/consent";
 import { getTodayAssignments } from "@/lib/assignments";
@@ -7,11 +8,9 @@ import AssignmentToday from "@/components/assignment-today";
 
 export default async function TodayAssignmentsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getVerifiedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">오늘의 숙제</h1>
@@ -22,7 +21,7 @@ export default async function TodayAssignmentsPage() {
     );
   }
 
-  const activeChild = await getActiveChild(supabase, user.id);
+  const activeChild = await getActiveChild(supabase, userId);
 
   if (!activeChild) {
     return (
@@ -37,7 +36,7 @@ export default async function TodayAssignmentsPage() {
 
   const [assignments, voiceAllowed] = await Promise.all([
     getTodayAssignments(supabase, activeChild.id),
-    hasVoiceConsent(supabase, user.id),
+    hasVoiceConsent(supabase, userId),
   ]);
 
   return (

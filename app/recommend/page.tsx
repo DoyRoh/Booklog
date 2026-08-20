@@ -1,27 +1,18 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
+import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
-
-const TYPE_LABELS: Record<string, string> = {
-  kindergarten: "유치원",
-  school: "학교",
-  library: "도서관",
-  family: "가족",
-  community: "커뮤니티",
-  creator: "크리에이터",
-};
 
 type GroupRow = { id: string; name: string; type: string; join_policy: string };
 
 export default async function RecommendPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getVerifiedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">추천</h1>
@@ -32,19 +23,18 @@ export default async function RecommendPage() {
     );
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  const activeChild = await getActiveChild(supabase, user.id);
-
-  const { data: operatorRows } = await supabase
-    .from("group_members")
-    .select("groups(id, name, type, join_policy)")
-    .eq("user_id", user.id)
-    .eq("status", "approved");
+  // 서로 무관한 조회 네 개(내 역할, 활성 아이, 내가 운영진인 그룹, 공개
+  // 그룹 목록)를 동시에 왕복한다.
+  const [{ data: profile }, activeChild, { data: operatorRows }, { data: openGroupRows }] = await Promise.all([
+    supabase.from("users").select("role").eq("id", userId).single(),
+    getActiveChild(supabase, userId),
+    supabase
+      .from("group_members")
+      .select("groups(id, name, type, join_policy)")
+      .eq("user_id", userId)
+      .eq("status", "approved"),
+    supabase.from("groups").select("id, name, type").eq("join_policy", "open"),
+  ]);
 
   const { data: memberRows } = activeChild
     ? await supabase
@@ -53,11 +43,6 @@ export default async function RecommendPage() {
         .eq("child_id", activeChild.id)
         .eq("status", "approved")
     : { data: null };
-
-  const { data: openGroupRows } = await supabase
-    .from("groups")
-    .select("id, name, type")
-    .eq("join_policy", "open");
 
   const operatorGroups = (operatorRows ?? [])
     .map((row) => row.groups as unknown as GroupRow | null)
@@ -104,7 +89,7 @@ export default async function RecommendPage() {
               >
                 <p className="d text-sm">{group.name}</p>
                 <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                  {TYPE_LABELS[group.type] ?? group.type}
+                  {GROUP_TYPE_LABELS[group.type] ?? group.type}
                 </p>
               </Link>
             ))}

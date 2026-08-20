@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { syncNlcyRecommendations } from "@/lib/nlcy-sync";
 
 export const maxDuration = 60;
@@ -9,15 +10,13 @@ export const maxDuration = 60;
 // 확인한다 -- 어차피 sync 로직 자체가 항상 그 하나의 고정 그룹만 건드리는
 // 멱등적인 동작이라, 다른 큐레이터가 눌러도 자기 그룹엔 아무 영향이 없다.
 export async function POST() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const userId = await getVerifiedUserId();
+  if (!userId) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
 
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
+  const supabase = await createClient();
+  const { data: profile } = await supabase.from("users").select("role").eq("id", userId).single();
   if (profile?.role !== "curator") {
     return NextResponse.json({ error: "큐레이터 계정만 동기화할 수 있어요." }, { status: 403 });
   }

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 
 type KakaoDoc = {
   title?: string;
@@ -32,11 +32,8 @@ function normalize(doc: KakaoDoc, fallbackIsbn?: string) {
 // candidates -- used when building a group's recommended-book list where
 // there's no barcode to scan).
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const userId = await getVerifiedUserId();
+  if (!userId) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
 

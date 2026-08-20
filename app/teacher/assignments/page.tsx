@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 
 type AssignmentCard = {
   id: string;
@@ -14,11 +15,9 @@ type AssignmentCard = {
 
 export default async function TeacherAssignmentsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getVerifiedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">숙제</h1>
@@ -29,7 +28,7 @@ export default async function TeacherAssignmentsPage() {
     );
   }
 
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("users").select("role").eq("id", userId).single();
 
   if (profile?.role !== "teacher") {
     return (
@@ -45,7 +44,7 @@ export default async function TeacherAssignmentsPage() {
   const { data: operatorRows } = await supabase
     .from("group_members")
     .select("groups(id, name)")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("role", "teacher")
     .eq("status", "approved");
 
@@ -53,34 +52,45 @@ export default async function TeacherAssignmentsPage() {
   const groups = (operatorRows ?? [])
     .map((row) => row.groups as unknown as GroupRow | null)
     .filter((g): g is GroupRow => Boolean(g));
+  const groupIds = groups.map((g) => g.id);
+  const groupById = new Map(groups.map((g) => [g.id, g]));
 
-  const cards: AssignmentCard[] = [];
-  for (const group of groups) {
-    const { data: assignmentRows } = await supabase
-      .from("assignments")
-      .select("id, title, start_date, end_date")
-      .eq("group_id", group.id)
-      .order("created_at", { ascending: false });
+  // 그룹마다, 그리고 숙제마다 따로 물어보던 걸(N+1) 한 번씩만 물어보고
+  // 자바스크립트에서 묶는 방식으로 바꿨다.
+  const { data: assignmentRows } = groupIds.length
+    ? await supabase
+        .from("assignments")
+        .select("id, group_id, title, start_date, end_date")
+        .in("group_id", groupIds)
+        .order("created_at", { ascending: false })
+    : { data: [] };
 
-    for (const assignment of assignmentRows ?? []) {
-      const { data: completionRows } = await supabase
-        .from("assignment_completion")
-        .select("completed")
-        .eq("assignment_id", assignment.id);
-      const total = completionRows?.length ?? 0;
-      const completed = (completionRows ?? []).filter((row) => row.completed).length;
-      cards.push({
-        id: assignment.id,
-        groupId: group.id,
-        groupName: group.name,
-        title: assignment.title,
-        startDate: assignment.start_date,
-        endDate: assignment.end_date,
-        completed,
-        total,
-      });
-    }
+  const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
+  const { data: completionRows } = assignmentIds.length
+    ? await supabase.from("assignment_completion").select("assignment_id, completed").in("assignment_id", assignmentIds)
+    : { data: [] };
+
+  const completionByAssignment = new Map<string, { completed: number; total: number }>();
+  for (const row of completionRows ?? []) {
+    const stat = completionByAssignment.get(row.assignment_id) ?? { completed: 0, total: 0 };
+    stat.total++;
+    if (row.completed) stat.completed++;
+    completionByAssignment.set(row.assignment_id, stat);
   }
+
+  const cards: AssignmentCard[] = (assignmentRows ?? []).map((assignment) => {
+    const stat = completionByAssignment.get(assignment.id) ?? { completed: 0, total: 0 };
+    return {
+      id: assignment.id,
+      groupId: assignment.group_id,
+      groupName: groupById.get(assignment.group_id)?.name ?? "",
+      title: assignment.title,
+      startDate: assignment.start_date,
+      endDate: assignment.end_date,
+      completed: stat.completed,
+      total: stat.total,
+    };
+  });
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
