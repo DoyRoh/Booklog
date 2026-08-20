@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import NlcySyncButton from "@/components/nlcy-sync-button";
+
+const NLCY_GROUP_NAME = "국립어린이청소년도서관";
 
 const TYPE_LABELS: Record<string, string> = {
   kindergarten: "유치원",
@@ -134,6 +137,15 @@ export default async function CuratorDashboardPage() {
                 <span>팔로워 {card.followerCount}명</span>
                 <span>추천도서 {card.bookCount}권</span>
               </div>
+
+              {card.name === NLCY_GROUP_NAME && (
+                <>
+                  <p className="mt-2 text-xs" style={{ color: "var(--ink-2)" }}>
+                    국립어린이청소년도서관 사서추천도서 Open API에서 자동으로 채워지는 목록이에요.
+                  </p>
+                  <NlcySyncButton />
+                </>
+              )}
             </div>
           ))}
         </div>

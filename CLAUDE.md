@@ -748,4 +748,15 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **`components/photo-picker.tsx`**: 버튼 텍스트를 하드코딩("사진 첨부")하던 걸 `label` prop(기본값은 그대로 "사진 첨부")으로 바꿔, 호출부마다 다른 문구를 쓸 수 있게 했습니다.
 - **연하고 얇은 구분선 추가**: 기록 남기기 화면(`app/library/add/page.tsx`)의 "책 찾기" 섹션 뒤, "지금 상태/날짜/쪽수" 섹션 뒤, "평점/기분/즐겨찾기/오늘의 질문" 섹션 뒤, 그리고 사진·음성 카드 내부(사진 섹션과 음성 섹션 사이)에 이미 앱 곳곳에서 쓰던 옅은 구분선(`rgba(38,54,43,0.08)`, `border-top`)을 추가해 내용을 시각적으로 구획했습니다. 같은 패턴을 `components/record-edit-modal.tsx`의 상태/날짜 섹션과 평점/기분 섹션 사이에도 적용했습니다.
 
+## 국립어린이청소년도서관 사서추천도서 자동 연동 (사용자 요청)
+
+사용자가 data.go.kr의 공공데이터(15104976, 국립어린이청소년도서관_사서추천도서)를 큐레이터 하나로 추가해서 자동으로 추천도서가 뜨게 해달라고 요청했습니다. 이 API는 실제로는 data.go.kr이 아니라 한국문화정보원(KCISA)의 `api.kcisa.kr` 게이트웨이에서 제공되고(요청 URL `https://api.kcisa.kr/openapi/service/rest/meta2/NLCFsase`), 도서 전용 스키마가 아니라 범용 메타데이터 스키마(`title`/`creator`/`description` 등 17개 필드, ISBN·표지·출판사 필드가 아예 없음)라는 걸 사용자가 문화공공데이터광장 페이지 내용을 직접 복사해준 덕분에 확인했습니다(제 세션 자체가 data.go.kr/nl.go.kr/culture.go.kr 전부 네트워크로 막혀 있어 문서를 직접 못 열어봄 — 이번엔 사용자가 대신 봐준 페이지 내용으로 정확한 필드명을 확정).
+
+- **`lib/nlcy-sync.ts`**: 동기화 핵심 로직. ISBN이 없으므로 카카오 책 검색(`KAKAO_REST_API_KEY`, 이미 있던 것 재사용)으로 제목을 검색해 표지/출판사/ISBN을 보강하고, 그래도 못 찾으면 `source='nlcy'`로 표지 없이 등록합니다. XML 응답은 정확한 감싸는 구조(`response>body>items>item` 등)를 확인할 방법이 없어서 "title 필드를 가진 객체들의 배열"을 트리 어디서든 재귀로 찾는 방식(`findItems`)으로 방어적으로 파싱합니다. **로컬에서 XML 파싱 로직만 별도로 검증하다가 실제 버그를 하나 잡았습니다**: `fast-xml-parser`의 기본 옵션(`parseTagValue: true`)이 `resultCode`값 `"0000"`을 앞자리 0이 없어지는 숫자 `0`으로 파싱해버려서, 정상 응답인데도 "0" !== "0000"으로 판정돼 매번 API 오류로 잘못 처리될 뻔했습니다 — `parseTagValue: false`로 고쳐서 모든 태그 값을 문자열로 유지하도록 했습니다.
+- **서비스 롤 키 없이 RLS 통과하기**: 이 프로젝트엔 Supabase 서비스 롤 키가 없어서(그동안 `sample_haba7.sql` 때도 마찬가지), `book_list_items`에 자동으로 쓰려면 진짜 로그인한 사용자 컨텍스트가 필요합니다. 그래서 "국립어린이청소년도서관" 전용 큐레이터 계정을 하나 만들고(`supabase/seed/nlcy_curator.sql`, `sample_haba7.sql`과 동일한 2단계 패턴 — 먼저 `/signup`으로 회원가입, 그 다음 시드 스크립트 실행), 동기화 코드가 서버에서 `NLCY_CURATOR_EMAIL`/`NLCY_CURATOR_PASSWORD` 환경변수로 그 계정에 직접 로그인해서(`supabase.auth.signInWithPassword`) 그 권한으로 쓰고 마지막에 로그아웃합니다. 그 계정은 실제 사람이 로그인할 일이 없는 시스템 계정입니다.
+- **중복 방지**: 마이그레이션 0014로 `book_list_items(book_list_id, book_id)`에 유니크 제약을 추가하고 upsert(`ignoreDuplicates: true`)로 넣습니다. ISBN이 있으면 기존 `book_isbns` 재사용, 없으면 같은 목록 안에서 제목+저자로 이미 있는지 확인 후 건너뜁니다(연 1회 갱신되는 데이터라 매일 동기화해도 대부분 건너뛰기만 할 것으로 예상).
+- **두 경로로 트리거**: `/api/cron/nlcy-sync`(Vercel Cron 전용, `vercel.json`에 매일 KST 04시로 등록, `CRON_SECRET` 헤더로 보호)와 `/api/curators/nlcy/sync-now`(로그인한 큐레이터 계정이 부르는 수동 트리거, role만 확인) 두 라우트가 같은 `syncNlcyRecommendations()` 함수를 부릅니다. 큐레이터 대시보드(`app/curator/page.tsx`)에 이 그룹일 때만 "지금 동기화" 버튼(`components/nlcy-sync-button.tsx`)이 뜹니다.
+- **그룹 분류**: 사용자는 "크리에이터에 추가"라고 표현했지만, 실제로는 국가기관 도서관이라 `groups.type`은 `creator`가 아니라 `library`(도서관)로 넣었습니다 — `role='curator'`(큐레이터 계정 종류)와 `groups.type`(그룹 표시 유형)은 별개 값이라, "큐레이터 기능으로 등록하되 유형 라벨은 도서관으로 정확하게 보이는" 두 요구를 동시에 만족합니다. `join_policy='open'`이라 부모는 승인 없이 바로 팔로우할 수 있습니다.
+- **실제로 검증하지 못한 것**: 제 세션에서 KCISA API 자체를 호출해볼 수 없어서(네트워크 차단), 실제 서비스키로 첫 동기화를 돌려서 필드가 예상대로 들어오는지는 사용자가 Vercel에 배포한 뒤 "지금 동기화" 버튼으로 직접 확인해야 합니다. XML 파싱 로직 자체는 문서에 나온 필드명을 그대로 반영한 샘플 XML 몇 가지 모양으로 로컬에서 별도 검증했습니다.
+
 @AGENTS.md
