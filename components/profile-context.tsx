@@ -52,7 +52,24 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
 
     load();
     window.addEventListener("chaeksup:profile-changed", load);
-    return () => window.removeEventListener("chaeksup:profile-changed", load);
+
+    // 로그인/로그아웃은 router.replace()+router.refresh()로 하는 소프트
+    // 네비게이션이라, 루트 레이아웃에 마운트된 이 컴포넌트는 계정이
+    // 바뀌어도 다시 마운트되지 않는다 -- onAuthStateChange 없이는 이전
+    // 계정의 role이 그대로 남아 하단 탭이 새 계정과 안 맞게 뜬다(실사용
+    // 중 발견: 큐레이터 계정 테스트 후 부모 계정으로 돌아왔는데 큐레이터용
+    // 탭이 그대로 떠 있었음).
+    const supabase = createClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      load();
+    });
+
+    return () => {
+      window.removeEventListener("chaeksup:profile-changed", load);
+      subscription.unsubscribe();
+    };
   }, []);
 
   return <ProfileContext.Provider value={state}>{children}</ProfileContext.Provider>;

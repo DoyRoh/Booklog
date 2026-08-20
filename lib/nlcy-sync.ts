@@ -55,7 +55,7 @@ function findItems(node: unknown): NlcyItem[] {
   return [];
 }
 
-async function fetchNlcyItems(serviceKey: string, numOfRows = 100): Promise<NlcyItem[]> {
+async function fetchNlcyItems(serviceKey: string, numOfRows = 50): Promise<NlcyItem[]> {
   const url = new URL(NLCY_ENDPOINT);
   url.searchParams.set("serviceKey", serviceKey);
   url.searchParams.set("numOfRows", String(numOfRows));
@@ -201,64 +201,76 @@ export async function syncNlcyRecommendations(): Promise<NlcySyncResult> {
     let skipped = 0;
     const errors: string[] = [];
 
-    for (const item of items) {
-      const title = typeof item.title === "string" ? item.title.trim() : "";
-      if (!title) continue;
-      const creator = typeof item.creator === "string" ? item.creator.trim() : "";
-      const description = typeof item.description === "string" ? item.description.trim() : "";
+    // 책마다 카카오 검색을 순서대로 하나씩 기다리면(항목이 몇십 개만
+    // 돼도) 서버 함수 실행 시간 제한에 걸릴 정도로 느려서(실사용 중 확인),
+    // 소수 개씩 묶어 동시에 처리한다. 같은 묶음 안에서 제목이 겹치는
+    // 항목은 existingKeys 갱신 시점 차이로 중복 처리될 수 있지만, 이
+    // 데이터셋 특성상(연 1회 갱신, 항목 간 제목 중복 거의 없음) 감수할
+    // 만한 수준이다.
+    const CHUNK_SIZE = 6;
+    for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+      const chunk = items.slice(i, i + CHUNK_SIZE);
+      await Promise.all(
+        chunk.map(async (item) => {
+          const title = typeof item.title === "string" ? item.title.trim() : "";
+          if (!title) return;
+          const creator = typeof item.creator === "string" ? item.creator.trim() : "";
+          const description = typeof item.description === "string" ? item.description.trim() : "";
 
-      try {
-        const enriched = kakaoKey ? await enrichWithKakao(kakaoKey, title) : null;
-        const finalTitle = enriched?.title ?? title;
-        const finalAuthor = enriched?.author ?? (creator || null);
-        const key = normalizeKey(finalTitle, finalAuthor ?? "");
+          try {
+            const enriched = kakaoKey ? await enrichWithKakao(kakaoKey, title) : null;
+            const finalTitle = enriched?.title ?? title;
+            const finalAuthor = enriched?.author ?? (creator || null);
+            const key = normalizeKey(finalTitle, finalAuthor ?? "");
 
-        if (existingKeys.has(key)) {
-          skipped++;
-          continue;
-        }
+            if (existingKeys.has(key)) {
+              skipped++;
+              return;
+            }
 
-        let bookId: string | null = null;
-        if (enriched?.isbn) {
-          const { data: existingIsbn } = await supabase
-            .from("book_isbns")
-            .select("book_id")
-            .eq("isbn", enriched.isbn)
-            .maybeSingle();
-          bookId = existingIsbn?.book_id ?? null;
-        }
+            let bookId: string | null = null;
+            if (enriched?.isbn) {
+              const { data: existingIsbn } = await supabase
+                .from("book_isbns")
+                .select("book_id")
+                .eq("isbn", enriched.isbn)
+                .maybeSingle();
+              bookId = existingIsbn?.book_id ?? null;
+            }
 
-        if (!bookId) {
-          bookId = crypto.randomUUID();
-          const { error: bookError } = await supabase.from("books").insert({
-            id: bookId,
-            title: finalTitle,
-            author: finalAuthor,
-            publisher: enriched?.publisher ?? null,
-            cover_url: enriched?.coverUrl ?? null,
-            introduction: description || null,
-            source: "nlcy",
-          });
-          if (bookError) throw bookError;
+            if (!bookId) {
+              bookId = crypto.randomUUID();
+              const { error: bookError } = await supabase.from("books").insert({
+                id: bookId,
+                title: finalTitle,
+                author: finalAuthor,
+                publisher: enriched?.publisher ?? null,
+                cover_url: enriched?.coverUrl ?? null,
+                introduction: description || null,
+                source: "nlcy",
+              });
+              if (bookError) throw bookError;
 
-          if (enriched?.isbn) {
-            await supabase.from("book_isbns").insert({ book_id: bookId, isbn: enriched.isbn });
+              if (enriched?.isbn) {
+                await supabase.from("book_isbns").insert({ book_id: bookId, isbn: enriched.isbn });
+              }
+            }
+
+            const { error: itemError } = await supabase
+              .from("book_list_items")
+              .upsert(
+                { book_list_id: bookListId, book_id: bookId },
+                { onConflict: "book_list_id,book_id", ignoreDuplicates: true }
+              );
+            if (itemError) throw itemError;
+
+            existingKeys.add(key);
+            added++;
+          } catch (itemErr) {
+            errors.push(`${title}: ${itemErr instanceof Error ? itemErr.message : String(itemErr)}`);
           }
-        }
-
-        const { error: itemError } = await supabase
-          .from("book_list_items")
-          .upsert(
-            { book_list_id: bookListId, book_id: bookId },
-            { onConflict: "book_list_id,book_id", ignoreDuplicates: true }
-          );
-        if (itemError) throw itemError;
-
-        existingKeys.add(key);
-        added++;
-      } catch (itemErr) {
-        errors.push(`${title}: ${itemErr instanceof Error ? itemErr.message : String(itemErr)}`);
-      }
+        })
+      );
     }
 
     return { fetched: items.length, added, skipped, errors };
