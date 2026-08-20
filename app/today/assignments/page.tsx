@@ -35,8 +35,10 @@ export default async function TodayAssignmentsPage() {
     );
   }
 
-  const assignments = await getTodayAssignments(supabase, activeChild.id);
-  const voiceAllowed = await hasVoiceConsent(supabase, user.id);
+  const [assignments, voiceAllowed] = await Promise.all([
+    getTodayAssignments(supabase, activeChild.id),
+    hasVoiceConsent(supabase, user.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">

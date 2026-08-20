@@ -49,27 +49,6 @@ export async function getTodayAssignments(
 
   const assignmentIds = rows.map((row) => row.id);
   const missionIds = rows.flatMap((row) => row.assignment_missions.map((m) => m.id));
-
-  const { data: completionRows } = assignmentIds.length
-    ? await supabase
-        .from("assignment_completion")
-        .select("assignment_id, book_id, completed")
-        .eq("child_id", childId)
-        .in("assignment_id", assignmentIds)
-    : { data: [] };
-
-  const { data: responseRows } = missionIds.length
-    ? await supabase
-        .from("assignment_mission_responses")
-        .select("mission_id, answer_text, voice_url")
-        .eq("child_id", childId)
-        .in("mission_id", missionIds)
-    : { data: [] };
-
-  const completedSet = new Set(
-    (completionRows ?? []).filter((row) => row.completed).map((row) => `${row.assignment_id}:${row.book_id}`)
-  );
-
   // 완료된 숙제 책은 "읽었어요" 표시만이 아니라 실제 독서기록을 그 자리에서
   // 수정할 수 있어야 하므로, 책마다 붙는 reading_records를 미리 찾아둔다
   // (같은 책을 여러 그룹 숙제로 완독했을 수 있어 여러 개일 수 있는데, 가장
@@ -90,15 +69,39 @@ export async function getTodayAssignments(
     read_date: string;
     pages_read: number | null;
   };
-  const { data: recordRows } = bookIds.length
-    ? await supabase
-        .from("reading_records")
-        .select("id, book_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read")
-        .eq("child_id", childId)
-        .in("status", ["done", "reading"])
-        .in("book_id", bookIds)
-        .order("read_date", { ascending: false })
-    : { data: [] };
+
+  // 셋 다 assignmentRows에서 뽑은 id 목록에만 의존하고 서로는 무관하므로,
+  // 순서대로 기다리지 않고 한 번에 왕복한다(오늘 탭이 유독 무거웠던 이유
+  // 중 하나 -- 이 세 조회가 전부 순차적이었다).
+  const [{ data: completionRows }, { data: responseRows }, { data: recordRows }] = await Promise.all([
+    assignmentIds.length
+      ? supabase
+          .from("assignment_completion")
+          .select("assignment_id, book_id, completed")
+          .eq("child_id", childId)
+          .in("assignment_id", assignmentIds)
+      : Promise.resolve({ data: [] }),
+    missionIds.length
+      ? supabase
+          .from("assignment_mission_responses")
+          .select("mission_id, answer_text, voice_url")
+          .eq("child_id", childId)
+          .in("mission_id", missionIds)
+      : Promise.resolve({ data: [] }),
+    bookIds.length
+      ? supabase
+          .from("reading_records")
+          .select("id, book_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read")
+          .eq("child_id", childId)
+          .in("status", ["done", "reading"])
+          .in("book_id", bookIds)
+          .order("read_date", { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const completedSet = new Set(
+    (completionRows ?? []).filter((row) => row.completed).map((row) => `${row.assignment_id}:${row.book_id}`)
+  );
   // 완료로 잡힌 책마다 대표 기록 하나를 골라 그 자리에서 수정할 수 있게
   // 한다 -- '완독' 숙제는 보통 status='done' 기록이지만, 부분 읽기(target_page)
   // 숙제는 status='reading' 기록으로도 완료 처리되므로 done을 우선하되

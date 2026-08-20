@@ -731,4 +731,12 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **`getActiveChild()` 왕복 2번 → 1번**: `users.active_child_id`와 그 아이 정보를 따로 조회하던 걸, `users` 조회 한 번에 `children(id, name, avatar)`를 같이 임베드해서 가져오도록 합쳤습니다(`users.active_child_id → children.id` FK가 있어서 PostgREST가 조인해줍니다). 이 함수는 거의 모든 부모 화면(오늘/책장/기록/배지/추천 등)이 부르기 때문에, 화면마다 왕복 1번씩 줄어드는 효과가 있습니다.
 - **의도적으로 안 건드린 것**: 미들웨어와 각 페이지가 각각 `auth.getUser()`를 부르는 이중 검증은 Supabase의 공식 권장 패턴이라(미들웨어의 결과를 서버 컴포넌트가 안전하게 재사용할 방법이 마땅치 않음) 이번엔 손대지 않았습니다. 이걸 없애려면 미들웨어가 검증한 사용자 정보를 요청 헤더로 넘겨 각 페이지가 재검증 없이 신뢰하는 구조로 바꿔야 하는데, 인증 관련 코드라 서두르지 않고 필요하면 별도로 검토하겠습니다.
 
+## 오늘 탭이 유독 느렸던 원인 — 순차 조회를 병렬로 (실사용 피드백 반영)
+
+속도를 개선했는데도 "오늘 탭이 스켈레톤에서 안 넘어간다"는 스크린샷을 받고 다시 짚어보니, 오늘 탭 하나가 다른 탭보다 훨씬 무거운 구조였습니다: `getTodayAssignments()` 내부에서 `assignment_completion`/`assignment_mission_responses`/완료된 책의 `reading_records`를 순서대로 하나씩 기다리고 있었고(서로 관련 없는 조회인데도), 오늘 탭 페이지 자체도 역할 조회 → 활성 아이 조회 → 통계용 `reading_records` 조회 → `getTodayAssignments()`를 전부 순서대로 기다리고 있었습니다.
+
+- **`lib/assignments.ts`**: `assignment_completion`, `assignment_mission_responses`, 완료된 책의 `reading_records` 세 조회가 전부 assignmentRows에서 뽑은 id 목록에만 의존하고 서로 무관하다는 걸 확인하고, `Promise.all`로 동시에 왕복하도록 바꿨습니다(왕복 3번 → 1번).
+- **`app/today/page.tsx`**: role 조회와 활성 아이 조회(둘 다 user.id에만 의존), 그리고 통계용 `reading_records` 조회와 `getTodayAssignments()`(둘 다 activeChild.id에만 의존)를 각각 `Promise.all`로 동시에 실행하도록 바꿨습니다. `app/today/assignments/page.tsx`도 `getTodayAssignments()`와 `hasVoiceConsent()`를 동시에 실행하도록 같은 방식으로 고쳤습니다.
+- **되게 빠른데도 여전히 느리다는 질문에 답변**: 카카오톡 같은 네이티브 앱은 데이터를 기기에 미리 저장해두고 화면 전환 시 네트워크를 안 타는 구조라, 매번 서버에 물어보는 웹 앱(책숲)과는 애초에 체급이 다릅니다. Vercel을 다른 호스팅으로 옮겨도 "브라우저 → 서버 → DB" 왕복 구조 자체는 똑같아서 근본적인 차이는 안 생기고, 대신 지금처럼 왕복 횟수 자체를 줄이는 게 실질적인 개선입니다. 사용자에게 직접 확인을 부탁한 것: (1) Vercel 프로젝트와 Supabase 프로젝트의 리전이 같은/가까운 지역인지, (2) 둘 다 무료(Hobby/Free) 플랜이면 콜드 스타트·커넥션 제한이 있어 유료 플랜 전환도 고려해볼 만하다는 점.
+
 @AGENTS.md

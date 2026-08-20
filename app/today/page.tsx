@@ -22,11 +22,13 @@ export default async function TodayPage() {
     );
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  // role과 활성 아이는 둘 다 user.id에만 의존하고 서로 무관하므로 동시에
+  // 물어본다(role이 parent가 아니면 activeChild 조회는 버려지지만, 흔한
+  // 부모 계정 쪽에서 왕복 하나를 아끼는 게 더 이득이다).
+  const [{ data: profile }, activeChild] = await Promise.all([
+    supabase.from("users").select("role").eq("id", user.id).single(),
+    getActiveChild(supabase, user.id),
+  ]);
 
   if (profile?.role !== "parent") {
     return (
@@ -48,8 +50,6 @@ export default async function TodayPage() {
     );
   }
 
-  const activeChild = await getActiveChild(supabase, user.id);
-
   if (!activeChild) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
@@ -61,13 +61,19 @@ export default async function TodayPage() {
     );
   }
 
-  const { data: allRecords } = await supabase
-    .from("reading_records")
-    .select(
-      "id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, books(title, author, cover_url)"
-    )
-    .eq("child_id", activeChild.id)
-    .order("read_date", { ascending: false });
+  // 통계/최근 기록에 쓰는 reading_records 조회와 오늘의 숙제 조회는 서로
+  // 무관하므로(둘 다 activeChild.id에만 의존) 동시에 왕복한다 -- 오늘
+  // 탭이 유독 느렸던 가장 큰 원인이 이 둘을 순서대로 기다리던 것이었다.
+  const [{ data: allRecords }, assignments] = await Promise.all([
+    supabase
+      .from("reading_records")
+      .select(
+        "id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, books(title, author, cover_url)"
+      )
+      .eq("child_id", activeChild.id)
+      .order("read_date", { ascending: false }),
+    getTodayAssignments(supabase, activeChild.id),
+  ]);
 
   const doneRecords = (allRecords ?? []).filter((r) => r.status === "done");
   const totalDone = doneRecords.length;
@@ -105,8 +111,6 @@ export default async function TodayPage() {
       pagesRead: r.pages_read,
     };
   });
-
-  const assignments = await getTodayAssignments(supabase, activeChild.id);
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
