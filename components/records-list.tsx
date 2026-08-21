@@ -16,6 +16,8 @@ export type RecordRow = {
   parentMemo: string | null;
   readDate: string;
   pagesRead: number | null;
+  photoPath: string | null;
+  voicePath: string | null;
   photoSignedUrl: string | null;
   voiceSignedUrl: string | null;
   bookTitle: string;
@@ -43,7 +45,15 @@ function monthLabel(key: string) {
   return `${y}년 ${Number(m)}월`;
 }
 
-export default function RecordsList({ childName, records }: { childName: string; records: RecordRow[] }) {
+export default function RecordsList({
+  childId,
+  childName,
+  records,
+}: {
+  childId: string;
+  childName: string;
+  records: RecordRow[];
+}) {
   const [query, setQuery] = useState("");
   const [groupFilter, setGroupFilter] = useState<GroupFilter>("all");
   const [sort, setSort] = useState<SortMode>("new");
@@ -102,6 +112,8 @@ export default function RecordsList({ childName, records }: { childName: string;
   function toEditable(r: RecordRow): EditableRecord {
     return {
       id: r.id,
+      childId,
+      childName,
       title: r.bookTitle,
       author: r.bookAuthor,
       coverUrl: r.bookCoverUrl,
@@ -112,6 +124,8 @@ export default function RecordsList({ childName, records }: { childName: string;
       memo: r.parentMemo ?? "",
       readDate: r.readDate,
       pagesRead: r.pagesRead,
+      photoPath: r.photoPath,
+      voicePath: r.voicePath,
     };
   }
 

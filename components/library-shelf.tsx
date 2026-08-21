@@ -21,6 +21,8 @@ export type ShelfInstance = {
   memo: string | null;
   readDate: string;
   pagesRead: number | null;
+  photoPath: string | null;
+  voicePath: string | null;
 };
 
 export type ShelfBook = {
@@ -83,9 +85,11 @@ function pickRepresentative(instances: ShelfInstance[]): ShelfInstance {
 
 type DedupedBook = ShelfBook & ShelfInstance;
 
-function toEditable(book: DedupedBook): EditableRecord {
+function toEditable(book: DedupedBook, childId: string, childName: string | null): EditableRecord {
   return {
     id: book.recordId,
+    childId,
+    childName,
     title: book.title,
     author: book.author,
     coverUrl: book.coverUrl,
@@ -96,10 +100,20 @@ function toEditable(book: DedupedBook): EditableRecord {
     memo: book.memo ?? "",
     readDate: book.readDate,
     pagesRead: book.pagesRead,
+    photoPath: book.photoPath,
+    voicePath: book.voicePath,
   };
 }
 
-export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
+export default function LibraryShelf({
+  childId,
+  childName,
+  books,
+}: {
+  childId: string;
+  childName: string | null;
+  books: ShelfBook[];
+}) {
   const [mode, setMode] = useState<ViewMode>("cover");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -371,7 +385,9 @@ export default function LibraryShelf({ books }: { books: ShelfBook[] }) {
         </div>
       )}
 
-      {editing && <RecordEditModal record={toEditable(editing)} onClose={() => setEditing(null)} />}
+      {editing && (
+        <RecordEditModal record={toEditable(editing, childId, childName)} onClose={() => setEditing(null)} />
+      )}
     </div>
   );
 }

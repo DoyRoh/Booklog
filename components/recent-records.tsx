@@ -16,9 +16,19 @@ export type RecentRecord = {
   memo: string;
   readDate: string;
   pagesRead: number | null;
+  photoPath: string | null;
+  voicePath: string | null;
 };
 
-export default function RecentRecords({ records }: { records: RecentRecord[] }) {
+export default function RecentRecords({
+  childId,
+  childName,
+  records,
+}: {
+  childId: string;
+  childName: string | null;
+  records: RecentRecord[];
+}) {
   const [editing, setEditing] = useState<RecentRecord | null>(null);
 
   return (
@@ -59,6 +69,8 @@ export default function RecentRecords({ records }: { records: RecentRecord[] }) 
         <RecordEditModal
           record={{
             id: editing.id,
+            childId,
+            childName,
             title: editing.title,
             author: editing.author,
             coverUrl: editing.coverUrl,
@@ -69,6 +81,8 @@ export default function RecentRecords({ records }: { records: RecentRecord[] }) 
             memo: editing.memo,
             readDate: editing.readDate,
             pagesRead: editing.pagesRead,
+            photoPath: editing.photoPath,
+            voicePath: editing.voicePath,
           }}
           onClose={() => setEditing(null)}
         />

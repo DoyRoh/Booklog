@@ -775,5 +775,14 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **의도적으로 하지 않은 것**:
   - **캐싱(fetch 캐시/`unstable_cache`/ISR)**: 독서기록·숙제 완료 현황처럼 화면에 뜨는 데이터 대부분이 사용자별로 실시간에 가깝게 바뀌어야 해서(부모가 방금 남긴 기록이 바로 안 보이면 그게 더 큰 문제), 섣불리 캐싱하면 오래된 정보가 보일 위험이 이득보다 큽니다. 유일하게 캐싱해도 안전한 건 이미 쿠키로 캐싱해둔 `onboarding_completed` 정도였고, 그건 전에 처리했습니다.
   - **Vercel/Supabase 리전, 호스팅 교체**: "다른 저장소를 쓰더라도"라는 질문에는, 코드로 확인·수정할 수 있는 영역이 아니라서 답변으로만 안내했습니다 — Vercel 프로젝트와 Supabase 프로젝트가 같은/가까운 리전인지 각 대시보드에서 확인이 필요하고(리전이 멀면 이번에 줄인 왕복 횟수와 별개로 왕복 1번당 지연이 큼), 무료(Hobby/Free) 플랜이면 콜드 스타트·커넥션 제한이 있어 유료 전환도 고려할 만합니다. Supabase 대신 다른 DB로 옮기는 건 이번 왕복-횟수 문제와는 무관하고(어떤 DB든 네트워크 왕복 자체는 발생) RLS 전체를 다시 설계해야 하는 큰 작업이라 권하지 않았습니다.
+- **배포 직후 콜드 스타트 문의**: 위 변경을 배포한 직후 탭 전환이 오히려 느려 보인다는 스크린샷을 받았습니다. `proxy.ts`가 거의 모든 요청에 실행되는데, Next.js 16부터 Proxy(구 미들웨어)가 Edge가 아니라 Node.js 런타임에서 기본 동작해서, 배포 직후 첫 요청들은 서버 함수가 새로 뜨는 콜드 스타트 지연을 탈 수 있다고 답변했습니다. 실제로 왕복 횟수 자체는 줄었으니(이중 인증 검증 제거) 몇 분 뒤 다시 확인해보도록 안내했고, 이후 사용자가 별도로 재확인 없이 다음 요청(기록 고치기 사진/음성 관련)으로 넘어가서 이 시점 기준으로는 해결된 것으로 보입니다.
+
+## 기록 고치기 모달에 사진·음성 수정 기능 추가 (실사용 피드백 반영)
+
+기록 남기기(`app/library/add`) 화면에는 사진 촬영/음성 녹음이 있는데, 이미 저장된 기록을 나중에 고치는 `RecordEditModal`에는 이 기능이 아예 없었습니다("기록 고치기 누를때는 사진이나 녹음 수정 안뜨네"). 초기 기록과 동일한 기능을 갖추도록 모달을 확장했습니다.
+
+- **`EditableRecord`에 `childId`/`childName`/`photoPath`/`voicePath` 추가**: `photoPath`/`voicePath`는 서명 안 된 원본 `reading_records.photo_url`/`voice_url` 값입니다. 목록 화면(책장/기록/오늘/오늘의 숙제)마다 미리 서명해두면 카드가 많을 때 그만큼 왕복이 늘어나므로, 모달이 실제로 열릴 때(useEffect on mount)만 `getSignedMediaUrl()`로 직접 서명합니다 — 이번 속도 개선 작업의 원칙(왕복은 꼭 필요한 시점에만)과 같은 방향입니다. 이 값을 채우려면 `app/library/page.tsx`(+`components/library-shelf.tsx`), `app/today/page.tsx`(+`components/recent-records.tsx`), `lib/assignments.ts`(+`components/assignment-today.tsx`) 세 조회 경로의 `reading_records` select에 `photo_url, voice_url`을 추가했습니다. `app/records/page.tsx`(+`components/records-list.tsx`)는 목록에서 이미 사진/음성을 인라인으로 보여주고 있어서 원래도 서명된 값을 갖고 있었는데, 그 서명 안 된 원본 경로도 같이 넘기도록만 추가했습니다.
+- **`components/photo-picker.tsx`/`components/voice-recorder.tsx`에 `existingUrl`/`onRemoveExisting` prop 추가**: 원래는 "새로 파일 선택"만 지원하는 컴포넌트였는데, 이미 업로드된 사진/음성이 있을 때 그걸 보여주고 "바꾸기"(새 파일 선택기 다시 염) 또는 "지우기"(`onRemoveExisting` 호출)를 할 수 있게 상태를 하나 더 추가했습니다. 기록 남기기 화면(항상 새로 첨부하는 경우)은 이 prop들을 안 넘기므로 동작이 그대로입니다.
+- **저장 시 부분 업데이트**: 사진/음성을 안 건드렸으면 `reading_records.update()` 페이로드에 `photo_url`/`voice_url` 키 자체를 아예 안 넣어서 기존 값이 그대로 유지되도록 했습니다(새로 파일을 골랐을 때만 업로드 후 그 경로로, 지웠을 때만 `null`로 채웁니다) — 매번 무조건 포함시키면 라이브러리 화면처럼 여러 값을 조합해서 만든 `EditableRecord`에서 원본 경로를 잘못 덮어쓸 여지가 있어 이 방식이 더 안전합니다.
 
 @AGENTS.md

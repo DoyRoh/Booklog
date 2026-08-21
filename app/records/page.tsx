@@ -52,6 +52,8 @@ export default async function RecordsPage() {
             parentMemo: row.parent_memo,
             readDate: row.read_date,
             pagesRead: row.pages_read,
+            photoPath: row.photo_url,
+            voicePath: row.voice_url,
             photoSignedUrl: row.photo_url ? await getSignedMediaUrl(supabase, row.photo_url) : null,
             voiceSignedUrl: row.voice_url ? await getSignedMediaUrl(supabase, row.voice_url) : null,
             bookTitle: book?.title ?? "",
@@ -87,7 +89,7 @@ export default async function RecordsPage() {
       )}
 
       {activeChild && records.length > 0 && (
-        <RecordsList childName={activeChild.name} records={records} />
+        <RecordsList childId={activeChild.id} childName={activeChild.name} records={records} />
       )}
     </div>
   );

@@ -34,11 +34,15 @@ export type TodayBook = {
   memo: string | null;
   readDate: string | null;
   pagesRead: number | null;
+  photoPath: string | null;
+  voicePath: string | null;
 };
 
-function toEditable(book: TodayBook): EditableRecord {
+function toEditable(book: TodayBook, childId: string, childName: string | null): EditableRecord {
   return {
     id: book.recordId as string,
+    childId,
+    childName,
     title: book.title,
     author: book.author,
     coverUrl: book.coverUrl,
@@ -49,6 +53,8 @@ function toEditable(book: TodayBook): EditableRecord {
     memo: book.memo ?? "",
     readDate: book.readDate ?? new Date().toISOString().slice(0, 10),
     pagesRead: book.pagesRead,
+    photoPath: book.photoPath,
+    voicePath: book.voicePath,
   };
 }
 
@@ -188,10 +194,12 @@ function VoiceMission({
 
 export default function AssignmentToday({
   childId,
+  childName,
   assignments,
   voiceAllowed,
 }: {
   childId: string;
+  childName: string | null;
   assignments: TodayAssignment[];
   voiceAllowed: boolean;
 }) {
@@ -292,7 +300,9 @@ export default function AssignmentToday({
         );
       })}
 
-      {editing && <RecordEditModal record={toEditable(editing)} onClose={() => setEditing(null)} />}
+      {editing && (
+        <RecordEditModal record={toEditable(editing, childId, childName)} onClose={() => setEditing(null)} />
+      )}
     </div>
   );
 }

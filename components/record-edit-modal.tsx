@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { hasVoiceConsent } from "@/lib/consent";
+import { getSignedMediaUrl, uploadChildPhoto, uploadChildVoice } from "@/lib/storage";
 import type { ReadingStatus } from "@/lib/reading-status";
 import RatingPicker from "@/components/rating-picker";
 import ReadDatePicker from "@/components/read-date-picker";
+import PhotoPicker from "@/components/photo-picker";
+import VoiceRecorder from "@/components/voice-recorder";
 
 const EMOTIONS = ["재밌어요", "웃겼어요", "감동적이에요", "슬퍼요", "그저그래요"];
 const STATUS_LABELS: Record<ReadingStatus, string> = {
@@ -16,6 +20,8 @@ const STATUS_LABELS: Record<ReadingStatus, string> = {
 
 export type EditableRecord = {
   id: string;
+  childId: string;
+  childName: string | null;
   title: string;
   author: string | null;
   coverUrl: string | null;
@@ -26,6 +32,11 @@ export type EditableRecord = {
   memo: string;
   readDate: string;
   pagesRead: number | null;
+  // reading_records.photo_url/voice_url 원본 경로(서명 안 된 값) -- 모달이
+  // 열릴 때 직접 서명해서 미리보기를 만든다. 목록 화면마다 미리 서명해두면
+  // 카드가 많을 때 그만큼 왕복이 늘어나므로, 실제로 열어볼 때만 서명한다.
+  photoPath: string | null;
+  voicePath: string | null;
 };
 
 export default function RecordEditModal({
@@ -46,21 +57,59 @@ export default function RecordEditModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [voiceAllowed, setVoiceAllowed] = useState(false);
+  const [photoSignedUrl, setPhotoSignedUrl] = useState<string | null>(null);
+  const [voiceSignedUrl, setVoiceSignedUrl] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [voiceRemoved, setVoiceRemoved] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      hasVoiceConsent(supabase, user.id).then(setVoiceAllowed);
+    });
+    if (record.photoPath) {
+      getSignedMediaUrl(supabase, record.photoPath).then(setPhotoSignedUrl);
+    }
+    if (record.voicePath) {
+      getSignedMediaUrl(supabase, record.voicePath).then(setVoiceSignedUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function save() {
     setSaving(true);
     setError(null);
     const supabase = createClient();
+
+    const updates: Record<string, unknown> = {
+      status,
+      rating,
+      emotion,
+      favorite,
+      parent_memo: memo || null,
+      read_date: readDate,
+      pages_read: status === "reading" && pagesRead ? Number(pagesRead) : null,
+    };
+
+    try {
+      if (photoFile) updates.photo_url = await uploadChildPhoto(supabase, record.childId, photoFile);
+      else if (photoRemoved) updates.photo_url = null;
+
+      if (voiceBlob) updates.voice_url = await uploadChildVoice(supabase, record.childId, voiceBlob);
+      else if (voiceRemoved) updates.voice_url = null;
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "사진/음성 업로드에 실패했어요.");
+      setSaving(false);
+      return;
+    }
+
     const { error: updateError } = await supabase
       .from("reading_records")
-      .update({
-        status,
-        rating,
-        emotion,
-        favorite,
-        parent_memo: memo || null,
-        read_date: readDate,
-        pages_read: status === "reading" && pagesRead ? Number(pagesRead) : null,
-      })
+      .update(updates)
       .eq("id", record.id);
     if (updateError) {
       setError(updateError.message);
@@ -201,6 +250,49 @@ export default function RecordEditModal({
           className="mt-4 w-full rounded-[14px] border px-4 py-3 text-sm outline-none"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         />
+
+        <div className="mx-1 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+
+        <div
+          className="mt-4 rounded-[var(--r)] border p-4"
+          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+        >
+          <p className="d text-base">{record.childName ? `${record.childName}의 기록` : "우리 아이의 기록"}</p>
+
+          <div className="mt-3">
+            <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+              인상 깊었던 장면을 사진으로 남겨보세요
+            </p>
+            <div className="mt-2">
+              <PhotoPicker
+                onSelect={setPhotoFile}
+                label="장면 찍어 담기"
+                existingUrl={photoSignedUrl}
+                onRemoveExisting={() => setPhotoRemoved(true)}
+              />
+            </div>
+          </div>
+
+          {voiceAllowed && (
+            <>
+              <div className="mx-0 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+              <div className="mt-4">
+                <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                  오늘 읽은 소감을 목소리로 남겨보세요
+                </p>
+                <div className="mt-2">
+                  <VoiceRecorder
+                    onRecorded={setVoiceBlob}
+                    onClear={() => setVoiceBlob(null)}
+                    label={record.childName ? `${record.childName}의 목소리로 남기기` : "목소리로 남기기"}
+                    existingUrl={voiceSignedUrl}
+                    onRemoveExisting={() => setVoiceRemoved(true)}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
         {error && (
           <p className="mt-3 text-sm" style={{ color: "var(--berry)" }}>

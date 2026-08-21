@@ -6,11 +6,24 @@ type Props = {
   onRecorded: (blob: Blob) => void;
   onClear?: () => void;
   label?: string;
+  // 기록 고치기 모달처럼 이미 업로드된 녹음이 있을 때, 그걸 재생할 수 있게
+  // 보여주고 다시 녹음하거나 지울 수 있게 한다. 새로 녹음하면 onRecorded로
+  // 그 blob이 넘어가고(부모가 새로 업로드), 지우면 onRemoveExisting이
+  // 한 번 불린다(부모가 voice_url을 null로 저장).
+  existingUrl?: string | null;
+  onRemoveExisting?: () => void;
 };
 
-export default function VoiceRecorder({ onRecorded, onClear, label = "음성 녹음 시작" }: Props) {
+export default function VoiceRecorder({
+  onRecorded,
+  onClear,
+  label = "음성 녹음 시작",
+  existingUrl = null,
+  onRemoveExisting,
+}: Props) {
   const [recording, setRecording] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [existingRemoved, setExistingRemoved] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -62,9 +75,16 @@ export default function VoiceRecorder({ onRecorded, onClear, label = "음성 녹
     onClear?.();
   }
 
+  function removeExisting() {
+    setExistingRemoved(true);
+    onRemoveExisting?.();
+  }
+
+  const showingExisting = !previewUrl && !recording && !existingRemoved && Boolean(existingUrl);
+
   return (
     <div className="flex flex-col gap-2">
-      {!previewUrl && !recording && (
+      {!previewUrl && !recording && !showingExisting && (
         <button
           type="button"
           onClick={start}
@@ -73,6 +93,18 @@ export default function VoiceRecorder({ onRecorded, onClear, label = "음성 녹
         >
           {label}
         </button>
+      )}
+
+      {showingExisting && (
+        <div className="flex items-center gap-3">
+          <audio src={existingUrl!} controls className="h-9" />
+          <button type="button" onClick={start} className="d text-sm" style={{ color: "var(--point)" }}>
+            다시 녹음
+          </button>
+          <button type="button" onClick={removeExisting} className="d text-sm" style={{ color: "var(--berry)" }}>
+            지우기
+          </button>
+        </div>
       )}
 
       {recording && (

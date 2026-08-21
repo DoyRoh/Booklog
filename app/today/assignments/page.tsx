@@ -51,7 +51,12 @@ export default async function TodayAssignmentsPage() {
           지금 진행 중인 숙제가 없어요.
         </p>
       ) : (
-        <AssignmentToday childId={activeChild.id} assignments={assignments} voiceAllowed={voiceAllowed} />
+        <AssignmentToday
+          childId={activeChild.id}
+          childName={activeChild.name}
+          assignments={assignments}
+          voiceAllowed={voiceAllowed}
+        />
       )}
     </div>
   );

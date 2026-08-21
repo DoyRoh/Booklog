@@ -67,7 +67,7 @@ export default async function TodayPage() {
     supabase
       .from("reading_records")
       .select(
-        "id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, books(title, author, cover_url)"
+        "id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, photo_url, voice_url, books(title, author, cover_url)"
       )
       .eq("child_id", activeChild.id)
       .order("read_date", { ascending: false }),
@@ -108,6 +108,8 @@ export default async function TodayPage() {
       memo: r.parent_memo ?? "",
       readDate: r.read_date,
       pagesRead: r.pages_read,
+      photoPath: r.photo_url,
+      voicePath: r.voice_url,
     };
   });
 
@@ -178,7 +180,7 @@ export default async function TodayPage() {
             </Link>
           </div>
           <div className="mt-3">
-            <RecentRecords records={recentRecords} />
+            <RecentRecords childId={activeChild.id} childName={activeChild.name} records={recentRecords} />
           </div>
         </div>
       )}

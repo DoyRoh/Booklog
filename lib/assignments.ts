@@ -68,6 +68,8 @@ export async function getTodayAssignments(
     parent_memo: string | null;
     read_date: string;
     pages_read: number | null;
+    photo_url: string | null;
+    voice_url: string | null;
   };
 
   // 셋 다 assignmentRows에서 뽑은 id 목록에만 의존하고 서로는 무관하므로,
@@ -91,7 +93,9 @@ export async function getTodayAssignments(
     bookIds.length
       ? supabase
           .from("reading_records")
-          .select("id, book_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read")
+          .select(
+            "id, book_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, photo_url, voice_url"
+          )
           .eq("child_id", childId)
           .in("status", ["done", "reading"])
           .in("book_id", bookIds)
@@ -157,6 +161,8 @@ export async function getTodayAssignments(
           memo: record?.parent_memo ?? null,
           readDate: record?.read_date ?? null,
           pagesRead: record?.pages_read ?? null,
+          photoPath: record?.photo_url ?? null,
+          voicePath: record?.voice_url ?? null,
         };
       }),
     missions: row.assignment_missions.map((mission) => ({
