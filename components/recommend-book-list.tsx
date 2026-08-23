@@ -4,17 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BOOK_CATEGORIES } from "@/lib/categories";
+import type { RecommendBook } from "@/lib/recommend-books";
 
-export type RecommendBook = {
-  itemId: string;
-  bookId: string;
-  title: string;
-  author: string | null;
-  coverUrl: string | null;
-  categories: string[];
-  required: boolean;
-  inShelf: boolean;
-};
+export type { RecommendBook };
 
 type Filter = "all" | "required" | string;
 

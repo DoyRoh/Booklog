@@ -3,11 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
+import { getRecommendBooks } from "@/lib/recommend-books";
 import GroupApprovals from "@/components/group-approvals";
 import AddBookToList from "@/components/add-book-to-list";
 import BrowseGroups from "@/components/browse-groups";
 import CreateAssignment from "@/components/create-assignment";
-import RecommendBookList, { type RecommendBook } from "@/components/recommend-book-list";
+import RecommendBookList from "@/components/recommend-book-list";
 
 export default async function GroupDetailPage({
   params,
@@ -28,9 +29,10 @@ export default async function GroupDetailPage({
     );
   }
 
-  // 서로 무관한 조회 넷(그룹 정보, 내 운영진 멤버십, 활성 아이, 책 목록)을
-  // 동시에 왕복한다.
-  const [{ data: group }, { data: myMembership }, activeChild, { data: bookList }] = await Promise.all([
+  // 서로 무관한 조회 셋(그룹 정보, 내 운영진 멤버십, 활성 아이)을 먼저
+  // 동시에 왕복한다 -- 추천도서 목록은 활성 아이 id가 있어야 조회할 수
+  // 있어서 그 다음 단계로 미룬다.
+  const [{ data: group }, { data: myMembership }, activeChild] = await Promise.all([
     supabase.from("groups").select("id, name, type, join_policy, invite_code").eq("id", groupId).single(),
     supabase
       .from("group_members")
@@ -40,7 +42,6 @@ export default async function GroupDetailPage({
       .eq("status", "approved")
       .maybeSingle(),
     getActiveChild(supabase, userId),
-    supabase.from("book_lists").select("id, name").eq("group_id", groupId).limit(1).maybeSingle(),
   ]);
 
   if (!group) {
@@ -62,80 +63,27 @@ export default async function GroupDetailPage({
     myMembership?.role === "admin" ||
     myMembership?.role === "curator";
 
-  const [{ data: childMembership }, { data: itemRows }] = await Promise.all([
-    activeChild
-      ? supabase
-          .from("group_members")
-          .select("id")
-          .eq("group_id", groupId)
-          .eq("child_id", activeChild.id)
-          .eq("status", "approved")
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    bookList
-      ? supabase
-          .from("book_list_items")
-          .select("id, required, books(id, title, author, cover_url)")
-          .eq("book_list_id", bookList.id)
-      : Promise.resolve({ data: null }),
-  ]);
-
-  const isMember = Boolean(myMembership) || Boolean(childMembership);
-
-  const items = (itemRows ?? [])
-    .map((row) => ({
-      id: row.id,
-      required: row.required,
-      book: row.books as unknown as
-        | { id: string; title: string; author: string | null; cover_url: string | null }
-        | null,
-    }))
-    .filter((row) => row.book);
-
-  const listedBookIds = items.map((row) => row.book!.id);
-
-  // 여기서부터 넷(분야, 책장 여부, 승인 대기 목록, 숙제 목록)은 서로
-  // 무관하므로(승인 대기/숙제는 isOperator·isMember에만 의존) 동시에
-  // 왕복한다.
-  const [{ data: categoryRows }, { data: shelfRows }, { data: pendingRows }, { data: assignmentRows }] =
+  // 셋 다 activeChild.id/groupId에만 의존하고 서로 무관하므로 동시에
+  // 왕복한다. 추천도서 목록 조회는 lib/recommend-books.ts로 옮겨서
+  // 숙제 탭(그룹 필터)과 로직을 공유한다.
+  const [{ data: childMembership }, { bookListId, listName, books: recommendBooks }, { data: pendingRows }] =
     await Promise.all([
-      listedBookIds.length
-        ? supabase.from("book_categories").select("book_id, category").in("book_id", listedBookIds)
-        : Promise.resolve({ data: [] }),
-      activeChild && listedBookIds.length
-        ? supabase.from("reading_records").select("book_id").eq("child_id", activeChild.id).in("book_id", listedBookIds)
-        : Promise.resolve({ data: [] }),
+      activeChild
+        ? supabase
+            .from("group_members")
+            .select("id")
+            .eq("group_id", groupId)
+            .eq("child_id", activeChild.id)
+            .eq("status", "approved")
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      getRecommendBooks(supabase, groupId, activeChild?.id ?? null),
       isOperator
         ? supabase.from("group_members").select("id, children(name)").eq("group_id", groupId).eq("status", "pending")
         : Promise.resolve({ data: [] }),
-      isOperator || isMember
-        ? supabase
-            .from("assignments")
-            .select("id, title, description, start_date, end_date, assignment_books(books(title))")
-            .eq("group_id", groupId)
-            .order("created_at", { ascending: false })
-        : Promise.resolve({ data: [] }),
     ]);
 
-  const categoriesByBook = new Map<string, string[]>();
-  for (const row of categoryRows ?? []) {
-    const list = categoriesByBook.get(row.book_id) ?? [];
-    list.push(row.category);
-    categoriesByBook.set(row.book_id, list);
-  }
-
-  const shelvedBookIds = new Set((shelfRows ?? []).map((row) => row.book_id));
-
-  const recommendBooks: RecommendBook[] = items.map((row) => ({
-    itemId: row.id,
-    bookId: row.book!.id,
-    title: row.book!.title,
-    author: row.book!.author,
-    coverUrl: row.book!.cover_url,
-    categories: categoriesByBook.get(row.book!.id) ?? [],
-    required: row.required,
-    inShelf: shelvedBookIds.has(row.book!.id),
-  }));
+  const isMember = Boolean(myMembership) || Boolean(childMembership);
 
   const pending = (pendingRows ?? [])
     .map((row) => ({
@@ -143,17 +91,6 @@ export default async function GroupDetailPage({
       childName: (row.children as unknown as { name: string } | null)?.name ?? "",
     }))
     .filter((row) => row.childName);
-
-  const assignments = (assignmentRows ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    startDate: row.start_date,
-    endDate: row.end_date,
-    bookTitles: ((row.assignment_books as unknown as { books: { title: string } | null }[] | null) ?? [])
-      .map((ab) => ab.books?.title)
-      .filter((title): title is string => Boolean(title)),
-  }));
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -202,65 +139,30 @@ export default async function GroupDetailPage({
         <div className="mt-3">
           <RecommendBookList
             groupId={groupId}
-            listName={bookList?.name ?? "추천도서"}
+            listName={listName}
             books={recommendBooks}
             activeChildId={activeChild?.id ?? null}
           />
         </div>
       </div>
 
-      {isOperator && bookList && (
+      {isOperator && bookListId && (
         <div className="mt-8">
-          <AddBookToList bookListId={bookList.id} />
+          <AddBookToList bookListId={bookListId} />
         </div>
       )}
 
-      {(isOperator || isMember) && (
+      {/* 부모가 보는 숙제 목록/진행 현황은 숙제 탭(그룹 필터)에서 다룬다 --
+          여기는 운영진이 새 숙제를 만드는 자리로만 남겨둔다. */}
+      {isOperator && (
         <div className="mt-8">
-          <p className="d text-lg">숙제</p>
-          {assignments.length === 0 ? (
-            <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>
-              아직 등록된 숙제가 없어요.
-            </p>
-          ) : (
-            <div className="mt-3 flex flex-col gap-3">
-              {assignments.map((assignment) => (
-                <div
-                  key={assignment.id}
-                  className="rounded-[var(--r)] border p-4"
-                  style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-                >
-                  <p className="d text-sm">{assignment.title}</p>
-                  {assignment.description && (
-                    <p className="mt-1 text-sm" style={{ color: "var(--ink)" }}>
-                      {assignment.description}
-                    </p>
-                  )}
-                  {(assignment.startDate || assignment.endDate) && (
-                    <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
-                      {assignment.startDate ?? "~"} ~ {assignment.endDate ?? ""}
-                    </p>
-                  )}
-                  {assignment.bookTitles.length > 0 && (
-                    <p className="mt-2 text-xs" style={{ color: "var(--ink-2)" }}>
-                      {assignment.bookTitles.join(", ")}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {isOperator && (
-            <div className="mt-4">
-              <CreateAssignment
-                groupId={groupId}
-                books={items
-                  .filter((item) => item.book)
-                  .map((item) => ({ id: item.book!.id, title: item.book!.title }))}
-              />
-            </div>
-          )}
+          <p className="d text-lg">숙제 만들기</p>
+          <div className="mt-3">
+            <CreateAssignment
+              groupId={groupId}
+              books={recommendBooks.map((book) => ({ id: book.bookId, title: book.title }))}
+            />
+          </div>
         </div>
       )}
     </div>
