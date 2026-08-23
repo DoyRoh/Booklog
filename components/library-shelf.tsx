@@ -309,6 +309,13 @@ export default function LibraryShelf({
         </select>
       </div>
 
+      <div className="mt-3 flex items-center gap-3">
+        <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
+          {filtered.length}권
+        </span>
+        <div className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
+      </div>
+
       {filtered.length === 0 && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
           검색 결과가 없어요.

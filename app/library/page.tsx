@@ -77,15 +77,6 @@ export default async function LibraryPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      {activeChild && (
-        <div className="flex items-center gap-3">
-          <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
-            {books.length}권
-          </span>
-          <div className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
-        </div>
-      )}
-
       {!activeChild && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
           아이를 등록하면 책장이 시작돼요. 더보기에서 아이를 추가해 주세요.
