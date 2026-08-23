@@ -339,7 +339,7 @@ function AddBookForm() {
 
       {step === "no-child" && (
         <div className="mt-8 flex flex-col gap-4">
-          <p className="d text-lg">먼저 아이를 등록해 주세요</p>
+          <p className="d text-base">먼저 아이를 등록해 주세요</p>
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             기록을 남기려면 아이가 한 명 이상 있어야 해요.
           </p>
@@ -634,7 +634,7 @@ function AddBookForm() {
 
       {step === "saved" && (
         <div className="mt-8 flex flex-col gap-4">
-          <p className="d text-lg">책장에 기록됐어요!</p>
+          <p className="d text-base">책장에 기록됐어요!</p>
           <Link
             href="/library"
             className="d rounded-[14px] py-3 text-center text-sm text-white"

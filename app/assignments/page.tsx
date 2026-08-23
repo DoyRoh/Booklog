@@ -78,7 +78,7 @@ export default async function AssignmentsPage({
 
       {selectedGroup && recommend && (
         <div className="mt-6">
-          <p className="d text-lg">{selectedGroup.name}의 추천도서</p>
+          <p className="d text-base">{selectedGroup.name}의 추천도서</p>
           <div className="mt-3">
             <RecommendBookList
               groupId={selectedGroup.id}
@@ -91,7 +91,7 @@ export default async function AssignmentsPage({
       )}
 
       <div className="mt-8">
-        <p className="d text-lg">숙제</p>
+        <p className="d text-base">숙제</p>
         {assignments.length === 0 ? (
           <p className="mt-3 text-sm" style={{ color: "var(--ink-2)" }}>
             지금 진행 중이거나 예정된 숙제가 없어요.

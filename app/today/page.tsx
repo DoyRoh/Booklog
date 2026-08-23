@@ -60,10 +60,11 @@ export default async function TodayPage() {
     );
   }
 
-  // 통계/최근 기록에 쓰는 reading_records 조회와 오늘의 숙제 조회는 서로
-  // 무관하므로(둘 다 activeChild.id에만 의존) 동시에 왕복한다 -- 오늘
-  // 탭이 유독 느렸던 가장 큰 원인이 이 둘을 순서대로 기다리던 것이었다.
-  const [{ data: allRecords }, assignments] = await Promise.all([
+  // 통계/최근 기록에 쓰는 reading_records 조회, 오늘의 숙제 조회, 속한
+  // 그룹 수 조회는 서로 무관하므로(전부 activeChild.id에만 의존) 동시에
+  // 왕복한다 -- 오늘 탭이 유독 느렸던 가장 큰 원인이 이런 조회들을
+  // 순서대로 기다리던 것이었다.
+  const [{ data: allRecords }, assignments, { data: groupRows }] = await Promise.all([
     supabase
       .from("reading_records")
       .select(
@@ -72,6 +73,7 @@ export default async function TodayPage() {
       .eq("child_id", activeChild.id)
       .order("read_date", { ascending: false }),
     getTodayAssignments(supabase, activeChild.id),
+    supabase.from("group_members").select("group_id").eq("child_id", activeChild.id).eq("status", "approved"),
   ]);
 
   // 마감일(end_date)을 안 정한 숙제는 날짜만으로는 절대 안 없어지므로,
@@ -85,19 +87,21 @@ export default async function TodayPage() {
 
   const doneRecords = (allRecords ?? []).filter((r) => r.status === "done");
   const totalDone = doneRecords.length;
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayCount = doneRecords.filter((r) => r.read_date === todayKey).length;
+
+  // 이번 주 시작(월요일)은 lib/badges.ts의 "이번 주" 배지와 같은 공식을
+  // 쓴다 -- 두 곳 다 짧은 계산이라 별도 유틸로 뽑지 않고 그대로 둔다.
+  const weekStartDate = new Date();
+  weekStartDate.setDate(weekStartDate.getDate() - ((weekStartDate.getDay() + 6) % 7));
+  const weekKey = weekStartDate.toISOString().slice(0, 10);
+  const weekCount = doneRecords.filter((r) => r.read_date >= weekKey).length;
+
   const thisMonthKey = new Date().toISOString().slice(0, 7);
   const monthCount = doneRecords.filter((r) => r.read_date.startsWith(thisMonthKey)).length;
 
-  const uniqDates = Array.from(new Set(doneRecords.map((r) => r.read_date))).sort();
-  let run = 0;
-  let bestStreak = 0;
-  let prevTime: number | null = null;
-  for (const d of uniqDates) {
-    const t = new Date(`${d}T00:00:00`).getTime();
-    run = prevTime !== null && t - prevTime === 86400000 ? run + 1 : 1;
-    bestStreak = Math.max(bestStreak, run);
-    prevTime = t;
-  }
+  const groupCount = (groupRows ?? []).length;
 
   const recentRecords: RecentRecord[] = (allRecords ?? []).slice(0, 5).map((r) => {
     const book = r.books as unknown as {
@@ -128,6 +132,54 @@ export default async function TodayPage() {
         {activeChild.name}, 오늘도 책숲을 걸어볼까요?
       </p>
 
+      {/* 오늘 탭이 가장 먼저 보여줘야 하는 건 "지금까지 얼마나 읽었는지"
+          요약이라, 요약 박스를 맨 위로 올리고 기록 버튼은 그 아래로
+          내렸다(레거시 "유안이 독서 기록" 화면 구조 참고). */}
+      <div
+        className="mt-3 rounded-[var(--r)] border p-4"
+        style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+      >
+        <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+          읽은 책
+        </span>
+        <p className="d mt-1 text-2xl" style={{ color: "var(--point-deep)" }}>
+          {totalDone}
+          <span className="ml-1 text-base font-normal" style={{ color: "var(--ink-2)" }}>
+            권
+          </span>
+        </p>
+
+        <div
+          className="mt-4 grid grid-cols-4 gap-1"
+          style={{ borderTop: "1px solid var(--rule)", paddingTop: "0.875rem" }}
+        >
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="d text-lg">{todayCount}</span>
+            <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+              오늘
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="d text-lg">{weekCount}</span>
+            <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+              이번 주
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="d text-lg">{monthCount}</span>
+            <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+              이번 달
+            </span>
+          </div>
+          <Link href="/assignments" className="flex flex-col items-center gap-0.5">
+            <span className="d text-lg">{groupCount}</span>
+            <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+              그룹
+            </span>
+          </Link>
+        </div>
+      </div>
+
       <Link
         href="/library/add"
         className="d mt-3 block rounded-[14px] py-3.5 text-center text-base text-white"
@@ -136,35 +188,9 @@ export default async function TodayPage() {
         + 책 기록하기
       </Link>
 
-      <div
-        className="mt-4 flex items-center justify-around rounded-[var(--r)] border p-4"
-        style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-      >
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="d text-xl" style={{ color: "var(--point-deep)" }}>
-            {totalDone}
-          </span>
-          <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-            읽은 책
-          </span>
-        </div>
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="d text-xl">{monthCount}</span>
-          <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-            이번 달
-          </span>
-        </div>
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="d text-xl">{bestStreak}</span>
-          <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-            최장 연속
-          </span>
-        </div>
-      </div>
-
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <p className="d text-lg">오늘의 숙제</p>
+          <p className="d text-base">오늘의 숙제</p>
           {activeAssignments.length > 0 && (
             <Link href="/assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
               전체 보기 ›
@@ -172,7 +198,7 @@ export default async function TodayPage() {
           )}
         </div>
         {activeAssignments.length === 0 ? (
-          <p className="mt-3 text-base" style={{ color: "var(--ink-2)" }}>
+          <p className="mt-3 text-sm" style={{ color: "var(--ink-2)" }}>
             지금 진행 중인 숙제가 없어요. 책장에서 자유롭게 책을 기록해 보세요.
           </p>
         ) : (
@@ -183,7 +209,7 @@ export default async function TodayPage() {
       {recentRecords.length > 0 && (
         <div className="mt-8">
           <div className="flex items-center justify-between">
-            <p className="d text-lg">최근 기록</p>
+            <p className="d text-base">최근 기록</p>
             <Link href="/records" className="text-xs" style={{ color: "var(--ink-2)" }}>
               전체 보기 ›
             </Link>

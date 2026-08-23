@@ -111,7 +111,7 @@ export default async function GroupDetailPage({
           <p className="text-xs" style={{ color: "var(--ink-2)" }}>
             초대 코드
           </p>
-          <p className="d text-lg">{group.invite_code}</p>
+          <p className="d text-base">{group.invite_code}</p>
         </div>
       )}
 
@@ -127,7 +127,7 @@ export default async function GroupDetailPage({
 
       {isOperator && (
         <div className="mt-8">
-          <p className="d text-lg">가입 승인 대기</p>
+          <p className="d text-base">가입 승인 대기</p>
           <div className="mt-3">
             <GroupApprovals pending={pending} />
           </div>
@@ -135,7 +135,7 @@ export default async function GroupDetailPage({
       )}
 
       <div className="mt-8">
-        <p className="d text-lg">추천도서</p>
+        <p className="d text-base">추천도서</p>
         <div className="mt-3">
           <RecommendBookList
             groupId={groupId}
@@ -156,7 +156,7 @@ export default async function GroupDetailPage({
           여기는 운영진이 새 숙제를 만드는 자리로만 남겨둔다. */}
       {isOperator && (
         <div className="mt-8">
-          <p className="d text-lg">숙제 만들기</p>
+          <p className="d text-base">숙제 만들기</p>
           <div className="mt-3">
             <CreateAssignment
               groupId={groupId}

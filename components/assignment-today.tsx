@@ -238,7 +238,7 @@ export default function AssignmentToday({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div>
-                      <p className="d text-lg">{assignment.title}</p>
+                      <p className="d text-base">{assignment.title}</p>
                     </div>
                     <span
                       className="d flex-none rounded-full px-3 py-1 text-sm"
@@ -257,7 +257,7 @@ export default function AssignmentToday({
                     </span>
                   </div>
                   {assignment.description && (
-                    <p className="mt-1 text-base" style={{ color: "var(--ink-2)" }}>
+                    <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
                       {assignment.description}
                     </p>
                   )}
@@ -273,7 +273,7 @@ export default function AssignmentToday({
                           className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5 text-left"
                           style={{ borderColor: "var(--rule)" }}
                         >
-                          <span className="text-base">{book.title}</span>
+                          <span className="text-sm">{book.title}</span>
                           <span className="text-sm" style={{ color: "var(--point-deep)" }}>
                             읽었어요
                           </span>
@@ -286,7 +286,7 @@ export default function AssignmentToday({
                           style={{ borderColor: "var(--rule)" }}
                         >
                           <div>
-                            <span className="text-base">{book.title}</span>
+                            <span className="text-sm">{book.title}</span>
                             {book.targetPage && (
                               <span className="ml-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
                                 {book.targetPage}쪽까지

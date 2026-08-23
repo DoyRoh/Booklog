@@ -149,7 +149,7 @@ export default function RecordEditModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <p className="d text-lg">기록 고치기</p>
+          <p className="d text-base">기록 고치기</p>
           <button type="button" onClick={onClose} className="text-sm" style={{ color: "var(--ink-2)" }}>
             닫기
           </button>
@@ -164,7 +164,7 @@ export default function RecordEditModal({
             <img src={record.coverUrl} alt="" className="h-20 w-14 rounded object-cover" />
           )}
           <div>
-            <p className="d text-base">{record.title}</p>
+            <p className="d text-sm">{record.title}</p>
             {record.author && (
               <p className="text-sm" style={{ color: "var(--ink-2)" }}>
                 {record.author}
@@ -273,7 +273,7 @@ export default function RecordEditModal({
           className="mt-4 rounded-[var(--r)] border p-4"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         >
-          <p className="d text-base">{record.childName ? `${record.childName}의 기록` : "우리 아이의 기록"}</p>
+          <p className="d text-sm">{record.childName ? `${record.childName}의 기록` : "우리 아이의 기록"}</p>
 
           <div className="mt-3">
             <p className="text-sm" style={{ color: "var(--ink-2)" }}>

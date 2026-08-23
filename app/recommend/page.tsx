@@ -73,7 +73,7 @@ export default async function RecommendPage() {
       )}
 
       <div className="mt-6">
-        <p className="d text-lg">내 그룹</p>
+        <p className="d text-base">내 그룹</p>
         {myGroups.length === 0 ? (
           <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>
             아직 속한 그룹이 없어요. 아래에서 둘러보거나 초대 코드로 참가해 보세요.
@@ -104,7 +104,7 @@ export default async function RecommendPage() {
       )}
 
       <div className="mt-8">
-        <p className="d text-lg">둘러보기</p>
+        <p className="d text-base">둘러보기</p>
         <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
           공개된 기관·크리에이터 추천도서 리스트예요.
         </p>
