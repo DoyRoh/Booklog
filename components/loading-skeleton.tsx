@@ -4,7 +4,13 @@
 // 아니라 "불러오는 중"이라는 걸 바로 알 수 있게 해준다.
 export default function LoadingSkeleton() {
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div
+      className="mx-auto max-w-[520px] px-5 pt-8 pb-10"
+      style={{
+        opacity: 0,
+        animation: "skeleton-delayed-fade-in 0.15s ease-out 0.15s forwards",
+      }}
+    >
       <div className="animate-pulse">
         <div className="h-4 w-32 rounded-full" style={{ background: "var(--rule)" }} />
         <div
