@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { SearchIcon, SpineViewIcon, CoverViewIcon } from "@/components/icons/misc-icons";
 import type { ReadingStatus } from "@/lib/reading-status";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
@@ -225,6 +226,13 @@ export default function LibraryShelf({
             <SpineViewIcon />
           </button>
         </div>
+        <Link
+          href="/library/add"
+          className="d flex flex-none items-center rounded-[14px] px-3.5 text-sm text-white"
+          style={{ background: "var(--point)" }}
+        >
+          + 책
+        </Link>
       </div>
 
       {(groupOptions.hasDirect || groupOptions.groups.length > 0) && (
