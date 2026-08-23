@@ -128,7 +128,7 @@ export default async function TodayPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <p className="d text-base">
+      <p className="hand text-xl" style={{ color: "var(--point-deep)" }}>
         {activeChild.name}, 오늘도 책숲을 걸어볼까요?
       </p>
 

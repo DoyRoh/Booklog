@@ -85,7 +85,7 @@ export default async function LibraryPage() {
 
       {activeChild && books.length === 0 && (
         <div className="mt-6">
-          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+          <p className="hand text-lg" style={{ color: "var(--point-deep)" }}>
             책장이 비었어요. 첫 책을 기록해 보세요.
           </p>
           <Link

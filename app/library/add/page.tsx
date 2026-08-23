@@ -634,7 +634,9 @@ function AddBookForm() {
 
       {step === "saved" && (
         <div className="mt-8 flex flex-col gap-4">
-          <p className="d text-base">책장에 기록됐어요!</p>
+          <p className="hand text-2xl" style={{ color: "var(--point-deep)" }}>
+            책장에 기록됐어요!
+          </p>
           <Link
             href="/library"
             className="d rounded-[14px] py-3 text-center text-sm text-white"

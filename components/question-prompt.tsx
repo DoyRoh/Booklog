@@ -74,7 +74,9 @@ export default function QuestionPrompt({
               <p className="text-xs" style={{ color: "var(--ink-2)" }}>
                 오늘의 질문
               </p>
-              <p className="mt-1 text-sm">{questions[index]?.text}</p>
+              <p className="hand mt-1 text-lg" style={{ color: "var(--ink)" }}>
+                {questions[index]?.text}
+              </p>
             </>
           )}
           <div className="mt-2 flex gap-3">

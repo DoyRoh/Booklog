@@ -44,7 +44,7 @@ export default async function BadgesPage() {
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+        <p className="hand text-lg" style={{ color: "var(--point-deep)" }}>
           {activeChild.name}의 발자국이 모여 배지가 돼요.
         </p>
         <span className="d text-sm" style={{ color: "var(--ink-2)" }}>

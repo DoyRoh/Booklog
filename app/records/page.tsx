@@ -79,7 +79,7 @@ export default async function RecordsPage() {
       )}
 
       {activeChild && records.length === 0 && (
-        <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
+        <p className="hand mt-6 text-lg" style={{ color: "var(--point-deep)" }}>
           아직 기록이 없어요. 책장에서 책을 등록하면 여기에 기록이 쌓여요.
         </p>
       )}
