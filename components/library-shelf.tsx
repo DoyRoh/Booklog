@@ -40,17 +40,13 @@ type SortMode = "new" | "title" | "author";
 
 const STORAGE_KEY = "chaeksup:library-view";
 
-const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
-  all: "전체",
+// library/add·record-edit-modal과 같은 문체("~요"로 끝나는 문장형)로
+// 통일한다 -- 예전엔 "읽는 중"/"다 읽음"처럼 단어형이 섞여 있었다.
+// 필터 칩과 표지 배지 둘 다 이 라벨을 그대로 쓴다.
+const STATUS_LABELS: Record<ReadingStatus, string> = {
   want: "읽고 싶어요",
-  reading: "읽는 중",
-  done: "다 읽음",
-};
-
-const STATUS_BADGE_LABELS: Record<ReadingStatus, string> = {
-  want: "읽고 싶어요",
-  reading: "읽는 중",
-  done: "다 읽음",
+  reading: "읽는 중이에요",
+  done: "다 읽었어요",
 };
 
 const SORT_LABELS: Record<SortMode, string> = {
@@ -237,22 +233,10 @@ export default function LibraryShelf({
             출처
           </span>
           <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
-            <button
-              type="button"
-              onClick={() => setGroupFilter("all")}
-              className="d flex-none rounded-full border px-3 py-1 text-xs"
-              style={{
-                borderColor: groupFilter === "all" ? "var(--point)" : "var(--rule)",
-                background: groupFilter === "all" ? "rgba(47,168,79,0.08)" : "var(--card)",
-                color: groupFilter === "all" ? "var(--point-deep)" : "var(--ink-2)",
-              }}
-            >
-              전체
-            </button>
             {groupOptions.hasDirect && (
               <button
                 type="button"
-                onClick={() => setGroupFilter("direct")}
+                onClick={() => setGroupFilter(groupFilter === "direct" ? "all" : "direct")}
                 className="d flex-none rounded-full border px-3 py-1 text-xs"
                 style={{
                   borderColor: groupFilter === "direct" ? "var(--point)" : "var(--rule)",
@@ -267,7 +251,7 @@ export default function LibraryShelf({
               <button
                 key={id}
                 type="button"
-                onClick={() => setGroupFilter(id)}
+                onClick={() => setGroupFilter(groupFilter === id ? "all" : id)}
                 className="d flex-none rounded-full border px-3 py-1 text-xs"
                 style={{
                   borderColor: groupFilter === id ? "var(--point)" : "var(--rule)",
@@ -287,11 +271,11 @@ export default function LibraryShelf({
           상태
         </span>
         <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
-          {(Object.keys(STATUS_FILTER_LABELS) as StatusFilter[]).map((value) => (
+          {(Object.keys(STATUS_LABELS) as ReadingStatus[]).map((value) => (
             <button
               key={value}
               type="button"
-              onClick={() => setStatusFilter(value)}
+              onClick={() => setStatusFilter(statusFilter === value ? "all" : value)}
               className="d flex-none rounded-full border px-3 py-1 text-xs"
               style={{
                 borderColor: statusFilter === value ? "var(--point)" : "var(--rule)",
@@ -299,7 +283,7 @@ export default function LibraryShelf({
                 color: statusFilter === value ? "var(--point-deep)" : "var(--ink-2)",
               }}
             >
-              {STATUS_FILTER_LABELS[value]}
+              {STATUS_LABELS[value]}
             </button>
           ))}
         </div>
@@ -355,7 +339,7 @@ export default function LibraryShelf({
                   className="d self-start rounded-full px-2 py-0.5 text-[10px]"
                   style={{ background: "rgba(232,163,61,0.16)", color: "var(--lantern)" }}
                 >
-                  {STATUS_BADGE_LABELS[book.status]}
+                  {STATUS_LABELS[book.status]}
                 </span>
               )}
             </button>
