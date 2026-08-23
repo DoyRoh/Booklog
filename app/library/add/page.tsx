@@ -66,6 +66,12 @@ function AddBookForm() {
   const [bookId, setBookId] = useState<string | null>(null);
   const [groupId, setGroupId] = useState<string | null>(null);
   const lastResolvedTitle = useRef("");
+  // saving 상태(state)만으로 저장 버튼을 막으면, React가 리렌더링해서
+  // 버튼이 실제로 disabled되기 전까지의 짧은 틈에 빠르게 두 번 탭하면
+  // save()가 두 번 다 실행돼 기록이 중복 저장될 수 있다(아이가 화면을
+  // 여러 번 두드리는 경우 특히). ref는 즉시(동기적으로) 갱신되므로 이
+  // 틈을 막는다.
+  const savingRef = useRef(false);
 
   const [candidates, setCandidates] = useState<Candidate[] | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -235,92 +241,91 @@ function AddBookForm() {
   }
 
   async function save() {
-    if (!title.trim()) return;
+    if (!title.trim() || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setError(null);
 
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setError("로그인 정보를 확인할 수 없어요.");
-      setSaving(false);
-      return;
-    }
-
-    const activeChild = await getActiveChild(supabase, user.id);
-    if (!activeChild) {
-      setStep("no-child");
-      setSaving(false);
-      return;
-    }
-
-    let finalBookId = bookId;
-    if (!finalBookId) {
-      finalBookId = crypto.randomUUID();
-      const { error: bookError } = await supabase.from("books").insert({
-        id: finalBookId,
-        title: title.trim(),
-        author: author.trim() || null,
-        publisher: publisher.trim() || null,
-        cover_url: coverUrl,
-        introduction: introduction || null,
-        publish_date: publishDate,
-        source: isbn ? "kakao" : "manual",
-      });
-      if (bookError) {
-        setError(bookError.message);
-        setSaving(false);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setError("로그인 정보를 확인할 수 없어요.");
         return;
       }
 
-      // ISBN 없이 등록한 책(오래된 책, 수제책 등)은 book_isbns에 남길 게 없다.
-      if (isbn) {
-        const { error: isbnError } = await supabase
-          .from("book_isbns")
-          .insert({ book_id: finalBookId, isbn });
-        if (isbnError) {
-          setError(isbnError.message);
-          setSaving(false);
+      const activeChild = await getActiveChild(supabase, user.id);
+      if (!activeChild) {
+        setStep("no-child");
+        return;
+      }
+
+      let finalBookId = bookId;
+      if (!finalBookId) {
+        finalBookId = crypto.randomUUID();
+        const { error: bookError } = await supabase.from("books").insert({
+          id: finalBookId,
+          title: title.trim(),
+          author: author.trim() || null,
+          publisher: publisher.trim() || null,
+          cover_url: coverUrl,
+          introduction: introduction || null,
+          publish_date: publishDate,
+          source: isbn ? "kakao" : "manual",
+        });
+        if (bookError) {
+          setError(bookError.message);
           return;
         }
+
+        // ISBN 없이 등록한 책(오래된 책, 수제책 등)은 book_isbns에 남길 게 없다.
+        if (isbn) {
+          const { error: isbnError } = await supabase
+            .from("book_isbns")
+            .insert({ book_id: finalBookId, isbn });
+          if (isbnError) {
+            setError(isbnError.message);
+            return;
+          }
+        }
       }
-    }
 
-    let photoUrl: string | null = null;
-    let voiceUrl: string | null = null;
-    try {
-      if (photoFile) photoUrl = await uploadChildPhoto(supabase, activeChild.id, photoFile);
-      if (voiceBlob) voiceUrl = await uploadChildVoice(supabase, activeChild.id, voiceBlob);
-    } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "사진/음성 업로드에 실패했어요.");
+      let photoUrl: string | null = null;
+      let voiceUrl: string | null = null;
+      try {
+        if (photoFile) photoUrl = await uploadChildPhoto(supabase, activeChild.id, photoFile);
+        if (voiceBlob) voiceUrl = await uploadChildVoice(supabase, activeChild.id, voiceBlob);
+      } catch (uploadError) {
+        setError(uploadError instanceof Error ? uploadError.message : "사진/음성 업로드에 실패했어요.");
+        return;
+      }
+
+      const { error: recordError } = await supabase.from("reading_records").insert({
+        child_id: activeChild.id,
+        book_id: finalBookId,
+        group_id: groupId,
+        status,
+        read_date: readDate,
+        rating,
+        emotion,
+        favorite,
+        pages_read: status === "reading" && pagesRead ? Number(pagesRead) : null,
+        parent_memo: memo || null,
+        photo_url: photoUrl,
+        voice_url: voiceUrl,
+      });
+      if (recordError) {
+        setError(recordError.message);
+        return;
+      }
+
+      setStep("saved");
+    } finally {
+      savingRef.current = false;
       setSaving(false);
-      return;
     }
-
-    const { error: recordError } = await supabase.from("reading_records").insert({
-      child_id: activeChild.id,
-      book_id: finalBookId,
-      group_id: groupId,
-      status,
-      read_date: readDate,
-      rating,
-      emotion,
-      favorite,
-      pages_read: status === "reading" && pagesRead ? Number(pagesRead) : null,
-      parent_memo: memo || null,
-      photo_url: photoUrl,
-      voice_url: voiceUrl,
-    });
-    if (recordError) {
-      setError(recordError.message);
-      setSaving(false);
-      return;
-    }
-
-    setSaving(false);
-    setStep("saved");
   }
 
   return (

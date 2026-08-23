@@ -55,6 +55,7 @@ export default function RecordEditModal({
   const [readDate, setReadDate] = useState(record.readDate);
   const [pagesRead, setPagesRead] = useState(record.pagesRead ? String(record.pagesRead) : "");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [voiceAllowed, setVoiceAllowed] = useState(false);
@@ -117,6 +118,21 @@ export default function RecordEditModal({
       return;
     }
     setSaving(false);
+    onClose();
+    router.refresh();
+  }
+
+  async function deleteRecord() {
+    if (!window.confirm("이 기록을 삭제할까요? 되돌릴 수 없어요.")) return;
+    setDeleting(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: deleteError } = await supabase.from("reading_records").delete().eq("id", record.id);
+    if (deleteError) {
+      setError(deleteError.message);
+      setDeleting(false);
+      return;
+    }
     onClose();
     router.refresh();
   }
@@ -302,12 +318,22 @@ export default function RecordEditModal({
 
         <button
           type="button"
-          disabled={saving}
+          disabled={saving || deleting}
           onClick={save}
           className="d mt-4 w-full rounded-[14px] py-3 text-sm text-white disabled:opacity-40"
           style={{ background: "var(--point)" }}
         >
           {saving ? "저장 중..." : "✓ 기록 저장하기"}
+        </button>
+
+        <button
+          type="button"
+          disabled={saving || deleting}
+          onClick={deleteRecord}
+          className="d mt-3 w-full py-1 text-sm disabled:opacity-40"
+          style={{ color: "var(--berry)" }}
+        >
+          {deleting ? "삭제 중..." : "이 기록 삭제하기"}
         </button>
       </div>
     </div>
