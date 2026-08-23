@@ -330,8 +330,8 @@ export default function RecordEditModal({
           type="button"
           disabled={saving || deleting}
           onClick={deleteRecord}
-          className="d mt-3 w-full py-1 text-sm disabled:opacity-40"
-          style={{ color: "var(--berry)" }}
+          className="d mt-3 w-full rounded-[14px] border py-3 text-sm disabled:opacity-40"
+          style={{ borderColor: "var(--rule)", background: "var(--paper)", color: "var(--ink-2)" }}
         >
           {deleting ? "삭제 중..." : "이 기록 삭제하기"}
         </button>
