@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -14,6 +14,7 @@ export default function JoinByCode({ activeChildId }: { activeChildId: string | 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [joined, setJoined] = useState<"pending" | "approved" | null>(null);
+  const joiningRef = useRef(false);
 
   async function search() {
     if (!code.trim()) return;
@@ -47,6 +48,10 @@ export default function JoinByCode({ activeChildId }: { activeChildId: string | 
       setError("먼저 더보기에서 아이를 등록해 주세요.");
       return;
     }
+    // state 업데이트를 기다리지 않고 동기적으로 막아서, 가입 버튼을
+    // 빠르게 두 번 눌러도 group_members가 중복 생성되지 않게 한다.
+    if (joiningRef.current) return;
+    joiningRef.current = true;
     setLoading(true);
     setError(null);
 
@@ -59,10 +64,15 @@ export default function JoinByCode({ activeChildId }: { activeChildId: string | 
       status,
     });
 
+    joiningRef.current = false;
     setLoading(false);
     if (joinError) {
-      setError(joinError.message);
-      return;
+      // 유니크 제약 위반(23505)이면 이미 신청/가입돼 있다는 뜻이니 그
+      // 상태로 안내한다.
+      if (joinError.code !== "23505") {
+        setError(joinError.message);
+        return;
+      }
     }
     setJoined(status);
     router.refresh();

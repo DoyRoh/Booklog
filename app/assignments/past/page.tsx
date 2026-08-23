@@ -52,7 +52,8 @@ export default async function PastAssignmentsPage({
 
   const myGroups: FilterGroup[] = (memberGroupRows ?? [])
     .map((row) => row.groups as unknown as FilterGroup | null)
-    .filter((g): g is FilterGroup => Boolean(g));
+    .filter((g): g is FilterGroup => Boolean(g))
+    .filter((g, i, arr) => arr.findIndex((other) => other.id === g.id) === i);
 
   const selectedGroupId = groupParam && myGroups.some((g) => g.id === groupParam) ? groupParam : null;
   const assignments = selectedGroupId

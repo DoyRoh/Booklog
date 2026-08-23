@@ -54,7 +54,8 @@ export default async function AssignmentsPage({
 
   const myGroups: FilterGroup[] = (memberGroupRows ?? [])
     .map((row) => row.groups as unknown as FilterGroup | null)
-    .filter((g): g is FilterGroup => Boolean(g));
+    .filter((g): g is FilterGroup => Boolean(g))
+    .filter((g, i, arr) => arr.findIndex((other) => other.id === g.id) === i);
 
   // 쿼리로 들어온 group이 실제로 이 아이가 속한 그룹일 때만 필터로 인정한다
   // (다른 그룹 id를 넣어도 조용히 무시되고 전체 보기로 대체됨).
