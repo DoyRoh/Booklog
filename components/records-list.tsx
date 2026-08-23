@@ -18,8 +18,6 @@ export type RecordRow = {
   pagesRead: number | null;
   photoPath: string | null;
   voicePath: string | null;
-  photoSignedUrl: string | null;
-  voiceSignedUrl: string | null;
   bookTitle: string;
   bookAuthor: string | null;
   bookCoverUrl: string | null;
@@ -27,12 +25,6 @@ export type RecordRow = {
 
 type GroupFilter = "all" | "direct" | string;
 type SortMode = "new" | "title" | "author";
-
-const STATUS_BADGE_LABELS: Record<ReadingStatus, string> = {
-  want: "읽고 싶어요",
-  reading: "읽는 중",
-  done: "다 읽음",
-};
 
 const SORT_LABELS: Record<SortMode, string> = {
   new: "최신순",
@@ -43,6 +35,11 @@ const SORT_LABELS: Record<SortMode, string> = {
 function monthLabel(key: string) {
   const [y, m] = key.split("-");
   return `${y}년 ${Number(m)}월`;
+}
+
+function formatMonthDay(dateStr: string) {
+  const [, m, d] = dateStr.split("-");
+  return `${Number(m)}/${Number(d)}`;
 }
 
 export default function RecordsList({
@@ -133,53 +130,29 @@ export default function RecordsList({
     return (
       <div key={record.id}>
         {withTopBorder && <div className="mx-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />}
-        <div className="p-4">
-        <button type="button" onClick={() => setEditing(record)} className="flex w-full gap-3 text-left">
-          {record.bookCoverUrl && (
+        <button
+          type="button"
+          onClick={() => setEditing(record)}
+          className="flex w-full items-center gap-2.5 px-4 py-2 text-left"
+        >
+          {record.bookCoverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={record.bookCoverUrl} alt="" className="h-20 w-14 flex-none rounded object-cover" />
+            <img src={record.bookCoverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
+          ) : (
+            <div className="h-11 w-8 flex-none rounded" style={{ background: "var(--paper)" }} />
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <p className="d truncate text-base">{record.bookTitle}</p>
-              {record.favorite && (
-                <span className="flex-none text-xs" style={{ color: "var(--berry)" }}>
-                  즐겨찾는 책
-                </span>
-              )}
-            </div>
-            {record.bookAuthor && (
-              <p className="truncate text-sm" style={{ color: "var(--ink-2)" }}>
-                {record.bookAuthor}
-              </p>
-            )}
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--ink-2)" }}>
-              <span>{record.readDate}</span>
-              {record.rating && <span>· 평점 {record.rating}</span>}
-              {record.emotion && <span>· {record.emotion}</span>}
-              {record.groupName && <span>· {record.groupName}</span>}
-              {record.status !== "done" && (
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px]"
-                  style={{ background: "rgba(232,163,61,0.16)", color: "var(--lantern)" }}
-                >
-                  {STATUS_BADGE_LABELS[record.status]}
-                </span>
-              )}
-            </div>
-            {record.parentMemo && (
-              <p className="mt-2 truncate text-sm" style={{ color: "var(--ink)" }}>
-                {record.parentMemo}
+            <p className="d truncate text-sm">{record.bookTitle}</p>
+            {record.groupName && (
+              <p className="truncate text-[11px]" style={{ color: "var(--ink-2)" }}>
+                {record.groupName}
               </p>
             )}
           </div>
+          <span className="flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+            {formatMonthDay(record.readDate)}
+          </span>
         </button>
-        {record.photoSignedUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={record.photoSignedUrl} alt="" className="mt-2 h-24 w-full rounded-[10px] object-cover" />
-        )}
-        {record.voiceSignedUrl && <audio src={record.voiceSignedUrl} controls className="mt-2 h-9 w-full" />}
-        </div>
       </div>
     );
   }

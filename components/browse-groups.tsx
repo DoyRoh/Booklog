@@ -84,7 +84,7 @@ export default function BrowseGroups({
             </Link>
             {following ? (
               <span className="d text-xs" style={{ color: "var(--point-deep)" }}>
-                팔로우 중
+                팔로잉
               </span>
             ) : (
               <button

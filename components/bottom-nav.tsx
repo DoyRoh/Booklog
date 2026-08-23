@@ -8,20 +8,19 @@ import {
   LibraryIcon,
   RecordsIcon,
   RecommendIcon,
-  BadgeIcon,
   DashboardIcon,
   AssignmentIcon,
   ChildrenIcon,
 } from "@/components/icons/tab-icons";
 
-// '더보기'는 하단 탭이 아니라 상단 우측 상시 아이콘(TopBar)으로 옮겼다 --
-// 부모/교사/큐레이터 탭 어디에도 더 이상 포함하지 않는다.
+// '더보기'와 '배지'는 하단 탭이 아니라 상단 우측 상시 아이콘(TopBar)으로
+// 옮겼다 -- 부모/교사/큐레이터 탭 어디에도 더 이상 포함하지 않는다.
 const PARENT_TABS = [
   { href: "/today", label: "오늘", Icon: TodayIcon },
   { href: "/library", label: "책장", Icon: LibraryIcon },
   { href: "/records", label: "기록", Icon: RecordsIcon },
   { href: "/recommend", label: "추천", Icon: RecommendIcon },
-  { href: "/badges", label: "배지", Icon: BadgeIcon },
+  { href: "/assignments", label: "숙제", Icon: AssignmentIcon },
 ] as const;
 
 const TEACHER_TABS = [

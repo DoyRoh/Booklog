@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { TodayAssignment } from "@/components/assignment-today";
 
 // '오늘' 탭은 숙제 요약만 보여준다 -- 그룹명/제목/완료 여부 정도의 한 줄
-// 리스트고, 실제로 책을 골라 기록하는 상세 화면은 /today/assignments다.
+// 리스트고, 실제로 책을 골라 기록하는 상세 화면은 숙제 탭(/assignments)이다.
 // 같은 그룹의 숙제끼리는 구분선 없이 한 섹션으로 묶고, 섹션(그룹) 사이에만
 // 구분선을 둔다.
 export default function AssignmentSummary({ assignments }: { assignments: TodayAssignment[] }) {
@@ -33,7 +33,7 @@ export default function AssignmentSummary({ assignments }: { assignments: TodayA
             return (
               <Link
                 key={assignment.id}
-                href={`/today/assignments#${assignment.id}`}
+                href={`/assignments#${assignment.id}`}
                 className={`flex items-center justify-between gap-3 py-2 ${sIndex > 0 ? "" : "px-4"}`}
               >
                 <p className="d truncate text-sm">{assignment.title}</p>

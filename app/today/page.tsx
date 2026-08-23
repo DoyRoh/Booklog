@@ -122,7 +122,7 @@ export default async function TodayPage() {
       <Link
         href="/library/add"
         className="d mt-3 block rounded-[14px] py-3.5 text-center text-base text-white"
-        style={{ background: "var(--lantern)" }}
+        style={{ background: "var(--berry)" }}
       >
         + 책 기록하기
       </Link>
@@ -157,7 +157,7 @@ export default async function TodayPage() {
         <div className="flex items-center justify-between">
           <p className="d text-lg">오늘의 숙제</p>
           {assignments.length > 0 && (
-            <Link href="/today/assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
+            <Link href="/assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
               전체 보기 ›
             </Link>
           )}

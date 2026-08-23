@@ -178,11 +178,11 @@ export default async function GroupDetailPage({
         </div>
       )}
 
-      {!isOperator && !isMember && group.join_policy === "open" && (
+      {!isOperator && group.join_policy === "open" && (
         <div className="mt-4">
           <BrowseGroups
             groups={[{ id: group.id, name: group.name, type: group.type }]}
-            followingIds={[]}
+            followingIds={isMember ? [group.id] : []}
             activeChildId={activeChild?.id ?? null}
           />
         </div>

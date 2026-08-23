@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MoreIcon } from "@/components/icons/tab-icons";
+import { MoreIcon, BadgeIcon } from "@/components/icons/tab-icons";
 import { useProfile } from "@/components/profile-context";
 
 const HIDDEN_PREFIXES = ["/login", "/signup", "/onboarding"];
@@ -19,7 +19,8 @@ export default function TopBar() {
   }
 
   const title = role === "parent" && childName ? `${childName}의 책숲` : "책숲";
-  const active = pathname === "/more" || pathname.startsWith("/more/");
+  const moreActive = pathname === "/more" || pathname.startsWith("/more/");
+  const badgesActive = pathname === "/badges" || pathname.startsWith("/badges/");
 
   return (
     <div
@@ -30,15 +31,28 @@ export default function TopBar() {
         <span className="d text-lg" style={{ color: "var(--ink)" }}>
           {title}
         </span>
-        <Link
-          href="/more"
-          aria-label="더보기"
-          className="flex items-center gap-1"
-          style={{ color: active ? "var(--ink)" : "var(--ink-2)" }}
-        >
-          <span className="d text-xs">더보기</span>
-          <MoreIcon width={20} height={20} strokeWidth={active ? 2.4 : 1.9} />
-        </Link>
+        <div className="flex items-center gap-4">
+          {role === "parent" && (
+            <Link
+              href="/badges"
+              aria-label="배지"
+              className="flex items-center gap-1"
+              style={{ color: badgesActive ? "var(--ink)" : "var(--ink-2)" }}
+            >
+              <span className="d text-xs">배지</span>
+              <BadgeIcon width={20} height={20} strokeWidth={badgesActive ? 2.4 : 1.9} />
+            </Link>
+          )}
+          <Link
+            href="/more"
+            aria-label="더보기"
+            className="flex items-center gap-1"
+            style={{ color: moreActive ? "var(--ink)" : "var(--ink-2)" }}
+          >
+            <span className="d text-xs">더보기</span>
+            <MoreIcon width={20} height={20} strokeWidth={moreActive ? 2.4 : 1.9} />
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -15,14 +15,18 @@ type AssignmentRow = {
   assignment_missions: { id: string; type: TodayAssignment["missions"][number]["type"]; question: string | null }[];
 };
 
+type AssignmentScope = "current" | "current_and_upcoming" | "past";
+
 /**
- * 오늘 탭(요약)과 /today/assignments(상세) 양쪽에서 같은 아이의 진행 중인
- * 숙제 데이터를 써야 해서, 조회 로직을 한 곳으로 뺐다.
+ * 오늘 탭(요약)·숙제 탭(전체 목록)·숙제 탭 상세 카드 전부 같은 아이의
+ * 숙제 데이터를 써야 해서, 조회 로직을 한 곳으로 뺐다. scope로 날짜
+ * 범위만 바꿔서 세 가지 쓰임(오늘 것만/오늘+앞으로/지난 것)을 공유한다.
  */
-export async function getTodayAssignments(
+async function fetchAssignments(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any>,
-  childId: string
+  childId: string,
+  scope: AssignmentScope
 ): Promise<TodayAssignment[]> {
   const { data: memberGroupRows } = await supabase
     .from("group_members")
@@ -34,15 +38,31 @@ export async function getTodayAssignments(
   if (groupIds.length === 0) return [];
 
   const today = new Date().toISOString().slice(0, 10);
-  const { data: assignmentRows } = await supabase
+  let query = supabase
     .from("assignments")
     .select(
       "id, group_id, title, description, groups(name), assignment_books(target_page, books(id, title, author, cover_url)), assignment_missions(id, type, question)"
     )
-    .in("group_id", groupIds)
-    .or(`start_date.is.null,start_date.lte.${today}`)
-    .or(`end_date.is.null,end_date.gte.${today}`)
-    .order("created_at", { ascending: false });
+    .in("group_id", groupIds);
+
+  if (scope === "current") {
+    query = query
+      .or(`start_date.is.null,start_date.lte.${today}`)
+      .or(`end_date.is.null,end_date.gte.${today}`)
+      .order("created_at", { ascending: false });
+  } else if (scope === "current_and_upcoming") {
+    // 시작일 제약 없이, 아직 끝나지 않은(또는 마감이 없는) 숙제 전부 --
+    // "오늘 숙제"와 "앞으로의 숙제"를 한 번에 다룬다. 가까운 시작일 순으로
+    // 정렬해서 곧 시작하는(또는 이미 진행 중인) 숙제가 위에 오게 한다.
+    query = query
+      .or(`end_date.is.null,end_date.gte.${today}`)
+      .order("start_date", { ascending: true, nullsFirst: true });
+  } else {
+    // 지난 숙제: 마감일이 있고, 그 마감일이 지난 것만. 최근에 끝난 것부터.
+    query = query.not("end_date", "is", null).lt("end_date", today).order("end_date", { ascending: false });
+  }
+
+  const { data: assignmentRows } = await query;
 
   const rows = (assignmentRows ?? []) as unknown as AssignmentRow[];
   if (rows.length === 0) return [];
@@ -173,4 +193,31 @@ export async function getTodayAssignments(
       voiceSignedUrl: voiceSignedUrlByMission.get(mission.id) ?? null,
     })),
   }));
+}
+
+/** 오늘 탭 요약("오늘까지 해야 할 숙제")에서 쓴다. */
+export async function getTodayAssignments(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any>,
+  childId: string
+): Promise<TodayAssignment[]> {
+  return fetchAssignments(supabase, childId, "current");
+}
+
+/** 숙제 탭 기본 화면("오늘 + 앞으로의 숙제")에서 쓴다. */
+export async function getActiveAndUpcomingAssignments(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any>,
+  childId: string
+): Promise<TodayAssignment[]> {
+  return fetchAssignments(supabase, childId, "current_and_upcoming");
+}
+
+/** 숙제 탭의 "지난 숙제 보기"에서 쓴다. */
+export async function getPastAssignments(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any>,
+  childId: string
+): Promise<TodayAssignment[]> {
+  return fetchAssignments(supabase, childId, "past");
 }

@@ -787,4 +787,12 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **`components/photo-picker.tsx`/`components/voice-recorder.tsx`에 `existingUrl`/`onRemoveExisting` prop 추가**: 원래는 "새로 파일 선택"만 지원하는 컴포넌트였는데, 이미 업로드된 사진/음성이 있을 때 그걸 보여주고 "바꾸기"(새 파일 선택기 다시 염) 또는 "지우기"(`onRemoveExisting` 호출)를 할 수 있게 상태를 하나 더 추가했습니다. 기록 남기기 화면(항상 새로 첨부하는 경우)은 이 prop들을 안 넘기므로 동작이 그대로입니다.
 - **저장 시 부분 업데이트**: 사진/음성을 안 건드렸으면 `reading_records.update()` 페이로드에 `photo_url`/`voice_url` 키 자체를 아예 안 넣어서 기존 값이 그대로 유지되도록 했습니다(새로 파일을 골랐을 때만 업로드 후 그 경로로, 지웠을 때만 `null`로 채웁니다) — 매번 무조건 포함시키면 라이브러리 화면처럼 여러 값을 조합해서 만든 `EditableRecord`에서 원본 경로를 잘못 덮어쓸 여지가 있어 이 방식이 더 안전합니다.
 
+## 하단 탭 재편(배지 → 숙제) + 기록 탭 압축 + 팔로우 상태 표시 (사용자 요청)
+
+- **배지를 상단으로, 숙제를 하단 탭으로**: `components/top-bar.tsx`의 '더보기' 아이콘 옆에 배지 아이콘을 하나 더 추가했습니다(부모 계정에서만, `role === "parent"` 조건). 그 빈자리에 숙제를 새 하단 탭으로 넣어서, 부모 탭 구성이 **오늘 · 책장 · 기록 · 추천 · 숙제**가 됐습니다. 숙제 탭 아이콘은 교사용 `AssignmentIcon`을 그대로 재사용했습니다(경로만 다름 — 교사는 `/teacher/assignments`, 부모는 `/assignments`).
+- **숙제 탭 신설(`app/assignments`)**: 기존 `/today/assignments`(오늘 숙제 상세)를 대체하는 자리로, `lib/assignments.ts`의 `getTodayAssignments()`를 조회 범위별로 세 함수로 나눴습니다 — 내부 공용 `fetchAssignments(scope)`에 `"current"`(기존 오늘 탭 요약과 완전히 동일한 동작, 회귀 없음)/`"current_and_upcoming"`(시작일 제약 없이 아직 안 끝난 숙제 전부 — 숙제 탭 기본 화면)/`"past"`(마감일이 지난 것만 — `/assignments/past`) 세 가지를 파라미터로 넘깁니다. `components/assignment-today.tsx`는 그룹별로 섹션을 나눠 보여주도록 고쳤습니다(그룹명을 카드마다 반복하지 않고 섹션 헤더 한 번만). 오늘 탭 요약의 "전체 보기"와 각 숙제 링크(`#assignmentId`)도 전부 `/assignments`로 바꿨습니다.
+- **기록 탭을 "다 읽은 책 로그"로 좁힘**: 사용자가 기록 탭을 "다 읽은 책에 대한 기록"으로 명확히 정의해서, `app/records/page.tsx`의 조회에 `status='done'` 필터를 추가했습니다(읽고 싶은 책/읽는 중인 책은 책장 탭의 상태 필터에서만 봄). 각 행도 사진·음성 인라인 미리보기, 평점·기분·메모 텍스트, 즐겨찾기 표시를 다 빼고 **아주 작은 표지(44×32px) + 제목 + 그룹명(아주 작게) + 날짜(M/D)** 한 줄로 압축했습니다(`components/records-list.tsx`). 이제 목록에서 사진/음성을 안 보여주므로, `app/records/page.tsx`가 모든 기록에 대해 미리 서명된 URL을 만들던 것도 없앴습니다(모달이 열릴 때만 서명하는 이번 세션의 다른 개선과 같은 방향 — 목록 렌더링 자체가 훨씬 가벼워짐).
+- **팔로우 → 팔로잉**: `components/browse-groups.tsx`의 "팔로우 중" 라벨을 "팔로잉"으로 바꿨고, 실제 버그도 하나 고쳤습니다 — 그룹 상세 화면(`app/recommend/[groupId]/page.tsx`)이 `!isMember`일 때만 팔로우 UI를 렌더링해서, 이미 팔로우한 뒤에는 팔로우 버튼도 "팔로잉" 표시도 아무것도 안 뜨고 그냥 사라졌습니다. `isMember` 조건을 빼고 `followingIds`를 실제 멤버십 여부로 넘기도록 고쳐서, 팔로우한 뒤에도 "팔로잉"이 계속 보이게 했습니다.
+- **책 기록하기 버튼 색상**: `app/records/page.tsx`, `app/today/page.tsx`의 "+ 책 기록하기" 버튼 배경을 `var(--lantern)`(호박색)에서 `var(--berry)`(#D94A32)로 바꿨습니다. 숙제 관련 강조에 쓰이는 다른 lantern 색상(교사 승인 대기 건수, 숙제 미완료 배지, 책장/기록의 "읽고 싶어요"/"읽는 중" 상태 배지 등)은 그대로 뒀습니다 — 사용자가 지목한 건 "책 기록하기" 버튼만이었습니다.
+
 @AGENTS.md

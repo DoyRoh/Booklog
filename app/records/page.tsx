@@ -2,7 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
-import { getSignedMediaUrl } from "@/lib/storage";
 import RecordsList, { type RecordRow } from "@/components/records-list";
 
 export default async function RecordsPage() {
@@ -22,6 +21,8 @@ export default async function RecordsPage() {
 
   const activeChild = await getActiveChild(supabase, userId);
 
+  // 기록 탭은 "다 읽은 책"에 대한 기록 로그다 -- 읽고 싶은 책/읽는 중인
+  // 책은 책장 탭에서 상태 필터로 보고, 여기서는 status='done'만 다룬다.
   const { data: rows } = activeChild
     ? await supabase
         .from("reading_records")
@@ -29,40 +30,35 @@ export default async function RecordsPage() {
           "id, group_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, photo_url, voice_url, books(title, author, cover_url), groups(name)"
         )
         .eq("child_id", activeChild.id)
+        .eq("status", "done")
         .order("read_date", { ascending: false })
     : { data: null };
 
-  const records: RecordRow[] = rows
-    ? await Promise.all(
-        rows.map(async (row) => {
-          const book = row.books as unknown as {
-            title: string;
-            author: string | null;
-            cover_url: string | null;
-          } | null;
-          const group = row.groups as unknown as { name: string } | null;
-          return {
-            id: row.id,
-            groupId: row.group_id,
-            groupName: group?.name ?? null,
-            status: row.status,
-            rating: row.rating,
-            emotion: row.emotion,
-            favorite: row.favorite,
-            parentMemo: row.parent_memo,
-            readDate: row.read_date,
-            pagesRead: row.pages_read,
-            photoPath: row.photo_url,
-            voicePath: row.voice_url,
-            photoSignedUrl: row.photo_url ? await getSignedMediaUrl(supabase, row.photo_url) : null,
-            voiceSignedUrl: row.voice_url ? await getSignedMediaUrl(supabase, row.voice_url) : null,
-            bookTitle: book?.title ?? "",
-            bookAuthor: book?.author ?? null,
-            bookCoverUrl: book?.cover_url ?? null,
-          };
-        })
-      )
-    : [];
+  const records: RecordRow[] = (rows ?? []).map((row) => {
+    const book = row.books as unknown as {
+      title: string;
+      author: string | null;
+      cover_url: string | null;
+    } | null;
+    const group = row.groups as unknown as { name: string } | null;
+    return {
+      id: row.id,
+      groupId: row.group_id,
+      groupName: group?.name ?? null,
+      status: row.status,
+      rating: row.rating,
+      emotion: row.emotion,
+      favorite: row.favorite,
+      parentMemo: row.parent_memo,
+      readDate: row.read_date,
+      pagesRead: row.pages_read,
+      photoPath: row.photo_url,
+      voicePath: row.voice_url,
+      bookTitle: book?.title ?? "",
+      bookAuthor: book?.author ?? null,
+      bookCoverUrl: book?.cover_url ?? null,
+    };
+  });
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -70,7 +66,7 @@ export default async function RecordsPage() {
         <Link
           href="/library/add"
           className="d block rounded-[14px] py-3.5 text-center text-base text-white"
-          style={{ background: "var(--lantern)" }}
+          style={{ background: "var(--berry)" }}
         >
           + 책 기록하기
         </Link>
