@@ -74,6 +74,15 @@ export default async function TodayPage() {
     getTodayAssignments(supabase, activeChild.id),
   ]);
 
+  // 마감일(end_date)을 안 정한 숙제는 날짜만으로는 절대 안 없어지므로,
+  // 오늘 탭 요약에서는 책을 전부 다 읽어서 완료된 숙제를 따로 걸러낸다
+  // (실사용 피드백: 다 끝난 숙제가 계속 "오늘의 숙제"에 남아있던 문제).
+  // 숙제 탭(/assignments)은 관리 화면이라 완료된 것도 그대로 보여준다.
+  const activeAssignments = assignments.filter((a) => {
+    const completedCount = a.books.filter((b) => b.completed).length;
+    return a.books.length === 0 || completedCount < a.books.length;
+  });
+
   const doneRecords = (allRecords ?? []).filter((r) => r.status === "done");
   const totalDone = doneRecords.length;
   const thisMonthKey = new Date().toISOString().slice(0, 7);
@@ -156,18 +165,18 @@ export default async function TodayPage() {
       <div className="mt-8">
         <div className="flex items-center justify-between">
           <p className="d text-lg">오늘의 숙제</p>
-          {assignments.length > 0 && (
+          {activeAssignments.length > 0 && (
             <Link href="/assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
               전체 보기 ›
             </Link>
           )}
         </div>
-        {assignments.length === 0 ? (
+        {activeAssignments.length === 0 ? (
           <p className="mt-3 text-base" style={{ color: "var(--ink-2)" }}>
             지금 진행 중인 숙제가 없어요. 책장에서 자유롭게 책을 기록해 보세요.
           </p>
         ) : (
-          <AssignmentSummary assignments={assignments} />
+          <AssignmentSummary assignments={activeAssignments} />
         )}
       </div>
 
