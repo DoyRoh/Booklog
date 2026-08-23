@@ -153,25 +153,25 @@ export default async function TodayPage() {
           className="mt-4 grid grid-cols-4 gap-1"
           style={{ borderTop: "1px solid var(--rule)", paddingTop: "0.875rem" }}
         >
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="flex flex-col items-start gap-0.5">
             <span className="d text-lg">{todayCount}</span>
             <span className="text-xs" style={{ color: "var(--ink-2)" }}>
               오늘
             </span>
           </div>
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="flex flex-col items-start gap-0.5">
             <span className="d text-lg">{weekCount}</span>
             <span className="text-xs" style={{ color: "var(--ink-2)" }}>
               이번 주
             </span>
           </div>
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="flex flex-col items-start gap-0.5">
             <span className="d text-lg">{monthCount}</span>
             <span className="text-xs" style={{ color: "var(--ink-2)" }}>
               이번 달
             </span>
           </div>
-          <Link href="/assignments" className="flex flex-col items-center gap-0.5">
+          <Link href="/assignments" className="flex flex-col items-start gap-0.5">
             <span className="d text-lg">{groupCount}</span>
             <span className="text-xs" style={{ color: "var(--ink-2)" }}>
               그룹
