@@ -217,99 +217,106 @@ export default function AssignmentToday({
   return (
     <div className="mt-4 flex flex-col gap-6">
       {sections.map((section) => (
-        <div key={section.groupName} className="flex flex-col gap-4">
+        <div key={section.groupName}>
           <p className="d text-sm" style={{ color: "var(--lantern)" }}>
             {section.groupName}
           </p>
-          {section.assignments.map((assignment) => {
-            const completedCount = assignment.books.filter((book) => book.completed).length;
-            return (
-              <div
-                key={assignment.id}
-                id={assignment.id}
-                className="rounded-[var(--r)] border p-4 scroll-mt-4"
-                style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="d text-lg">{assignment.title}</p>
+          {/* 그룹당 숙제가 여러 개여도 박스를 나누지 않고, 하나의 박스
+              안에서 구분선으로만 나눈다(추천도서 목록과 같은 패턴). */}
+          <div
+            className="mt-2 overflow-hidden rounded-[var(--r)] border"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          >
+            {section.assignments.map((assignment, index) => {
+              const completedCount = assignment.books.filter((book) => book.completed).length;
+              return (
+                <div
+                  key={assignment.id}
+                  id={assignment.id}
+                  className="p-4 scroll-mt-4"
+                  style={index > 0 ? { borderTop: "1px solid var(--rule)" } : undefined}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="d text-lg">{assignment.title}</p>
+                    </div>
+                    <span
+                      className="d flex-none rounded-full px-3 py-1 text-sm"
+                      style={{
+                        background:
+                          completedCount === assignment.books.length && assignment.books.length > 0
+                            ? "rgba(47,168,79,0.12)"
+                            : "var(--paper)",
+                        color:
+                          completedCount === assignment.books.length && assignment.books.length > 0
+                            ? "var(--point-deep)"
+                            : "var(--ink-2)",
+                      }}
+                    >
+                      {completedCount}/{assignment.books.length} 완료
+                    </span>
                   </div>
-                  <span
-                    className="d flex-none rounded-full px-3 py-1 text-sm"
-                    style={{
-                      background:
-                        completedCount === assignment.books.length && assignment.books.length > 0
-                          ? "rgba(47,168,79,0.12)"
-                          : "var(--paper)",
-                      color:
-                        completedCount === assignment.books.length && assignment.books.length > 0
-                          ? "var(--point-deep)"
-                          : "var(--ink-2)",
-                    }}
-                  >
-                    {completedCount}/{assignment.books.length} 완료
-                  </span>
-                </div>
-                {assignment.description && (
-                  <p className="mt-1 text-base" style={{ color: "var(--ink-2)" }}>
-                    {assignment.description}
-                  </p>
-                )}
+                  {assignment.description && (
+                    <p className="mt-1 text-base" style={{ color: "var(--ink-2)" }}>
+                      {assignment.description}
+                    </p>
+                  )}
 
-                <div className="mt-3 flex flex-col gap-2">
-                  {assignment.books.map((book) =>
-                    book.completed ? (
-                      <button
-                        key={book.id}
-                        type="button"
-                        disabled={!book.recordId}
-                        onClick={() => setEditing(book)}
-                        className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5 text-left"
-                        style={{ borderColor: "var(--rule)" }}
-                      >
-                        <span className="text-base">{book.title}</span>
-                        <span className="text-sm" style={{ color: "var(--point-deep)" }}>
-                          읽었어요
-                        </span>
-                      </button>
-                    ) : (
-                      <Link
-                        key={book.id}
-                        href={`/library/add?bookId=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(assignment.groupId)}`}
-                        className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5"
-                        style={{ borderColor: "var(--rule)" }}
-                      >
-                        <div>
+                  <div className="mt-3 flex flex-col gap-2">
+                    {assignment.books.map((book) =>
+                      book.completed ? (
+                        <button
+                          key={book.id}
+                          type="button"
+                          disabled={!book.recordId}
+                          onClick={() => setEditing(book)}
+                          className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5 text-left"
+                          style={{ borderColor: "var(--rule)" }}
+                        >
                           <span className="text-base">{book.title}</span>
-                          {book.targetPage && (
-                            <span className="ml-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
-                              {book.targetPage}쪽까지
-                            </span>
-                          )}
-                        </div>
-                        <span className="d text-sm" style={{ color: "var(--point)" }}>
-                          기록하기
-                        </span>
-                      </Link>
-                    )
+                          <span className="text-sm" style={{ color: "var(--point-deep)" }}>
+                            읽었어요
+                          </span>
+                        </button>
+                      ) : (
+                        <Link
+                          key={book.id}
+                          href={`/library/add?bookId=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(assignment.groupId)}`}
+                          className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5"
+                          style={{ borderColor: "var(--rule)" }}
+                        >
+                          <div>
+                            <span className="text-base">{book.title}</span>
+                            {book.targetPage && (
+                              <span className="ml-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
+                                {book.targetPage}쪽까지
+                              </span>
+                            )}
+                          </div>
+                          <span className="d text-sm" style={{ color: "var(--point)" }}>
+                            기록하기
+                          </span>
+                        </Link>
+                      )
+                    )}
+                  </div>
+
+                  {assignment.missions.map((mission) =>
+                    mission.type === "question" ? (
+                      <QuestionMission key={mission.id} childId={childId} mission={mission} />
+                    ) : mission.type === "voice" ? (
+                      <VoiceMission
+                        key={mission.id}
+                        childId={childId}
+                        mission={mission}
+                        voiceAllowed={voiceAllowed}
+                      />
+                    ) : null
                   )}
                 </div>
-
-                {assignment.missions.map((mission) =>
-                  mission.type === "question" ? (
-                    <QuestionMission key={mission.id} childId={childId} mission={mission} />
-                  ) : mission.type === "voice" ? (
-                    <VoiceMission
-                      key={mission.id}
-                      childId={childId}
-                      mission={mission}
-                      voiceAllowed={voiceAllowed}
-                    />
-                  ) : null
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       ))}
 

@@ -15,12 +15,15 @@ import {
 
 // '더보기'와 '배지'는 하단 탭이 아니라 상단 우측 상시 아이콘(TopBar)으로
 // 옮겼다 -- 부모/교사/큐레이터 탭 어디에도 더 이상 포함하지 않는다.
+// '추천'과 '숙제'가 그룹 상세 화면에서 겹쳐 보인다는 피드백으로 하나의
+// 탭('숲길')으로 합쳤다 -- 그룹을 고르면 그 그룹의 추천도서와 숙제를 한
+// 화면에서 같이 본다(app/assignments). 아직 안 속한 그룹을 찾아
+// 팔로우/가입하는 기능은 더보기 화면으로 옮겼다.
 const PARENT_TABS = [
   { href: "/today", label: "오늘", Icon: TodayIcon },
   { href: "/library", label: "책장", Icon: LibraryIcon },
   { href: "/records", label: "기록", Icon: RecordsIcon },
-  { href: "/recommend", label: "추천", Icon: RecommendIcon },
-  { href: "/assignments", label: "숙제", Icon: AssignmentIcon },
+  { href: "/assignments", label: "숲길", Icon: AssignmentIcon },
 ] as const;
 
 const TEACHER_TABS = [

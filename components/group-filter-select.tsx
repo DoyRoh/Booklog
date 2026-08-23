@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 export type FilterGroup = { id: string; name: string };
 
-// 숙제 탭 상단의 그룹 드롭다운 -- URL의 ?group= 쿼리로 선택 상태를
+// 숲길 탭 상단의 그룹 드롭다운 -- URL의 ?group= 쿼리로 선택 상태를
 // 저장하므로(클라이언트 state가 아니라), 서버 컴포넌트가 선택된 그룹에
 // 맞는 추천도서/숙제를 그대로 다시 렌더링할 수 있다.
 export default function GroupFilterSelect({

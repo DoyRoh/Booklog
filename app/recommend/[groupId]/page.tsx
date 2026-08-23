@@ -47,12 +47,12 @@ export default async function GroupDetailPage({
   if (!group) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
-        <h1 className="d text-xl">추천</h1>
+        <h1 className="d text-xl">그룹</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           그룹을 찾을 수 없어요.
         </p>
         <Link href="/recommend" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
-          추천 탭으로
+          그룹 목록으로
         </Link>
       </div>
     );
@@ -65,7 +65,7 @@ export default async function GroupDetailPage({
 
   // 셋 다 activeChild.id/groupId에만 의존하고 서로 무관하므로 동시에
   // 왕복한다. 추천도서 목록 조회는 lib/recommend-books.ts로 옮겨서
-  // 숙제 탭(그룹 필터)과 로직을 공유한다.
+  // 숲길 탭(그룹 필터)과 로직을 공유한다.
   const [{ data: childMembership }, { bookListId, listName, books: recommendBooks }, { data: pendingRows }] =
     await Promise.all([
       activeChild
@@ -95,7 +95,7 @@ export default async function GroupDetailPage({
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <Link href="/recommend" className="text-sm" style={{ color: "var(--ink-2)" }}>
-        ← 추천
+        ← 그룹 목록
       </Link>
 
       <h1 className="d mt-2 text-xl">{group.name}</h1>
@@ -152,7 +152,7 @@ export default async function GroupDetailPage({
         </div>
       )}
 
-      {/* 부모가 보는 숙제 목록/진행 현황은 숙제 탭(그룹 필터)에서 다룬다 --
+      {/* 부모가 보는 숙제 목록/진행 현황은 숲길 탭(그룹 필터)에서 다룬다 --
           여기는 운영진이 새 숙제를 만드는 자리로만 남겨둔다. */}
       {isOperator && (
         <div className="mt-8">

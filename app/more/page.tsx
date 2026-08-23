@@ -73,6 +73,22 @@ export default async function MorePage() {
         </div>
       )}
 
+      {profile?.role === "parent" && (
+        <div className="mt-8">
+          <p className="d text-lg">그룹 둘러보기</p>
+          <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+            아직 안 속한 기관·크리에이터 그룹을 찾아 팔로우하거나, 초대 코드로 학급에 참가할 수 있어요.
+          </p>
+          <Link
+            href="/recommend"
+            className="mt-2 block rounded-[var(--r)] border p-4 text-sm"
+            style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
+          >
+            새 그룹 찾기
+          </Link>
+        </div>
+      )}
+
       {(profile?.role === "teacher" || profile?.role === "curator") && (
         <div className="mt-8">
           <p className="d text-lg">대시보드</p>

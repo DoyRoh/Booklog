@@ -149,26 +149,35 @@ export default function RecommendBookList({
         </p>
       )}
 
-      <div className="mt-4 flex flex-col gap-5">
-        {sections.map(({ category, books: sectionBooks }) => (
-          <div key={category ?? "all"}>
-            {category && (
-              <div className="flex items-center justify-between px-1">
-                <span className="d text-sm">{category}</span>
-                <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-                  {sectionBooks.filter((b) => b.inShelf).length}/{sectionBooks.length}
-                </span>
-              </div>
-            )}
-            <div
-              className="mt-2 overflow-hidden rounded-[var(--r)] border"
-              style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-            >
+      {/* 분야별로 따로 박스를 나누면 카드가 너무 많아 보인다는 피드백으로,
+          전체 목록을 박스 하나에 담고 분야는 안의 소제목 행(구분선)으로만
+          나눈다. */}
+      {sections.length > 0 && (
+        <div
+          className="mt-4 overflow-hidden rounded-[var(--r)] border"
+          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+        >
+          {sections.map(({ category, books: sectionBooks }, sectionIndex) => (
+            <div key={category ?? "all"}>
+              {category && (
+                <div
+                  className="flex items-center justify-between px-3 py-2"
+                  style={{
+                    background: "var(--paper)",
+                    borderTop: sectionIndex > 0 ? "1px solid var(--rule)" : undefined,
+                  }}
+                >
+                  <span className="d text-sm">{category}</span>
+                  <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+                    {sectionBooks.filter((b) => b.inShelf).length}/{sectionBooks.length}
+                  </span>
+                </div>
+              )}
               {sectionBooks.map((book, index) => (
                 <div
                   key={book.itemId + (category ?? "")}
                   className="flex items-center gap-3 p-3"
-                  style={index > 0 ? { borderTop: "1px solid var(--rule)" } : undefined}
+                  style={category || index > 0 ? { borderTop: "1px solid var(--rule)" } : undefined}
                 >
                   {book.coverUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -220,9 +229,9 @@ export default function RecommendBookList({
                 </div>
               ))}
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

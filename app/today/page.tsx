@@ -77,7 +77,7 @@ export default async function TodayPage() {
   // 마감일(end_date)을 안 정한 숙제는 날짜만으로는 절대 안 없어지므로,
   // 오늘 탭 요약에서는 책을 전부 다 읽어서 완료된 숙제를 따로 걸러낸다
   // (실사용 피드백: 다 끝난 숙제가 계속 "오늘의 숙제"에 남아있던 문제).
-  // 숙제 탭(/assignments)은 관리 화면이라 완료된 것도 그대로 보여준다.
+  // 숲길 탭(/assignments)은 관리 화면이라 완료된 것도 그대로 보여준다.
   const activeAssignments = assignments.filter((a) => {
     const completedCount = a.books.filter((b) => b.completed).length;
     return a.books.length === 0 || completedCount < a.books.length;
