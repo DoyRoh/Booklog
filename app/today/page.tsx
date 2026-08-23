@@ -150,7 +150,7 @@ export default async function TodayPage() {
         </p>
 
         <div
-          className="mt-4 grid grid-cols-4 gap-1"
+          className="mt-4 flex justify-between"
           style={{ borderTop: "1px solid var(--rule)", paddingTop: "0.875rem" }}
         >
           <div className="flex flex-col items-start gap-0.5">
