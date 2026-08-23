@@ -182,7 +182,7 @@ export default function LibraryShelf({
   }, [deduped, query, statusFilter, sort]);
 
   return (
-    <div className="mt-6">
+    <div>
       <div className="flex gap-2">
         <div className="relative flex-1">
           <SearchIcon
@@ -295,6 +295,9 @@ export default function LibraryShelf({
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="mt-2 flex justify-end">
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortMode)}
