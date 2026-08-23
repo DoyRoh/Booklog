@@ -188,7 +188,9 @@ export default async function TodayPage() {
         + 책 기록하기
       </Link>
 
-      <div className="mt-8">
+      <div className="mx-1 mt-8" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+
+      <div className="mt-6">
         <div className="flex items-center justify-between">
           <p className="d text-base">오늘의 숙제</p>
           {activeAssignments.length > 0 && (
@@ -207,17 +209,21 @@ export default async function TodayPage() {
       </div>
 
       {recentRecords.length > 0 && (
-        <div className="mt-8">
-          <div className="flex items-center justify-between">
-            <p className="d text-base">최근 기록</p>
-            <Link href="/records" className="text-xs" style={{ color: "var(--ink-2)" }}>
-              전체 보기 ›
-            </Link>
+        <>
+          <div className="mx-1 mt-8" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+
+          <div className="mt-6">
+            <div className="flex items-center justify-between">
+              <p className="d text-base">최근 기록</p>
+              <Link href="/records" className="text-xs" style={{ color: "var(--ink-2)" }}>
+                전체 보기 ›
+              </Link>
+            </div>
+            <div className="mt-3">
+              <RecentRecords childId={activeChild.id} childName={activeChild.name} records={recentRecords} />
+            </div>
           </div>
-          <div className="mt-3">
-            <RecentRecords childId={activeChild.id} childName={activeChild.name} records={recentRecords} />
-          </div>
-        </div>
+        </>
       )}
     </div>
   );
