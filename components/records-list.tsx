@@ -39,7 +39,7 @@ function monthLabel(key: string) {
 
 function formatMonthDay(dateStr: string) {
   const [, m, d] = dateStr.split("-");
-  return `${Number(m)}/${Number(d)}`;
+  return `${Number(m)}월 ${Number(d)}일`;
 }
 
 export default function RecordsList({
