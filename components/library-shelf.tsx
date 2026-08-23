@@ -232,59 +232,67 @@ export default function LibraryShelf({
       </div>
 
       {(groupOptions.hasDirect || groupOptions.groups.length > 0) && (
-        <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => setGroupFilter("all")}
-            className="d flex-none rounded-full border px-3 py-1 text-xs"
-            style={{
-              borderColor: groupFilter === "all" ? "var(--point)" : "var(--rule)",
-              background: groupFilter === "all" ? "rgba(47,168,79,0.08)" : "var(--card)",
-              color: groupFilter === "all" ? "var(--point-deep)" : "var(--ink-2)",
-            }}
-          >
-            전체 출처
-          </button>
-          {groupOptions.hasDirect && (
+        <div className="mt-2 flex items-center gap-2">
+          <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+            출처
+          </span>
+          <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
             <button
               type="button"
-              onClick={() => setGroupFilter("direct")}
+              onClick={() => setGroupFilter("all")}
               className="d flex-none rounded-full border px-3 py-1 text-xs"
               style={{
-                borderColor: groupFilter === "direct" ? "var(--point)" : "var(--rule)",
-                background: groupFilter === "direct" ? "rgba(47,168,79,0.08)" : "var(--card)",
-                color: groupFilter === "direct" ? "var(--point-deep)" : "var(--ink-2)",
+                borderColor: groupFilter === "all" ? "var(--point)" : "var(--rule)",
+                background: groupFilter === "all" ? "rgba(47,168,79,0.08)" : "var(--card)",
+                color: groupFilter === "all" ? "var(--point-deep)" : "var(--ink-2)",
               }}
             >
-              직접 기록
+              전체
             </button>
-          )}
-          {groupOptions.groups.map(([id, name]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setGroupFilter(id)}
-              className="d flex-none rounded-full border px-3 py-1 text-xs"
-              style={{
-                borderColor: groupFilter === id ? "var(--point)" : "var(--rule)",
-                background: groupFilter === id ? "rgba(47,168,79,0.08)" : "var(--card)",
-                color: groupFilter === id ? "var(--point-deep)" : "var(--ink-2)",
-              }}
-            >
-              {name}
-            </button>
-          ))}
+            {groupOptions.hasDirect && (
+              <button
+                type="button"
+                onClick={() => setGroupFilter("direct")}
+                className="d flex-none rounded-full border px-3 py-1 text-xs"
+                style={{
+                  borderColor: groupFilter === "direct" ? "var(--point)" : "var(--rule)",
+                  background: groupFilter === "direct" ? "rgba(47,168,79,0.08)" : "var(--card)",
+                  color: groupFilter === "direct" ? "var(--point-deep)" : "var(--ink-2)",
+                }}
+              >
+                직접 기록
+              </button>
+            )}
+            {groupOptions.groups.map(([id, name]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setGroupFilter(id)}
+                className="d flex-none rounded-full border px-3 py-1 text-xs"
+                style={{
+                  borderColor: groupFilter === id ? "var(--point)" : "var(--rule)",
+                  background: groupFilter === id ? "rgba(47,168,79,0.08)" : "var(--card)",
+                  color: groupFilter === id ? "var(--point-deep)" : "var(--ink-2)",
+                }}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5">
+      <div className="mt-2 flex items-center gap-2">
+        <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+          상태
+        </span>
+        <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
           {(Object.keys(STATUS_FILTER_LABELS) as StatusFilter[]).map((value) => (
             <button
               key={value}
               type="button"
               onClick={() => setStatusFilter(value)}
-              className="d rounded-full border px-3 py-1 text-xs"
+              className="d flex-none rounded-full border px-3 py-1 text-xs"
               style={{
                 borderColor: statusFilter === value ? "var(--point)" : "var(--rule)",
                 background: statusFilter === value ? "rgba(47,168,79,0.08)" : "var(--card)",
