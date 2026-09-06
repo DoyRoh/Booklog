@@ -51,7 +51,7 @@ export default function ChildSwitcher({
     const supabase = createClient();
     const { error: updateError } = await supabase
       .from("users")
-      .update({ active_child_id: childId })
+      .update({ active_child_id: childId, active_profile_type: "child" })
       .eq("id", userId);
 
     setSwitching(null);
@@ -100,7 +100,7 @@ export default function ChildSwitcher({
     // 새로 추가한 아이로 바로 전환.
     const { error: activeError } = await supabase
       .from("users")
-      .update({ active_child_id: childId })
+      .update({ active_child_id: childId, active_profile_type: "child" })
       .eq("id", userId);
     if (activeError) {
       setError(activeError.message);

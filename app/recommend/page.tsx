@@ -23,10 +23,9 @@ export default async function RecommendPage() {
     );
   }
 
-  // 서로 무관한 조회 네 개(내 역할, 활성 아이, 내가 운영진인 그룹, 공개
-  // 그룹 목록)를 동시에 왕복한다.
-  const [{ data: profile }, activeChild, { data: operatorRows }, { data: openGroupRows }] = await Promise.all([
-    supabase.from("users").select("role").eq("id", userId).single(),
+  // 서로 무관한 조회 셋(활성 아이, 내가 운영진인 그룹, 공개 그룹 목록)을
+  // 동시에 왕복한다.
+  const [activeChild, { data: operatorRows }, { data: openGroupRows }] = await Promise.all([
     getActiveChild(supabase, userId),
     supabase
       .from("group_members")
@@ -56,21 +55,19 @@ export default async function RecommendPage() {
   );
   const myGroupIds = myGroups.map((g) => g.id);
 
-  const isOperatorRole = profile?.role === "teacher" || profile?.role === "curator";
-
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      {isOperatorRole && (
-        <div className="flex justify-end">
-          <Link
-            href="/recommend/create"
-            className="d rounded-[14px] px-4 py-2 text-sm text-white"
-            style={{ background: "var(--point)" }}
-          >
-            + 그룹 만들기
-          </Link>
-        </div>
-      )}
+      {/* 선생님/기관 프로필도 이 계정에서 바로 추가할 수 있으므로(더보기의
+          "프로필" 섹션과 같은 목적지), 역할과 무관하게 항상 보여준다. */}
+      <div className="flex justify-end">
+        <Link
+          href="/recommend/create"
+          className="d rounded-[14px] px-4 py-2 text-sm text-white"
+          style={{ background: "var(--point)" }}
+        >
+          + 그룹 만들기
+        </Link>
+      </div>
 
       <div className="mt-6">
         <p className="d text-base">내 그룹</p>
@@ -97,9 +94,9 @@ export default async function RecommendPage() {
         )}
       </div>
 
-      {!isOperatorRole && (
+      {activeChild && (
         <div className="mt-8">
-          <JoinByCode activeChildId={activeChild?.id ?? null} />
+          <JoinByCode activeChildId={activeChild.id} />
         </div>
       )}
 

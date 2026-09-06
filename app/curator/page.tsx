@@ -30,19 +30,10 @@ export default async function CuratorDashboardPage() {
     );
   }
 
-  const { data: profile } = await supabase.from("users").select("role").eq("id", userId).single();
-
-  if (profile?.role !== "curator") {
-    return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
-        <h1 className="d text-xl">큐레이터 대시보드</h1>
-        <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-          큐레이터 계정에서만 볼 수 있는 화면이에요.
-        </p>
-      </div>
-    );
-  }
-
+  // "큐레이터 계정"이라는 고정된 역할 대신, 실제로 큐레이터로 승인된
+  // 그룹이 있는지로 판단한다(계정 하나가 아이 프로필과 기관 프로필을
+  // 동시에 가질 수 있음). 그룹이 하나도 없으면 아래 "아직 발행한
+  // 리스트가 없어요" 안내가 그대로 자연스럽게 뜬다.
   const { data: operatorRows } = await supabase
     .from("group_members")
     .select("groups(id, name, type, join_policy)")

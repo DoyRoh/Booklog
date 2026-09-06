@@ -34,24 +34,15 @@ export default async function TeacherChildrenPage() {
     );
   }
 
-  const { data: profile } = await supabase.from("users").select("role").eq("id", userId).single();
-
-  if (profile?.role !== "teacher") {
-    return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
-        <h1 className="d text-xl">아이 관리</h1>
-        <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-          교사 계정에서만 볼 수 있는 화면이에요.
-        </p>
-      </div>
-    );
-  }
-
+  // "교사 계정"이라는 고정된 역할 대신, 실제로 운영진으로 승인된 그룹이
+  // 있는지로 판단한다(계정 하나가 아이 프로필과 선생님 프로필을 동시에
+  // 가질 수 있음). 그룹이 하나도 없으면 아래 "아직 운영하는 그룹이
+  // 없어요" 안내가 그대로 자연스럽게 뜬다.
   const { data: operatorRows } = await supabase
     .from("group_members")
     .select("groups(id, name)")
     .eq("user_id", userId)
-    .eq("role", "teacher")
+    .in("role", ["teacher", "admin"])
     .eq("status", "approved");
 
   type GroupRow = { id: string; name: string };

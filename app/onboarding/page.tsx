@@ -85,7 +85,14 @@ export default function OnboardingPage() {
       return;
     }
 
-    const { error: roleError } = await supabase.from("users").update({ role }).eq("id", user.id);
+    // 계정 하나가 아이 프로필과 선생님/기관 프로필을 동시에 가질 수
+    // 있어서, role은 이제 "최초에 고른 기본값" 정도의 의미다. 지금 당장
+    // 보여줄 화면은 active_profile_type으로 정하고, 나중에 더보기에서
+    // 다른 프로필을 추가하면 그때그때 전환할 수 있다.
+    const { error: roleError } = await supabase
+      .from("users")
+      .update({ role, active_profile_type: role === "parent" ? "child" : "operator" })
+      .eq("id", user.id);
     if (roleError) {
       setError(roleError.message);
       setSaving(false);
@@ -165,7 +172,7 @@ export default function OnboardingPage() {
           <div>
             <p className="d text-lg">어떤 역할로 함께하시나요?</p>
             <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-              나중에 더보기에서 바꿀 수 있어요.
+              일단 하나를 골라 시작해요. 나중에 더보기에서 다른 프로필(아이/선생님/기관)도 이 계정에 추가할 수 있어요.
             </p>
           </div>
 

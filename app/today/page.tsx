@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
+import { getActiveProfile } from "@/lib/active-profile";
 import { getTodayAssignments } from "@/lib/assignments";
 import AssignmentSummary from "@/components/assignment-summary";
 import RecentRecords, { type RecentRecord } from "@/components/recent-records";
@@ -21,25 +22,25 @@ export default async function TodayPage() {
     );
   }
 
-  // role과 활성 아이는 둘 다 userId에만 의존하고 서로 무관하므로 동시에
-  // 물어본다(role이 parent가 아니면 activeChild 조회는 버려지지만, 흔한
-  // 부모 계정 쪽에서 왕복 하나를 아끼는 게 더 이득이다).
-  const [{ data: profile }, activeChild] = await Promise.all([
-    supabase.from("users").select("role").eq("id", userId).single(),
+  // 지금 활성화된 프로필과 활성 아이는 둘 다 userId에만 의존하고 서로
+  // 무관하므로 동시에 물어본다(아이 프로필이 아니면 activeChild 조회는
+  // 버려지지만, 흔한 아이 프로필 쪽에서 왕복 하나를 아끼는 게 더 이득이다).
+  const [activeProfile, activeChild] = await Promise.all([
+    getActiveProfile(supabase, userId),
     getActiveChild(supabase, userId),
   ]);
 
-  if (profile?.role !== "parent") {
+  if (activeProfile.type === "operator") {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">오늘</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-          {profile?.role === "teacher"
+          {activeProfile.operatorRole === "teacher"
             ? "교사 대시보드에서 반의 숙제 진행 상황을 볼 수 있어요."
             : "큐레이터 대시보드에서 발행한 리스트를 관리할 수 있어요."}
         </p>
         <Link
-          href={profile?.role === "teacher" ? "/teacher" : "/curator"}
+          href={activeProfile.operatorRole === "teacher" ? "/teacher" : "/curator"}
           className="d mt-2 inline-block text-sm"
           style={{ color: "var(--point)" }}
         >

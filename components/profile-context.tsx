@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getActiveChild } from "@/lib/active-child";
+import { getActiveProfile } from "@/lib/active-profile";
 
 type Profile = {
   role: string | null;
@@ -36,18 +37,22 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
         setState({ role: null, childName: null, loading: false });
         return;
       }
-      const { data: profile } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", user.id)
-        .single();
+      // users.role은 온보딩 때 고른 최초 기본값일 뿐이고, 실제로 지금
+      // 어느 화면(아이 프로필 vs 선생님/기관 프로필)을 보여줄지는
+      // active_profile_type + 실제 group_members 운영진 여부로 정한다
+      // (계정 하나가 두 프로필을 동시에 가질 수 있어서, 고정된 role
+      // 하나로는 표현이 안 된다). 이렇게 계산한 값을 그대로 "role"이라는
+      // 이름으로 내보내서, 이 값을 쓰는 bottom-nav/top-bar는 손댈 필요가
+      // 없다.
+      const activeProfile = await getActiveProfile(supabase, user.id);
+      const role = activeProfile.type === "operator" ? activeProfile.operatorRole : "parent";
 
       let childName: string | null = null;
-      if (profile?.role === "parent") {
+      if (activeProfile.type === "child") {
         const child = await getActiveChild(supabase, user.id);
         childName = child?.name ?? null;
       }
-      setState({ role: profile?.role ?? null, childName, loading: false });
+      setState({ role, childName, loading: false });
     }
 
     load();

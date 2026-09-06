@@ -64,6 +64,29 @@ export default function BrowseGroups({
     router.refresh();
   }
 
+  async function unfollow(groupId: string) {
+    if (!activeChildId) return;
+    if (followingRef.current === groupId) return;
+    followingRef.current = groupId;
+    setPending(groupId);
+    setError(null);
+
+    const supabase = createClient();
+    const { error: unfollowError } = await supabase
+      .from("group_members")
+      .delete()
+      .eq("group_id", groupId)
+      .eq("child_id", activeChildId);
+
+    followingRef.current = null;
+    setPending(null);
+    if (unfollowError) {
+      setError(unfollowError.message);
+      return;
+    }
+    router.refresh();
+  }
+
   if (groups.length === 0) {
     return (
       <p className="text-sm" style={{ color: "var(--ink-2)" }}>
@@ -94,9 +117,15 @@ export default function BrowseGroups({
               </p>
             </Link>
             {following ? (
-              <span className="d text-xs" style={{ color: "var(--point-deep)" }}>
+              <button
+                type="button"
+                disabled={pending === group.id}
+                onClick={() => unfollow(group.id)}
+                className="d rounded-[14px] border px-4 py-2 text-xs disabled:opacity-40"
+                style={{ borderColor: "var(--rule)", color: "var(--point-deep)" }}
+              >
                 팔로잉
-              </span>
+              </button>
             ) : (
               <button
                 type="button"

@@ -7,6 +7,12 @@ import { createClient } from "@/lib/supabase/client";
 
 type GroupType = "kindergarten" | "school" | "library" | "family" | "community" | "creator";
 type JoinPolicy = "approval" | "open";
+type OperatorRole = "teacher" | "curator";
+
+const OPERATOR_ROLES: { value: OperatorRole; label: string; description: string }[] = [
+  { value: "teacher", label: "선생님", description: "학급 추천도서·숙제를 관리해요" },
+  { value: "curator", label: "기관·인플루언서", description: "승인 없이 팔로우 가능한 추천도서를 발행해요" },
+];
 
 const TYPES: { value: GroupType; label: string }[] = [
   { value: "kindergarten", label: "유치원" },
@@ -31,6 +37,7 @@ export default function CreateGroupPage() {
   const [name, setName] = useState("");
   const [type, setType] = useState<GroupType>("school");
   const [joinPolicy, setJoinPolicy] = useState<JoinPolicy>("approval");
+  const [operatorRole, setOperatorRole] = useState<OperatorRole>("teacher");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,13 +55,6 @@ export default function CreateGroupPage() {
       setSaving(false);
       return;
     }
-
-    const { data: profile } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-    const operatorRole = profile?.role === "curator" ? "curator" : "teacher";
 
     const groupId = crypto.randomUUID();
     const { error: groupError } = await supabase.from("groups").insert({
@@ -94,6 +94,13 @@ export default function CreateGroupPage() {
       return;
     }
 
+    // 이 그룹을 만든 사람은 곧 그 그룹의 운영진 프로필이 생긴 것이므로,
+    // 바로 그 프로필로 전환해서 하단 탭이 방금 만든 그룹의 대시보드를
+    // 보여주도록 한다(계정에 아이 프로필이 이미 있어도 그대로 유지되고,
+    // 더보기에서 언제든 다시 아이 프로필로 돌아올 수 있다).
+    await supabase.from("users").update({ active_profile_type: "operator" }).eq("id", user.id);
+    window.dispatchEvent(new Event("chaeksup:profile-changed"));
+
     router.replace(`/recommend/${groupId}`);
     router.refresh();
   }
@@ -108,6 +115,29 @@ export default function CreateGroupPage() {
       </div>
 
       <div className="mt-8 flex flex-col gap-4">
+        <div>
+          <p className="d text-sm">이 그룹을 운영할 나는</p>
+          <div className="mt-2 flex flex-col gap-2">
+            {OPERATOR_ROLES.map((r) => (
+              <button
+                key={r.value}
+                type="button"
+                onClick={() => setOperatorRole(r.value)}
+                className="rounded-[var(--r)] border px-4 py-3 text-left"
+                style={{
+                  borderColor: operatorRole === r.value ? "var(--point)" : "var(--rule)",
+                  background: operatorRole === r.value ? "rgba(47,168,79,0.08)" : "var(--card)",
+                }}
+              >
+                <p className="d text-sm">{r.label}</p>
+                <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                  {r.description}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <input
           type="text"
           placeholder="그룹 이름 (예: 7세 은빛반)"

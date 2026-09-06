@@ -1,14 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
+import { getActiveProfile } from "@/lib/active-profile";
 import SignOutButton from "@/components/sign-out-button";
 import ChildSwitcher from "@/components/child-switcher";
-
-const ROLE_LABELS: Record<string, string> = {
-  parent: "아이 & 부모",
-  teacher: "교사",
-  curator: "큐레이터",
-};
+import OperatorProfileSwitcher, { type OperatorGroup } from "@/components/operator-profile-switcher";
 
 export default async function MorePage() {
   const supabase = await createClient();
@@ -27,10 +23,18 @@ export default async function MorePage() {
 
   // 화면에 이메일도 보여줘야 하는데, users 테이블에 이미 email이 복제돼
   // 있어서(가입 시 트리거) auth.getUser()로 다시 왕복하지 않고 이 조회에
-  // 같이 얹는다.
-  const [{ data: profile }, { data: guardianRows }] = await Promise.all([
-    supabase.from("users").select("email, role, active_child_id").eq("id", userId).single(),
+  // 같이 얹는다. 서로 무관한 조회 셋(프로필, 아이 목록, 운영 중인 그룹
+  // 목록)을 동시에 왕복한다.
+  const [{ data: profile }, { data: guardianRows }, { data: operatorRows }, activeProfile] = await Promise.all([
+    supabase.from("users").select("email, active_child_id").eq("id", userId).single(),
     supabase.from("child_guardians").select("children(id, name, avatar, birth_date)").eq("user_id", userId),
+    supabase
+      .from("group_members")
+      .select("role, groups(id, name, type)")
+      .eq("user_id", userId)
+      .eq("status", "approved")
+      .in("role", ["teacher", "admin", "curator"]),
+    getActiveProfile(supabase, userId),
   ]);
 
   type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null; birth_date: string | null };
@@ -38,42 +42,69 @@ export default async function MorePage() {
     .map((row) => row.children as unknown as ChildRow | null)
     .filter((child): child is ChildRow => Boolean(child));
 
+  type GroupRow = { id: string; name: string; type: string };
+  const operatorGroups: OperatorGroup[] = (operatorRows ?? [])
+    .map((row) => {
+      const group = row.groups as unknown as GroupRow | null;
+      if (!group) return null;
+      return {
+        groupId: group.id,
+        groupName: group.name,
+        groupType: group.type,
+        operatorRole: row.role as "teacher" | "admin" | "curator",
+      };
+    })
+    .filter((g): g is OperatorGroup => Boolean(g));
+
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <h1 className="d text-xl">더보기</h1>
 
       <div
-        className="mt-6 rounded-[var(--r)] border p-4"
+        className="mt-6 flex items-center justify-between gap-3 rounded-[var(--r)] border p-4"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm">{profile?.email}</p>
-            {profile?.role && (
-              <p className="mt-0.5 text-xs" style={{ color: "var(--ink-2)" }}>
-                {ROLE_LABELS[profile.role] ?? profile.role}
-              </p>
-            )}
+        <p className="text-sm">{profile?.email}</p>
+        <SignOutButton />
+      </div>
+
+      {/* 계정 하나가 아이 프로필(들)과 선생님/기관 프로필(들)을 동시에 가질
+          수 있다 -- 예전처럼 계정을 나눠 만들 필요 없이, 여기서 프로필을
+          고르면 그 프로필 기준으로 하단 탭·화면이 바뀐다. */}
+      <div className="mt-8">
+        <p className="d text-base">프로필</p>
+        <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+          지금 어떤 프로필로 볼지 골라 주세요. 언제든 여기서 바꿀 수 있어요.
+        </p>
+
+        <div className="mt-3">
+          <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+            아이 프로필
+          </p>
+          <div className="mt-2">
+            <ChildSwitcher
+              userId={userId}
+              childList={children}
+              activeChildId={activeProfile.type === "child" ? profile?.active_child_id ?? null : null}
+            />
           </div>
-          <SignOutButton />
+        </div>
+
+        <div className="mt-5">
+          <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+            선생님 / 기관 프로필
+          </p>
+          <div className="mt-2">
+            <OperatorProfileSwitcher
+              userId={userId}
+              groups={operatorGroups}
+              isActive={activeProfile.type === "operator"}
+            />
+          </div>
         </div>
       </div>
 
-      {profile?.role === "parent" && (
-        <div className="mt-8">
-          <p className="d text-base">아이 관리</p>
-          <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-            선택한 아이 기준으로 책장·기록이 표시돼요.
-          </p>
-          <ChildSwitcher
-            userId={userId}
-            childList={children}
-            activeChildId={profile?.active_child_id ?? null}
-          />
-        </div>
-      )}
-
-      {profile?.role === "parent" && (
+      {children.length > 0 && (
         <div className="mt-8">
           <p className="d text-base">그룹 둘러보기</p>
           <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
@@ -85,19 +116,6 @@ export default async function MorePage() {
             style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
           >
             새 그룹 찾기
-          </Link>
-        </div>
-      )}
-
-      {(profile?.role === "teacher" || profile?.role === "curator") && (
-        <div className="mt-8">
-          <p className="d text-base">대시보드</p>
-          <Link
-            href={profile.role === "teacher" ? "/teacher" : "/curator"}
-            className="mt-2 block rounded-[var(--r)] border p-4 text-sm"
-            style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
-          >
-            {profile.role === "teacher" ? "교사 대시보드로 가기" : "큐레이터 대시보드로 가기"}
           </Link>
         </div>
       )}

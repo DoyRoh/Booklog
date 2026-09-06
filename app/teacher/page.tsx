@@ -27,24 +27,15 @@ export default async function TeacherDashboardPage() {
     );
   }
 
-  const { data: profile } = await supabase.from("users").select("role").eq("id", userId).single();
-
-  if (profile?.role !== "teacher") {
-    return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
-        <h1 className="d text-xl">교사 대시보드</h1>
-        <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-          교사 계정에서만 볼 수 있는 화면이에요.
-        </p>
-      </div>
-    );
-  }
-
+  // "교사 계정"이라는 고정된 역할 대신, 실제로 교사/운영진으로 승인된
+  // 그룹이 있는지로 이 화면을 볼 수 있는지 정한다 -- 계정 하나가 아이
+  // 프로필과 선생님 프로필을 동시에 가질 수 있어서, users.role 하나로는
+  // 더 이상 판단할 수 없다.
   const { data: operatorRows } = await supabase
     .from("group_members")
     .select("groups(id, name, type)")
     .eq("user_id", userId)
-    .eq("role", "teacher")
+    .in("role", ["teacher", "admin"])
     .eq("status", "approved");
 
   type GroupRow = { id: string; name: string; type: string };
