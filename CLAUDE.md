@@ -918,4 +918,13 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **`supabase/seed/unify_byul_account.sql`(신규)**: byul890808@gmail.com 계정에 유안이(이미 있으면 재사용, 없으면 새로 생성) + 하바 7세반 선생님 프로필을 실제로 붙이는 1회성 스크립트입니다(`sample_haba7.sql`과 같은 패턴 — Supabase SQL Editor에서 직접 실행). 기존 교사 테스트 계정(sangwkk@naver.com)의 운영진 자격은 건드리지 않습니다. 로컬 Postgres에 같은 시나리오를 만들어 두 번 실행해도 중복 없이 안전한지(멱등성), RLS 하에서 실제 계정 전환(자기 자신의 `active_profile_type` 업데이트는 허용, 남의 계정은 차단)이 의도대로 동작하는지 확인했습니다.
 - **의도적으로 하지 않은 것**: 그룹(학급/유치원) 전체가 실제로 읽은 책들을 모아 보여주는 "공동 책장"은 사용자가 명시적으로 필요 없다고 해서 만들지 않았습니다 — 지금처럼 교사가 추천도서를 올리고 부모가 "책장에 꽂기"로 골라 담는 정도로 충분합니다.
 
+## byul890808 계정만 남기고 나머지 테스트 계정 정리 (사용자 요청, 1회성 유지보수)
+
+프로필 통합 기능을 새로 테스트해보기 위해 byul890808@gmail.com 외의 모든 테스트 계정(교사 계정 sangwkk@naver.com, 큐레이터 계정 등)을 지워달라는 요청을 받았습니다. 실제 Supabase 프로젝트에 직접 접근할 권한이 없어서(서비스 롤 키 없음, 지금까지 계속 그래왔던 제약) 코드가 아니라 사용자가 SQL Editor에서 직접 실행할 스크립트로 제공했습니다.
+
+- **`supabase/seed/reset_to_byul_only.sql`(신규)**: `auth.users`에서 byul890808@gmail.com이 아닌 계정을 전부 지웁니다. 그 전에 두 가지를 먼저 처리합니다 — (1) `groups.owner_id`/`assignments.created_by`/`group_members.approved_by`는 원본 스키마에 `on delete cascade`가 없어서, 그대로 두면 다른 계정을 참조하는 행이 남아있는 한 그 계정 삭제 자체가 외래키 위반으로 실패합니다. `owner_id`는 not null이라 byul890808로 옮겨서 그룹(하바 7세반 등)과 그 추천도서 데이터를 그대로 보존했고, `created_by`/`approved_by`는 nullable이라 그냥 비웠습니다(데이터는 안 지워지고 "누가 만들었는지" 기록만 없어짐). (2) `children`은 `child_guardians`를 통한 다대다 관계라 보호자 계정을 지워도 아이 행 자체는 자동으로 안 지워지므로(고아 행으로 남음), 마지막에 보호자가 하나도 안 남은 아이만 명시적으로 지웁니다.
+- **`public.users`/`child_guardians`/`group_members(user_id)`/`consents`는 그대로 cascade로 정리됩니다** — 원본 스키마에 이미 `on delete cascade`가 걸려 있어서 추가 처리가 필요 없었습니다.
+- 로컬 Postgres에 같은 상황(교사 계정이 소유한 그룹 + 그 그룹의 숙제, 다른 부모 계정들)을 만들어 실행해서, 다른 계정은 전부 지워지고 byul890808에 해당하는 계정만 남으며 그룹 소유권 이전·숙제 데이터 보존·고아 아이 행 정리가 전부 의도대로 되는지 확인했습니다.
+- **되돌릴 수 없는 삭제이므로**, 스크립트 맨 위에 실행 전 Supabase 백업/PITR 확인을 권하는 주석을 남겼습니다.
+
 @AGENTS.md
