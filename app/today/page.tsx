@@ -134,7 +134,7 @@ export default async function TodayPage() {
       {/* 등불 든 곰이 오늘의 길을 비춰 주는 헤더 -- 디자인 가이드의
           "오늘 탭: 곰+등불 헤더 일러스트". */}
       <div className="flex items-end justify-between gap-3">
-        <p className="hand text-xl" style={{ color: "var(--point-deep)" }}>
+        <p className="hand text-xl" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
           {activeChild.name}, 오늘도 책숲을 걸어볼까요?
         </p>
         <Illustration name="bear-lantern" height={88} priority className="flex-none" />
