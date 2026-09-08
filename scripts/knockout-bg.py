@@ -50,6 +50,10 @@ if n:
 alpha = np.ones((h, w), np.float32)
 ramp = np.clip((dist - LO) / (HI - LO), 0, 1)
 alpha[bg_region] = ramp[bg_region]
+# 배경 노이즈로 생긴 옅은 알파(그림과 붙어 있지 않은 것)는 0으로
+strong = alpha > 0.3
+keep = ndimage.binary_dilation(strong, iterations=3)
+alpha[bg_region & ~keep] = 0
 
 # un-premultiply: 관측색 = a*fg + (1-a)*bg  →  fg = (obs - (1-a)*bg) / a
 a3 = alpha[..., None]
