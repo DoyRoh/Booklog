@@ -5,6 +5,8 @@
 
 ## 작업 순서 (스타일이 흐트러지지 않게)
 
+> 참고 이미지(다른 작가의 크레용 그림)는 톤·단순함의 정도만 참고하고, 작가 이름이나 그림을 ChatGPT에 직접 넣어 따라 그리게 하지 않습니다(CLAUDE.md 저작권 원칙).
+
 1. **한 대화(채팅) 안에서 전부 만듭니다.** 대화를 바꾸면 스타일이 달라집니다.
 2. 맨 처음 **캐릭터 시트** 프롬프트(0번)로 다섯 캐릭터를 한 장에 뽑아 스타일을 고정합니다. 마음에 들 때까지 이것만 다시 뽑습니다.
 3. 그다음부터 각 자산 프롬프트를 하나씩 보내되, 앞에 항상 **공통 스타일 문단**을 붙이고 "**위 캐릭터 시트와 똑같은 디자인으로**"라고 덧붙입니다.
@@ -14,17 +16,15 @@
 ## 공통 스타일 문단 (모든 프롬프트 맨 앞에 붙이기)
 
 ```
-Children's picture-book illustration drawn in soft colored pencil texture, hand-drawn and warm, gentle and calm, minimal detail, soft edges without hard black outlines. Palette: sage green (#EAF0E5), leaf green (#2FA84F), deep forest green (#1B5E3A), warm amber lantern light (#E8A33D), dark forest-shadow ink (#26362B), a tiny touch of berry red (#D94A32) only if needed. One subject centered with generous empty space around it. Plain flat solid background filled with one uniform sage green color #EAF0E5 — no checkerboard pattern, no texture, no gradient, no ground shadow. No text, no watermark, no border, no frame. Not a sticker, not emoji style, not glossy 3D, not vector clip-art.
+Children's picture-book illustration in a simple naive crayon and oil-pastel style, hand-drawn, warm, gentle, and quietly playful. Use large, flat, chunky color shapes with visible broad crayon strokes, uneven waxy coverage, and softly irregular edges; a subtle paper grain may show inside the colored shapes only. Keep the character extremely simple and iconic: a rounded silhouette, slightly imperfect handmade proportions, very few facial marks, tiny dot eyes, a tiny nose and mouth, and short simplified limbs. Avoid realistic anatomy and detailed rendering. Do not draw individual strands of fur or feathers, fine pencil hatching, intricate textures, polished digital shading, highlights, or dimensional modeling. Palette: sage green (#EAF0E5), leaf green (#2FA84F), deep forest green (#1B5E3A), warm amber (#E8A33D), dark forest-shadow ink (#26362B), and only a tiny touch of berry red (#D94A32) if needed. One small subject centered with generous empty space around it. Plain flat solid background filled with one uniform sage green color (#EAF0E5): the background itself must be perfectly flat with no paper texture, gradient, checkerboard pattern, scenery, lighting effect, or ground shadow. No text, watermark, border, or frame. Not a sticker, not emoji style, not glossy 3D, not vector clip-art, and not a detailed colored-pencil illustration.
 ```
 
 ## 진행 상황
 
-- 0번 캐릭터 시트: **확정** (`docs/illustrations/character-sheet.png`). 이후 그림은 전부 이 시트 기준.
-- 1번 곰: **완료** (세이지 단색 배경으로 다시 받아 `scripts/knockout-bg.py`로 배경을 걷어냄 → `public/illustrations/bear-lantern.png`).
-- 5번 강아지·6번 고양이: **완료** (`dog.png`, `cat.png`).
-- 4번 토끼: **완료** (`--lo 3.5 --hi 14` → `rabbit.png`).
-- 3번 앉은 새: **완료** (세이지 배경 → `knockout-bg.py --lo 3.5 --hi 10`, 흰 몸통이 배경과 가까워 문턱을 낮춤 → `bird-perched.png`).
-- 2번 편지 새: **완료** (`public/illustrations/bird-letter.png`, 진짜 투명 PNG로 나옴 — 이 방식이 되면 굳이 단색 배경으로 안 뽑아도 됨).
+- **그림체 변경(2차)**: 색연필 세밀화(1차, `docs/illustrations/pencil-v1/`에 보관)가 앱 아이콘 크기에서 뭉개져 보여, 단순한 크레용·오일파스텔 스타일로 바꿨습니다. 공통 스타일 문단은 사용자가 직접 다시 쓴 것을 기준으로 합니다.
+- 곰은 **까만 반달가슴곰**(가슴에 흰 초승달 무늬)으로 정함. 2차 시트의 갈색 곰은 1번 프롬프트에서 반달곰으로 바꿔 뽑는다.
+- 0번 캐릭터 시트(2차): **확정** (`docs/illustrations/character-sheet.png`). 이후 그림은 전부 이 시트 기준.
+- 1~13번: 새 스타일로 다시 뽑는 중.
 
 ## 자산 목록
 
@@ -51,14 +51,14 @@ Children's picture-book illustration drawn in soft colored pencil texture, hand-
 
 ```
 [공통 스타일 문단]
-A character sheet showing five characters standing side by side in a row, all in the exact same drawing style and scale: (1) a friendly round bear with slightly worn brown-grey fur holding a small glowing amber lantern, (2) a slender white bird like a small egret, (3) a small round cream-colored rabbit, (4) a small round honey-brown dog, (5) a small round grey-blue cat. The rabbit, dog and cat are children-like and each hug a closed picture book. Gentle closed-eye smiles, simple shapes, same line weight and texture for all five. Plain flat white background for this sheet only.
+A character sheet showing five characters standing side by side in a row, all in the exact same drawing style and scale: (1) a friendly round black Asiatic moon bear (black fur with a small white crescent mark on its chest and a lighter muzzle) holding a small glowing amber lantern, (2) a slender white bird like a small egret, (3) a small round cream-colored rabbit, (4) a small round honey-brown dog, (5) a small round grey-blue cat. The rabbit, dog and cat are children-like and each hug a closed picture book. Tiny dot eyes, simple rounded shapes, same stroke weight for all five. Plain flat white background for this sheet only.
 ```
 
 ### 1. 등불 든 곰 — `bear-lantern.png`
 
 ```
 [공통 스타일 문단]
-Same bear as in the character sheet. Full body, standing and walking slowly toward the right as if guiding the way through a night forest, holding up a small glowing amber lantern in one paw at shoulder height. The lantern gives off a soft warm halo. Gentle closed-eye smile, calm and reassuring. Flat solid sage green background (#EAF0E5).
+Same bear as in the character sheet. Full body, standing and walking slowly toward the right as if guiding the way through a night forest, holding up a small glowing amber lantern in one paw at shoulder height. The lantern gives off a soft warm halo. Tiny dot eyes, calm and reassuring. Flat solid sage green background (#EAF0E5).
 ```
 
 ### 2. 편지 물고 나는 하얀 새 — `bird-letter.png`
@@ -99,19 +99,19 @@ Same cat as in the character sheet. Full body, standing, facing forward, hugging
 ### 7. 토끼 발자국 도장 — `paw-rabbit.png`
 
 ```
-A single rubber-stamp style paw print of a rabbit: two elongated oval pads above and two small round toe pads, printed in one flat deep forest green ink (#1B5E3A), edges slightly uneven and grainy like a real ink stamp on paper, simple bold silhouette, centered, flat solid sage green background (#EAF0E5) with no checkerboard, no text, no border.
+A single rubber-stamp style paw print of a rabbit: two elongated oval pads above and two small round toe pads, printed in one flat deep forest green ink (#1B5E3A), edges slightly uneven and waxy like a crayon rubber stamp, simple bold silhouette, centered, flat solid sage green background (#EAF0E5) with no checkerboard, no text, no border.
 ```
 
 ### 8. 강아지 발자국 도장 — `paw-dog.png`
 
 ```
-A single rubber-stamp style paw print of a dog: one large heart-shaped pad with four round toe pads above it, printed in one flat deep forest green ink (#1B5E3A), edges slightly uneven and grainy like a real ink stamp on paper, simple bold silhouette, centered, flat solid sage green background (#EAF0E5) with no checkerboard, no text, no border.
+A single rubber-stamp style paw print of a dog: one large heart-shaped pad with four round toe pads above it, printed in one flat deep forest green ink (#1B5E3A), edges slightly uneven and waxy like a crayon rubber stamp, simple bold silhouette, centered, flat solid sage green background (#EAF0E5) with no checkerboard, no text, no border.
 ```
 
 ### 9. 고양이 발자국 도장 — `paw-cat.png`
 
 ```
-A single rubber-stamp style paw print of a cat: a smaller rounded pad with four small oval toe pads close together, printed in one flat deep forest green ink (#1B5E3A), edges slightly uneven and grainy like a real ink stamp on paper, simple bold silhouette, centered, flat solid sage green background (#EAF0E5) with no checkerboard, no text, no border.
+A single rubber-stamp style paw print of a cat: a smaller rounded pad with four small oval toe pads close together, printed in one flat deep forest green ink (#1B5E3A), edges slightly uneven and waxy like a crayon rubber stamp, simple bold silhouette, centered, flat solid sage green background (#EAF0E5) with no checkerboard, no text, no border.
 ```
 
 ### 10. 켜진 등불 — `lantern-on.png`
@@ -132,13 +132,13 @@ The exact same small hanging lantern as before but unlit: dark glass, no glow, n
 
 ```
 [공통 스타일 문단 — 단, 이 그림은 단색 배경 대신 장면이 화면 전체를 채웁니다]
-A wide, gentle night forest scene: a soft winding path leading from the bottom toward the distance, tall rounded trees on both sides, a calm indigo-green starry sky, a few tiny amber lantern lights far along the path. No characters, no text. Leave the lower third of the image quiet and simple so characters can be placed there later. Dreamy, calm, colored pencil texture over the whole image. Landscape 3:2.
+A wide, gentle night forest scene: a soft winding path leading from the bottom toward the distance, tall rounded trees on both sides, a calm indigo-green starry sky, a few tiny amber lantern lights far along the path. No characters, no text. Leave the lower third of the image quiet and simple so characters can be placed there later. Dreamy, calm, broad crayon strokes over the whole image, very simple shapes. Landscape 3:2.
 ```
 
 ### 13. 앱 아이콘 — `app-icon.png` (배경 있음)
 
 ```
-App icon design, flat and very simple, readable at tiny size: a single glowing amber lantern (#E8A33D) with a soft halo on a plain sage green (#EAF0E5) rounded-square background, tiny hint of the bear's paw holding the lantern handle at the bottom edge, colored pencil texture kept subtle. No text, no border, square 1:1, fills the whole canvas.
+App icon design, flat and very simple, readable at tiny size: a single glowing amber lantern (#E8A33D) with a soft halo on a plain sage green (#EAF0E5) rounded-square background, tiny hint of the black moon bear's paw holding the lantern handle at the bottom edge, crayon texture kept subtle. No text, no border, square 1:1, fills the whole canvas.
 ```
 
 ## 다 만든 뒤
