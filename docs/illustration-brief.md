@@ -21,6 +21,7 @@ Children's picture-book illustration drawn in soft colored pencil texture, hand-
 
 - 0번 캐릭터 시트: **확정** (`docs/illustrations/character-sheet.png`). 이후 그림은 전부 이 시트 기준.
 - 1번 곰: **완료** (세이지 단색 배경으로 다시 받아 `scripts/knockout-bg.py`로 배경을 걷어냄 → `public/illustrations/bear-lantern.png`).
+- 5번 강아지·6번 고양이: **완료** (`dog.png`, `cat.png`).
 - 4번 토끼: **완료** (`--lo 3.5 --hi 14` → `rabbit.png`).
 - 3번 앉은 새: **완료** (세이지 배경 → `knockout-bg.py --lo 3.5 --hi 10`, 흰 몸통이 배경과 가까워 문턱을 낮춤 → `bird-perched.png`).
 - 2번 편지 새: **완료** (`public/illustrations/bird-letter.png`, 진짜 투명 PNG로 나옴 — 이 방식이 되면 굳이 단색 배경으로 안 뽑아도 됨).
