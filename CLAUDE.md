@@ -1031,3 +1031,14 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **개발 모드에서 안 보이던 버그**: React StrictMode가 효과를 두 번 실행해서, 첫 실행이 플래그를 심고 두 번째 실행이 "이미 봤음"으로 판단해 바로 지웠습니다(스크린샷으로 확인). 모듈 스코프 변수로 "이 페이지 로드에서 보여줄지"를 한 번만 결정하도록 고쳤습니다. 배포에서는 원래 안 생기는 문제지만 개발 중 확인이 안 되면 곤란해서.
 - **문구 서체를 손글씨에서 명조로 교체**("글꼴 별로야, 성의 없어 보여"): 8개 후보(Gamja Flower·Nanum Pen Script·Gaegu·Nanum Brush Script·Gowun Batang·Nanum Myeongjo·Hahmlet·Song Myung)를 실제 스플래시 배경 위에 렌더링해 비교한 뒤 **Gowun Batang**(제목 서체 Gowun Dodum과 같은 집안의 명조)으로 정했습니다. `app/layout.tsx`에 `next/font/google`로 추가하고 `app/globals.css`에 `--book`/`.book` 토큰을 새로 뒀습니다 — `.hand`(손글씨)는 인사말·축하 문구처럼 작고 개인적인 자리에만 남기고, "책의 한 구절"처럼 읽혀야 하는 문구는 `.book`을 씁니다. 문구 위아래에 짧은 흰 장식선, 로고 "책숲"도 같은 명조 굵게 + 자간 넓게. 효과 안에서 동기 `setState`를 하던 부분은 lint 규칙(`react-hooks/set-state-in-effect`)에 걸려 `requestAnimationFrame`으로 한 프레임 미뤘습니다.
 - **배경 그림 교체(2안)**: 1안은 동물들이 나무 사이에 떠 있는 것처럼 보인다는 지적("동물들이 나무에 떠 있어서")으로, 사용자가 다시 그려온 그림 — 곰이 등불을 들어 올리고 토끼·강아지·고양이가 그루터기 옆에서 책을 펴고 있고 백로가 편지를 물고 날아오는 장면 — 으로 교체했습니다(`docs/illustrations/splash-src.jpg`, 1안은 `splash-v1-src.jpg`로 보관; `public/illustrations/splash.jpg`는 900×1599 JPEG 232KB). 하늘이 위쪽 20%뿐이라 문구를 위로 올리고(`paddingTop` 7vh) 상단 그림자를 조금 더 진하게 깔아 나무 위에 올라간 흰 글자도 읽히게 했습니다. 초점은 `center 60%`.
+
+## 최종 일러스트 5장으로 장면 그림 전면 교체 (사용자 요청: "다 바꿔")
+
+사용자가 "최종"으로 보내온 8장 중 새 5장을 `docs/illustrations/`에 보관하고(`forest-camp-src.png`, `forest-peek-src.jpg`, `parade-v2-src.png`, `pattern-v2-src.jpg`, `pattern-v3-src.png` — 목록은 `docs/illustration-brief.md` 맨 아래 표), 그중 4장을 바로 앱에 연결했습니다. 모두 `components/scene-banner.tsx`의 `SCENES`를 거치므로 화면 코드는 장면 이름과 높이만 바뀌었습니다.
+
+- **로그인**: `forest-reading` → **`forest-peek`**(나무 사이로 동물들이 책을 안고 고개 내미는 밤 숲, 세로 그림). 가로 배너에 세로 그림이라 동물들이 모여 있는 아래쪽 띠에 초점(`center 69%`), 높이 170→200.
+- **온보딩 첫 화면**: 캐릭터 없는 밤 숲길 → **`camp`**(텐트 앞에 다섯 동물이 둘러앉아 책 읽는 밤 숲, `center 71%`, 높이 160). 이걸로 `forest-banner.tsx` 별칭은 쓰는 곳이 없어져 삭제. `forest`(밤 숲길)와 `forest-reading` 장면은 `SCENES`에 남겨 뒀습니다.
+- **회원가입·404·로딩 띠**: 낮 행렬을 **v2**(캐릭터가 크고 또렷한 가로 판)로 교체. `parade.jpg`는 1200×800, 로딩용 `parade-strip.jpg`는 v2에서 동물 행렬 구간(y 420~932)을 3:1로 잘라 다시 만듦.
+- **배지 탭·독서 리포트 띠**: 패턴을 **v2**(곰 포함, 세이지 종이)로 교체. 초점 `center 12%`는 그대로(편지 백로 + 나무가 보이는 위쪽).
+- `pattern-v3`(연두 배경, 곰 없음)은 아직 붙일 자리가 없어 보관만.
+- 전부 iPhone 뷰포트로 스크린샷 확인(임시 미리보기 라우트 사용 후 삭제).

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import ForestBanner from "@/components/forest-banner";
+import SceneBanner from "@/components/scene-banner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -172,7 +172,7 @@ export default function OnboardingPage() {
         <SignOutButton />
       </div>
 
-      {step === "role" && <div className="mt-5"><ForestBanner height={140} /></div>}
+      {step === "role" && <div className="mt-5"><SceneBanner scene="camp" height={160} /></div>}
 
       {step === "role" && (
         <div className="mt-8 flex flex-col gap-4">
