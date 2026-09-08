@@ -979,6 +979,7 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **그룹 만들기 연타 방지**: `library/add`·팔로우·가입과 같은 경쟁 상태가 그룹 만들기에도 있었습니다(state만으로 막아 두 번 눌리면 그룹이 두 개). `savingRef` 가드를 추가했습니다.
 - **이름표를 고칠 방법이 없었습니다**: 만들기만 있고 이름 바꾸기/삭제가 없어 오타가 영구히 남는 구조였습니다. 더보기에 "책장 이름표" 섹션(`components/shelf-tag-manager.tsx`, 이름 바꾸기·삭제, 삭제 시 기록은 남고 이름표만 떨어진다는 안내)을 추가했습니다.
 - 소소한 정리: `browse-groups.tsx`에 남아 있던 그룹 유형 라벨 복사본을 `GROUP_TYPE_LABELS`로 통일, 가입 승인/거절 실패를 화면에 표시, `ProfileProvider`가 마운트 시 같은 조회를 두 번 하던 것(`onAuthStateChange`의 `INITIAL_SESSION`) 제거.
+- **전체 초기화 스크립트 `supabase/seed/reset_all.sql`**: "데이터 아이디 모두 다 삭제해줘 첨부터 새로해보게"라는 요청으로 만들었습니다. `reset_to_byul_only.sql`과 달리 본인 계정까지 전부 지우고(스키마·RLS·기본 질문 은행만 보존), 참조하는 쪽부터 지우는 순서(storage.objects → reading_records/shelf_tags → assignments → groups → children → books → 사용자 질문 → consents → auth.users)로 짰습니다. 로컬 Postgres에 전체 관계를 다 채운 픽스처를 만들어 돌려보다가 **실제 순서 버그를 하나 잡았습니다** — `reading_records.group_id`도 cascade가 없어서 그룹을 먼저 지우면 외래키 위반으로 실패하므로, 독서기록을 그룹보다 앞으로 옮겼습니다(수정 후 전 테이블 0건, 기본 질문 11개만 남는 것 확인).
 - **아직 못 한 것 / 사용자가 해야 할 것**: 마이그레이션 0016(`active_profile_type`)·0017(책장 공유)·0018(이름표)은 아직 실제 Supabase에 적용되지 않았습니다. 적용 전까지는 위의 오류 표시 덕분에 "불러오지 못했어요"로 보이고, 적용하면 바로 정상 동작합니다. 사진·음성 업로드, 카카오 검색, 실제 로그인 같은 외부 연동은 이 환경에서 끝까지 실행해 볼 수 없어 코드 리뷰까지만 했습니다.
 
 @AGENTS.md
