@@ -54,6 +54,12 @@ alpha[bg_region] = ramp[bg_region]
 strong = alpha > 0.3
 keep = ndimage.binary_dilation(strong, iterations=3)
 alpha[bg_region & ~keep] = 0
+# 종이 결 같은 배경 노이즈가 배경색과 꽤 달라 살아남는 경우: 작은 알파 조각(80px 미만)은 지운다
+lab_a, n_a = ndimage.label(alpha > 0.1)
+if n_a:
+    sz = ndimage.sum(np.ones_like(lab_a), lab_a, index=np.arange(1, n_a + 1))
+    small = np.isin(lab_a, np.flatnonzero(sz < 80) + 1)
+    alpha[small] = 0
 
 # un-premultiply: 관측색 = a*fg + (1-a)*bg  →  fg = (obs - (1-a)*bg) / a
 a3 = alpha[..., None]
