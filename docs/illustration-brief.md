@@ -27,7 +27,7 @@ Children's picture-book illustration in a simple naive crayon and oil-pastel sty
 - 1~11번 + 앱 아이콘: **완료** — 12칸 시트 한 장(`docs/illustrations/sheet-1.png`)을 `slice-sheet.py --cols 4 --rows 3`으로 잘라 `public/illustrations/`에 넣음(칸당 약 250~320px). 발자국 3종은 모양이 거의 같게 나왔지만 도장 크기에선 구분이 무의미해 그대로 씀.
 - 12번 숲길 배경: **완료** (`public/illustrations/forest-path.jpg`, 1200px JPEG로 축소).
 - 발자국 도장 3종은 시트 것 대신 따로 받은 것으로 교체(`stamp-mask.py`로 마스크화).
-- **3차 캐릭터 시트**(`docs/illustrations/character-sheet.png`, 털 질감 있는 평면 스타일 — 2차 숲 배경과 같은 결): 곰·백로·토끼·강아지·고양이 5종 교체 완료. 편지 물고 나는 새(`bird-letter.png`)는 아직 이 스타일로 없어서 2차 크레용 것이 남아 있음 → 다시 받으면 교체.
+- **3차 캐릭터 시트**(`docs/illustrations/character-sheet.png`, 털 질감 있는 평면 스타일 — 2차 숲 배경과 같은 결): 곰·백로·토끼·강아지·고양이 5종 교체 완료. 편지 물고 나는 새·발자국 도장 3종·등불 2종도 같은 스타일로 다시 받아 교체 완료(`docs/illustrations/sheet-stamps-lanterns.png`). 이제 전 자산이 3차 스타일로 통일됨.
 - **앱 연결 완료** — 어디에 붙였는지는 CLAUDE.md '크레용 일러스트 연결' 절 참고.
 
 ## 자산 목록

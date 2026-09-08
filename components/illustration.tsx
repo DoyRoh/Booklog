@@ -6,17 +6,17 @@ import type { CSSProperties } from "react";
 // 높이만 정하면 비율에 맞춰 너비를 계산한다.
 export const ILLUSTRATIONS = {
   "bear-lantern": [443, 564],
-  "bird-letter": [347, 269],
+  "bird-letter": [1250, 1024],
   "bird-perched": [234, 422],
   "app-icon": [302, 288],
   rabbit: [173, 459],
   dog: [257, 401],
   cat: [249, 398],
-  "lantern-on": [281, 296],
-  "lantern-off": [273, 327],
-  "paw-rabbit": [372, 512],
-  "paw-dog": [512, 476],
-  "paw-cat": [470, 389],
+  "lantern-on": [385, 394],
+  "lantern-off": [182, 353],
+  "paw-rabbit": [228, 299],
+  "paw-dog": [306, 286],
+  "paw-cat": [290, 249],
 } as const;
 
 export type IllustrationName = keyof typeof ILLUSTRATIONS;
