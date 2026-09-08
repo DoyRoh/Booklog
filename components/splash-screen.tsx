@@ -43,18 +43,21 @@ export default function SplashScreen() {
         }
       }
     }
-    if (!decidedThisLoad) {
-      setPhase("gone");
-      return;
-    }
-    setQuote(SPLASH_QUOTES[Math.floor(Math.random() * SPLASH_QUOTES.length)]);
-
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const t1 = setTimeout(() => setPhase("fading"), SHOW_MS);
-    const t2 = setTimeout(() => setPhase("gone"), SHOW_MS + (reduce ? 0 : FADE_MS));
+    // 상태 갱신은 다음 프레임으로 미룬다(효과 안에서 동기 setState를 피함).
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const raf = requestAnimationFrame(() => {
+      if (!decidedThisLoad) {
+        setPhase("gone");
+        return;
+      }
+      setQuote(SPLASH_QUOTES[Math.floor(Math.random() * SPLASH_QUOTES.length)]);
+      const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      timers.push(setTimeout(() => setPhase("fading"), SHOW_MS));
+      timers.push(setTimeout(() => setPhase("gone"), SHOW_MS + (reduce ? 0 : FADE_MS)));
+    });
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
+      cancelAnimationFrame(raf);
+      timers.forEach(clearTimeout);
     };
   }, []);
 
@@ -80,21 +83,30 @@ export default function SplashScreen() {
         className="pointer-events-none absolute inset-x-0 top-0 h-[55%]"
         style={{ background: "linear-gradient(rgba(15,31,22,0.45), rgba(15,31,22,0))" }}
       />
-      <p
-        className="hand relative whitespace-pre-line px-8 text-center leading-snug"
-        style={{
-          color: "#FFFFFF",
-          fontSize: "clamp(24px, 6.6vw, 30px)",
-          textShadow: "0 1px 12px rgba(0,0,0,0.35)",
-          wordBreak: "keep-all",
-          minHeight: "3em",
-        }}
-      >
-        {quote ?? ""}
-      </p>
+      {/* 문구는 손글씨체가 아니라 책 본문 같은 명조로 -- 손글씨(Gamja
+          Flower)는 큰 크기에서 성의 없어 보인다는 피드백. 짧은 장식선을
+          위아래에 둬 "책의 한 구절"처럼 읽히게 한다. */}
+      <div className="relative flex flex-col items-center gap-5 px-8">
+        <span aria-hidden="true" className="h-px w-8" style={{ background: "rgba(255,255,255,0.55)" }} />
+        <p
+          className="book whitespace-pre-line text-center"
+          style={{
+            color: "#FFFFFF",
+            fontSize: "clamp(21px, 5.8vw, 26px)",
+            lineHeight: 1.7,
+            letterSpacing: "0.01em",
+            textShadow: "0 1px 12px rgba(0,0,0,0.4)",
+            wordBreak: "keep-all",
+            minHeight: "3.4em",
+          }}
+        >
+          {quote ?? ""}
+        </p>
+        <span aria-hidden="true" className="h-px w-8" style={{ background: "rgba(255,255,255,0.55)" }} />
+      </div>
       <span
-        className="d relative text-2xl tracking-wide"
-        style={{ color: "#FFFFFF", textShadow: "0 1px 10px rgba(0,0,0,0.4)" }}
+        className="book relative text-2xl font-bold"
+        style={{ color: "#FFFFFF", letterSpacing: "0.18em", textShadow: "0 1px 10px rgba(0,0,0,0.4)" }}
       >
         책숲
       </span>
