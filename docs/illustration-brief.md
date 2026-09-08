@@ -20,7 +20,8 @@ Children's picture-book illustration drawn in soft colored pencil texture, hand-
 ## 진행 상황
 
 - 0번 캐릭터 시트: **확정** (`docs/illustrations/character-sheet.png`). 이후 그림은 전부 이 시트 기준.
-- 1번 곰: 체크무늬 배경이 박힌 채로 나와서 단색 배경으로 다시 뽑기로 함.
+- 1번 곰: 체크무늬 배경이 박힌 채로 나와서 다시 뽑기로 함.
+- 2번 편지 새: **완료** (`public/illustrations/bird-letter.png`, 진짜 투명 PNG로 나옴 — 이 방식이 되면 굳이 단색 배경으로 안 뽑아도 됨).
 
 ## 자산 목록
 
