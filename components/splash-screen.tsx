@@ -69,10 +69,10 @@ export default function SplashScreen() {
       onClick={() => setPhase("gone")}
       className="fixed inset-0 z-[100] flex flex-col items-center justify-between overflow-hidden"
       style={{
-        background: "#0F1F16 url(/illustrations/splash.jpg) center 55% / cover no-repeat",
+        background: "#0F1F16 url(/illustrations/splash.jpg) center 60% / cover no-repeat",
         opacity: phase === "fading" ? 0 : 1,
         transition: `opacity ${FADE_MS}ms ease-out`,
-        paddingTop: "calc(var(--st, 0px) + 18vh)",
+        paddingTop: "calc(var(--st, 0px) + 7vh)",
         paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 40px)",
       }}
     >
@@ -80,8 +80,8 @@ export default function SplashScreen() {
           나무가 올라올 수 있어 아주 옅은 어두운 그림자만 한 겹 깐다. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[55%]"
-        style={{ background: "linear-gradient(rgba(15,31,22,0.45), rgba(15,31,22,0))" }}
+        className="pointer-events-none absolute inset-x-0 top-0 h-[45%]"
+        style={{ background: "linear-gradient(rgba(10,20,14,0.55), rgba(10,20,14,0.25) 60%, rgba(10,20,14,0))" }}
       />
       {/* 문구는 손글씨체가 아니라 책 본문 같은 명조로 -- 손글씨(Gamja
           Flower)는 큰 크기에서 성의 없어 보인다는 피드백. 짧은 장식선을
