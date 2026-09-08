@@ -45,7 +45,46 @@ Children's picture-book illustration in a simple naive crayon and oil-pastel sty
 | 12 | `forest-path.png` | 1536×1024 (배경 있음) | 오늘 탭·숲길 배경, 온보딩 첫 화면 |
 | 13 | `app-icon.png` | 1024×1024 (배경 있음) | 앱 아이콘·홈 화면 아이콘 |
 
-## 프롬프트
+## 한 번에 뽑기 (프롬프트 4개)
+
+14개를 하나씩 보내기 번거로울 때. A·B는 한 장에 여러 그림을 격자로 그리게 하고 `scripts/slice-sheet.py`로 낱개 투명 PNG로 잘라낸다(순서는 왼쪽→오른쪽, 위→아래). 개별 해상도가 낮아지므로 크게 쓰는 그림(오늘 탭 곰 등)은 필요하면 아래 개별 프롬프트로 다시 뽑는다. 각 프롬프트 앞에 공통 스타일 문단을 붙이되, A·B는 "(For this sheet, ignore the single-subject composition rule; follow the grid layout below.)"를 한 줄 덧붙인다.
+
+### A. 캐릭터 시트 한 장 (6개) — → bear-lantern, bird-letter, bird-perched, rabbit, dog, cat
+
+```
+[공통 스타일 문단]
+One landscape image (3:2) containing SIX separate drawings arranged in a neat grid of 3 columns and 2 rows, evenly spaced, all the same scale, none touching or overlapping, with clear empty sage green space between them. Top row, left to right: (1) the black moon bear walking to the right holding up a small glowing amber lantern, (2) the white egret flying to the right with wings spread, carrying a small folded letter with a tiny green wax seal in its beak, (3) the white egret perched calmly on a short thin bare branch, facing left. Bottom row, left to right: (4) the cream rabbit, (5) the honey-brown dog, (6) the grey-blue cat, each standing full body facing forward and hugging a closed deep-green picture book with both paws. All six in exactly the same crayon style as the character sheet above. No grid lines, no labels, no numbers.
+```
+
+### B. 도장·등불 시트 한 장 (5개) — → paw-rabbit, paw-dog, paw-cat, lantern-on, lantern-off
+
+```
+[공통 스타일 문단]
+One landscape image (3:2) containing FIVE separate small drawings arranged in one row, evenly spaced, none touching, with clear empty sage green space between them. Left to right: (1) a rabbit paw print, (2) a dog paw print, (3) a cat paw print, all three drawn as simple bold rubber-stamp silhouettes in one flat deep forest green ink (#1B5E3A) with slightly uneven waxy crayon edges; (4) a small old-fashioned hanging lantern, lit, glowing warm amber with a soft round halo; (5) the exact same lantern unlit, dark glass, no glow. The lanterns are the same simple lantern the bear carries. No grid lines, no labels, no numbers.
+```
+
+### C. 밤 숲길 배경 (혼자) — forest-path.png
+
+```
+[공통 스타일 문단]
+This image fills the whole canvas instead of a flat sage background. A wide, gentle night forest scene in the same simple crayon style: a soft winding path from the bottom toward the distance, tall rounded tree shapes on both sides, a calm deep indigo-green sky with a few crayon-dot stars, a few tiny amber lantern lights far along the path. No characters, no text. Keep the lower third quiet and simple so characters can be placed there later. Landscape 3:2.
+```
+
+### D. 앱 아이콘 (혼자) — app-icon.png
+
+```
+[공통 스타일 문단]
+App icon design in the same simple crayon style, readable at tiny size: a single glowing amber lantern with a soft round halo on a plain sage green (#EAF0E5) rounded-square background, with a tiny hint of the black moon bear's paw holding the lantern handle at the bottom edge. No text, no border, square 1:1, fills the whole canvas.
+```
+
+잘라내기 예:
+
+```
+python3 scripts/slice-sheet.py sheetA.png public/illustrations bear-lantern,bird-letter,bird-perched,rabbit,dog,cat
+python3 scripts/slice-sheet.py sheetB.png public/illustrations paw-rabbit,paw-dog,paw-cat,lantern-on,lantern-off
+```
+
+## 프롬프트 (하나씩 뽑기)
 
 ### 0. 캐릭터 시트 (스타일 고정용)
 
