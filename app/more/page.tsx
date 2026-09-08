@@ -5,6 +5,7 @@ import { getActiveProfile } from "@/lib/active-profile";
 import SignOutButton from "@/components/sign-out-button";
 import ChildSwitcher from "@/components/child-switcher";
 import OperatorProfileSwitcher, { type OperatorGroup } from "@/components/operator-profile-switcher";
+import ChildShare from "@/components/child-share";
 
 export default async function MorePage() {
   const supabase = await createClient();
@@ -27,7 +28,10 @@ export default async function MorePage() {
   // 목록)을 동시에 왕복한다.
   const [{ data: profile }, { data: guardianRows }, { data: operatorRows }, activeProfile] = await Promise.all([
     supabase.from("users").select("email, active_child_id").eq("id", userId).single(),
-    supabase.from("child_guardians").select("children(id, name, avatar, birth_date)").eq("user_id", userId),
+    supabase
+      .from("child_guardians")
+      .select("children(id, name, avatar, birth_date, invite_code)")
+      .eq("user_id", userId),
     supabase
       .from("group_members")
       .select("role, groups(id, name, type)")
@@ -37,7 +41,13 @@ export default async function MorePage() {
     getActiveProfile(supabase, userId),
   ]);
 
-  type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null; birth_date: string | null };
+  type ChildRow = {
+    id: string;
+    name: string;
+    avatar: "rabbit" | "dog" | "cat" | null;
+    birth_date: string | null;
+    invite_code: string | null;
+  };
   const children = (guardianRows ?? [])
     .map((row) => row.children as unknown as ChildRow | null)
     .filter((child): child is ChildRow => Boolean(child));
@@ -101,6 +111,18 @@ export default async function MorePage() {
               isActive={activeProfile.type === "operator"}
             />
           </div>
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <p className="d text-base">책장 공유</p>
+        <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+          배우자·조부모 같은 다른 보호자를 초대해서 같은 아이의 책장을 함께 보고 기록할 수 있어요.
+        </p>
+        <div className="mt-3">
+          <ChildShare
+            childList={children.map((child) => ({ id: child.id, name: child.name, inviteCode: child.invite_code }))}
+          />
         </div>
       </div>
 

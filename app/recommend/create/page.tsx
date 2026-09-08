@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { randomInviteCode } from "@/lib/invite-code";
 
 type GroupType = "kindergarten" | "school" | "library" | "family" | "community" | "creator";
 type JoinPolicy = "approval" | "open";
@@ -22,15 +23,6 @@ const TYPES: { value: GroupType; label: string }[] = [
   { value: "community", label: "커뮤니티" },
   { value: "creator", label: "크리에이터" },
 ];
-
-function randomInviteCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code;
-}
 
 export default function CreateGroupPage() {
   const router = useRouter();

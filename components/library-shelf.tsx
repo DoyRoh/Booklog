@@ -317,6 +317,9 @@ export default function LibraryShelf({
           {filtered.length}권
         </span>
         <div className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
+        <Link href="/library/export" className="flex-none text-xs" style={{ color: "var(--point-deep)" }}>
+          내보내기
+        </Link>
       </div>
 
       {filtered.length === 0 && (

@@ -24,7 +24,7 @@ export default function TopBar() {
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-50 border-b"
+      className="no-print fixed inset-x-0 top-0 z-50 border-b"
       style={{ paddingTop: "var(--st)", background: "var(--paper)", borderColor: "var(--rule)" }}
     >
       <div className="mx-auto flex max-w-[520px] items-center justify-between px-5 py-2.5">

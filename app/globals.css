@@ -102,3 +102,16 @@ body {
     opacity: 1;
   }
 }
+
+/* 책장 내보내기(독서 리포트) 인쇄용 -- 상단바/하단탭처럼 화면 조작용
+   요소는 인쇄에 필요 없으니 숨긴다. 프린터로는 쓰지 않고 "PDF로 저장"
+   또는 모바일 공유 시트로 쓰는 경우가 대부분일 것으로 예상. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .pt-\[56px\],
+  .pb-\[64px\] {
+    padding: 0 !important;
+  }
+}
