@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import PrintButton from "@/components/print-button";
+import SceneBanner from "@/components/scene-banner";
 import GroupFilterSelect from "@/components/group-filter-select";
 
 const RATING_LABELS: Record<number, string> = {
@@ -90,7 +91,8 @@ export default async function LibraryExportPage({
         <PrintButton />
       </div>
 
-      <div className="mt-6 flex items-baseline justify-between border-b pb-4" style={{ borderColor: "var(--rule)" }}>
+      <SceneBanner scene="pattern" height={120} className="mt-6" />
+      <div className="mt-4 flex items-baseline justify-between border-b pb-4" style={{ borderColor: "var(--rule)" }}>
         <div>
           <p className="d text-xl">
             {activeChild.name}의 {selectedTagName ? `${selectedTagName} ` : ""}책숲 독서 리포트

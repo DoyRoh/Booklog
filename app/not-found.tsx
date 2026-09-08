@@ -1,9 +1,11 @@
 import Link from "next/link";
+import SceneBanner from "@/components/scene-banner";
 
 export default function NotFound() {
   return (
-    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-16">
-      <p className="hand text-xl" style={{ color: "var(--point-deep)" }}>
+    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-10">
+      <SceneBanner scene="parade" height={170} />
+      <p className="hand mt-6 text-xl" style={{ color: "var(--point-deep)" }}>
         숲길을 잘못 들었나 봐요.
       </p>
       <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>

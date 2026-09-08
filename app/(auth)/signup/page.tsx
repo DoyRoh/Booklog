@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import SceneBanner from "@/components/scene-banner";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/auth-errors";
@@ -43,8 +44,9 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-16">
-      <h1 className="d text-2xl">책숲</h1>
+    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-10">
+      <SceneBanner scene="parade" height={170} />
+      <h1 className="d mt-6 text-2xl">책숲</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         이메일로 회원가입하세요.
       </p>
