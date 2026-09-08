@@ -4,6 +4,7 @@ import Image from "next/image";
 // 보여준다. 그림마다 초점이 다르므로 objectPosition을 받는다.
 export const SCENES = {
   forest: { src: "/illustrations/forest-path.jpg", position: "center 62%", bg: "var(--point-deep)" },
+  "forest-reading": { src: "/illustrations/forest-reading.jpg", position: "center 68%", bg: "var(--point-deep)" },
   parade: { src: "/illustrations/parade.jpg", position: "center 72%", bg: "#DCE6D3" },
   pattern: { src: "/illustrations/pattern.jpg", position: "center 12%", bg: "var(--paper)" },
 } as const;
