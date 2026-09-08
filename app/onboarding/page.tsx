@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/sign-out-button";
@@ -222,7 +223,27 @@ export default function OnboardingPage() {
               className="mt-0.5"
             />
             <span className="text-sm">
-              <span style={{ color: "var(--berry)" }}>(필수)</span> 이용약관 및 개인정보처리방침에 동의합니다
+              <span style={{ color: "var(--berry)" }}>(필수)</span>{" "}
+              <Link
+                href="/terms"
+                target="_blank"
+                onClick={(e) => e.stopPropagation()}
+                className="underline"
+                style={{ color: "var(--point-deep)" }}
+              >
+                이용약관
+              </Link>{" "}
+              및{" "}
+              <Link
+                href="/privacy"
+                target="_blank"
+                onClick={(e) => e.stopPropagation()}
+                className="underline"
+                style={{ color: "var(--point-deep)" }}
+              >
+                개인정보처리방침
+              </Link>
+              에 동의합니다
             </span>
           </label>
 
