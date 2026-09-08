@@ -16,7 +16,7 @@ export default function ForestBanner({ height = 160 }: { height?: number }) {
         fill
         sizes="(max-width: 520px) 100vw, 520px"
         priority
-        style={{ objectFit: "cover", objectPosition: "center 40%" }}
+        style={{ objectFit: "cover", objectPosition: "center 62%" }}
       />
     </div>
   );
