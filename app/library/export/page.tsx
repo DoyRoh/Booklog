@@ -136,7 +136,7 @@ export default async function LibraryExportPage({
 
       {rows.length === 0 ? (
         <p className="mt-8 text-sm" style={{ color: "var(--ink-2)" }}>
-          {tagParam ? "이 이름표가 붙은 책이 아직 없어요." : "아직 다 읽은 책이 없어요."}
+          {tagParam ? "이 책장에 꽂힌 책이 아직 없어요." : "아직 다 읽은 책이 없어요."}
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-[var(--r)] border" style={{ borderColor: "var(--rule)" }}>
@@ -162,7 +162,7 @@ export default async function LibraryExportPage({
                   출처
                 </th>
                 <th className="px-3 py-2 font-normal" style={{ color: "var(--ink-2)" }}>
-                  이름표
+                  책장
                 </th>
               </tr>
             </thead>

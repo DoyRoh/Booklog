@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 
 type Tag = { id: string; name: string };
 
-// "6살 책장", "여름방학 책장"처럼 부모가 직접 이름 붙인 폴더(이름표)를
+// "6살 책장", "여름방학 책장"처럼 부모가 직접 이름 붙인 책장(shelf_tags)을
 // 고르거나 새로 만드는 칩 목록. 기록 남기기(app/library/add)와 기록
 // 고치기(RecordEditModal) 양쪽에서 재사용한다.
 export default function ShelfTagPicker({
@@ -46,7 +46,7 @@ export default function ShelfTagPicker({
 
     setSaving(false);
     if (insertError) {
-      setError(insertError.code === "23505" ? "이미 있는 이름표예요." : insertError.message);
+      setError(insertError.code === "23505" ? "이미 있는 책장 이름이에요." : insertError.message);
       return;
     }
     const tag = data as Tag;
@@ -58,7 +58,7 @@ export default function ShelfTagPicker({
 
   return (
     <div>
-      <p className="d text-sm">책장 이름표 (선택)</p>
+      <p className="d text-sm">어느 책장에 꽂을까요? (선택)</p>
       <div className="mt-2 flex flex-wrap gap-2">
         <button
           type="button"
@@ -94,7 +94,7 @@ export default function ShelfTagPicker({
             className="d rounded-full border border-dashed px-3 py-1.5 text-sm"
             style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
           >
-            + 새 이름표
+            + 새 책장
           </button>
         )}
       </div>

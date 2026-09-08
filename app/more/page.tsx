@@ -142,9 +142,9 @@ export default async function MorePage() {
 
       {(profile?.active_child_id ?? children[0]?.id) && (
         <div className="mt-8">
-          <p className="d text-base">책장 이름표</p>
+          <p className="d text-base">책장 나누기</p>
           <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-            &quot;6살 책장&quot;처럼 기록에 붙인 이름표의 이름을 바꾸거나 지울 수 있어요.
+            &quot;6살 책장&quot;, &quot;7살 책장&quot;처럼 나눠 둔 책장의 이름을 바꾸거나 지울 수 있어요.
           </p>
           <div className="mt-3">
             <ShelfTagManager childId={(profile?.active_child_id ?? children[0]?.id) as string} />

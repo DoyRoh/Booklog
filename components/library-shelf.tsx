@@ -176,7 +176,7 @@ export default function LibraryShelf({
     const byId = new Map<string, string>();
     for (const book of books) {
       for (const inst of book.instances) {
-        if (inst.shelfTagId) byId.set(inst.shelfTagId, inst.shelfTagName ?? "이름표");
+        if (inst.shelfTagId) byId.set(inst.shelfTagId, inst.shelfTagName ?? "책장");
       }
     }
     return { tags: Array.from(byId.entries()) };
@@ -316,7 +316,7 @@ export default function LibraryShelf({
       {tagOptions.tags.length > 0 && (
         <div className="mt-2 flex items-center gap-2">
           <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
-            이름표
+            책장
           </span>
           <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
             {tagOptions.tags.map(([id, name]) => (
