@@ -59,7 +59,7 @@ fg = np.clip(fg, 0, 255)
 out = np.dstack([fg, alpha * 255]).astype(np.uint8)
 res = Image.fromarray(out, "RGBA")
 if trim:
-    box = res.getbbox()
+    box = res.getchannel("A").point(lambda v: 255 if v > 24 else 0).getbbox()  # 거의 투명한 잔티는 무시
     pad = 16
     res = res.crop((max(0, box[0] - pad), max(0, box[1] - pad), min(w, box[2] + pad), min(h, box[3] + pad)))
 res.save(dst)
