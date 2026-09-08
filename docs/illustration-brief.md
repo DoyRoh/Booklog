@@ -45,7 +45,35 @@ Children's picture-book illustration in a simple naive crayon and oil-pastel sty
 | 12 | `forest-path.png` | 1536×1024 (배경 있음) | 오늘 탭·숲길 배경, 온보딩 첫 화면 |
 | 13 | `app-icon.png` | 1024×1024 (배경 있음) | 앱 아이콘·홈 화면 아이콘 |
 
-## 한 번에 뽑기 (프롬프트 4개)
+## 딱 두 번에 끝내기 (추천)
+
+1번은 12개를 4×3 격자 한 장에, 2번은 숲길 배경 혼자. 분할:
+
+```
+python3 scripts/slice-sheet.py sheet1.png public/illustrations bear-lantern,bird-letter,bird-perched,app-icon,rabbit,dog,cat,lantern-on,paw-rabbit,paw-dog,paw-cat,lantern-off
+```
+
+### 1. 한 장에 12개 (곰·새·아바타·도장·등불·앱 아이콘) — → 12개 파일로 자동 분할
+
+```
+[공통 스타일 문단]
+(For this sheet, ignore the single-subject composition rule; follow the grid layout below.)
+One landscape image (3:2) containing TWELVE separate small drawings arranged in a neat grid of 4 columns and 3 rows, evenly spaced, all the same scale, none touching or overlapping, with clear empty sage green space between them. No grid lines, no labels, no numbers.
+Row 1, left to right: (1) the black moon bear walking to the right, holding up a small glowing amber lantern; (2) the white egret flying to the right with wings spread, carrying a small folded letter with a tiny green wax seal in its beak; (3) the white egret perched calmly on a short thin bare branch, facing left; (4) an app icon: a rounded square tile filled with slightly darker sage green, showing one glowing amber lantern with a soft round halo and a tiny hint of the bear's black paw holding the handle at the bottom.
+Row 2, left to right: (5) the cream rabbit, (6) the honey-brown dog, (7) the grey-blue cat, each standing full body facing forward and hugging a closed deep-green picture book with both paws; (8) a small old-fashioned hanging lantern, lit, glowing warm amber with a soft round halo, the same simple lantern the bear carries.
+Row 3, left to right: (9) a rabbit paw print, (10) a dog paw print, (11) a cat paw print, all three drawn as simple bold rubber-stamp silhouettes in one flat deep forest green ink (#1B5E3A) with slightly uneven waxy crayon edges; (12) the exact same hanging lantern as (8) but unlit, dark glass, no glow.
+All twelve in exactly the same crayon style as the character sheet above.
+```
+
+### 2. 밤 숲길 배경 (혼자) — forest-path.png
+
+```
+[공통 스타일 문단]
+(For this sheet, ignore the single-subject composition rule; follow the grid layout below.)
+This image fills the whole canvas instead of a flat sage background. A wide, gentle night forest scene in the same simple crayon style: a soft winding path from the bottom toward the distance, tall rounded tree shapes on both sides, a calm deep indigo-green sky with a few crayon-dot stars, a few tiny amber lantern lights far along the path. No characters, no text. Keep the lower third quiet and simple so characters can be placed there later. Landscape 3:2.
+```
+
+## 네 번에 나눠 뽑기
 
 14개를 하나씩 보내기 번거로울 때. A·B는 한 장에 여러 그림을 격자로 그리게 하고 `scripts/slice-sheet.py`로 낱개 투명 PNG로 잘라낸다(순서는 왼쪽→오른쪽, 위→아래). 개별 해상도가 낮아지므로 크게 쓰는 그림(오늘 탭 곰 등)은 필요하면 아래 개별 프롬프트로 다시 뽑는다. 각 프롬프트 앞에 공통 스타일 문단을 붙이되, A·B는 "(For this sheet, ignore the single-subject composition rule; follow the grid layout below.)"를 한 줄 덧붙인다.
 
