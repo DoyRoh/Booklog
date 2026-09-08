@@ -3,6 +3,7 @@ import { Gowun_Dodum, Gamja_Flower } from "next/font/google";
 import BottomNav from "@/components/bottom-nav";
 import TopBar from "@/components/top-bar";
 import ProfileProvider from "@/components/profile-context";
+import SplashScreen from "@/components/splash-screen";
 import "./globals.css";
 
 const gowunDodum = Gowun_Dodum({
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${gowunDodum.variable} ${gamjaFlower.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
+        <SplashScreen />
         <ProfileProvider>
           <TopBar />
           <main className="flex-1 pt-[56px] pb-[64px]">{children}</main>
