@@ -24,7 +24,8 @@ Children's picture-book illustration in a simple naive crayon and oil-pastel sty
 - **그림체 변경(2차)**: 색연필 세밀화(1차, `docs/illustrations/pencil-v1/`에 보관)가 앱 아이콘 크기에서 뭉개져 보여, 단순한 크레용·오일파스텔 스타일로 바꿨습니다. 공통 스타일 문단은 사용자가 직접 다시 쓴 것을 기준으로 합니다.
 - 곰은 **까만 반달가슴곰**(가슴에 흰 초승달 무늬)으로 정함. 2차 시트의 갈색 곰은 1번 프롬프트에서 반달곰으로 바꿔 뽑는다.
 - 0번 캐릭터 시트(2차): **확정** (`docs/illustrations/character-sheet.png`). 이후 그림은 전부 이 시트 기준.
-- 1~13번: 새 스타일로 다시 뽑는 중.
+- 1~11번 + 앱 아이콘: **완료** — 12칸 시트 한 장(`docs/illustrations/sheet-1.png`)을 `slice-sheet.py --cols 4 --rows 3`으로 잘라 `public/illustrations/`에 넣음(칸당 약 250~320px). 발자국 3종은 모양이 거의 같게 나왔지만 도장 크기에선 구분이 무의미해 그대로 씀.
+- 12번 숲길 배경: 대기 중.
 
 ## 자산 목록
 

@@ -16,6 +16,7 @@ src, out_dir, names = sys.argv[1], pathlib.Path(sys.argv[2]), sys.argv[3].split(
 def opt(name, default):
     return float(sys.argv[sys.argv.index(name) + 1]) if name in sys.argv else default
 cols = int(opt("--cols", 0))
+rows_n = int(opt("--rows", 0))  # --cols C --rows R 를 주면 고정 격자로 자른다(그림 간격이 좁을 때 안전)
 extra = [a for a in sys.argv[4:] if a.startswith("--lo") or a.startswith("--hi")]
 passthru = []
 for flag in ("--lo", "--hi"):
@@ -28,6 +29,22 @@ subprocess.run([sys.executable, "scripts/knockout-bg.py", src, str(tmp), *passth
 
 im = Image.open(tmp)
 alpha = np.asarray(im.getchannel("A")) > 24
+if cols and rows_n:
+    cw, ch = im.width / cols, im.height / rows_n
+    pad = 12
+    k = 0
+    for r in range(rows_n):
+        for c in range(cols):
+            if k >= len(names): break
+            x0, y0, x1, y1 = int(c * cw), int(r * ch), int((c + 1) * cw), int((r + 1) * ch)
+            cell = alpha[y0:y1, x0:x1]
+            ys, xs = np.where(cell)
+            if len(xs) == 0:
+                print(f"  {names[k]}: 빈 칸"); k += 1; continue
+            box = (x0 + xs.min() - pad, y0 + ys.min() - pad, x0 + xs.max() + 1 + pad, y0 + ys.min() + (ys.max() - ys.min()) + 1 + pad)
+            crop = im.crop((max(0, box[0]), max(0, box[1]), min(im.width, box[2]), min(im.height, box[3])))
+            crop.save(out_dir / f"{names[k]}.png"); print(f"  {names[k]}.png {crop.size}"); k += 1
+    tmp.unlink(); sys.exit(0)
 blob = ndimage.binary_dilation(alpha, iterations=30)
 labels, n = ndimage.label(blob)
 boxes = []
