@@ -216,3 +216,20 @@ App icon design, flat and very simple, readable at tiny size: a single glowing a
 
 - 지금처럼 채팅으로 파일을 그대로 보내 주시면 됩니다(파일명은 제가 붙입니다). 배경이 단색 세이지그린인지만 확인해 주세요.
 - 그러면 제가 오늘 탭 헤더의 곰, 기록 저장 순간의 "발자국 도장 쾅" 애니메이션, 책장 공유의 편지 새, 그룹 등불 진행률, 아바타 교체, 앱 아이콘까지 한 번에 연결합니다.
+
+## 스플래시 장면 2안 — 등불 켜는 곰 + 책 읽는 동물들 + 편지 물고 오는 백로 (세로)
+
+사용자 지정 장면: "숲속에서 곰은 등불 밝히고 있고, 다른 동물들은 미소 지으며 책 읽고 있고, 백로는 편지 물고 날아오고 있고, 하늘도 보이게". 기존 스플래시(`docs/illustrations/splash-src.jpg`)와 같은 그림체여야 하므로 **그 그림을 첨부하고** 아래 프롬프트를 보낸다. 위쪽 하늘 35%는 문구가 올라가는 자리라 비워 둬야 한다.
+
+```
+Use exactly the same illustration style, palette, brush texture and character designs as the attached picture (my previous forest scene): a textured flat children's picture-book style with soft paper grain, muted layered greens, no outlines, tiny dot eyes, simple rounded shapes.
+
+Portrait 9:16, fills the whole canvas. A calm night forest clearing. TOP 35% of the image: open deep indigo-green night sky with a few small warm crayon-dot stars and one thin crescent moon, kept quiet and empty (text will be placed here). Tall rounded trees frame the left and right edges only.
+
+MIDDLE and BOTTOM: on a soft mossy clearing, the black moon bear (small white crescent on its chest) stands slightly left of center, reaching up to hang and light a small old-fashioned amber lantern on a low branch; the lantern casts one soft warm round glow over the group. Under that glow, the cream rabbit, the honey-brown dog and the grey-blue cat sit close together on the ground, each holding an open deep-green picture book, faces lifted a little, with tiny gentle smiles. From the upper right, the white egret flies in toward them with wings spread, carrying a small folded letter with a tiny green wax seal in its beak. A couple of tiny distant amber lantern lights deeper in the woods, a few mushrooms and small leaves on the ground.
+
+Mood: hushed, warm, safe, like the moment before a bedtime story. Same stroke weight and simplicity as the attached picture. No text, no watermark, no border, no frame, not glossy 3D, not vector clip-art, not kawaii.
+```
+
+- 얼굴은 기존 규칙(점 눈 + 아주 작은 입선)이라 "미소"는 `tiny gentle smiles`로만 지시. 눈웃음·볼터치를 그리면 다시 뽑는다.
+- 그림이 나오면 `public/illustrations/splash.jpg`(세로 896×1200 JPEG)를 교체하면 코드 변경 없이 바로 적용된다. `components/splash-screen.tsx`의 `center 55%` 초점 위치는 하늘/동물 배치에 따라 다시 맞춘다.
