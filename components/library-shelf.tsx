@@ -65,6 +65,28 @@ const STATUS_RANK: Record<ReadingStatus, number> = { done: 2, reading: 1, want: 
 // 책 제목 해시로 고정 배정해, 같은 책은 항상 같은 색으로 보이게 한다.
 const SPINE_COLORS = ["#6B8F71", "#A6763F", "#D9A441", "#7C9C82", "#B5654A", "#5E7A6B", "#C9A66B"];
 
+// 나무 선반 -- 숲길 배경 그림의 나무 기둥 색(밝은 결 → 몸통 → 아래 그늘)을
+// 그대로 뽑아 왔다. 나뭇결 무늬는 일부러 넣지 않는다(표지 이미지와 싸워서
+// 산만해짐). 그림의 기둥도 결이 거의 없는 평면이라 톤만 맞추면 충분하다.
+const PLANK_STYLE = {
+  background: "linear-gradient(#867556, #735838 55%, #4C412F)",
+  boxShadow: "0 3px 4px rgba(38,54,43,0.18)",
+} as const;
+
+// 책등 보기에서 책마다 높이를 조금씩 다르게 -- 전부 같은 높이면 막대그래프처럼
+// 보인다. 제목 해시로 고정해서 같은 책은 항상 같은 높이.
+function spineHeight(title: string) {
+  let hash = 0;
+  for (const ch of title) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return 124 + (hash % 5) * 9; // 124 ~ 160px
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += size) rows.push(items.slice(i, i + size));
+  return rows;
+}
+
 function spineColor(title: string) {
   let hash = 0;
   for (let i = 0; i < title.length; i++) {
@@ -371,71 +393,95 @@ export default function LibraryShelf({
       )}
 
       {filtered.length > 0 && mode === "cover" && (
-        <div className="mt-5 grid grid-cols-3 gap-4">
-          {filtered.map((book) => (
-            <button
-              key={book.bookId}
-              type="button"
-              onClick={() => setEditing(book)}
-              className="flex flex-col gap-1.5 text-left"
-            >
-              <div
-                className="aspect-[3/4] overflow-hidden rounded-[10px]"
-                style={{ background: "var(--card)", border: "1px solid var(--rule)" }}
-              >
-                {book.coverUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={book.coverUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full items-center justify-center p-2 text-center">
-                    <span className="d text-xs" style={{ color: "var(--ink-2)" }}>
-                      {book.title}
-                    </span>
-                  </div>
-                )}
+        <div className="mt-5 flex flex-col gap-2">
+          {chunk(filtered, 3).map((row, rowIndex) => (
+            <div key={rowIndex}>
+              {/* 표지는 선반 위에 "올려진" 느낌으로 -- 바닥 그림자를 아래로만 */}
+              <div className="grid grid-cols-3 gap-4 px-3">
+                {row.map((book) => (
+                  <button
+                    key={book.bookId}
+                    type="button"
+                    onClick={() => setEditing(book)}
+                    className="aspect-[3/4] overflow-hidden rounded-[8px] text-left"
+                    style={{
+                      background: "var(--card)",
+                      border: "1px solid var(--rule)",
+                      boxShadow: "0 4px 6px rgba(38,54,43,0.2)",
+                    }}
+                    aria-label={book.title}
+                  >
+                    {book.coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={book.coverUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center p-2 text-center">
+                        <span className="d text-xs" style={{ color: "var(--ink-2)" }}>
+                          {book.title}
+                        </span>
+                      </div>
+                    )}
+                  </button>
+                ))}
               </div>
-              <p className="truncate text-xs" style={{ color: "var(--ink-2)" }}>
-                {book.title}
-              </p>
-              {book.status !== "done" && (
-                <span
-                  className="d self-start rounded-full px-2 py-0.5 text-[10px]"
-                  style={{ background: "rgba(232,163,61,0.16)", color: "var(--lantern)" }}
-                >
-                  {STATUS_LABELS[book.status]}
-                </span>
-              )}
-            </button>
+              <div className="h-3 rounded-[3px]" style={PLANK_STYLE} />
+              <div className="mt-1.5 grid grid-cols-3 gap-4 px-3">
+                {row.map((book) => (
+                  <div key={book.bookId} className="flex flex-col items-center gap-1">
+                    <p className="w-full truncate text-center text-xs" style={{ color: "var(--ink-2)" }}>
+                      {book.title}
+                    </p>
+                    {book.status !== "done" && (
+                      <span
+                        className="d rounded-full px-2 py-0.5 text-[10px]"
+                        style={{ background: "rgba(232,163,61,0.16)", color: "var(--lantern)" }}
+                      >
+                        {STATUS_LABELS[book.status]}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
 
       {filtered.length > 0 && mode === "spine" && (
-        <div
-          className="mt-5 flex flex-wrap items-end gap-1.5 rounded-[10px] border-b-4 p-3"
-          style={{ background: "var(--card)", borderColor: "var(--rule)" }}
-        >
-          {filtered.map((book) => (
-            <button
-              key={book.bookId}
-              type="button"
-              onClick={() => setEditing(book)}
-              className="flex h-40 w-8 flex-none items-start justify-center overflow-hidden rounded-[4px] pt-2 shadow-sm"
-              style={{ background: spineColor(book.title) }}
-              title={book.title}
-            >
-              <span
-                className="d block text-[11px] leading-none text-white"
-                style={{
-                  writingMode: "vertical-rl",
-                  textOrientation: "mixed",
-                  maxHeight: "148px",
-                  overflow: "hidden",
-                }}
-              >
-                {book.title}
-              </span>
-            </button>
+        <div className="mt-5 flex flex-col gap-5">
+          {/* 한 줄에 8권(32px × 8 + 간격 6px × 7 = 298px -- 가장 좁은 폰의 안쪽 폭 326px에 들어감) */}
+          {chunk(filtered, 8).map((row, rowIndex) => (
+            <div key={rowIndex}>
+              <div className="flex items-end gap-1.5 px-3">
+                {row.map((book) => (
+                  <button
+                    key={book.bookId}
+                    type="button"
+                    onClick={() => setEditing(book)}
+                    className="flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2"
+                    style={{
+                      height: spineHeight(book.title),
+                      background: spineColor(book.title),
+                      boxShadow: "inset -2px 0 0 rgba(0,0,0,0.12)",
+                    }}
+                    title={book.title}
+                  >
+                    <span
+                      className="d block text-[11px] leading-none text-white"
+                      style={{
+                        writingMode: "vertical-rl",
+                        textOrientation: "mixed",
+                        maxHeight: "148px",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {book.title}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="h-3 rounded-[3px]" style={PLANK_STYLE} />
+            </div>
           ))}
         </div>
       )}
