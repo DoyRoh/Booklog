@@ -13,6 +13,7 @@ import VoiceRecorder from "@/components/voice-recorder";
 import QuestionPrompt from "@/components/question-prompt";
 import RatingPicker from "@/components/rating-picker";
 import ReadDatePicker from "@/components/read-date-picker";
+import ShelfTagPicker from "@/components/shelf-tag-picker";
 
 type Step = "form" | "no-child" | "saved";
 type FindMode = "none" | "scan" | "isbn";
@@ -95,13 +96,18 @@ function AddBookForm() {
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [voiceAllowed, setVoiceAllowed] = useState(false);
   const [childName, setChildName] = useState<string | null>(null);
+  const [childId, setChildId] = useState<string | null>(null);
+  const [shelfTagId, setShelfTagId] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       hasVoiceConsent(supabase, user.id).then(setVoiceAllowed);
-      getActiveChild(supabase, user.id).then((child) => setChildName(child?.name ?? null));
+      getActiveChild(supabase, user.id).then((child) => {
+        setChildName(child?.name ?? null);
+        setChildId(child?.id ?? null);
+      });
     });
   }, []);
 
@@ -315,6 +321,7 @@ function AddBookForm() {
         parent_memo: memo || null,
         photo_url: photoUrl,
         voice_url: voiceUrl,
+        shelf_tag_id: shelfTagId,
       });
       if (recordError) {
         setError(recordError.message);
@@ -537,6 +544,8 @@ function AddBookForm() {
               평점·기분 같은 나머지 기록은 다 읽고 나서 채워도 괜찮아요.
             </p>
           )}
+
+          {childId && <ShelfTagPicker childId={childId} value={shelfTagId} onChange={setShelfTagId} />}
 
           <div className="mx-1" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
 

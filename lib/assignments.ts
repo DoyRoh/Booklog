@@ -88,6 +88,7 @@ async function fetchAssignments(
     parent_memo: string | null;
     read_date: string;
     pages_read: number | null;
+    shelf_tag_id: string | null;
     photo_url: string | null;
     voice_url: string | null;
   };
@@ -114,7 +115,7 @@ async function fetchAssignments(
       ? supabase
           .from("reading_records")
           .select(
-            "id, book_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, photo_url, voice_url"
+            "id, book_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, shelf_tag_id, photo_url, voice_url"
           )
           .eq("child_id", childId)
           .in("status", ["done", "reading"])
@@ -181,6 +182,7 @@ async function fetchAssignments(
           memo: record?.parent_memo ?? null,
           readDate: record?.read_date ?? null,
           pagesRead: record?.pages_read ?? null,
+          shelfTagId: record?.shelf_tag_id ?? null,
           photoPath: record?.photo_url ?? null,
           voicePath: record?.voice_url ?? null,
         };

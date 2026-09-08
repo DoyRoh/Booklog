@@ -16,6 +16,7 @@ export type RecentRecord = {
   memo: string;
   readDate: string;
   pagesRead: number | null;
+  shelfTagId: string | null;
   photoPath: string | null;
   voicePath: string | null;
 };
@@ -81,6 +82,7 @@ export default function RecentRecords({
             memo: editing.memo,
             readDate: editing.readDate,
             pagesRead: editing.pagesRead,
+            shelfTagId: editing.shelfTagId,
             photoPath: editing.photoPath,
             voicePath: editing.voicePath,
           }}

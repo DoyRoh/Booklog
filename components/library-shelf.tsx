@@ -15,6 +15,8 @@ export type ShelfInstance = {
   recordId: string;
   groupId: string | null;
   groupName: string | null;
+  shelfTagId: string | null;
+  shelfTagName: string | null;
   favorite: boolean;
   status: ReadingStatus;
   rating: number | null;
@@ -37,6 +39,7 @@ export type ShelfBook = {
 type ViewMode = "cover" | "spine";
 type StatusFilter = "all" | ReadingStatus;
 type GroupFilter = "all" | "direct" | string;
+type TagFilter = "all" | string;
 type SortMode = "new" | "title" | "author";
 
 const STORAGE_KEY = "chaeksup:library-view";
@@ -97,6 +100,7 @@ function toEditable(book: DedupedBook, childId: string, childName: string | null
     memo: book.memo ?? "",
     readDate: book.readDate,
     pagesRead: book.pagesRead,
+    shelfTagId: book.shelfTagId,
     photoPath: book.photoPath,
     voicePath: book.voicePath,
   };
@@ -115,6 +119,7 @@ export default function LibraryShelf({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [groupFilter, setGroupFilter] = useState<GroupFilter>("all");
+  const [tagFilter, setTagFilter] = useState<TagFilter>("all");
   const [sort, setSort] = useState<SortMode>("new");
   const [editing, setEditing] = useState<DedupedBook | null>(null);
 
@@ -145,20 +150,32 @@ export default function LibraryShelf({
     return { hasDirect, groups: Array.from(byId.entries()) };
   }, [books]);
 
+  const tagOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const book of books) {
+      for (const inst of book.instances) {
+        if (inst.shelfTagId) byId.set(inst.shelfTagId, inst.shelfTagName ?? "이름표");
+      }
+    }
+    return { tags: Array.from(byId.entries()) };
+  }, [books]);
+
   const deduped = useMemo<DedupedBook[]>(() => {
     return books
       .map((book) => {
         const matching = book.instances.filter((inst) => {
-          if (groupFilter === "all") return true;
-          if (groupFilter === "direct") return inst.groupId === null;
-          return inst.groupId === groupFilter;
+          const groupOk =
+            groupFilter === "all" ||
+            (groupFilter === "direct" ? inst.groupId === null : inst.groupId === groupFilter);
+          if (!groupOk) return false;
+          return tagFilter === "all" || inst.shelfTagId === tagFilter;
         });
         if (matching.length === 0) return null;
         const rep = pickRepresentative(matching);
         return { ...book, ...rep };
       })
       .filter((book): book is DedupedBook => Boolean(book));
-  }, [books, groupFilter]);
+  }, [books, groupFilter, tagFilter]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -265,6 +282,31 @@ export default function LibraryShelf({
                   borderColor: groupFilter === id ? "var(--point)" : "var(--rule)",
                   background: groupFilter === id ? "rgba(47,168,79,0.08)" : "var(--card)",
                   color: groupFilter === id ? "var(--point-deep)" : "var(--ink-2)",
+                }}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tagOptions.tags.length > 0 && (
+        <div className="mt-2 flex items-center gap-2">
+          <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+            이름표
+          </span>
+          <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
+            {tagOptions.tags.map(([id, name]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTagFilter(tagFilter === id ? "all" : id)}
+                className="d flex-none rounded-full border px-3 py-1 text-xs"
+                style={{
+                  borderColor: tagFilter === id ? "var(--point)" : "var(--rule)",
+                  background: tagFilter === id ? "rgba(47,168,79,0.08)" : "var(--card)",
+                  color: tagFilter === id ? "var(--point-deep)" : "var(--ink-2)",
                 }}
               >
                 {name}

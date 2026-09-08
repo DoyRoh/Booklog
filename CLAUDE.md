@@ -953,4 +953,16 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **책장 내보내기(`app/library/export`, 신규)**: 다 읽은 책 통계(권수·총 기록·이번 달)와 전체 목록을 표로 보여주는 "독서 리포트" 페이지입니다. 이미지 캡처 라이브러리(html2canvas류)를 쓰지 않고 브라우저 내장 인쇄(`window.print()`)로 구현했습니다 — 책 표지가 카카오 CDN 등 외부 도메인이라, 캔버스로 캡처하면 CORS 정책 때문에 "오염된 캔버스"로 처리돼 이미지가 빈 칸으로 나올 위험이 컸는데, 인쇄는 `<img>`를 브라우저가 직접 그리는 것이라 이 제약이 없습니다. 인쇄 미리보기/PDF 저장 시 상단바·하단탭이 안 나오도록 `no-print` 클래스(`app/globals.css`의 `@media print` 규칙)를 두 컴포넌트에 붙였습니다. 책장 탭의 "N권" 표시 옆에 "내보내기" 링크를 추가했습니다.
 - **의도적으로 하지 않은 것**: 이미지 한 장으로 예쁘게 꾸민 "카드 공유"(인스타그램 스토리처럼)는 이번엔 만들지 않았습니다 — 위에서 설명한 CORS 리스크 없이 안정적으로 구현하려면 표지 이미지를 서버에서 우리 스토리지로 프록시/재호스팅하는 작업이 먼저 필요한데, 범위가 커서 이번 라운드에서는 "확실하게 동작하는" 인쇄 기반 내보내기를 먼저 내놓는 쪽을 택했습니다. 그룹(학급) 전체가 함께 보는 공동 책장은 이전 라운드에서 이미 사용자가 명시적으로 필요 없다고 확인한 사항이라 다시 만들지 않았습니다.
 
+## 책장 이름표 — 직접 이름 붙이는 폴더/태그 (사용자 요청: "6살 책장, 7살책장 정리")
+
+"정리는 내가 7살 책장 6살책장 뭐 이런식으로 공유 기록하고 싶으면 어떡하지?"라는 질문을 받았습니다. 이미 있는 "출처(그룹) 필터"는 하바 7세반처럼 학급 그룹에 가입해야만 그 이름으로 묶여 보이는 거라, 그룹과 무관하게 부모가 자유롭게 이름 붙이는 분류를 원하는 건지 확인이 필요했습니다. `AskUserQuestion`으로 세 가지 방식(생일 기준 자동 계산 / 학급 그룹 이름 재사용 / 직접 이름 붙이는 폴더·태그)을 제시했고, **"직접 이름 붙이는 폴더/태그"**를 선택받아 그대로 구현했습니다.
+
+- **마이그레이션 0018**: `shelf_tags(child_id, name)` 테이블(아이별로 이름 유니크)과 `reading_records.shelf_tag_id`(nullable FK, `on delete set null` — 이름표를 지워도 기록 자체는 안 지워지고 이름표만 떨어짐)를 추가했습니다. RLS는 `child_guardians`와 완전히 같은 소유권 규칙이라 새 정책을 새로 짜지 않고 기존 `public.is_child_guardian()` 함수(마이그레이션 0002)를 그대로 재사용했습니다.
+  - **로컬 테스트 중 발견한 하네스 한계**: 새 테이블에 로컬 Postgres에서 `permission denied for table shelf_tags`가 났는데, RLS 문제가 아니라 `authenticated` 롤에 대한 테이블 단위 GRANT가 아예 없어서였습니다. 실제 Supabase 프로젝트는 스키마 단위 default privileges로 새 테이블에도 자동으로 grant가 붙지만(기존 마이그레이션들에 grant 문이 하나도 없는 이유), 이번 로컬 테스트 DB는 그 default privileges 규칙이 없어서 기존 테이블들만 개별적으로 grant가 붙어있던 상태였습니다 — 로컬 검증용으로만 `grant ... to authenticated`를 수동 실행하고(마이그레이션 파일에는 넣지 않음), RLS 자체(소유 아닌 보호자의 insert/select 차단, on delete set null)는 정상 검증했습니다.
+- **`components/shelf-tag-picker.tsx`(신규)**: 이름표 칩 목록 + "+ 새 이름표"로 그 자리에서 만들고 바로 선택하는 컴포넌트. 기록 남기기(`app/library/add`)와 기록 고치기(`RecordEditModal`) 양쪽에서 재사용합니다.
+- **`EditableRecord`/`ShelfInstance`/`RecordRow`/`RecentRecord`/`TodayBook`에 `shelfTagId` 추가**: 사진·음성 경로(`photoPath`/`voicePath`)를 추가할 때와 같은 패턴으로, 기록을 편집 가능하게 만드는 5개 타입과 그 값을 채우는 5개 조회 지점(`app/library/page.tsx`, `app/records/page.tsx`, `app/today/page.tsx`, `lib/assignments.ts`, `app/library/add/page.tsx`)에 전부 `shelf_tag_id`(+ 필요한 곳은 `shelf_tags(name)`)를 select에 추가했습니다.
+- **책장 탭 필터(`components/library-shelf.tsx`)**: "출처"/"상태" 필터와 같은 가로 스크롤 칩 줄로 "이름표" 필터를 추가했습니다(실제 이름표가 하나라도 있는 책이 있을 때만 줄 자체가 보임). 그룹 필터와 동시에 적용되므로 "하바 7세반 소속 + 6살 책장" 같은 조합도 가능합니다.
+- **`components/group-filter-select.tsx`를 살짝 일반화**: 원래 숲길 탭의 그룹 드롭다운 전용이었는데, `queryKey`/`allLabel` prop을 추가해서 `/library/export`의 이름표 드롭다운("전체 책장" 기본값, `?tag=`)에도 그대로 재사용했습니다. 특정 이름표를 고르면 리포트 제목이 "OO의 6살 책장 독서 리포트"처럼 바뀌고 표에 "이름표" 열이 추가됩니다.
+- **의도적으로 하지 않은 것**: 이름표 순서를 부모가 직접 정렬하는 기능(드래그 정렬 등)은 만들지 않았습니다 — 지금은 가나다순 고정이고, 이름표 개수가 몇 개 안 될 것으로 예상돼 필요성이 낮다고 판단했습니다. 나중에 필요해지면 `sort_order` 컬럼을 추가하면 됩니다.
+
 @AGENTS.md

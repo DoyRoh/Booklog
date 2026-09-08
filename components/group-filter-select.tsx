@@ -11,10 +11,14 @@ export default function GroupFilterSelect({
   groups,
   selectedId,
   basePath,
+  queryKey = "group",
+  allLabel = "전체 그룹",
 }: {
   groups: FilterGroup[];
   selectedId: string | null;
   basePath: string;
+  queryKey?: string;
+  allLabel?: string;
 }) {
   const router = useRouter();
 
@@ -23,12 +27,12 @@ export default function GroupFilterSelect({
       value={selectedId ?? "all"}
       onChange={(e) => {
         const value = e.target.value;
-        router.push(value === "all" ? basePath : `${basePath}?group=${value}`);
+        router.push(value === "all" ? basePath : `${basePath}?${queryKey}=${value}`);
       }}
       className="d w-full rounded-[14px] border px-4 py-3 text-sm outline-none"
       style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink)" }}
     >
-      <option value="all">전체 그룹</option>
+      <option value="all">{allLabel}</option>
       {groups.map((group) => (
         <option key={group.id} value={group.id}>
           {group.name}

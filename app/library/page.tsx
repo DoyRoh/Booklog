@@ -25,7 +25,7 @@ export default async function LibraryPage() {
     ? await supabase
         .from("reading_records")
         .select(
-          "id, group_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, photo_url, voice_url, books(id, title, author, cover_url), groups(name)"
+          "id, group_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, photo_url, voice_url, shelf_tag_id, books(id, title, author, cover_url), groups(name), shelf_tags(name)"
         )
         .eq("child_id", activeChild.id)
         .order("read_date", { ascending: false })
@@ -45,10 +45,13 @@ export default async function LibraryPage() {
     if (!book) continue;
 
     const group = record.groups as unknown as { name: string } | null;
+    const shelfTag = record.shelf_tags as unknown as { name: string } | null;
     const instance = {
       recordId: record.id,
       groupId: record.group_id,
       groupName: group?.name ?? null,
+      shelfTagId: record.shelf_tag_id,
+      shelfTagName: shelfTag?.name ?? null,
       favorite: record.favorite,
       status: record.status as ShelfBook["instances"][number]["status"],
       rating: record.rating,

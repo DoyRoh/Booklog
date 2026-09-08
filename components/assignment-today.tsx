@@ -34,6 +34,7 @@ export type TodayBook = {
   memo: string | null;
   readDate: string | null;
   pagesRead: number | null;
+  shelfTagId: string | null;
   photoPath: string | null;
   voicePath: string | null;
 };
@@ -53,6 +54,7 @@ function toEditable(book: TodayBook, childId: string, childName: string | null):
     memo: book.memo ?? "",
     readDate: book.readDate ?? new Date().toISOString().slice(0, 10),
     pagesRead: book.pagesRead,
+    shelfTagId: book.shelfTagId,
     photoPath: book.photoPath,
     voicePath: book.voicePath,
   };

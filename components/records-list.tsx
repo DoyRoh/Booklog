@@ -16,6 +16,7 @@ export type RecordRow = {
   parentMemo: string | null;
   readDate: string;
   pagesRead: number | null;
+  shelfTagId: string | null;
   photoPath: string | null;
   voicePath: string | null;
   bookTitle: string;
@@ -121,6 +122,7 @@ export default function RecordsList({
       memo: r.parentMemo ?? "",
       readDate: r.readDate,
       pagesRead: r.pagesRead,
+      shelfTagId: r.shelfTagId,
       photoPath: r.photoPath,
       voicePath: r.voicePath,
     };

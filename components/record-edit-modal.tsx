@@ -10,6 +10,7 @@ import RatingPicker from "@/components/rating-picker";
 import ReadDatePicker from "@/components/read-date-picker";
 import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
+import ShelfTagPicker from "@/components/shelf-tag-picker";
 
 const EMOTIONS = ["재밌어요", "웃겼어요", "감동적이에요", "슬퍼요", "그저그래요"];
 const STATUS_LABELS: Record<ReadingStatus, string> = {
@@ -32,6 +33,7 @@ export type EditableRecord = {
   memo: string;
   readDate: string;
   pagesRead: number | null;
+  shelfTagId: string | null;
   // reading_records.photo_url/voice_url 원본 경로(서명 안 된 값) -- 모달이
   // 열릴 때 직접 서명해서 미리보기를 만든다. 목록 화면마다 미리 서명해두면
   // 카드가 많을 때 그만큼 왕복이 늘어나므로, 실제로 열어볼 때만 서명한다.
@@ -54,6 +56,7 @@ export default function RecordEditModal({
   const [memo, setMemo] = useState(record.memo);
   const [readDate, setReadDate] = useState(record.readDate);
   const [pagesRead, setPagesRead] = useState(record.pagesRead ? String(record.pagesRead) : "");
+  const [shelfTagId, setShelfTagId] = useState(record.shelfTagId);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +97,7 @@ export default function RecordEditModal({
       parent_memo: memo || null,
       read_date: readDate,
       pages_read: status === "reading" && pagesRead ? Number(pagesRead) : null,
+      shelf_tag_id: shelfTagId,
     };
 
     try {
@@ -219,6 +223,10 @@ export default function RecordEditModal({
             평점·기분 같은 나머지 기록은 다 읽고 나서 채워도 괜찮아요.
           </p>
         )}
+
+        <div className="mt-4">
+          <ShelfTagPicker childId={record.childId} value={shelfTagId} onChange={setShelfTagId} />
+        </div>
 
         <div className="mx-1 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
 
