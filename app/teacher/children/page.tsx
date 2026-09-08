@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
-import { RabbitIcon, DogIcon, CatIcon } from "@/components/icons/avatar-icons";
+import { AvatarIllustration } from "@/components/illustration";
 
-const AVATAR_ICONS = { rabbit: RabbitIcon, dog: DogIcon, cat: CatIcon } as const;
 
 type ChildCard = {
   id: string;
@@ -131,7 +130,6 @@ export default async function TeacherChildrenPage() {
               ) : (
                 <div className="mt-2 flex flex-col gap-2">
                   {section.children.map((child) => {
-                    const AvatarIcon = child.avatar ? AVATAR_ICONS[child.avatar] : null;
                     return (
                       <div
                         key={child.id}
@@ -142,7 +140,7 @@ export default async function TeacherChildrenPage() {
                           className="flex h-9 w-9 flex-none items-center justify-center rounded-full"
                           style={{ background: "var(--paper)" }}
                         >
-                          {AvatarIcon && <AvatarIcon width={20} height={20} />}
+                          <AvatarIllustration avatar={child.avatar} height={28} />
                         </div>
                         <p className="flex-1 text-sm">{child.name}</p>
                         <span className="text-xs" style={{ color: "var(--ink-2)" }}>

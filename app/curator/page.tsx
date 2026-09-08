@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Illustration from "@/components/illustration";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
@@ -89,10 +90,15 @@ export default async function CuratorDashboardPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-        하얀 새가 물어온 책 소식이 여기 모여요
-      </p>
-      <h1 className="d mt-1 text-xl">큐레이터 대시보드</h1>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+            하얀 새가 물어온 책 소식이 여기 모여요
+          </p>
+          <h1 className="d mt-1 text-xl">큐레이터 대시보드</h1>
+        </div>
+        <Illustration name="bird-perched" height={72} className="flex-none" />
+      </div>
 
       {cards.length === 0 ? (
         <div className="mt-6">

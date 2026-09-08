@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getActiveChild } from "@/lib/active-child";
+import { AvatarIllustration, PawStamp, type Avatar } from "@/components/illustration";
 import { hasVoiceConsent } from "@/lib/consent";
 import { uploadChildPhoto, uploadChildVoice } from "@/lib/storage";
 import BarcodeScanner from "@/components/barcode-scanner";
@@ -97,6 +98,7 @@ function AddBookForm() {
   const [voiceAllowed, setVoiceAllowed] = useState(false);
   const [childName, setChildName] = useState<string | null>(null);
   const [childId, setChildId] = useState<string | null>(null);
+  const [childAvatar, setChildAvatar] = useState<Avatar | null>(null);
   const [shelfTagId, setShelfTagId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -107,6 +109,7 @@ function AddBookForm() {
       getActiveChild(supabase, user.id).then((child) => {
         setChildName(child?.name ?? null);
         setChildId(child?.id ?? null);
+        setChildAvatar(child?.avatar ?? null);
       });
     });
   }, []);
@@ -643,9 +646,19 @@ function AddBookForm() {
 
       {step === "saved" && (
         <div className="mt-8 flex flex-col gap-4">
-          <p className="hand text-2xl" style={{ color: "var(--point-deep)" }}>
-            책장에 기록됐어요!
-          </p>
+          {/* 다 읽은 책이면 아이 아바타의 발자국 도장이 "쾅" 찍힌다(탐험
+              수첩 모티프). 아직 안 읽은/읽는 중인 책은 아바타가 책을 안고
+              책장에 꽂아 두는 느낌으로. */}
+          <div className="flex items-center gap-4">
+            {status === "done" ? (
+              <PawStamp avatar={childAvatar} height={96} className="paw-stamp flex-none" />
+            ) : (
+              <AvatarIllustration avatar={childAvatar} height={96} className="flex-none" />
+            )}
+            <p className="hand text-2xl" style={{ color: "var(--point-deep)" }}>
+              {status === "done" ? "발자국을 남겼어요!" : "책장에 꽂아 뒀어요!"}
+            </p>
+          </div>
           <Link
             href="/library"
             className="d rounded-[14px] py-3 text-center text-sm text-white"

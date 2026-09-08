@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import ForestBanner from "@/components/forest-banner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/sign-out-button";
-import { RabbitIcon, DogIcon, CatIcon } from "@/components/icons/avatar-icons";
+import { AvatarIllustration } from "@/components/illustration";
 
 type Role = "parent" | "teacher" | "curator";
 type Avatar = "rabbit" | "dog" | "cat";
@@ -17,10 +18,10 @@ const ROLES: { value: Role; label: string; description: string }[] = [
   { value: "curator", label: "큐레이터", description: "기관·크리에이터로 추천도서를 발행해요" },
 ];
 
-const AVATARS: { value: Avatar; label: string; Icon: typeof RabbitIcon }[] = [
-  { value: "rabbit", label: "토끼", Icon: RabbitIcon },
-  { value: "dog", label: "강아지", Icon: DogIcon },
-  { value: "cat", label: "고양이", Icon: CatIcon },
+const AVATARS: { value: Avatar; label: string }[] = [
+  { value: "rabbit", label: "토끼" },
+  { value: "dog", label: "강아지" },
+  { value: "cat", label: "고양이" },
 ];
 
 function toDateInputValue(date: Date): string {
@@ -170,6 +171,8 @@ export default function OnboardingPage() {
         <h1 className="d text-2xl">책숲</h1>
         <SignOutButton />
       </div>
+
+      {step === "role" && <div className="mt-5"><ForestBanner height={140} /></div>}
 
       {step === "role" && (
         <div className="mt-8 flex flex-col gap-4">
@@ -322,7 +325,7 @@ export default function OnboardingPage() {
           />
 
           <div className="flex justify-between gap-3">
-            {AVATARS.map(({ value, label, Icon }) => (
+            {AVATARS.map(({ value, label }) => (
               <button
                 key={value}
                 type="button"
@@ -330,7 +333,7 @@ export default function OnboardingPage() {
                 className="flex flex-1 flex-col items-center gap-1.5 rounded-[var(--r)] border py-3"
                 style={cardStyle(childAvatar === value)}
               >
-                <Icon />
+                <AvatarIllustration avatar={value} height={72} />
                 <span className="d text-sm">{label}</span>
               </button>
             ))}

@@ -115,3 +115,32 @@ body {
     padding: 0 !important;
   }
 }
+
+/* 기록 저장 순간의 "발자국 도장 쾅" -- 크게 떠 있다가 종이에 내려찍히듯
+   줄어들며 나타난다. 아이가 기록을 남겼을 때의 손맛(레거시 독서통장의
+   도장 찍기)을 살리는 유일한 애니메이션이라 다른 데서는 쓰지 않는다. */
+@keyframes paw-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(2.4) rotate(-14deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.94) rotate(6deg);
+  }
+  75% {
+    transform: scale(1.06) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+.paw-stamp {
+  animation: paw-stamp 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .paw-stamp {
+    animation: none;
+  }
+}

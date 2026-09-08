@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import ForestBanner from "@/components/forest-banner";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -40,8 +41,9 @@ function LoginForm() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-16">
-      <h1 className="d text-2xl">책숲</h1>
+    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-10">
+      <ForestBanner height={150} />
+      <h1 className="d mt-6 text-2xl">책숲</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         이메일로 로그인하세요.
       </p>

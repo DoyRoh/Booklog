@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { RabbitIcon, DogIcon, CatIcon } from "@/components/icons/avatar-icons";
+import { AvatarIllustration } from "@/components/illustration";
 
 type Avatar = "rabbit" | "dog" | "cat";
 type Child = {
@@ -13,16 +13,11 @@ type Child = {
   birth_date: string | null;
 };
 
-const AVATAR_ICONS: Record<Avatar, typeof RabbitIcon> = {
-  rabbit: RabbitIcon,
-  dog: DogIcon,
-  cat: CatIcon,
-};
 
-const AVATAR_OPTIONS: { value: Avatar; label: string; Icon: typeof RabbitIcon }[] = [
-  { value: "rabbit", label: "토끼", Icon: RabbitIcon },
-  { value: "dog", label: "강아지", Icon: DogIcon },
-  { value: "cat", label: "고양이", Icon: CatIcon },
+const AVATAR_OPTIONS: { value: Avatar; label: string }[] = [
+  { value: "rabbit", label: "토끼" },
+  { value: "dog", label: "강아지" },
+  { value: "cat", label: "고양이" },
 ];
 
 export default function ChildSwitcher({
@@ -120,7 +115,6 @@ export default function ChildSwitcher({
   return (
     <div className="mt-3 flex flex-col gap-3">
       {initialChildren.map((child) => {
-        const Icon = child.avatar ? AVATAR_ICONS[child.avatar] : RabbitIcon;
         const active = child.id === activeChildId;
         return (
           <button
@@ -134,7 +128,7 @@ export default function ChildSwitcher({
               background: active ? "rgba(47,168,79,0.08)" : "var(--card)",
             }}
           >
-            <Icon style={{ color: active ? "var(--point-deep)" : "var(--ink-2)" }} />
+            <AvatarIllustration avatar={child.avatar} height={44} style={{ opacity: active ? 1 : 0.6 }} />
             <div className="flex-1">
               <p className="d text-sm">{child.name}</p>
               {child.birth_date && (
@@ -185,7 +179,7 @@ export default function ChildSwitcher({
             style={{ borderColor: "var(--rule)" }}
           />
           <div className="flex justify-between gap-3">
-            {AVATAR_OPTIONS.map(({ value, label, Icon }) => (
+            {AVATAR_OPTIONS.map(({ value, label }) => (
               <button
                 key={value}
                 type="button"
@@ -197,7 +191,7 @@ export default function ChildSwitcher({
                   color: avatar === value ? "var(--point-deep)" : "var(--ink)",
                 }}
               >
-                <Icon />
+                <AvatarIllustration avatar={value} height={56} />
                 <span className="d text-xs">{label}</span>
               </button>
             ))}

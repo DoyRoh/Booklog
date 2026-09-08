@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AvatarIllustration } from "@/components/illustration";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
@@ -97,7 +98,8 @@ export default async function LibraryPage() {
 
       {activeChild && !recordsError && books.length === 0 && (
         <div className="mt-6">
-          <p className="hand text-lg" style={{ color: "var(--point-deep)" }}>
+          <AvatarIllustration avatar={activeChild.avatar} height={120} />
+          <p className="hand mt-3 text-lg" style={{ color: "var(--point-deep)" }}>
             책장이 비었어요. 첫 책을 기록해 보세요.
           </p>
           <Link

@@ -7,6 +7,7 @@ import ChildSwitcher from "@/components/child-switcher";
 import OperatorProfileSwitcher, { type OperatorGroup } from "@/components/operator-profile-switcher";
 import ChildShare from "@/components/child-share";
 import ShelfTagManager from "@/components/shelf-tag-manager";
+import Illustration from "@/components/illustration";
 
 export default async function MorePage() {
   const supabase = await createClient();
@@ -122,10 +123,16 @@ export default async function MorePage() {
       </div>
 
       <div className="mt-8">
-        <p className="d text-base">책장 공유</p>
-        <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-          배우자·조부모 같은 다른 보호자를 초대해서 같은 아이의 책장을 함께 보고 기록할 수 있어요.
-        </p>
+        {/* 하얀 새가 편지를 물어다 주는 장면 -- 공유 코드가 곧 편지. */}
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="d text-base">책장 공유</p>
+            <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+              배우자·조부모 같은 다른 보호자를 초대해서 같은 아이의 책장을 함께 보고 기록할 수 있어요.
+            </p>
+          </div>
+          <Illustration name="bird-letter" height={56} className="flex-none" />
+        </div>
         <div className="mt-3">
           <ChildShare
             childList={children.map((child) => ({ id: child.id, name: child.name, inviteCode: child.invite_code }))}

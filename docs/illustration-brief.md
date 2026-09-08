@@ -25,7 +25,9 @@ Children's picture-book illustration in a simple naive crayon and oil-pastel sty
 - 곰은 **까만 반달가슴곰**(가슴에 흰 초승달 무늬)으로 정함. 2차 시트의 갈색 곰은 1번 프롬프트에서 반달곰으로 바꿔 뽑는다.
 - 0번 캐릭터 시트(2차): **확정** (`docs/illustrations/character-sheet.png`). 이후 그림은 전부 이 시트 기준.
 - 1~11번 + 앱 아이콘: **완료** — 12칸 시트 한 장(`docs/illustrations/sheet-1.png`)을 `slice-sheet.py --cols 4 --rows 3`으로 잘라 `public/illustrations/`에 넣음(칸당 약 250~320px). 발자국 3종은 모양이 거의 같게 나왔지만 도장 크기에선 구분이 무의미해 그대로 씀.
-- 12번 숲길 배경: 대기 중.
+- 12번 숲길 배경: **완료** (`public/illustrations/forest-path.jpg`, 1200px JPEG로 축소).
+- 발자국 도장 3종은 시트 것 대신 따로 받은 것으로 교체(`stamp-mask.py`로 마스크화).
+- **앱 연결 완료** — 어디에 붙였는지는 CLAUDE.md '크레용 일러스트 연결' 절 참고.
 
 ## 자산 목록
 

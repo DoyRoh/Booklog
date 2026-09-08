@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Illustration from "@/components/illustration";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
@@ -97,10 +98,15 @@ export default async function TeacherDashboardPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <p className="text-xs" style={{ color: "var(--lantern)" }}>
-        곰이 등불을 들고 반 아이들의 길을 비추고 있어요
-      </p>
-      <h1 className="d mt-1 text-xl">교사 대시보드</h1>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-xs" style={{ color: "var(--lantern)" }}>
+            곰이 등불을 들고 반 아이들의 길을 비추고 있어요
+          </p>
+          <h1 className="d mt-1 text-xl">교사 대시보드</h1>
+        </div>
+        <Illustration name="bear-lantern" height={72} className="flex-none" />
+      </div>
 
       {cards.length === 0 ? (
         <div className="mt-6">

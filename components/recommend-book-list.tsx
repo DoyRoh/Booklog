@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Illustration from "@/components/illustration";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BOOK_CATEGORIES } from "@/lib/categories";
@@ -79,6 +80,9 @@ export default function RecommendBookList({
     router.refresh();
   }
 
+  const lanternTotal = Math.min(totalCount, 10);
+  const lanternLit = totalCount > 0 ? Math.round((doneCount / totalCount) * lanternTotal) : 0;
+
   return (
     <div>
       <div
@@ -91,6 +95,20 @@ export default function RecommendBookList({
         <p className="d mt-1 text-2xl">
           {doneCount} <span className="text-base font-normal">/ {totalCount}권 · {percent}%</span>
         </p>
+        {/* "함께 밝혀 나가는 숲길" -- 진행률만큼 등불이 켜진다. 등불 수는
+            책 수(최대 10개)이고, 켜진 개수는 비율로 계산한다. */}
+        {totalCount > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1" aria-label={`등불 ${lanternLit}개 켜짐`}>
+            {Array.from({ length: lanternTotal }, (_, i) => (
+              <Illustration
+                key={i}
+                name={i < lanternLit ? "lantern-on" : "lantern-off"}
+                height={30}
+                style={{ opacity: i < lanternLit ? 1 : 0.45 }}
+              />
+            ))}
+          </div>
+        )}
         <div className="mt-2 h-2 overflow-hidden rounded-full" style={{ background: "var(--paper)" }}>
           <div
             className="h-full rounded-full"

@@ -21,6 +21,14 @@ export const metadata: Metadata = {
   title: "책숲",
   description: "아이의 독서를 부모·교사와 함께 기록하고 넓혀가는 독서 플랫폼",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

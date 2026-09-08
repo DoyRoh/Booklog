@@ -6,6 +6,7 @@ import { getActiveProfile } from "@/lib/active-profile";
 import { getTodayAssignments } from "@/lib/assignments";
 import AssignmentSummary from "@/components/assignment-summary";
 import RecentRecords, { type RecentRecord } from "@/components/recent-records";
+import Illustration from "@/components/illustration";
 
 export default async function TodayPage() {
   const supabase = await createClient();
@@ -130,9 +131,14 @@ export default async function TodayPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <p className="hand text-xl" style={{ color: "var(--point-deep)" }}>
-        {activeChild.name}, 오늘도 책숲을 걸어볼까요?
-      </p>
+      {/* 등불 든 곰이 오늘의 길을 비춰 주는 헤더 -- 디자인 가이드의
+          "오늘 탭: 곰+등불 헤더 일러스트". */}
+      <div className="flex items-end justify-between gap-3">
+        <p className="hand text-xl" style={{ color: "var(--point-deep)" }}>
+          {activeChild.name}, 오늘도 책숲을 걸어볼까요?
+        </p>
+        <Illustration name="bear-lantern" height={88} priority className="flex-none" />
+      </div>
 
       {recordsError && (
         <p className="mt-4 text-sm" style={{ color: "var(--berry)" }}>
