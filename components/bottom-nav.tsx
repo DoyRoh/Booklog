@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useProfile } from "@/components/profile-context";
+import { isChromeHidden } from "@/lib/nav";
 import {
   TodayIcon,
   LibraryIcon,
@@ -38,13 +39,11 @@ const CURATOR_TABS = [
   { href: "/recommend", label: "그룹", Icon: RecommendIcon },
 ] as const;
 
-const HIDDEN_PREFIXES = ["/login", "/signup", "/onboarding"];
-
 export default function BottomNav() {
   const pathname = usePathname();
-  const { role } = useProfile();
+  const { role, loading } = useProfile();
 
-  if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  if (isChromeHidden(pathname) || (!loading && role === null)) {
     return null;
   }
 

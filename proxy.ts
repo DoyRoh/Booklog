@@ -37,7 +37,20 @@ export async function proxy(request: NextRequest) {
   }
 
   const path = request.nextUrl.pathname;
-  const TAB_ROUTES = ["/today", "/library", "/records", "/recommend", "/more"];
+  // 로그인이 필요한 화면 전부 -- 탭 경로뿐 아니라 배지/숲길/대시보드처럼
+  // 탭 밖에서 들어가는 화면도 포함한다(빠져 있으면 로그아웃 상태에서
+  // "로그인하기" 링크만 덜렁 뜨는 반쪽 화면이 보인다).
+  const TAB_ROUTES = [
+    "/today",
+    "/library",
+    "/records",
+    "/recommend",
+    "/more",
+    "/assignments",
+    "/badges",
+    "/teacher",
+    "/curator",
+  ];
   const PUBLIC_AUTH_PATHS = ["/login", "/signup"];
   const isTabRoute = TAB_ROUTES.some((p) => path === p || path.startsWith(`${p}/`));
   const isOnboarding = path === "/onboarding";

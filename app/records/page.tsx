@@ -23,7 +23,7 @@ export default async function RecordsPage() {
 
   // 기록 탭은 "다 읽은 책"에 대한 기록 로그다 -- 읽고 싶은 책/읽는 중인
   // 책은 책장 탭에서 상태 필터로 보고, 여기서는 status='done'만 다룬다.
-  const { data: rows } = activeChild
+  const { data: rows, error: rowsError } = activeChild
     ? await supabase
         .from("reading_records")
         .select(
@@ -32,7 +32,7 @@ export default async function RecordsPage() {
         .eq("child_id", activeChild.id)
         .eq("status", "done")
         .order("read_date", { ascending: false })
-    : { data: null };
+    : { data: null, error: null };
 
   const records: RecordRow[] = (rows ?? []).map((row) => {
     const book = row.books as unknown as {
@@ -79,7 +79,13 @@ export default async function RecordsPage() {
         </p>
       )}
 
-      {activeChild && records.length === 0 && (
+      {rowsError && (
+        <p className="mt-6 text-sm" style={{ color: "var(--berry)" }}>
+          기록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요. ({rowsError.message})
+        </p>
+      )}
+
+      {activeChild && !rowsError && records.length === 0 && (
         <p className="hand mt-6 text-lg" style={{ color: "var(--point-deep)" }}>
           아직 기록이 없어요. 책장에서 책을 등록하면 여기에 기록이 쌓여요.
         </p>

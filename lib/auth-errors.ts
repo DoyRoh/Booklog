@@ -12,6 +12,9 @@ const KNOWN_MESSAGES: [RegExp, string][] = [
   [/for security purposes/i, "잠시 후 다시 시도해 주세요."],
   [/new password should be different/i, "이전과 다른 비밀번호를 입력해 주세요."],
   [/auth session missing/i, "로그인이 만료됐어요. 다시 로그인해 주세요."],
+  // 브라우저별 네트워크 실패 문구(Chrome "Failed to fetch", Safari "Load
+  // failed", Firefox "NetworkError", Node "fetch failed").
+  [/failed to fetch|fetch failed|load failed|networkerror/i, "네트워크 연결을 확인하고 다시 시도해 주세요."],
 ];
 
 export function translateAuthError(message: string): string {

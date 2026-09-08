@@ -9,15 +9,17 @@ type PendingMember = { id: string; childName: string };
 export default function GroupApprovals({ pending }: { pending: PendingMember[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function decide(memberId: string, status: "approved" | "rejected") {
     setBusy(memberId);
+    setError(null);
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("group_members")
       .update({
         status,
@@ -27,6 +29,10 @@ export default function GroupApprovals({ pending }: { pending: PendingMember[] }
       .eq("id", memberId);
 
     setBusy(null);
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
     router.refresh();
   }
 
@@ -40,6 +46,11 @@ export default function GroupApprovals({ pending }: { pending: PendingMember[] }
 
   return (
     <div className="flex flex-col gap-3">
+      {error && (
+        <p className="text-sm" style={{ color: "var(--berry)" }}>
+          {error}
+        </p>
+      )}
       {pending.map((member) => (
         <div
           key={member.id}

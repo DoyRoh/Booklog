@@ -4,17 +4,9 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 
 type OpenGroup = { id: string; name: string; type: string };
-
-const TYPE_LABELS: Record<string, string> = {
-  kindergarten: "유치원",
-  school: "학교",
-  library: "도서관",
-  family: "가족",
-  community: "커뮤니티",
-  creator: "크리에이터",
-};
 
 export default function BrowseGroups({
   groups,
@@ -113,7 +105,7 @@ export default function BrowseGroups({
             <Link href={`/recommend/${group.id}`} className="flex-1">
               <p className="d text-sm">{group.name}</p>
               <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                {TYPE_LABELS[group.type] ?? group.type}
+                {GROUP_TYPE_LABELS[group.type] ?? group.type}
               </p>
             </Link>
             {following ? (

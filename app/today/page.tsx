@@ -65,7 +65,7 @@ export default async function TodayPage() {
   // 그룹 수 조회는 서로 무관하므로(전부 activeChild.id에만 의존) 동시에
   // 왕복한다 -- 오늘 탭이 유독 느렸던 가장 큰 원인이 이런 조회들을
   // 순서대로 기다리던 것이었다.
-  const [{ data: allRecords }, assignments, { data: groupRows }] = await Promise.all([
+  const [{ data: allRecords, error: recordsError }, assignments, { data: groupRows }] = await Promise.all([
     supabase
       .from("reading_records")
       .select(
@@ -133,6 +133,12 @@ export default async function TodayPage() {
       <p className="hand text-xl" style={{ color: "var(--point-deep)" }}>
         {activeChild.name}, 오늘도 책숲을 걸어볼까요?
       </p>
+
+      {recordsError && (
+        <p className="mt-4 text-sm" style={{ color: "var(--berry)" }}>
+          기록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요. ({recordsError.message})
+        </p>
+      )}
 
       {/* 오늘 탭이 가장 먼저 보여줘야 하는 건 "지금까지 얼마나 읽었는지"
           요약이라, 요약 박스를 맨 위로 올리고 기록 버튼은 그 아래로

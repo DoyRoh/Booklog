@@ -21,7 +21,7 @@ export default async function LibraryPage() {
 
   const activeChild = await getActiveChild(supabase, userId);
 
-  const { data: records } = activeChild
+  const { data: records, error: recordsError } = activeChild
     ? await supabase
         .from("reading_records")
         .select(
@@ -29,7 +29,7 @@ export default async function LibraryPage() {
         )
         .eq("child_id", activeChild.id)
         .order("read_date", { ascending: false })
-    : { data: null };
+    : { data: null, error: null };
 
   // 같은 책을 여러 그룹의 숙제로 각각 기록했을 수 있으므로(child_id+book_id
   // 조합이 중복될 수 있음), 책 단위로 묶어 책장에는 책마다 한 장만 뜨게 한다
@@ -86,7 +86,16 @@ export default async function LibraryPage() {
         </p>
       )}
 
-      {activeChild && books.length === 0 && (
+      {/* 조회 자체가 실패했을 때 "책장이 비었어요"로 보이면 데이터가 사라진
+          줄 알고 놀라게 된다(예: DB 마이그레이션이 아직 안 된 상태) --
+          빈 상태와 오류를 구분해서 보여준다. */}
+      {recordsError && (
+        <p className="mt-6 text-sm" style={{ color: "var(--berry)" }}>
+          책장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요. ({recordsError.message})
+        </p>
+      )}
+
+      {activeChild && !recordsError && books.length === 0 && (
         <div className="mt-6">
           <p className="hand text-lg" style={{ color: "var(--point-deep)" }}>
             책장이 비었어요. 첫 책을 기록해 보세요.

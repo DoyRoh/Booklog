@@ -6,6 +6,7 @@ import SignOutButton from "@/components/sign-out-button";
 import ChildSwitcher from "@/components/child-switcher";
 import OperatorProfileSwitcher, { type OperatorGroup } from "@/components/operator-profile-switcher";
 import ChildShare from "@/components/child-share";
+import ShelfTagManager from "@/components/shelf-tag-manager";
 
 export default async function MorePage() {
   const supabase = await createClient();
@@ -26,7 +27,8 @@ export default async function MorePage() {
   // 있어서(가입 시 트리거) auth.getUser()로 다시 왕복하지 않고 이 조회에
   // 같이 얹는다. 서로 무관한 조회 셋(프로필, 아이 목록, 운영 중인 그룹
   // 목록)을 동시에 왕복한다.
-  const [{ data: profile }, { data: guardianRows }, { data: operatorRows }, activeProfile] = await Promise.all([
+  const [{ data: profile }, { data: guardianRows, error: guardianError }, { data: operatorRows }, activeProfile] =
+    await Promise.all([
     supabase.from("users").select("email, active_child_id").eq("id", userId).single(),
     supabase
       .from("child_guardians")
@@ -91,6 +93,11 @@ export default async function MorePage() {
           <p className="text-xs" style={{ color: "var(--ink-2)" }}>
             아이 프로필
           </p>
+          {guardianError && (
+            <p className="mt-2 text-sm" style={{ color: "var(--berry)" }}>
+              아이 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요. ({guardianError.message})
+            </p>
+          )}
           <div className="mt-2">
             <ChildSwitcher
               userId={userId}
@@ -125,6 +132,18 @@ export default async function MorePage() {
           />
         </div>
       </div>
+
+      {(profile?.active_child_id ?? children[0]?.id) && (
+        <div className="mt-8">
+          <p className="d text-base">책장 이름표</p>
+          <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+            &quot;6살 책장&quot;처럼 기록에 붙인 이름표의 이름을 바꾸거나 지울 수 있어요.
+          </p>
+          <div className="mt-3">
+            <ShelfTagManager childId={(profile?.active_child_id ?? children[0]?.id) as string} />
+          </div>
+        </div>
+      )}
 
       {children.length > 0 && (
         <div className="mt-8">

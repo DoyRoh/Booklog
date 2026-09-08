@@ -157,7 +157,10 @@ export default function OnboardingPage() {
       return;
     }
 
-    router.replace("/today");
+    // 교사/큐레이터로 시작한 계정은 아직 운영하는 그룹이 없어서 /today로
+    // 보내면 "아이를 등록하세요"만 보이는 빈 부모 화면이 뜬다 -- 첫
+    // 그룹(=선생님/기관 프로필)을 바로 만들도록 그룹 만들기로 보낸다.
+    router.replace(role === "parent" ? "/today" : "/recommend/create");
     router.refresh();
   }
 

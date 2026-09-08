@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -32,11 +32,23 @@ export default function CreateGroupPage() {
   const [operatorRole, setOperatorRole] = useState<OperatorRole>("teacher");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const savingRef = useRef(false);
 
   async function create() {
-    if (!name.trim()) return;
+    // state로만 막으면 리렌더 전 짧은 틈에 두 번 눌려 그룹이 두 개
+    // 생길 수 있다(library/add·팔로우 버튼과 같은 가드).
+    if (!name.trim() || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setError(null);
+    try {
+      await createGroup();
+    } finally {
+      savingRef.current = false;
+    }
+  }
+
+  async function createGroup() {
 
     const supabase = createClient();
     const {

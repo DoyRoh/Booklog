@@ -67,7 +67,10 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
     const supabase = createClient();
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((event) => {
+      // 구독 직후 바로 오는 INITIAL_SESSION은 위의 load()와 중복이라
+      // 같은 조회를 두 번 왕복하지 않도록 건너뛴다.
+      if (event === "INITIAL_SESSION") return;
       load();
     });
 
