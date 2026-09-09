@@ -11,7 +11,7 @@ import { isChromeHidden } from "@/lib/nav";
 // 하단 탭 강조 표시로 이미 알 수 있다. '더보기'도 같은 줄 우측에 둔다.
 export default function TopBar() {
   const pathname = usePathname();
-  const { role, childName, loading } = useProfile();
+  const { role, childName, childAvatar, loading } = useProfile();
 
   // 인증 화면에서는 항상 숨기고, 로그인이 안 된 상태(역할 조회가 끝났는데
   // role이 없음)에서도 숨긴다 -- 로그아웃 상태로 /teacher 같은 경로에
@@ -30,8 +30,24 @@ export default function TopBar() {
       style={{ paddingTop: "var(--st)", background: "var(--paper)", borderColor: "var(--rule)" }}
     >
       <div className="mx-auto flex max-w-[520px] items-center justify-between px-5 py-2.5">
-        <span className="d text-lg" style={{ color: "var(--ink)" }}>
-          {title}
+        <span className="flex items-center gap-2">
+          {/* 아이가 고른 아바타의 얼굴 -- 전신 그림(public/illustrations/{avatar}.png)
+              에서 얼굴만 동그랗게 잘라 둔 face-*.png. 아이 프로필일 때만. */}
+          {role === "parent" && childName && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/illustrations/face-${childAvatar ?? "rabbit"}.png`}
+              alt=""
+              aria-hidden="true"
+              width={30}
+              height={30}
+              className="h-[30px] w-[30px] flex-none rounded-full"
+              style={{ boxShadow: "0 0 0 1.5px var(--rule)" }}
+            />
+          )}
+          <span className="d text-lg" style={{ color: "var(--ink)" }}>
+            {title}
+          </span>
         </span>
         <div className="flex items-center gap-4">
           {role === "parent" && (

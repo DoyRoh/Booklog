@@ -5,13 +5,16 @@ import { createClient } from "@/lib/supabase/client";
 import { getActiveChild } from "@/lib/active-child";
 import { getActiveProfile } from "@/lib/active-profile";
 
+export type ChildAvatar = "rabbit" | "dog" | "cat";
+
 type Profile = {
   role: string | null;
   childName: string | null;
+  childAvatar: ChildAvatar | null;
   loading: boolean;
 };
 
-const ProfileContext = createContext<Profile>({ role: null, childName: null, loading: true });
+const ProfileContext = createContext<Profile>({ role: null, childName: null, childAvatar: null, loading: true });
 
 export function useProfile() {
   return useContext(ProfileContext);
@@ -25,7 +28,7 @@ export function useProfile() {
 // 서버 컴포넌트만 새로 그리고 이 클라이언트 컴포넌트는 다시 실행하지
 // 않아서, 이벤트 없이는 상단 제목이 아이를 바꿔도 안 바뀌는 문제가 있었다).
 export default function ProfileProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Profile>({ role: null, childName: null, loading: true });
+  const [state, setState] = useState<Profile>({ role: null, childName: null, childAvatar: null, loading: true });
 
   useEffect(() => {
     async function load() {
@@ -34,7 +37,7 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        setState({ role: null, childName: null, loading: false });
+        setState({ role: null, childName: null, childAvatar: null, loading: false });
         return;
       }
       // users.role은 온보딩 때 고른 최초 기본값일 뿐이고, 실제로 지금
@@ -48,11 +51,13 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
       const role = activeProfile.type === "operator" ? activeProfile.operatorRole : "parent";
 
       let childName: string | null = null;
+      let childAvatar: ChildAvatar | null = null;
       if (activeProfile.type === "child") {
         const child = await getActiveChild(supabase, user.id);
         childName = child?.name ?? null;
+        childAvatar = child?.avatar ?? null;
       }
-      setState({ role, childName, loading: false });
+      setState({ role, childName, childAvatar, loading: false });
     }
 
     load();

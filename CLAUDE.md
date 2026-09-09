@@ -1052,3 +1052,7 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **숙제 질문 미션 "저장" 버튼이 세로로 꺾이던 문제**: 입력창이 늘어나면서 버튼이 "저/장"으로 줄바꿈됐습니다. `flex-none whitespace-nowrap`.
 - **안 쓰는 자산 정리**: 이번 그림 교체로 쓰이지 않게 된 `forest`/`forest-reading` 장면과 그 JPEG 두 장, 슬라이스 시트에서 나온 `app-icon.png`(실제 아이콘은 `public/icon-*.png`), 어디서도 안 부르던 `FootprintIcon`을 지웠습니다. 원본 그림은 `docs/illustrations/`에 그대로 있습니다.
 - `npm run build`(프로덕션 빌드)까지 통과 확인.
+
+## 상단 제목 옆에 아이 아바타 얼굴 (사용자 요청)
+
+"{아이}의 책숲" 제목 왼쪽에 아이가 고른 아바타(토끼/강아지/고양이)의 얼굴을 30px 동그라미로 넣었습니다. 전신 그림(`public/illustrations/{avatar}.png`)에서 얼굴 부분만 잘라 흰 원판 위에 얹은 `face-rabbit.png`/`face-dog.png`/`face-cat.png`(160×160)를 새로 만들었고, `components/profile-context.tsx`가 아이 이름과 함께 `childAvatar`도 내보내도록 확장했습니다(이미 `getActiveChild()`가 avatar를 돌려주고 있어서 추가 조회 없음). 아이 프로필일 때만 뜨고, 아바타를 아직 안 골랐으면 토끼. 아이를 바꾸면 기존 "chaeksup:profile-changed" 이벤트로 이름과 같이 즉시 바뀝니다.
