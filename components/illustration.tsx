@@ -8,7 +8,6 @@ export const ILLUSTRATIONS = {
   "bear-lantern": [443, 564],
   "bird-letter": [1015, 716],
   "bird-perched": [234, 422],
-  "app-icon": [302, 288],
   rabbit: [173, 459],
   dog: [257, 401],
   cat: [249, 398],

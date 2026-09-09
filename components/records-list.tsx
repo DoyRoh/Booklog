@@ -187,23 +187,14 @@ export default function RecordsList({
       </div>
 
       {(groupOptions.hasDirect || groupOptions.groups.length > 0) && (
-        <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => setGroupFilter("all")}
-            className="d flex-none rounded-full border px-3 py-1 text-xs"
-            style={{
-              borderColor: groupFilter === "all" ? "var(--point)" : "var(--rule)",
-              background: groupFilter === "all" ? "rgba(47,168,79,0.08)" : "var(--card)",
-              color: groupFilter === "all" ? "var(--point-deep)" : "var(--ink-2)",
-            }}
-          >
-            전체 출처
-          </button>
+        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1">
+          <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+            출처
+          </span>
           {groupOptions.hasDirect && (
             <button
               type="button"
-              onClick={() => setGroupFilter("direct")}
+              onClick={() => setGroupFilter(groupFilter === "direct" ? "all" : "direct")}
               className="d flex-none rounded-full border px-3 py-1 text-xs"
               style={{
                 borderColor: groupFilter === "direct" ? "var(--point)" : "var(--rule)",
@@ -218,7 +209,7 @@ export default function RecordsList({
             <button
               key={id}
               type="button"
-              onClick={() => setGroupFilter(id)}
+              onClick={() => setGroupFilter(groupFilter === id ? "all" : id)}
               className="d flex-none rounded-full border px-3 py-1 text-xs"
               style={{
                 borderColor: groupFilter === id ? "var(--point)" : "var(--rule)",

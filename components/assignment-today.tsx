@@ -108,7 +108,7 @@ function QuestionMission({ childId, mission }: { childId: string; mission: Today
             type="button"
             disabled={!answer.trim() || saving}
             onClick={save}
-            className="d rounded-[10px] px-3 py-2 text-xs text-white disabled:opacity-40"
+            className="d flex-none whitespace-nowrap rounded-[10px] px-3 py-2 text-xs text-white disabled:opacity-40"
             style={{ background: "var(--point)" }}
           >
             저장

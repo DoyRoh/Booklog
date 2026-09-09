@@ -30,7 +30,12 @@ export default function RecommendBookList({
   const availableCategories = useMemo(() => {
     const set = new Set<string>();
     for (const book of books) for (const c of book.categories) set.add(c);
-    return BOOK_CATEGORIES.filter((c) => set.has(c));
+    // 표준 목록 순서를 먼저, 목록에 없는 분야(예전 이름·기관 데이터 등)는
+    // 뒤에 가나다순으로 이어 붙인다 -- 예전엔 표준 목록에 없는 분야만 가진
+    // 책이 화면에서 통째로 사라지는 버그가 있었다.
+    const standard = BOOK_CATEGORIES.filter((c) => set.has(c));
+    const extra = Array.from(set).filter((c) => !(BOOK_CATEGORIES as readonly string[]).includes(c)).sort();
+    return [...standard, ...extra];
   }, [books]);
 
   const requiredCount = books.filter((b) => b.required).length;

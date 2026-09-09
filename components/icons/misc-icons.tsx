@@ -24,18 +24,6 @@ function IconBase({ children, ...props }: IconProps & { children: React.ReactNod
 // 탐험 수첩 모티프 — 발자국 도장. 지금은 종·아바타 구분 없이 하나의 형태만
 // 사용하고, 아바타별 발자국 3종(토끼/강아지/고양이)은 실제 일러스트 제작 시
 // 교체한다.
-export function FootprintIcon(props: IconProps) {
-  return (
-    <IconBase {...props}>
-      <ellipse cx="12" cy="14.5" rx="4.2" ry="5.2" />
-      <ellipse cx="7.3" cy="7.5" rx="1.5" ry="2" />
-      <ellipse cx="11.2" cy="5.3" rx="1.4" ry="1.9" />
-      <ellipse cx="15.2" cy="5.6" rx="1.3" ry="1.8" />
-      <ellipse cx="18" cy="8" rx="1.3" ry="1.7" />
-    </IconBase>
-  );
-}
-
 export function SpineViewIcon(props: IconProps) {
   return (
     <IconBase {...props}>
