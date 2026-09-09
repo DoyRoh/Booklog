@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { SearchIcon, SpineViewIcon, CoverViewIcon } from "@/components/icons/misc-icons";
+import { SearchIcon, SpineViewIcon, CoverViewIcon, ListViewIcon } from "@/components/icons/misc-icons";
 import type { ReadingStatus } from "@/lib/reading-status";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 
@@ -36,7 +36,8 @@ export type ShelfBook = {
   instances: ShelfInstance[];
 };
 
-type ViewMode = "cover" | "spine";
+// "list"는 예전 기록 탭(읽은 순서대로 월별 목록)을 책장 안으로 합친 것.
+export type ViewMode = "cover" | "spine" | "list";
 type StatusFilter = "all" | ReadingStatus;
 // 책장 필터 하나로 "직접 나눈 책장(shelf_tags)"과 "그룹(학급·기관)"을 함께
 // 다룬다 -- 출처/책장 두 줄로 나눠 두니 필터 줄이 너무 많아져서 합쳤다.
@@ -129,16 +130,29 @@ function toEditable(book: DedupedBook, childId: string, childName: string | null
   };
 }
 
+function formatMonthDay(iso: string) {
+  const [, m, d] = iso.split("-");
+  return `${Number(m)}/${Number(d)}`;
+}
+
+function formatMonth(key: string) {
+  const [y, m] = key.split("-");
+  return `${y}년 ${Number(m)}월`;
+}
+
 export default function LibraryShelf({
   childId,
   childName,
   books,
+  initialMode,
 }: {
   childId: string;
   childName: string | null;
   books: ShelfBook[];
+  /** URL(?view=list)로 지정된 보기 -- 있으면 저장된 보기보다 우선 */
+  initialMode?: ViewMode;
 }) {
-  const [mode, setMode] = useState<ViewMode>("cover");
+  const [mode, setMode] = useState<ViewMode>(initialMode ?? "cover");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [shelfFilter, setShelfFilter] = useState<ShelfFilter>("all");
@@ -146,14 +160,15 @@ export default function LibraryShelf({
   const [editing, setEditing] = useState<DedupedBook | null>(null);
 
   useEffect(() => {
+    if (initialMode) return;
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved === "spine" || saved === "cover") {
+    if (saved === "spine" || saved === "cover" || saved === "list") {
       // 마운트 시 저장된 보기 모드를 한 번만 복원한다(로컬스토리지는 서버
       // 렌더 시점엔 없어서 초기 state로는 읽을 수 없다).
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMode(saved);
     }
-  }, []);
+  }, [initialMode]);
 
   function switchMode(next: ViewMode) {
     setMode(next);
@@ -191,6 +206,41 @@ export default function LibraryShelf({
       })
       .filter((book): book is DedupedBook => Boolean(book));
   }, [books, shelfFilter]);
+
+  // 목록 보기는 책 단위로 합치지 않고 "읽은 사건" 하나하나(기록)를 그대로
+  // 보여준다 -- 같은 책을 두 번 읽었으면 두 줄. 예전 기록 탭의 동작.
+  const listRows = useMemo<DedupedBook[]>(() => {
+    const q = query.trim().toLowerCase();
+    const rows: DedupedBook[] = [];
+    for (const book of books) {
+      if (q && !book.title.toLowerCase().includes(q) && !(book.author ?? "").toLowerCase().includes(q)) continue;
+      for (const inst of book.instances) {
+        if (shelfFilter !== "all") {
+          const ok = shelfFilter.startsWith("tag:")
+            ? inst.shelfTagId === shelfFilter.slice(4)
+            : inst.groupId === shelfFilter.slice(6);
+          if (!ok) continue;
+        }
+        if (statusFilter !== "all" && inst.status !== statusFilter) continue;
+        rows.push({ ...book, ...inst });
+      }
+    }
+    if (sort === "title") rows.sort((a, b) => a.title.localeCompare(b.title, "ko"));
+    else if (sort === "author") rows.sort((a, b) => (a.author ?? "").localeCompare(b.author ?? "", "ko"));
+    else rows.sort((a, b) => (a.readDate < b.readDate ? 1 : -1));
+    return rows;
+  }, [books, query, shelfFilter, statusFilter, sort]);
+
+  const listByMonth = useMemo(() => {
+    const groups: { key: string; rows: DedupedBook[] }[] = [];
+    for (const row of listRows) {
+      const key = row.readDate.slice(0, 7);
+      const last = groups[groups.length - 1];
+      if (last && last.key === key) last.rows.push(row);
+      else groups.push({ key, rows: [row] });
+    }
+    return groups;
+  }, [listRows]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -257,6 +307,19 @@ export default function LibraryShelf({
           >
             <SpineViewIcon />
           </button>
+          <button
+            type="button"
+            onClick={() => switchMode("list")}
+            aria-pressed={mode === "list"}
+            aria-label="읽은 순서 목록으로 보기"
+            className="flex items-center justify-center px-3"
+            style={{
+              background: mode === "list" ? "var(--point)" : "var(--card)",
+              color: mode === "list" ? "#fff" : "var(--ink-2)",
+            }}
+          >
+            <ListViewIcon />
+          </button>
         </div>
         <Link
           href="/library/add"
@@ -317,7 +380,7 @@ export default function LibraryShelf({
 
       <div className="mt-3 flex items-center gap-3">
         <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
-          {filtered.length}권
+          {mode === "list" ? `${listRows.length}권` : `${filtered.length}권`}
         </span>
         <div className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
         <select
@@ -338,7 +401,7 @@ export default function LibraryShelf({
         </Link>
       </div>
 
-      {filtered.length === 0 && (
+      {(mode === "list" ? listRows.length === 0 : filtered.length === 0) && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
           검색 결과가 없어요.
         </p>
@@ -433,6 +496,58 @@ export default function LibraryShelf({
                 ))}
               </div>
               <div className="h-3 rounded-[3px]" style={PLANK_STYLE} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {listRows.length > 0 && mode === "list" && (
+        <div className="mt-4 flex flex-col gap-4">
+          {(sort === "new" ? listByMonth : [{ key: "", rows: listRows }]).map((group) => (
+            <div key={group.key || "all"}>
+              {group.key && (
+                <p className="d mb-2 text-sm">
+                  {formatMonth(group.key)}
+                  <span className="ml-1.5 text-xs font-normal" style={{ color: "var(--ink-2)" }}>
+                    {group.rows.length}권
+                  </span>
+                </p>
+              )}
+              <div
+                className="overflow-hidden rounded-[var(--r)] border"
+                style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+              >
+                {group.rows.map((row, index) => (
+                  <div key={row.recordId}>
+                    {index > 0 && <div className="mx-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />}
+                    <button
+                      type="button"
+                      onClick={() => setEditing(row)}
+                      className="flex w-full items-center gap-2.5 px-4 py-2 text-left"
+                    >
+                      {row.coverUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={row.coverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
+                      ) : (
+                        <div className="h-11 w-8 flex-none rounded" style={{ background: "var(--paper)" }} />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="d truncate text-sm">{row.title}</p>
+                        {(row.groupName || row.shelfTagName || row.status !== "done") && (
+                          <p className="truncate text-[11px]" style={{ color: "var(--ink-2)" }}>
+                            {[row.status !== "done" ? STATUS_LABELS[row.status] : null, row.shelfTagName, row.groupName]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        )}
+                      </div>
+                      <span className="flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+                        {formatMonthDay(row.readDate)}
+                      </span>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

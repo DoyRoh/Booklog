@@ -7,7 +7,6 @@ import { isChromeHidden } from "@/lib/nav";
 import {
   TodayIcon,
   LibraryIcon,
-  RecordsIcon,
   RecommendIcon,
   DashboardIcon,
   AssignmentIcon,
@@ -23,8 +22,8 @@ import {
 const PARENT_TABS = [
   { href: "/today", label: "오늘", Icon: TodayIcon },
   { href: "/library", label: "책장", Icon: LibraryIcon },
-  { href: "/records", label: "기록", Icon: RecordsIcon },
-  { href: "/assignments", label: "숲길", Icon: AssignmentIcon },
+  { href: "/trail", label: "숲길", Icon: RecommendIcon },
+  { href: "/assignments", label: "숙제", Icon: AssignmentIcon },
 ] as const;
 
 // 숲지기(선생님·기관·인플루언서 통칭) 탭. 예전엔 교사/큐레이터 탭이

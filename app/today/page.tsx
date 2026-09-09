@@ -182,7 +182,7 @@ export default async function TodayPage() {
               이번 달
             </span>
           </div>
-          <Link href="/assignments" className="flex flex-col items-start gap-0.5">
+          <Link href="/trail" className="flex flex-col items-start gap-0.5">
             <span className="d text-lg">{groupCount}</span>
             <span className="text-xs" style={{ color: "var(--ink-2)" }}>
               그룹
@@ -226,7 +226,7 @@ export default async function TodayPage() {
           <div className="mt-6">
             <div className="flex items-center justify-between">
               <p className="d text-base">최근 기록</p>
-              <Link href="/records" className="text-xs" style={{ color: "var(--ink-2)" }}>
+              <Link href="/library?view=list" className="text-xs" style={{ color: "var(--ink-2)" }}>
                 전체 보기 ›
               </Link>
             </div>

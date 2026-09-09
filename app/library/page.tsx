@@ -5,7 +5,13 @@ import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import LibraryShelf, { type ShelfBook } from "@/components/library-shelf";
 
-export default async function LibraryPage() {
+export default async function LibraryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const { view } = await searchParams;
+  const initialMode = view === "list" || view === "spine" || view === "cover" ? view : undefined;
   const supabase = await createClient();
   const userId = await getVerifiedUserId();
 
@@ -113,7 +119,7 @@ export default async function LibraryPage() {
       )}
 
       {activeChild && books.length > 0 && (
-        <LibraryShelf childId={activeChild.id} childName={activeChild.name} books={books} />
+        <LibraryShelf childId={activeChild.id} childName={activeChild.name} books={books} initialMode={initialMode} />
       )}
     </div>
   );

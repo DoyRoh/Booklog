@@ -18,6 +18,7 @@ export default function GroupFilterSelect({
   selectedId: string | null;
   basePath: string;
   queryKey?: string;
+  /** 빈 문자열이면 "전체" 선택지를 아예 안 보여준다(그룹 중 하나는 꼭 골라야 하는 화면) */
   allLabel?: string;
 }) {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function GroupFilterSelect({
       className="d w-full rounded-[14px] border px-4 py-3 text-sm outline-none"
       style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink)" }}
     >
-      <option value="all">{allLabel}</option>
+      {allLabel && <option value="all">{allLabel}</option>}
       {groups.map((group) => (
         <option key={group.id} value={group.id}>
           {group.name}

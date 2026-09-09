@@ -44,6 +44,14 @@ export function CoverViewIcon(props: IconProps) {
   );
 }
 
+export function ListViewIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M4 6.5h16M4 12h16M4 17.5h16" />
+    </IconBase>
+  );
+}
+
 export function SearchIcon(props: IconProps) {
   return (
     <IconBase {...props}>
