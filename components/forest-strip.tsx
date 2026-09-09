@@ -33,8 +33,8 @@ export default function ForestStrip({
   const shown = Math.min(treeCount, MAX_TREES);
   // 나무가 많아지면 한 줄에 다 들어가도록 조금씩 작게
   const scale = shown <= 5 ? 1 : shown <= 8 ? 0.8 : 0.66;
-  const caption =
-    treeCount === 0 ? "첫 책을 다 읽으면 첫 나무가 심겨요" : `우리 숲에 나무 ${treeCount}그루가 자랐어요`;
+  // 오른쪽 "우리 숲 보기 ›"와 한 줄에 들어가야 하니 짧게(두 줄로 꺾이면 산만).
+  const caption = treeCount === 0 ? "첫 책을 읽으면 나무가 심겨요" : `나무 ${treeCount}그루가 자랐어요`;
 
   const body = (
     <>
@@ -77,7 +77,7 @@ export default function ForestStrip({
         </div>
       </div>
       <div className="mt-2 flex items-center justify-between gap-2">
-        <p className="hand text-base" style={{ color: "var(--point-deep)" }}>
+        <p className="hand min-w-0 truncate text-base" style={{ color: "var(--point-deep)" }}>
           {caption}
         </p>
         {href && (

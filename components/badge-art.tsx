@@ -51,18 +51,26 @@ export default function BadgeArt({
   count,
   avatar,
   achieved,
+  size = 64,
 }: {
   id: string;
   count?: number;
   avatar: Avatar | null | undefined;
   achieved: boolean;
+  /** 동그라미 지름(px). 기본 64, 배지 목록은 52로 작게. 안의 그림도 비례해서 줄어든다. */
+  size?: number;
 }) {
+  const k = size / 64;
+  const px = (n: number) => Math.round(n * k);
   // 그림은 늘 연한 초록 동그라미(스티커) 위에 올린다 -- 하얀 새처럼 밝은
   // 그림도 흰 카드 위에서 보이고, 아이 눈엔 "모으는 스티커"로 읽힌다.
   const disc = (children: React.ReactNode) => (
     <div
-      className="flex h-16 w-16 items-end justify-center gap-0.5 rounded-full pb-2.5"
+      className="flex items-end justify-center gap-0.5 rounded-full"
       style={{
+        width: size,
+        height: size,
+        paddingBottom: px(10),
         background: achieved ? "#DCE6D0" : "rgba(38,54,43,0.06)",
         filter: achieved ? undefined : "grayscale(1)",
         opacity: achieved ? 1 : 0.55,
@@ -74,13 +82,13 @@ export default function BadgeArt({
   if (id === "again" || id === "again3" || id === "same5") {
     return disc(
       <>
-        {id !== "again" && <PawStamp avatar={avatar} height={18} />}
-        <PawStamp avatar={avatar} height={id === "again" ? 28 : 26} />
-        {id !== "again" && <PawStamp avatar={avatar} height={18} />}
-        {id === "same5" && <PawStamp avatar={avatar} height={14} />}
+        {id !== "again" && <PawStamp avatar={avatar} height={px(18)} />}
+        <PawStamp avatar={avatar} height={px(id === "again" ? 28 : 26)} />
+        {id !== "again" && <PawStamp avatar={avatar} height={px(18)} />}
+        {id === "same5" && <PawStamp avatar={avatar} height={px(14)} />}
       </>
     );
   }
   const pieces = count !== undefined ? milestoneArt(count) : (ART[id] ?? [T("star", 20)]);
-  return disc(pieces.map((piece, i) => <Illustration key={i} name={piece.name} height={piece.height} className="flex-none" />));
+  return disc(pieces.map((piece, i) => <Illustration key={i} name={piece.name} height={px(piece.height)} className="flex-none" />));
 }

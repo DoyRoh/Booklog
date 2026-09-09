@@ -12,17 +12,17 @@ const FOREST_PREVIEW_AHEAD = 3;
 function BadgeTile({ badge, avatar }: { badge: Badge; avatar: Avatar | null | undefined }) {
   return (
     <div
-      className="flex flex-col items-center gap-1.5 rounded-[var(--r)] border p-3 text-center"
+      className="flex flex-col items-center gap-1 rounded-[16px] border px-1 py-2 text-center"
       style={{
         borderColor: badge.achieved ? "var(--point)" : "var(--rule)",
         background: badge.achieved ? "rgba(47,168,79,0.06)" : "var(--card)",
       }}
     >
-      <BadgeArt id={badge.id} count={badge.count} avatar={avatar} achieved={badge.achieved} />
-      <span className="d text-xs" style={{ wordBreak: "keep-all" }}>
+      <BadgeArt id={badge.id} count={badge.count} avatar={avatar} achieved={badge.achieved} size={48} />
+      <span className="d text-[11px] leading-tight" style={{ wordBreak: "keep-all" }}>
         {badge.label}
       </span>
-      <span className="text-[10px]" style={{ color: "var(--ink-2)" }}>
+      <span className="text-[9px] leading-tight" style={{ color: "var(--ink-2)", wordBreak: "keep-all" }}>
         {badge.description}
       </span>
     </div>
@@ -33,7 +33,7 @@ export default function BadgeGrid({ badges, avatar }: { badges: Badge[]; avatar:
   const [forestOpen, setForestOpen] = useState(false);
 
   return (
-    <div className="mt-6 flex flex-col gap-7">
+    <div className="mt-6 flex flex-col gap-6">
       {BADGE_SECTIONS.map((section) => {
         const all = badges.filter((b) => b.section === section.key);
         const achievedCount = all.filter((b) => b.achieved).length;
@@ -57,7 +57,7 @@ export default function BadgeGrid({ badges, avatar }: { badges: Badge[]; avatar:
                 {achievedCount} / {all.length}
               </span>
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-3">
+            <div className="mt-3 grid grid-cols-4 gap-2">
               {shown.map((badge) => (
                 <BadgeTile key={badge.id} badge={badge} avatar={avatar} />
               ))}
