@@ -106,16 +106,25 @@ export default function RecommendBookList({
         {/* "함께 밝혀 나가는 숲길" -- 진행률만큼 등불이 켜진다. 등불 수는
             책 수(최대 10개)이고, 켜진 개수는 비율로 계산한다. */}
         {totalCount > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1" aria-label={`등불 ${lanternLit}개 켜짐`}>
-            {Array.from({ length: lanternTotal }, (_, i) => (
-              <Illustration
-                key={i}
-                name={i < lanternLit ? "lantern-on" : "lantern-off"}
-                height={30}
-                style={{ opacity: i < lanternLit ? 1 : 0.45 }}
-              />
-            ))}
-          </div>
+          <>
+            <div className="mt-3 flex flex-wrap gap-1" aria-label={`등불 ${lanternLit}개 켜짐`}>
+              {Array.from({ length: lanternTotal }, (_, i) => (
+                <Illustration
+                  key={i}
+                  name={i < lanternLit ? "lantern-on" : "lantern-off"}
+                  height={30}
+                  style={{ opacity: i < lanternLit ? 1 : 0.45 }}
+                />
+              ))}
+            </div>
+            {/* 책이 10권을 넘으면 등불 하나가 여러 권을 대표한다(100권짜리
+                목록도 등불은 10개). 그걸 모르면 "왜 10개뿐이지" 싶어서 한 줄 안내. */}
+            {totalCount > lanternTotal && (
+              <p className="mt-1 text-[11px]" style={{ color: "var(--ink-2)" }}>
+                등불 하나가 약 {Math.ceil(totalCount / lanternTotal)}권이에요
+              </p>
+            )}
+          </>
         )}
         <div className="mt-2 h-2 overflow-hidden rounded-full" style={{ background: "var(--paper)" }}>
           <div
