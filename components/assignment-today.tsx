@@ -8,6 +8,9 @@ import { uploadMissionVoice } from "@/lib/storage";
 import VoiceRecorder from "@/components/voice-recorder";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 import type { ReadingStatus } from "@/lib/reading-status";
+import { PawStamp, type Avatar } from "@/components/illustration";
+import { LogGroup, LogRow, shortMd } from "@/components/log-row";
+import { missionChip } from "@/lib/assignment-chip";
 
 export type TodayMission = {
   id: string;
@@ -66,6 +69,8 @@ export type TodayAssignment = {
   groupName: string;
   title: string;
   description: string | null;
+  startDate: string | null;
+  endDate: string | null;
   books: TodayBook[];
   missions: TodayMission[];
 };
@@ -101,7 +106,7 @@ function QuestionMission({ childId, mission }: { childId: string; mission: Today
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="답을 적어 주세요"
-            className="flex-1 rounded-[10px] border px-3 py-2 text-sm outline-none"
+            className="min-w-0 flex-1 rounded-[10px] border px-3 py-2 text-sm outline-none"
             style={{ borderColor: "var(--rule)", background: "var(--card)" }}
           />
           <button
@@ -197,11 +202,13 @@ function VoiceMission({
 export default function AssignmentToday({
   childId,
   childName,
+  childAvatar = null,
   assignments,
   voiceAllowed,
 }: {
   childId: string;
   childName: string | null;
+  childAvatar?: Avatar | null;
   assignments: TodayAssignment[];
   voiceAllowed: boolean;
 }) {
@@ -217,54 +224,34 @@ export default function AssignmentToday({
   }
 
   return (
-    <div className="mt-4 flex flex-col gap-6">
+    <div className="mt-4 flex flex-col gap-4">
       {sections.map((section) => (
-        <div key={section.groupName}>
-          <p className="d text-sm" style={{ color: "var(--lantern)" }}>
-            {section.groupName}
-          </p>
-          {/* 그룹당 숙제가 여러 개여도 박스를 나누지 않고, 하나의 박스
-              안에서 구분선으로만 나눈다(추천도서 목록과 같은 패턴). */}
-          <div
-            className="mt-2 overflow-hidden rounded-[var(--r)] border"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
-            {section.assignments.map((assignment, index) => {
-              const completedCount = assignment.books.filter((book) => book.completed).length;
-              return (
-                <div
-                  key={assignment.id}
-                  id={assignment.id}
-                  className="p-4 scroll-mt-4"
-                  style={index > 0 ? { borderTop: "1px solid var(--rule)" } : undefined}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <p className="d text-base">{assignment.title}</p>
-                    </div>
+        <LogGroup key={section.groupName} heading={section.groupName} headingSub={`숙제 ${section.assignments.length}개`}>
+          {section.assignments.map((assignment, index) => {
+            const completedCount = assignment.books.filter((book) => book.completed).length;
+            const allDone = completedCount === assignment.books.length && assignment.books.length > 0;
+            return (
+              <div key={assignment.id} id={assignment.id} className="scroll-mt-4">
+                <LogRow
+                  first={index === 0}
+                  dateTop={assignment.startDate ? shortMd(assignment.startDate) : "상시"}
+                  dateBottom={assignment.endDate ? `~${shortMd(assignment.endDate)}` : undefined}
+                  chip={missionChip(assignment.missions)}
+                  title={<span className="d">{assignment.title}</span>}
+                  subtitle={assignment.description ?? undefined}
+                  right={
                     <span
-                      className="d flex-none rounded-full px-3 py-1 text-sm"
+                      className="d rounded-full px-2 py-0.5 text-[11px]"
                       style={{
-                        background:
-                          completedCount === assignment.books.length && assignment.books.length > 0
-                            ? "rgba(47,168,79,0.12)"
-                            : "var(--paper)",
-                        color:
-                          completedCount === assignment.books.length && assignment.books.length > 0
-                            ? "var(--point-deep)"
-                            : "var(--ink-2)",
+                        background: allDone ? "rgba(47,168,79,0.12)" : "var(--paper)",
+                        color: allDone ? "var(--point-deep)" : "var(--ink-2)",
                       }}
                     >
                       {completedCount}/{assignment.books.length} 완료
                     </span>
-                  </div>
-                  {assignment.description && (
-                    <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-                      {assignment.description}
-                    </p>
-                  )}
-
-                  <div className="mt-3 flex flex-col gap-2">
+                  }
+                >
+                  <div className="mt-2 flex flex-col gap-1.5">
                     {assignment.books.map((book) =>
                       book.completed ? (
                         <button
@@ -272,11 +259,12 @@ export default function AssignmentToday({
                           type="button"
                           disabled={!book.recordId}
                           onClick={() => setEditing(book)}
-                          className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5 text-left"
-                          style={{ borderColor: "var(--rule)" }}
+                          className="flex items-center justify-between gap-2 rounded-[10px] px-3 py-2 text-left"
+                          style={{ background: "var(--paper)" }}
                         >
                           <span className="text-sm">{book.title}</span>
-                          <span className="text-sm" style={{ color: "var(--point-deep)" }}>
+                          <span className="d flex items-center gap-1 text-xs" style={{ color: "var(--point-deep)" }}>
+                            <PawStamp avatar={childAvatar} height={18} />
                             읽었어요
                           </span>
                         </button>
@@ -284,8 +272,8 @@ export default function AssignmentToday({
                         <Link
                           key={book.id}
                           href={`/library/add?bookId=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(assignment.groupId)}`}
-                          className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5"
-                          style={{ borderColor: "var(--rule)" }}
+                          className="flex items-center justify-between gap-2 rounded-[10px] px-3 py-2"
+                          style={{ background: "var(--paper)" }}
                         >
                           <div>
                             <span className="text-sm">{book.title}</span>
@@ -295,7 +283,7 @@ export default function AssignmentToday({
                               </span>
                             )}
                           </div>
-                          <span className="d text-sm" style={{ color: "var(--point)" }}>
+                          <span className="d text-xs" style={{ color: "var(--point)" }}>
                             기록하기
                           </span>
                         </Link>
@@ -307,19 +295,14 @@ export default function AssignmentToday({
                     mission.type === "question" ? (
                       <QuestionMission key={mission.id} childId={childId} mission={mission} />
                     ) : mission.type === "voice" ? (
-                      <VoiceMission
-                        key={mission.id}
-                        childId={childId}
-                        mission={mission}
-                        voiceAllowed={voiceAllowed}
-                      />
+                      <VoiceMission key={mission.id} childId={childId} mission={mission} voiceAllowed={voiceAllowed} />
                     ) : null
                   )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                </LogRow>
+              </div>
+            );
+          })}
+        </LogGroup>
       ))}
 
       {editing && (

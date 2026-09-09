@@ -81,6 +81,7 @@ export default async function PastAssignmentsPage({
         <AssignmentToday
           childId={activeChild.id}
           childName={activeChild.name}
+          childAvatar={activeChild.avatar}
           assignments={assignments}
           voiceAllowed={voiceAllowed}
         />

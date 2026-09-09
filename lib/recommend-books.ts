@@ -12,6 +12,8 @@ export type RecommendBook = {
   readStatus: ReadingStatus | null;
   /** 지금 진행 중인 숙제에 들어 있는 책인지 -- 목록에 "숙제 중" 등불 표시. */
   inAssignment: boolean;
+  /** 목록에 올린 날짜(ISO). 목록 줄의 날짜 칸. */
+  addedAt: string;
 };
 
 const STATUS_RANK: Record<ReadingStatus, number> = { want: 0, reading: 1, done: 2 };
@@ -42,12 +44,14 @@ export async function getRecommendBooks(
 
   const { data: itemRows } = await supabase
     .from("book_list_items")
-    .select("id, books(id, title, author, cover_url)")
-    .eq("book_list_id", bookList.id);
+    .select("id, created_at, books(id, title, author, cover_url)")
+    .eq("book_list_id", bookList.id)
+    .order("created_at", { ascending: false });
 
   const items = (itemRows ?? [])
     .map((row) => ({
       id: row.id,
+      addedAt: row.created_at as string,
       book: row.books as unknown as
         | { id: string; title: string; author: string | null; cover_url: string | null }
         | null,
@@ -103,6 +107,7 @@ export async function getRecommendBooks(
     categories: categoriesByBook.get(row.book!.id) ?? [],
     readStatus: statusByBook.get(row.book!.id) ?? null,
     inAssignment: assignedBookIds.has(row.book!.id),
+    addedAt: row.addedAt,
   }));
 
   return { bookListId: bookList.id, listName: bookList.name, books };

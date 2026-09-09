@@ -4,14 +4,15 @@ import { useMemo, useState } from "react";
 import Illustration, { PawStamp, type Avatar } from "@/components/illustration";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { BOOK_CATEGORIES } from "@/lib/categories";
+import { BOOK_CATEGORIES, categoryColor } from "@/lib/categories";
+import { LogGroup, LogRow, monthOf, shortDate, shortMd } from "@/components/log-row";
 import type { RecommendBook } from "@/lib/recommend-books";
 
 export type { RecommendBook };
 
 type Filter = "all" | string;
 
-// HABA 100처럼 "N/M권 · P%" 진행률 카드 + 분야별로 묶은 목록.
+// HABA 100처럼 "N/M권 · P%" 진행률 카드 + 날짜·분야 칩·제목 한 줄 목록(달별).
 // 추천도서는 그룹의 "책 서랍"이라 강제 표시(필독)는 두지 않는다 -- 꼭 읽어야
 // 할 책은 숙제로 낸다. 대신 책마다 두 가지 표시만 붙는다: 지금 진행 중인
 // 숙제에 들어간 책은 등불("숙제 중"), 아이가 다 읽은 책은 발자국 도장.
@@ -21,12 +22,15 @@ export default function RecommendBookList({
   books,
   activeChildId,
   childAvatar = null,
+  manage = false,
 }: {
   groupId: string;
   listName: string;
   books: RecommendBook[];
   activeChildId: string | null;
   childAvatar?: Avatar | null;
+  /** 숲지기 관리 화면: 진행률·"책장에 꽂기" 없이 목록만. */
+  manage?: boolean;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
@@ -52,27 +56,18 @@ export default function RecommendBookList({
     return books.filter((b) => b.categories.includes(filter));
   }, [books, filter]);
 
-  const sections = useMemo(() => {
-    if (filter !== "all") return [{ category: null, books: filtered }];
-    const uncategorized: RecommendBook[] = [];
-    const byCategory = new Map<string, RecommendBook[]>();
+  // 올린 달별로 묶는다(최신 달이 위, 달 안에서도 최신이 위 -- 조회가 이미
+  // created_at desc라 순서만 유지하면 된다).
+  const monthGroups = useMemo(() => {
+    const groups: { key: string; label: string; books: RecommendBook[] }[] = [];
     for (const book of filtered) {
-      if (book.categories.length === 0) {
-        uncategorized.push(book);
-        continue;
-      }
-      for (const c of book.categories) {
-        const list = byCategory.get(c) ?? [];
-        list.push(book);
-        byCategory.set(c, list);
-      }
+      const { key, label } = monthOf(book.addedAt);
+      const last = groups[groups.length - 1];
+      if (last && last.key === key) last.books.push(book);
+      else groups.push({ key, label, books: [book] });
     }
-    const result: { category: string; books: RecommendBook[] }[] = availableCategories
-      .filter((c) => byCategory.has(c))
-      .map((c) => ({ category: c, books: byCategory.get(c)! }));
-    if (uncategorized.length > 0) result.push({ category: "분야 미지정", books: uncategorized });
-    return result;
-  }, [filtered, filter, availableCategories]);
+    return groups;
+  }, [filtered]);
 
   async function pinToShelf(book: RecommendBook) {
     if (!activeChildId || pinning) return;
@@ -93,6 +88,7 @@ export default function RecommendBookList({
 
   return (
     <div>
+      {!manage && (
       <div
         className="rounded-[var(--r)] border p-4"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
@@ -133,8 +129,9 @@ export default function RecommendBookList({
           />
         </div>
       </div>
+      )}
 
-      <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
+      <div className={`${manage ? "" : "mt-3 "}flex gap-1.5 overflow-x-auto pb-1`}>
         <button
           type="button"
           onClick={() => setFilter("all")}
@@ -164,90 +161,64 @@ export default function RecommendBookList({
         ))}
       </div>
 
-      {sections.length === 0 && (
+      {monthGroups.length === 0 && (
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           아직 추천도서가 없어요.
         </p>
       )}
 
-      {/* 분야별로 따로 박스를 나누면 카드가 너무 많아 보인다는 피드백으로,
-          전체 목록을 박스 하나에 담고 분야는 안의 소제목 행(구분선)으로만
-          나눈다. */}
-      {sections.length > 0 && (
-        <div
-          className="mt-4 overflow-hidden rounded-[var(--r)] border"
-          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-        >
-          {sections.map(({ category, books: sectionBooks }, sectionIndex) => (
-            <div key={category ?? "all"}>
-              {category && (
-                <div
-                  className="flex items-center justify-between px-3 py-2"
-                  style={{
-                    background: "var(--paper)",
-                    borderTop: sectionIndex > 0 ? "1px solid var(--rule)" : undefined,
+      {/* 날짜 · 분야 칩 · 제목 한 줄 목록(육아 기록 앱의 목록 형식). 올린
+          달마다 박스 하나. 분야는 왼쪽 색 칩으로만 구분하고 표지는 안 넣는다
+          -- 표지는 책장에서 보고, 여기선 "언제 어떤 책이 올라왔나"를 훑는 자리. */}
+      <div className="mt-4 flex flex-col gap-4">
+        {monthGroups.map((group) => (
+          <LogGroup key={group.key} heading={group.label} headingSub={`${group.books.length}권`}>
+            {group.books.map((book, index) => {
+              const [firstCategory, secondCategory] = book.categories;
+              return (
+                <LogRow
+                  key={book.itemId}
+                  first={index === 0}
+                  dateTop={shortMd(book.addedAt)}
+                  dateBottom={shortDate(book.addedAt)}
+                  chip={{
+                    label: firstCategory ?? "책",
+                    color: categoryColor(firstCategory),
+                    sub: secondCategory,
                   }}
-                >
-                  <span className="d text-sm">{category}</span>
-                  <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-                    {sectionBooks.filter((b) => b.readStatus === "done").length}/{sectionBooks.length}
-                  </span>
-                </div>
-              )}
-              {sectionBooks.map((book, index) => (
-                <div
-                  key={book.itemId + (category ?? "")}
-                  className="flex items-center gap-3 p-3"
-                  style={category || index > 0 ? { borderTop: "1px solid var(--rule)" } : undefined}
-                >
-                  {book.coverUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={book.coverUrl}
-                      alt=""
-                      className="h-14 w-10 flex-none rounded object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="h-14 w-10 flex-none rounded"
-                      style={{ background: "var(--paper)" }}
-                    />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm">{book.title}</p>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                      {book.inAssignment && (
-                        <span
-                          className="inline-flex items-center gap-1 rounded-full py-0.5 pl-1 pr-2 text-[10px]"
-                          style={{ background: "rgba(232,163,61,0.16)", color: "var(--lantern)" }}
-                        >
-                          <Illustration name="lantern-on" height={14} />
-                          숙제 중
-                        </span>
-                      )}
-                      {book.author && (
-                        <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-                          {book.author}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {activeChildId &&
-                    (book.readStatus === "done" ? (
+                  title={book.title}
+                  subtitle={
+                    book.author || book.inAssignment ? (
+                      <>
+                        {book.inAssignment && (
+                          <span
+                            className="mr-1.5 inline-flex items-center gap-0.5 align-middle"
+                            style={{ color: "var(--lantern)" }}
+                          >
+                            <Illustration name="lantern-on" height={13} />
+                            숙제 중
+                          </span>
+                        )}
+                        {book.author}
+                      </>
+                    ) : undefined
+                  }
+                  right={
+                    manage || !activeChildId ? null : book.readStatus === "done" ? (
                       <span
-                        className="d flex flex-none items-center gap-1 text-xs"
+                        className="d flex items-center gap-1 text-xs"
                         style={{ color: "var(--point-deep)" }}
                         aria-label="읽었어요"
                       >
-                        <PawStamp avatar={childAvatar} height={22} />
+                        <PawStamp avatar={childAvatar} height={20} />
                         읽었어요
                       </span>
                     ) : book.readStatus === "reading" ? (
-                      <span className="d flex-none text-xs" style={{ color: "var(--lantern)" }}>
+                      <span className="d text-xs" style={{ color: "var(--lantern)" }}>
                         읽는 중
                       </span>
                     ) : book.readStatus === "want" ? (
-                      <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+                      <span className="d text-xs" style={{ color: "var(--ink-2)" }}>
                         읽고 싶어요
                       </span>
                     ) : (
@@ -255,18 +226,19 @@ export default function RecommendBookList({
                         type="button"
                         disabled={pinning === book.bookId}
                         onClick={() => pinToShelf(book)}
-                        className="d flex-none rounded-full border px-3 py-1.5 text-xs disabled:opacity-40"
+                        className="d rounded-full border px-2.5 py-1 text-[11px] disabled:opacity-40"
                         style={{ borderColor: "var(--point)", color: "var(--point-deep)" }}
                       >
                         {pinning === book.bookId ? "꽂는 중" : "책장에 꽂기"}
                       </button>
-                    ))}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
+                    )
+                  }
+                />
+              );
+            })}
+          </LogGroup>
+        ))}
+      </div>
     </div>
   );
 }

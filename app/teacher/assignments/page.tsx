@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
+import { LogGroup, LogRow, shortMd } from "@/components/log-row";
+import { missionChip } from "@/lib/assignment-chip";
 
 type AssignmentCard = {
   id: string;
   groupId: string;
   groupName: string;
   title: string;
+  description: string | null;
+  bookTitles: string[];
+  missions: { type: string }[];
   startDate: string | null;
   endDate: string | null;
   completed: number;
@@ -51,7 +56,7 @@ export default async function TeacherAssignmentsPage() {
   const { data: assignmentRows } = groupIds.length
     ? await supabase
         .from("assignments")
-        .select("id, group_id, title, start_date, end_date")
+        .select("id, group_id, title, description, start_date, end_date, assignment_books(books(title)), assignment_missions(type)")
         .in("group_id", groupIds)
         .order("created_at", { ascending: false })
     : { data: [] };
@@ -89,6 +94,11 @@ export default async function TeacherAssignmentsPage() {
       groupId: assignment.group_id,
       groupName: groupById.get(assignment.group_id)?.name ?? "",
       title: assignment.title,
+      description: assignment.description,
+      bookTitles: ((assignment.assignment_books as unknown as { books: { title: string } | null }[] | null) ?? [])
+        .map((ab) => ab.books?.title)
+        .filter((t): t is string => Boolean(t)),
+      missions: (assignment.assignment_missions as unknown as { type: string }[] | null) ?? [],
       startDate: assignment.start_date,
       endDate: assignment.end_date,
       completed: stat.completed,
@@ -100,8 +110,8 @@ export default async function TeacherAssignmentsPage() {
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <h1 className="d text-xl">숙제</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-        추천도서 서랍에서 골라 기간을 정해 낸 숙제예요. 숙제마다 몇 명이 끝냈는지 보이고, 누르면 아이별로 자세히
-        보여요.
+        추천도서 서랍에서 골라 기간을 정해 낸 숙제예요. 시작일·종류(읽기/질문/낭독)·제목 순으로 보이고, 오른쪽은 몇
+        명이 끝냈는지예요. 누르면 아이별로 자세히 보여요.
       </p>
 
       {groups.length === 0 ? (
@@ -109,45 +119,40 @@ export default async function TeacherAssignmentsPage() {
           아직 운영하는 그룹이 없어요.
         </p>
       ) : (
-        <div className="mt-6 flex flex-col gap-6">
+        <div className="mt-6 flex flex-col gap-4">
           {groups.map((group) => {
             const groupCards = cards.filter((c) => c.groupId === group.id);
             return (
-              <div key={group.id}>
-                <div className="flex items-center justify-between">
-                  <p className="d text-sm">{group.name}</p>
-                  <Link href={`/recommend/${group.id}#assignment`} className="text-xs" style={{ color: "var(--point)" }}>
+              <LogGroup
+                key={group.id}
+                heading={group.name}
+                headingSub={`숙제 ${groupCards.length}개`}
+                headingRight={
+                  <Link href={`/recommend/${group.id}#assignment`} className="d" style={{ color: "var(--point)" }}>
                     + 숙제 만들기
                   </Link>
-                </div>
+                }
+              >
                 {groupCards.length === 0 ? (
-                  <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>
+                  <p className="px-4 pb-4 text-sm" style={{ color: "var(--ink-2)" }}>
                     아직 낸 숙제가 없어요.
                   </p>
                 ) : (
-                  <div
-                    className="mt-2 overflow-hidden rounded-[var(--r)] border"
-                    style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-                  >
-                    {groupCards.map((card, index) => {
-                      const allDone = card.total > 0 && card.completed === card.total;
-                      return (
-                        <Link
-                          key={card.id}
-                          href={`/teacher/assignments/${card.id}`}
-                          className="flex items-center gap-3 px-3 py-3"
-                          style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="d truncate text-sm">{card.title}</p>
-                            {(card.startDate || card.endDate) && (
-                              <p className="mt-0.5 text-xs" style={{ color: "var(--ink-2)" }}>
-                                {card.startDate ?? ""} ~ {card.endDate ?? ""}
-                              </p>
-                            )}
-                          </div>
+                  groupCards.map((card, index) => {
+                    const allDone = card.total > 0 && card.completed === card.total;
+                    return (
+                      <LogRow
+                        key={card.id}
+                        first={index === 0}
+                        href={`/teacher/assignments/${card.id}`}
+                        dateTop={card.startDate ? shortMd(card.startDate) : "상시"}
+                        dateBottom={card.endDate ? `~${shortMd(card.endDate)}` : undefined}
+                        chip={missionChip(card.missions)}
+                        title={<span className="d">{card.title}</span>}
+                        subtitle={card.bookTitles.length ? card.bookTitles.join(" · ") : card.description ?? undefined}
+                        right={
                           <span
-                            className="d flex-none rounded-full px-2 py-0.5 text-xs"
+                            className="d rounded-full px-2 py-0.5 text-[11px]"
                             style={{
                               background: allDone ? "rgba(47,168,79,0.12)" : "var(--paper)",
                               color: allDone ? "var(--point-deep)" : "var(--ink-2)",
@@ -155,12 +160,12 @@ export default async function TeacherAssignmentsPage() {
                           >
                             {card.completed}/{card.total}명 완료
                           </span>
-                        </Link>
-                      );
-                    })}
-                  </div>
+                        }
+                      />
+                    );
+                  })
                 )}
-              </div>
+              </LogGroup>
             );
           })}
         </div>

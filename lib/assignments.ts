@@ -7,6 +7,8 @@ type AssignmentRow = {
   group_id: string;
   title: string;
   description: string | null;
+  start_date: string | null;
+  end_date: string | null;
   groups: { name: string } | null;
   assignment_books: {
     target_page: number | null;
@@ -41,7 +43,7 @@ async function fetchAssignments(
   let query = supabase
     .from("assignments")
     .select(
-      "id, group_id, title, description, groups(name), assignment_books(target_page, books(id, title, author, cover_url)), assignment_missions(id, type, question)"
+      "id, group_id, title, description, start_date, end_date, groups(name), assignment_books(target_page, books(id, title, author, cover_url)), assignment_missions(id, type, question)"
     )
     .in("group_id", groupIds);
 
@@ -159,6 +161,8 @@ async function fetchAssignments(
     groupName: row.groups?.name ?? "",
     title: row.title,
     description: row.description,
+    startDate: row.start_date,
+    endDate: row.end_date,
     books: row.assignment_books
       .filter(
         (ab): ab is typeof ab & { books: { id: string; title: string; author: string | null; cover_url: string | null } } =>
