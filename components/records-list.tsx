@@ -24,7 +24,6 @@ export type RecordRow = {
   bookCoverUrl: string | null;
 };
 
-type GroupFilter = "all" | "direct" | string;
 type SortMode = "new" | "title" | "author";
 
 const SORT_LABELS: Record<SortMode, string> = {
@@ -53,33 +52,17 @@ export default function RecordsList({
   records: RecordRow[];
 }) {
   const [query, setQuery] = useState("");
-  const [groupFilter, setGroupFilter] = useState<GroupFilter>("all");
   const [sort, setSort] = useState<SortMode>("new");
   const [editing, setEditing] = useState<RecordRow | null>(null);
 
-  const groupOptions = useMemo(() => {
-    const byId = new Map<string, string>();
-    let hasDirect = false;
-    for (const r of records) {
-      if (r.groupId) byId.set(r.groupId, r.groupName ?? "그룹");
-      else hasDirect = true;
-    }
-    return { hasDirect, groups: Array.from(byId.entries()) };
-  }, [records]);
-
+  // 출처(그룹) 필터는 뺐다 -- 기록 탭은 "읽은 순서대로 보는 로그"라 검색과
+  // 정렬이면 충분하고, 어느 그룹 기록인지는 각 줄에 이미 작게 적혀 있다.
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return records
-      .filter((r) => {
-        if (groupFilter === "all") return true;
-        if (groupFilter === "direct") return r.groupId === null;
-        return r.groupId === groupFilter;
-      })
-      .filter(
-        (r) =>
-          !q || r.bookTitle.toLowerCase().includes(q) || (r.bookAuthor ?? "").toLowerCase().includes(q)
-      );
-  }, [records, query, groupFilter]);
+    return records.filter(
+      (r) => !q || r.bookTitle.toLowerCase().includes(q) || (r.bookAuthor ?? "").toLowerCase().includes(q)
+    );
+  }, [records, query]);
 
   const sortedFlat = useMemo(() => {
     if (sort === "new") return null;
@@ -185,43 +168,6 @@ export default function RecordsList({
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         />
       </div>
-
-      {(groupOptions.hasDirect || groupOptions.groups.length > 0) && (
-        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1">
-          <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
-            출처
-          </span>
-          {groupOptions.hasDirect && (
-            <button
-              type="button"
-              onClick={() => setGroupFilter(groupFilter === "direct" ? "all" : "direct")}
-              className="d flex-none rounded-full border px-3 py-1 text-xs"
-              style={{
-                borderColor: groupFilter === "direct" ? "var(--point)" : "var(--rule)",
-                background: groupFilter === "direct" ? "rgba(47,168,79,0.08)" : "var(--card)",
-                color: groupFilter === "direct" ? "var(--point-deep)" : "var(--ink-2)",
-              }}
-            >
-              직접 기록
-            </button>
-          )}
-          {groupOptions.groups.map(([id, name]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setGroupFilter(groupFilter === id ? "all" : id)}
-              className="d flex-none rounded-full border px-3 py-1 text-xs"
-              style={{
-                borderColor: groupFilter === id ? "var(--point)" : "var(--rule)",
-                background: groupFilter === id ? "rgba(47,168,79,0.08)" : "var(--card)",
-                color: groupFilter === id ? "var(--point-deep)" : "var(--ink-2)",
-              }}
-            >
-              {name}
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="mt-2 flex justify-end">
         <select

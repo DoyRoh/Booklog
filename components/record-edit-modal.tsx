@@ -12,7 +12,6 @@ import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
 import ShelfTagPicker from "@/components/shelf-tag-picker";
 
-const EMOTIONS = ["재밌어요", "웃겼어요", "감동적이에요", "슬퍼요", "그저그래요"];
 const STATUS_LABELS: Record<ReadingStatus, string> = {
   want: "읽고 싶어요",
   reading: "읽는 중이에요",
@@ -51,7 +50,11 @@ export default function RecordEditModal({
   const router = useRouter();
   const [status, setStatus] = useState<ReadingStatus>(record.status);
   const [rating, setRating] = useState(record.rating);
-  const [emotion, setEmotion] = useState(record.emotion);
+  // 이미 뭔가 남겨둔 기록(메모·사진·목소리·즐겨찾기·책장)이면 펼친 채로,
+  // 아니면 접은 채로 연다(기록 남기기 화면의 "더 남기기"와 같은 구조).
+  const [more, setMore] = useState(
+    Boolean(record.memo || record.photoPath || record.voicePath || record.favorite || record.shelfTagId)
+  );
   const [favorite, setFavorite] = useState(record.favorite);
   const [memo, setMemo] = useState(record.memo);
   const [readDate, setReadDate] = useState(record.readDate);
@@ -92,7 +95,6 @@ export default function RecordEditModal({
     const updates: Record<string, unknown> = {
       status,
       rating,
-      emotion,
       favorite,
       parent_memo: memo || null,
       read_date: readDate,
@@ -218,16 +220,6 @@ export default function RecordEditModal({
           </div>
         )}
 
-        {status !== "done" && (
-          <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-            평점·기분 같은 나머지 기록은 다 읽고 나서 채워도 괜찮아요.
-          </p>
-        )}
-
-        <div className="mt-4">
-          <ShelfTagPicker childId={record.childId} value={shelfTagId} onChange={setShelfTagId} />
-        </div>
-
         <div className="mx-1 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
 
         <div className="mt-4">
@@ -235,88 +227,89 @@ export default function RecordEditModal({
           <div className="mt-2">
             <RatingPicker value={rating} onChange={setRating} />
           </div>
-        </div>
-
-        <div className="mt-4">
-          <p className="d text-sm">기분</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {EMOTIONS.map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setEmotion(value === emotion ? null : value)}
-                className="d rounded-full border px-3 py-1.5 text-sm"
-                style={{
-                  borderColor: emotion === value ? "var(--point)" : "var(--rule)",
-                  background: emotion === value ? "rgba(47,168,79,0.08)" : "var(--card)",
-                  color: emotion === value ? "var(--point-deep)" : "var(--ink)",
-                }}
-              >
-                {value}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <label
-          className="mt-4 flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"
-          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-        >
-          <input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} />
-          <span className="text-sm">가장 좋아하는 책으로 남기기</span>
-        </label>
-
-        <textarea
-          placeholder="부모 메모 (선택)"
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          rows={3}
-          className="mt-4 w-full rounded-[14px] border px-4 py-3 text-sm outline-none"
-          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-        />
-
-        <div className="mx-1 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
-
-        <div
-          className="mt-4 rounded-[var(--r)] border p-4"
-          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-        >
-          <p className="d text-sm">{record.childName ? `${record.childName}의 기록` : "우리 아이의 기록"}</p>
-
-          <div className="mt-3">
-            <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-              인상 깊었던 장면을 사진으로 남겨보세요
+          {status !== "done" && (
+            <p className="mt-2 text-xs" style={{ color: "var(--ink-2)" }}>
+              다 읽고 나서 골라도 괜찮아요.
             </p>
-            <div className="mt-2">
-              <PhotoPicker
-                onSelect={setPhotoFile}
-                label="장면 찍어 담기"
-                existingUrl={photoSignedUrl}
-                onRemoveExisting={() => setPhotoRemoved(true)}
-              />
-            </div>
-          </div>
+          )}
+        </div>
 
-          {voiceAllowed && (
-            <>
-              <div className="mx-0 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
-              <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => setMore((v) => !v)}
+          aria-expanded={more}
+          className="d mt-4 flex w-full items-center justify-between rounded-[14px] border px-4 py-3 text-sm"
+          style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
+        >
+          <span>{more ? "간단히" : "더 남기기"}</span>
+          <span className="text-xs font-normal">책장 · 메모 · 사진 · 목소리</span>
+        </button>
+
+        {more && (
+          <>
+            <div className="mt-4">
+              <ShelfTagPicker childId={record.childId} value={shelfTagId} onChange={setShelfTagId} />
+            </div>
+
+            <label
+              className="mt-4 flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"
+              style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+            >
+              <input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} />
+              <span className="text-sm">가장 좋아하는 책으로 남기기</span>
+            </label>
+
+            <textarea
+              placeholder="부모 메모 (선택)"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              rows={3}
+              className="mt-4 w-full rounded-[14px] border px-4 py-3 text-sm outline-none"
+              style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+            />
+
+            <div
+              className="mt-4 rounded-[var(--r)] border p-4"
+              style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+            >
+              <p className="d text-sm">{record.childName ? `${record.childName}의 기록` : "우리 아이의 기록"}</p>
+
+              <div className="mt-3">
                 <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-                  오늘 읽은 소감을 목소리로 남겨보세요
+                  인상 깊었던 장면을 사진으로 남겨보세요
                 </p>
                 <div className="mt-2">
-                  <VoiceRecorder
-                    onRecorded={setVoiceBlob}
-                    onClear={() => setVoiceBlob(null)}
-                    label={record.childName ? `${record.childName}의 목소리로 남기기` : "목소리로 남기기"}
-                    existingUrl={voiceSignedUrl}
-                    onRemoveExisting={() => setVoiceRemoved(true)}
+                  <PhotoPicker
+                    onSelect={setPhotoFile}
+                    label="장면 찍어 담기"
+                    existingUrl={photoSignedUrl}
+                    onRemoveExisting={() => setPhotoRemoved(true)}
                   />
                 </div>
               </div>
-            </>
-          )}
-        </div>
+
+              {voiceAllowed && (
+                <>
+                  <div className="mx-0 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+                  <div className="mt-4">
+                    <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                      오늘 읽은 소감을 목소리로 남겨보세요
+                    </p>
+                    <div className="mt-2">
+                      <VoiceRecorder
+                        onRecorded={setVoiceBlob}
+                        onClear={() => setVoiceBlob(null)}
+                        label={record.childName ? `${record.childName}의 목소리로 남기기` : "목소리로 남기기"}
+                        existingUrl={voiceSignedUrl}
+                        onRemoveExisting={() => setVoiceRemoved(true)}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
 
         {error && (
           <p className="mt-3 text-sm" style={{ color: "var(--berry)" }}>

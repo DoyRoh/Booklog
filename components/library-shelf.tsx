@@ -38,8 +38,9 @@ export type ShelfBook = {
 
 type ViewMode = "cover" | "spine";
 type StatusFilter = "all" | ReadingStatus;
-type GroupFilter = "all" | "direct" | string;
-type TagFilter = "all" | string;
+// 책장 필터 하나로 "직접 나눈 책장(shelf_tags)"과 "그룹(학급·기관)"을 함께
+// 다룬다 -- 출처/책장 두 줄로 나눠 두니 필터 줄이 너무 많아져서 합쳤다.
+type ShelfFilter = "all" | `tag:${string}` | `group:${string}`;
 type SortMode = "new" | "title" | "author";
 
 const STORAGE_KEY = "chaeksup:library-view";
@@ -140,8 +141,7 @@ export default function LibraryShelf({
   const [mode, setMode] = useState<ViewMode>("cover");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [groupFilter, setGroupFilter] = useState<GroupFilter>("all");
-  const [tagFilter, setTagFilter] = useState<TagFilter>("all");
+  const [shelfFilter, setShelfFilter] = useState<ShelfFilter>("all");
   const [sort, setSort] = useState<SortMode>("new");
   const [editing, setEditing] = useState<DedupedBook | null>(null);
 
@@ -160,44 +160,37 @@ export default function LibraryShelf({
     window.localStorage.setItem(STORAGE_KEY, next);
   }
 
-  const groupOptions = useMemo(() => {
-    const byId = new Map<string, string>();
-    let hasDirect = false;
+  // 실제 기록에 등장하는 책장(직접 나눈 것)과 그룹만 칩으로 뜬다. 직접
+  // 나눈 책장을 먼저, 그룹을 뒤에 둔다.
+  const shelfOptions = useMemo(() => {
+    const tags = new Map<string, string>();
+    const groups = new Map<string, string>();
     for (const book of books) {
       for (const inst of book.instances) {
-        if (inst.groupId) byId.set(inst.groupId, inst.groupName ?? "그룹");
-        else hasDirect = true;
+        if (inst.shelfTagId) tags.set(inst.shelfTagId, inst.shelfTagName ?? "책장");
+        if (inst.groupId) groups.set(inst.groupId, inst.groupName ?? "그룹");
       }
     }
-    return { hasDirect, groups: Array.from(byId.entries()) };
-  }, [books]);
-
-  const tagOptions = useMemo(() => {
-    const byId = new Map<string, string>();
-    for (const book of books) {
-      for (const inst of book.instances) {
-        if (inst.shelfTagId) byId.set(inst.shelfTagId, inst.shelfTagName ?? "책장");
-      }
-    }
-    return { tags: Array.from(byId.entries()) };
+    return [
+      ...Array.from(tags.entries()).map(([id, name]) => ({ key: `tag:${id}` as ShelfFilter, name })),
+      ...Array.from(groups.entries()).map(([id, name]) => ({ key: `group:${id}` as ShelfFilter, name })),
+    ];
   }, [books]);
 
   const deduped = useMemo<DedupedBook[]>(() => {
     return books
       .map((book) => {
         const matching = book.instances.filter((inst) => {
-          const groupOk =
-            groupFilter === "all" ||
-            (groupFilter === "direct" ? inst.groupId === null : inst.groupId === groupFilter);
-          if (!groupOk) return false;
-          return tagFilter === "all" || inst.shelfTagId === tagFilter;
+          if (shelfFilter === "all") return true;
+          if (shelfFilter.startsWith("tag:")) return inst.shelfTagId === shelfFilter.slice(4);
+          return inst.groupId === shelfFilter.slice(6);
         });
         if (matching.length === 0) return null;
         const rep = pickRepresentative(matching);
         return { ...book, ...rep };
       })
       .filter((book): book is DedupedBook => Boolean(book));
-  }, [books, groupFilter, tagFilter]);
+  }, [books, shelfFilter]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -274,64 +267,25 @@ export default function LibraryShelf({
         </Link>
       </div>
 
-      {(groupOptions.hasDirect || groupOptions.groups.length > 0) && (
-        <div className="mt-2 flex items-center gap-2">
-          <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
-            출처
-          </span>
-          <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
-            {groupOptions.hasDirect && (
-              <button
-                type="button"
-                onClick={() => setGroupFilter(groupFilter === "direct" ? "all" : "direct")}
-                className="d flex-none rounded-full border px-3 py-1 text-xs"
-                style={{
-                  borderColor: groupFilter === "direct" ? "var(--point)" : "var(--rule)",
-                  background: groupFilter === "direct" ? "rgba(47,168,79,0.08)" : "var(--card)",
-                  color: groupFilter === "direct" ? "var(--point-deep)" : "var(--ink-2)",
-                }}
-              >
-                직접 기록
-              </button>
-            )}
-            {groupOptions.groups.map(([id, name]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setGroupFilter(groupFilter === id ? "all" : id)}
-                className="d flex-none rounded-full border px-3 py-1 text-xs"
-                style={{
-                  borderColor: groupFilter === id ? "var(--point)" : "var(--rule)",
-                  background: groupFilter === id ? "rgba(47,168,79,0.08)" : "var(--card)",
-                  color: groupFilter === id ? "var(--point-deep)" : "var(--ink-2)",
-                }}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {tagOptions.tags.length > 0 && (
+      {shelfOptions.length > 0 && (
         <div className="mt-2 flex items-center gap-2">
           <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
             책장
           </span>
           <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
-            {tagOptions.tags.map(([id, name]) => (
+            {shelfOptions.map((option) => (
               <button
-                key={id}
+                key={option.key}
                 type="button"
-                onClick={() => setTagFilter(tagFilter === id ? "all" : id)}
+                onClick={() => setShelfFilter(shelfFilter === option.key ? "all" : option.key)}
                 className="d flex-none rounded-full border px-3 py-1 text-xs"
                 style={{
-                  borderColor: tagFilter === id ? "var(--point)" : "var(--rule)",
-                  background: tagFilter === id ? "rgba(47,168,79,0.08)" : "var(--card)",
-                  color: tagFilter === id ? "var(--point-deep)" : "var(--ink-2)",
+                  borderColor: shelfFilter === option.key ? "var(--point)" : "var(--rule)",
+                  background: shelfFilter === option.key ? "rgba(47,168,79,0.08)" : "var(--card)",
+                  color: shelfFilter === option.key ? "var(--point-deep)" : "var(--ink-2)",
                 }}
               >
-                {name}
+                {option.name}
               </button>
             ))}
           </div>
@@ -361,10 +315,15 @@ export default function LibraryShelf({
         </div>
       </div>
 
-      <div className="mt-2 flex justify-end">
+      <div className="mt-3 flex items-center gap-3">
+        <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
+          {filtered.length}권
+        </span>
+        <div className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortMode)}
+          aria-label="정렬"
           className="d flex-none rounded-full border px-2.5 py-1 text-xs outline-none"
           style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
         >
@@ -374,13 +333,6 @@ export default function LibraryShelf({
             </option>
           ))}
         </select>
-      </div>
-
-      <div className="mt-3 flex items-center gap-3">
-        <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
-          {filtered.length}권
-        </span>
-        <div className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
         <Link href="/library/export" className="flex-none text-xs" style={{ color: "var(--point-deep)" }}>
           내보내기
         </Link>

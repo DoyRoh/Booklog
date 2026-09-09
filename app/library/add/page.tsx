@@ -31,7 +31,6 @@ type Candidate = {
 
 type ReadingStatus = "want" | "reading" | "done";
 
-const EMOTIONS = ["재밌어요", "웃겼어요", "감동적이에요", "슬퍼요", "그저그래요"];
 const STATUS_LABELS: Record<ReadingStatus, string> = {
   want: "읽고 싶어요",
   reading: "읽는 중이에요",
@@ -89,7 +88,10 @@ function AddBookForm() {
   const [status, setStatus] = useState<ReadingStatus>("done");
   const [readDate, setReadDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [rating, setRating] = useState<number | null>(null);
-  const [emotion, setEmotion] = useState<string | null>(null);
+  // 기본 화면엔 제목·상태·날짜·평점·저장만 두고, 나머지(책장·즐겨찾기·
+  // 메모·사진·목소리)는 "더 남기기"를 눌렀을 때만 펼친다 -- 30초 기록이
+  // 목표인데 첫 화면이 길면 기록 자체를 안 하게 된다.
+  const [more, setMore] = useState(false);
   const [favorite, setFavorite] = useState(false);
   const [pagesRead, setPagesRead] = useState("");
   const [memo, setMemo] = useState("");
@@ -318,7 +320,6 @@ function AddBookForm() {
         status,
         read_date: readDate,
         rating,
-        emotion,
         favorite,
         pages_read: status === "reading" && pagesRead ? Number(pagesRead) : null,
         parent_memo: memo || null,
@@ -542,14 +543,6 @@ function AddBookForm() {
             </div>
           )}
 
-          {status !== "done" && (
-            <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-              평점·기분 같은 나머지 기록은 다 읽고 나서 채워도 괜찮아요.
-            </p>
-          )}
-
-          {childId && <ShelfTagPicker childId={childId} value={shelfTagId} onChange={setShelfTagId} />}
-
           <div className="mx-1" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
 
           <div>
@@ -557,74 +550,73 @@ function AddBookForm() {
             <div className="mt-2">
               <RatingPicker value={rating} onChange={setRating} />
             </div>
-          </div>
-
-          <div>
-            <p className="d text-sm">기분</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {EMOTIONS.map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setEmotion(value === emotion ? null : value)}
-                  className="d rounded-full border px-3 py-1.5 text-sm"
-                  style={{
-                    borderColor: emotion === value ? "var(--point)" : "var(--rule)",
-                    background: emotion === value ? "rgba(47,168,79,0.08)" : "var(--card)",
-                    color: emotion === value ? "var(--point-deep)" : "var(--ink)",
-                  }}
-                >
-                  {value}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <label
-            className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
-            <input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} />
-            <span className="text-sm">가장 좋아하는 책으로 남기기</span>
-          </label>
-
-          <QuestionPrompt answer={memo} onAnswerChange={setMemo} />
-
-          <div className="mx-1" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
-
-          <div
-            className="rounded-[var(--r)] border p-4"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
-            <p className="d text-base">{childName ? `${childName}의 기록` : "우리 아이의 기록"}</p>
-
-            <div className="mt-3">
-              <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-                인상 깊었던 장면을 사진으로 남겨보세요
+            {status !== "done" && (
+              <p className="mt-2 text-xs" style={{ color: "var(--ink-2)" }}>
+                다 읽고 나서 골라도 괜찮아요.
               </p>
-              <div className="mt-2">
-                <PhotoPicker onSelect={setPhotoFile} label="장면 찍어 담기" />
-              </div>
-            </div>
-
-            {voiceAllowed && (
-              <>
-                <div className="mx-0 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
-                <div className="mt-4">
-                  <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-                    오늘 읽은 소감을 목소리로 남겨보세요
-                  </p>
-                  <div className="mt-2">
-                    <VoiceRecorder
-                      onRecorded={setVoiceBlob}
-                      onClear={() => setVoiceBlob(null)}
-                      label={childName ? `${childName}의 목소리로 남기기` : "목소리로 남기기"}
-                    />
-                  </div>
-                </div>
-              </>
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={() => setMore((v) => !v)}
+            aria-expanded={more}
+            className="d flex items-center justify-between rounded-[14px] border px-4 py-3 text-sm"
+            style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
+          >
+            <span>{more ? "간단히" : "더 남기기"}</span>
+            <span className="text-xs font-normal">책장 · 메모 · 사진 · 목소리</span>
+          </button>
+
+          {more && (
+            <>
+              {childId && <ShelfTagPicker childId={childId} value={shelfTagId} onChange={setShelfTagId} />}
+
+              <label
+                className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"
+                style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+              >
+                <input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} />
+                <span className="text-sm">가장 좋아하는 책으로 남기기</span>
+              </label>
+
+              <QuestionPrompt answer={memo} onAnswerChange={setMemo} />
+
+              <div
+                className="rounded-[var(--r)] border p-4"
+                style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+              >
+                <p className="d text-base">{childName ? `${childName}의 기록` : "우리 아이의 기록"}</p>
+
+                <div className="mt-3">
+                  <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                    인상 깊었던 장면을 사진으로 남겨보세요
+                  </p>
+                  <div className="mt-2">
+                    <PhotoPicker onSelect={setPhotoFile} label="장면 찍어 담기" />
+                  </div>
+                </div>
+
+                {voiceAllowed && (
+                  <>
+                    <div className="mx-0 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+                    <div className="mt-4">
+                      <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                        오늘 읽은 소감을 목소리로 남겨보세요
+                      </p>
+                      <div className="mt-2">
+                        <VoiceRecorder
+                          onRecorded={setVoiceBlob}
+                          onClear={() => setVoiceBlob(null)}
+                          label={childName ? `${childName}의 목소리로 남기기` : "목소리로 남기기"}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
 
           {error && (
             <p className="text-sm" style={{ color: "var(--berry)" }}>
