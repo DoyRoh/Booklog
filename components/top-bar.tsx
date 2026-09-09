@@ -11,7 +11,7 @@ import { isChromeHidden } from "@/lib/nav";
 // 하단 탭 강조 표시로 이미 알 수 있다. '더보기'도 같은 줄 우측에 둔다.
 export default function TopBar() {
   const pathname = usePathname();
-  const { role, childName, childAvatar, loading } = useProfile();
+  const { role, childName, childAvatar, operatorAvatar, loading } = useProfile();
 
   // 인증 화면에서는 항상 숨기고, 로그인이 안 된 상태(역할 조회가 끝났는데
   // role이 없음)에서도 숨긴다 -- 로그아웃 상태로 /teacher 같은 경로에
@@ -21,6 +21,14 @@ export default function TopBar() {
   }
 
   const title = role === "parent" && childName ? `${childName}의 책숲` : "책숲";
+  // 제목 옆 얼굴: 아이 프로필이면 아이가 고른 아바타, 선생님/기관 프로필이면
+  // 곰(기본) 또는 백로. 아직 역할을 모르는 로딩 중에는 안 그린다.
+  const face =
+    role === "parent" && childName
+      ? `face-${childAvatar ?? "rabbit"}`
+      : role === "teacher" || role === "curator"
+        ? `face-${operatorAvatar ?? "bear"}`
+        : null;
   const moreActive = pathname === "/more" || pathname.startsWith("/more/");
   const badgesActive = pathname === "/badges" || pathname.startsWith("/badges/");
 
@@ -31,12 +39,12 @@ export default function TopBar() {
     >
       <div className="mx-auto flex max-w-[520px] items-center justify-between px-5 py-2.5">
         <span className="flex items-center gap-2">
-          {/* 아이가 고른 아바타의 얼굴 -- 전신 그림(public/illustrations/{avatar}.png)
-              에서 얼굴만 동그랗게 잘라 둔 face-*.png. 아이 프로필일 때만. */}
-          {role === "parent" && childName && (
+          {/* 전신 그림(public/illustrations/*.png)에서 얼굴만 동그랗게 잘라 둔
+              face-*.png -- 아이는 토끼/강아지/고양이, 운영진은 곰/백로. */}
+          {face && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={`/illustrations/face-${childAvatar ?? "rabbit"}.png`}
+              src={`/illustrations/${face}.png`}
               alt=""
               aria-hidden="true"
               width={30}

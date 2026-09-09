@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
+import type { OperatorAvatar } from "@/lib/active-profile";
 
 export type OperatorGroup = {
   groupId: string;
@@ -20,17 +21,32 @@ export type OperatorGroup = {
 // 운영해도 대시보드 자체는 이미 전부 한 화면에 모아서 보여주므로
 // (app/teacher, app/curator), 어느 그룹을 눌렀든 목적지는 역할별로
 // 하나뿐이다.
+const AVATARS: { id: OperatorAvatar; label: string; hint: string }[] = [
+  { id: "bear", label: "곰", hint: "등불로 길을 비춰 주는" },
+  { id: "egret", label: "백로", hint: "책 소식을 물어다 주는" },
+];
+
 export default function OperatorProfileSwitcher({
   userId,
   groups,
   isActive,
+  avatar,
 }: {
   userId: string;
   groups: OperatorGroup[];
   isActive: boolean;
+  avatar: OperatorAvatar | null;
 }) {
   const router = useRouter();
   const [switching, setSwitching] = useState(false);
+  const [currentAvatar, setCurrentAvatar] = useState<OperatorAvatar>(avatar ?? "bear");
+
+  async function pickAvatar(next: OperatorAvatar) {
+    setCurrentAvatar(next);
+    const supabase = createClient();
+    await supabase.from("users").update({ operator_avatar: next }).eq("id", userId);
+    window.dispatchEvent(new Event("chaeksup:profile-changed"));
+  }
 
   async function selectOperator(destination: "/teacher" | "/curator") {
     setSwitching(true);
@@ -55,6 +71,37 @@ export default function OperatorProfileSwitcher({
 
   return (
     <div className="flex flex-col gap-3">
+      {/* 운영 프로필의 얼굴 -- 상단 제목 옆에 뜬다. 아이의 아바타 선택과 같은
+          역할이지만, 운영진은 세계관대로 곰(선생님 느낌)과 백로(소식 전하는
+          기관·인플루언서 느낌) 중에서 고른다. 강제는 아니고 취향대로. */}
+      <div className="flex items-center gap-3">
+        {AVATARS.map((a) => {
+          const selected = currentAvatar === a.id;
+          return (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => pickAvatar(a.id)}
+              className="flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-left"
+              style={{
+                borderColor: selected ? "var(--point)" : "var(--rule)",
+                background: selected ? "rgba(47,168,79,0.08)" : "var(--card)",
+              }}
+              aria-pressed={selected}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/illustrations/face-${a.id}.png`} alt="" width={32} height={32} className="h-8 w-8 rounded-full" />
+              <span className="flex flex-col leading-tight">
+                <span className="d text-xs">{a.label}</span>
+                <span className="text-[10px]" style={{ color: "var(--ink-2)" }}>
+                  {a.hint}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {groups.map((group) => {
         const active = isActive;
         const label = group.operatorRole === "curator" ? "기관" : "선생님";

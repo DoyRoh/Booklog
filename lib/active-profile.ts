@@ -1,8 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+export type OperatorAvatar = "bear" | "egret";
+
 export type ActiveProfile =
   | { type: "child" }
-  | { type: "operator"; operatorRole: "teacher" | "curator" };
+  | { type: "operator"; operatorRole: "teacher" | "curator"; operatorAvatar: OperatorAvatar | null };
 
 /**
  * 계정 하나가 아이 프로필과 선생님/기관 프로필을 동시에 가질 수 있다.
@@ -19,7 +21,7 @@ export async function getActiveProfile(
 ): Promise<ActiveProfile> {
   const { data: user } = await supabase
     .from("users")
-    .select("active_profile_type")
+    .select("active_profile_type, operator_avatar")
     .eq("id", userId)
     .single();
 
@@ -37,5 +39,5 @@ export async function getActiveProfile(
   const roles = new Set((memberships ?? []).map((m) => m.role as string));
   if (roles.size === 0) return { type: "child" };
   const operatorRole: "teacher" | "curator" = roles.has("teacher") || roles.has("admin") ? "teacher" : "curator";
-  return { type: "operator", operatorRole };
+  return { type: "operator", operatorRole, operatorAvatar: (user.operator_avatar as OperatorAvatar | null) ?? null };
 }
