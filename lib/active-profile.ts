@@ -2,17 +2,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type OperatorAvatar = "bear" | "egret";
 
+// "숲지기" = 선생님·기관·인플루언서를 통칭하는 운영 프로필. 예전엔 교사와
+// 큐레이터를 다른 화면으로 갈랐지만, 실제로 하는 일(추천도서 올리기, 숙제
+// 내기, 아이들 상태 보기)이 같아서 하나로 합쳤다. DB의 group_members.role
+// (teacher/admin/curator)은 그대로 두되 화면에서는 전부 같은 뜻으로 본다.
 export type ActiveProfile =
   | { type: "child" }
-  | { type: "operator"; operatorRole: "teacher" | "curator"; operatorAvatar: OperatorAvatar | null };
+  | { type: "operator"; operatorAvatar: OperatorAvatar | null };
 
 /**
- * 계정 하나가 아이 프로필과 선생님/기관 프로필을 동시에 가질 수 있다.
+ * 계정 하나가 아이 프로필과 숲지기 프로필을 동시에 가질 수 있다.
  * users.active_profile_type("child"|"operator")이 지금 어느 쪽을 보고
- * 있는지를 정하고, operator일 때 교사/큐레이터 중 어느 대시보드를 보여줄지는
- * 저장해두지 않고 group_members에서 그때그때 계산한다(그룹 멤버십이 이미
- * 진실의 원천이라 중복 저장하면 어긋날 수 있다). 운영 중인 그룹이 하나도
- * 없어졌으면(탈퇴 등) 조용히 아이 프로필로 되돌아간다.
+ * 있는지를 정한다. 운영 중인 그룹이 하나도 없어졌으면(탈퇴 등) 조용히
+ * 아이 프로필로 되돌아간다.
  */
 export async function getActiveProfile(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,8 +38,6 @@ export async function getActiveProfile(
     .eq("status", "approved")
     .in("role", ["teacher", "admin", "curator"]);
 
-  const roles = new Set((memberships ?? []).map((m) => m.role as string));
-  if (roles.size === 0) return { type: "child" };
-  const operatorRole: "teacher" | "curator" = roles.has("teacher") || roles.has("admin") ? "teacher" : "curator";
-  return { type: "operator", operatorRole, operatorAvatar: (user.operator_avatar as OperatorAvatar | null) ?? null };
+  if ((memberships ?? []).length === 0) return { type: "child" };
+  return { type: "operator", operatorAvatar: (user.operator_avatar as OperatorAvatar | null) ?? null };
 }

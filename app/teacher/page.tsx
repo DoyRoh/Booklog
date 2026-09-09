@@ -20,7 +20,7 @@ export default async function TeacherDashboardPage() {
   if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
-        <h1 className="d text-xl">교사 대시보드</h1>
+        <h1 className="d text-xl">숲지기 대시보드</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
         </Link>
@@ -36,7 +36,7 @@ export default async function TeacherDashboardPage() {
     .from("group_members")
     .select("groups(id, name, type)")
     .eq("user_id", userId)
-    .in("role", ["teacher", "admin"])
+    .in("role", ["teacher", "admin", "curator"])
     .eq("status", "approved");
 
   type GroupRow = { id: string; name: string; type: string };
@@ -63,7 +63,10 @@ export default async function TeacherDashboardPage() {
 
   const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
   const { data: completionRows } = assignmentIds.length
-    ? await supabase.from("assignment_completion").select("assignment_id, completed").in("assignment_id", assignmentIds)
+    ? await supabase
+        .from("assignment_completion")
+        .select("assignment_id, child_id, completed")
+        .in("assignment_id", assignmentIds)
     : { data: [] };
 
   const memberCountByGroup = new Map<string, number>();
@@ -74,12 +77,21 @@ export default async function TeacherDashboardPage() {
   for (const row of pendingRows ?? []) {
     pendingCountByGroup.set(row.group_id, (pendingCountByGroup.get(row.group_id) ?? 0) + 1);
   }
+  // (숙제, 책, 아이) 단위 행을 "아이가 그 숙제를 다 끝냈는지"로 묶어 명 단위로.
   const completionByAssignment = new Map<string, { completed: number; total: number }>();
-  for (const row of completionRows ?? []) {
-    const stat = completionByAssignment.get(row.assignment_id) ?? { completed: 0, total: 0 };
-    stat.total++;
-    if (row.completed) stat.completed++;
-    completionByAssignment.set(row.assignment_id, stat);
+  {
+    const perChild = new Map<string, Map<string, boolean>>();
+    for (const row of completionRows ?? []) {
+      const m = perChild.get(row.assignment_id) ?? new Map<string, boolean>();
+      m.set(row.child_id, (m.get(row.child_id) ?? true) && row.completed);
+      perChild.set(row.assignment_id, m);
+    }
+    for (const [assignmentId, m] of perChild) {
+      completionByAssignment.set(assignmentId, {
+        completed: Array.from(m.values()).filter(Boolean).length,
+        total: m.size,
+      });
+    }
   }
 
   const cards: GroupCard[] = groups.map((group) => ({
@@ -101,9 +113,9 @@ export default async function TeacherDashboardPage() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="text-xs" style={{ color: "var(--lantern)" }}>
-            곰이 등불을 들고 반 아이들의 길을 비추고 있어요
+            등불을 들고 아이들의 길을 비추는 숲지기
           </p>
-          <h1 className="d mt-1 text-xl">교사 대시보드</h1>
+          <h1 className="d mt-1 text-xl">숲지기 대시보드</h1>
         </div>
         <Illustration name="bear-lantern" height={72} className="flex-none" />
       </div>
@@ -138,7 +150,7 @@ export default async function TeacherDashboardPage() {
               </div>
 
               <div className="mt-3 flex gap-4 text-xs" style={{ color: "var(--ink-2)" }}>
-                <span>멤버 {card.memberCount}명</span>
+                <span>아이 {card.memberCount}명</span>
                 {card.pendingCount > 0 && (
                   <span style={{ color: "var(--lantern)" }}>승인 대기 {card.pendingCount}건</span>
                 )}
@@ -150,7 +162,7 @@ export default async function TeacherDashboardPage() {
                     <div key={assignment.title} className="flex items-center justify-between text-xs">
                       <span style={{ color: "var(--ink)" }}>{assignment.title}</span>
                       <span style={{ color: "var(--ink-2)" }}>
-                        완료 {assignment.completed}/{assignment.total}
+                        {assignment.completed}/{assignment.total}명 완료
                       </span>
                     </div>
                   ))}

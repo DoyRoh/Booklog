@@ -81,7 +81,7 @@ export default async function MorePage() {
         <SignOutButton />
       </div>
 
-      {/* 계정 하나가 아이 프로필(들)과 선생님/기관 프로필(들)을 동시에 가질
+      {/* 계정 하나가 아이 프로필(들)과 숲지기 프로필(들)을 동시에 가질
           수 있다 -- 예전처럼 계정을 나눠 만들 필요 없이, 여기서 프로필을
           고르면 그 프로필 기준으로 하단 탭·화면이 바뀐다. */}
       <div className="mt-8">
@@ -110,7 +110,7 @@ export default async function MorePage() {
 
         <div className="mt-5">
           <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-            선생님 / 기관 프로필
+            숲지기 프로필 <span style={{ opacity: 0.7 }}>· 선생님·기관·인플루언서</span>
           </p>
           <div className="mt-2">
             <OperatorProfileSwitcher

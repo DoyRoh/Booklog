@@ -21,12 +21,12 @@ export default function TopBar() {
   }
 
   const title = role === "parent" && childName ? `${childName}의 책숲` : "책숲";
-  // 제목 옆 얼굴: 아이 프로필이면 아이가 고른 아바타, 선생님/기관 프로필이면
+  // 제목 옆 얼굴: 아이 프로필이면 아이가 고른 아바타, 숲지기 프로필이면
   // 곰(기본) 또는 백로. 아직 역할을 모르는 로딩 중에는 안 그린다.
   const face =
     role === "parent" && childName
       ? `face-${childAvatar ?? "rabbit"}`
-      : role === "teacher" || role === "curator"
+      : role === "operator"
         ? `face-${operatorAvatar ?? "bear"}`
         : null;
   const moreActive = pathname === "/more" || pathname.startsWith("/more/");

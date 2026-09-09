@@ -1057,3 +1057,17 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 
 "{아이}의 책숲" 제목 왼쪽에 아이가 고른 아바타(토끼/강아지/고양이)의 얼굴을 30px 동그라미로 넣었습니다. 전신 그림(`public/illustrations/{avatar}.png`)에서 얼굴 부분만 잘라 흰 원판 위에 얹은 `face-rabbit.png`/`face-dog.png`/`face-cat.png`(160×160)를 새로 만들었고, `components/profile-context.tsx`가 아이 이름과 함께 `childAvatar`도 내보내도록 확장했습니다(이미 `getActiveChild()`가 avatar를 돌려주고 있어서 추가 조회 없음). 아이 프로필일 때만 뜨고, 아바타를 아직 안 골랐으면 토끼. 아이를 바꾸면 기존 "chaeksup:profile-changed" 이벤트로 이름과 같이 즉시 바뀝니다.
 - **선생님/기관 프로필도 얼굴을 고름(곰/백로)**: 마이그레이션 0019 `users.operator_avatar`('bear'|'egret', null 허용). 운영 프로필은 사람당 하나라 users에 둡니다(기존 self-update 정책이 `id = auth.uid()`라 추가 정책 불필요). `lib/active-profile.ts`가 operator일 때 `operatorAvatar`도 돌려주고, `profile-context` → `top-bar`로 흘러가 상단 제목 옆에 뜹니다(안 골랐으면 곰). 고르는 UI는 더보기 → 선생님/기관 프로필 목록 맨 위의 두 개 칩(`components/operator-profile-switcher.tsx`). 얼굴은 `bear-lantern.png`/`bird-perched.png`에서 잘라 `face-bear.png`/`face-egret.png`로. 로컬 Postgres가 이 세션에서 안 떠 있어 SQL은 문법만 확인(컬럼 추가 한 줄).
+
+## 숲지기 통합 + 추천도서/숙제 경계 정리 + 숲지기용 3축 화면 (사용자 요청)
+
+"선생님·기관·인플루언서를 통칭해서 그냥 관리하자, 너무 복잡함", "추천도서와 숙제 경계가 모호하다", "숲지기에게는 학생별/추천도서별/숙제별로 정리된 메뉴가 필요하지 않을까"라는 세 요청을 한 번에 반영했습니다. 통칭 이름은 `AskUserQuestion`으로 **"숲지기"**를, 추천도서의 "필독" 표시는 **없애기**로 확정받았습니다.
+
+- **숲지기 = 운영 프로필 하나**: `lib/active-profile.ts`의 `ActiveProfile`에서 교사/큐레이터 구분(`operatorRole`)을 없앴고, `profile-context`가 내보내는 role은 이제 `"parent" | "operator"` 둘뿐입니다. 하단 탭도 하나(`OPERATOR_TABS`): **대시보드 · 아이들 · 추천도서 · 숙제**. 큐레이터 전용 축소 탭과 `/curator` 대시보드는 없앴고 `/curator`는 `/teacher`로 리다이렉트만 합니다(`nlcy-sync-button.tsx` 삭제, 동기화 API·lib는 그대로). 온보딩의 역할 선택은 "아이 & 부모 / 숲지기" 둘로, 그룹 만들기의 "이 그룹을 운영할 나는(선생님/기관)" 선택은 없애고 항상 `role='teacher'`로 넣습니다. 더보기의 "선생님/기관 프로필"은 "숲지기 프로필 · 선생님·기관·인플루언서"로.
+- **마이그레이션 0020**: RLS 여러 곳(아이 이름 조회 0011, 독서기록 조회 0002, 가입 승인, 숙제·미션 응답 조회 0006)이 `teacher/admin`만 허용해서, 기존 `curator` 멤버십은 아이들 상태를 볼 수 없었습니다. 정책을 일일이 고치는 대신 **기존 curator 행을 teacher로 바꾸는 데이터 마이그레이션**으로 처리했습니다(`users.role`의 curator도 teacher로). check 제약의 'curator' 값은 남겨 둠. 이 세션엔 로컬 Postgres가 안 떠 있어 SQL은 문법만 확인(UPDATE 두 줄).
+- **추천도서 vs 숙제 경계**: 추천도서 = 그룹의 "책 서랍"(기간·강제 없음), 숙제 = 그 서랍에서 골라 기간·미션을 붙여 내는 것(숙제 책은 원래부터 추천도서 안에서만 고름). "필독" 체크박스(`add-book-to-list.tsx`)와 필독 필터·배지(`recommend-book-list.tsx`)를 없앴고(`book_list_items.required` 컬럼은 남기되 항상 false), 대신 목록의 책마다 두 표시만 붙습니다 — 지금 진행 중인 숙제에 들어간 책은 **등불 "숙제 중"**, 아이가 다 읽은 책은 **아바타 발자국 도장 + "읽었어요"**(읽는 중/읽고 싶어요는 글자로). 진행률 "N/M권"도 "책장에 있는" 수가 아니라 **다 읽은** 수로 바꿨습니다. 이를 위해 `lib/recommend-books.ts`의 `RecommendBook`이 `required/inShelf` 대신 `readStatus`(done>reading>want 중 최고)와 `inAssignment`를 갖고, 진행 중 숙제(`assignments` + `assignment_books`, 오늘 날짜 기준)를 같이 조회합니다. `RecommendBookList`에 `childAvatar` prop 추가(두 호출처에서 전달).
+- **숲지기용 3축 화면** (모두 그룹별 섹션, "박스 하나 + 구분선" 패턴):
+  - **아이들** `/teacher/children`: 아이마다 "추천도서 X/Y권 읽음 · 숙제 A/B 완료" → 누르면 **`/teacher/children/[childId]?group=`**(신규): 추천도서 책별 읽기 상태(등불·발자국 표시 포함) + 숙제별 책 완료·질문 답·낭독 제출 여부.
+  - **추천도서** `/teacher/books`(신규): 책마다 "N/M명 읽음" + 숙제 중 등불, 숙제 중인 책이 위로 → **`/teacher/books/[bookId]?group=`**(신규): 그 책을 아이별로 어디까지 읽었는지(날짜, 읽는 중이면 쪽수), 이 책이 들어간 숙제 이름. 각 그룹 헤더의 "+ 책 추가"는 그룹 상세로.
+  - **숙제** `/teacher/assignments`: 그룹별로 묶고 "N/M명 완료"(예전엔 (책×아이) 행 수라 헷갈렸음 → 아이 단위로 다시 묶음) → **`/teacher/assignments/[assignmentId]`**(신규): 책별 몇 명 읽었는지, 질문/낭독 몇 명 제출, 아이별 완료 수 + 답 내용. "+ 숙제 만들기"는 그룹 상세의 `#assignment` 앵커로.
+  - 대시보드의 숙제 진행률도 같은 "명" 기준으로 통일.
+- **숲지기가 보는 읽기 상태의 범위**: RLS상 숲지기는 자기 그룹으로 기록된(`group_id` 일치) 독서기록만 보므로, 위 화면의 "읽음"은 전부 "우리 그룹에서 기록한 것" 기준입니다(부모가 그룹 추천도서에서 "책장에 꽂기"나 숙제 링크로 기록하면 group_id가 붙음). 사진·음성은 원래 숲지기에게 안 보이고 여기서도 조회하지 않습니다.

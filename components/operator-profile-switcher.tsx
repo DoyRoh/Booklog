@@ -14,16 +14,14 @@ export type OperatorGroup = {
   operatorRole: "teacher" | "admin" | "curator";
 };
 
-// 더보기의 "프로필" 목록 중 선생님/기관 프로필 부분. 계정 하나가 아이
-// 프로필과 동시에 가질 수 있는 다른 종류의 프로필이라, ChildSwitcher와
-// 나란히 놓고 쓴다. 그룹을 고르면 active_profile_type을 "operator"로
-// 바꾸고 그 그룹의 역할에 맞는 대시보드로 이동한다 -- 여러 그룹을
-// 운영해도 대시보드 자체는 이미 전부 한 화면에 모아서 보여주므로
-// (app/teacher, app/curator), 어느 그룹을 눌렀든 목적지는 역할별로
-// 하나뿐이다.
+// 더보기의 "프로필" 목록 중 숲지기(선생님·기관·인플루언서) 프로필 부분.
+// 계정 하나가 아이 프로필과 동시에 가질 수 있는 다른 종류의 프로필이라,
+// ChildSwitcher와 나란히 놓고 쓴다. 그룹을 고르면 active_profile_type을
+// "operator"로 바꾸고 숲지기 대시보드로 이동한다 -- 여러 그룹을 운영해도
+// 대시보드가 전부 한 화면에 모아서 보여주므로 목적지는 하나뿐이다.
 const AVATARS: { id: OperatorAvatar; label: string; hint: string }[] = [
-  { id: "bear", label: "곰", hint: "등불로 길을 비춰 주는" },
-  { id: "egret", label: "백로", hint: "책 소식을 물어다 주는" },
+  { id: "bear", label: "곰", hint: "등불로 길을 비춰 주는 숲지기" },
+  { id: "egret", label: "백로", hint: "책 소식을 물어다 주는 숲지기" },
 ];
 
 export default function OperatorProfileSwitcher({
@@ -48,13 +46,13 @@ export default function OperatorProfileSwitcher({
     window.dispatchEvent(new Event("chaeksup:profile-changed"));
   }
 
-  async function selectOperator(destination: "/teacher" | "/curator") {
+  async function selectOperator() {
     setSwitching(true);
     const supabase = createClient();
     await supabase.from("users").update({ active_profile_type: "operator" }).eq("id", userId);
     setSwitching(false);
     window.dispatchEvent(new Event("chaeksup:profile-changed"));
-    router.push(destination);
+    router.push("/teacher");
   }
 
   if (groups.length === 0) {
@@ -64,7 +62,7 @@ export default function OperatorProfileSwitcher({
         className="d block rounded-[var(--r)] border border-dashed px-4 py-3 text-sm"
         style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
       >
-        + 선생님/기관 프로필 추가
+        + 숲지기 프로필 추가 (그룹 만들기)
       </Link>
     );
   }
@@ -104,13 +102,11 @@ export default function OperatorProfileSwitcher({
 
       {groups.map((group) => {
         const active = isActive;
-        const label = group.operatorRole === "curator" ? "기관" : "선생님";
-        const destination = group.operatorRole === "curator" ? "/curator" : "/teacher";
         return (
           <button
             key={group.groupId}
             type="button"
-            onClick={() => selectOperator(destination)}
+            onClick={() => selectOperator()}
             disabled={switching}
             className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3 text-left disabled:opacity-60"
             style={{
@@ -119,9 +115,7 @@ export default function OperatorProfileSwitcher({
             }}
           >
             <div className="flex-1">
-              <p className="d text-sm">
-                {label} 프로필 · {group.groupName}
-              </p>
+              <p className="d text-sm">숲지기 · {group.groupName}</p>
               <p className="text-xs" style={{ color: "var(--ink-2)" }}>
                 {GROUP_TYPE_LABELS[group.groupType] ?? group.groupType}
               </p>
@@ -140,7 +134,7 @@ export default function OperatorProfileSwitcher({
         className="d rounded-[var(--r)] border border-dashed px-4 py-3 text-sm"
         style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
       >
-        + 선생님/기관 프로필 추가
+        + 숲지기 프로필 추가 (그룹 만들기)
       </Link>
     </div>
   );

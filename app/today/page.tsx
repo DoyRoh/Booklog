@@ -36,12 +36,10 @@ export default async function TodayPage() {
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">오늘</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-          {activeProfile.operatorRole === "teacher"
-            ? "교사 대시보드에서 반의 숙제 진행 상황을 볼 수 있어요."
-            : "큐레이터 대시보드에서 발행한 리스트를 관리할 수 있어요."}
+          숲지기 프로필로 보고 있어요. 대시보드에서 그룹 아이들의 읽기·숙제 상황을 볼 수 있어요.
         </p>
         <Link
-          href={activeProfile.operatorRole === "teacher" ? "/teacher" : "/curator"}
+          href="/teacher"
           className="d mt-2 inline-block text-sm"
           style={{ color: "var(--point)" }}
         >

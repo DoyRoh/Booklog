@@ -27,16 +27,16 @@ const PARENT_TABS = [
   { href: "/assignments", label: "숲길", Icon: AssignmentIcon },
 ] as const;
 
-const TEACHER_TABS = [
+// 숲지기(선생님·기관·인플루언서 통칭) 탭. 예전엔 교사/큐레이터 탭이
+// 따로였지만 하는 일이 같아서 하나로 합쳤다. 같은 데이터를 세 축으로
+// 정리해서 보여준다 -- 아이별(아이들) / 책별(추천도서) / 숙제별(숙제).
+// 그룹 관리(책 추가·숙제 만들기·승인·초대 코드)는 대시보드의 "관리하기"와
+// 각 탭의 "+ 추가" 링크로 그룹 상세(/recommend/[groupId])에 들어가서 한다.
+const OPERATOR_TABS = [
   { href: "/teacher", label: "대시보드", Icon: DashboardIcon },
-  { href: "/teacher/children", label: "아이 관리", Icon: ChildrenIcon },
+  { href: "/teacher/children", label: "아이들", Icon: ChildrenIcon },
+  { href: "/teacher/books", label: "추천도서", Icon: RecommendIcon },
   { href: "/teacher/assignments", label: "숙제", Icon: AssignmentIcon },
-  { href: "/recommend", label: "그룹", Icon: RecommendIcon },
-] as const;
-
-const CURATOR_TABS = [
-  { href: "/curator", label: "대시보드", Icon: DashboardIcon },
-  { href: "/recommend", label: "그룹", Icon: RecommendIcon },
 ] as const;
 
 export default function BottomNav() {
@@ -49,7 +49,7 @@ export default function BottomNav() {
 
   // 역할 조회가 끝나기 전(role===null)에는 부모 탭을 기본값으로 보여준다 --
   // 로그인 직후 탭이 매번 깜빡이지 않도록.
-  const tabs = role === "teacher" ? TEACHER_TABS : role === "curator" ? CURATOR_TABS : PARENT_TABS;
+  const tabs = role === "operator" ? OPERATOR_TABS : PARENT_TABS;
 
   return (
     <nav

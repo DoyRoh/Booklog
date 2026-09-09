@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Illustration from "@/components/illustration";
+import Illustration, { PawStamp, type Avatar } from "@/components/illustration";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BOOK_CATEGORIES } from "@/lib/categories";
@@ -9,19 +9,24 @@ import type { RecommendBook } from "@/lib/recommend-books";
 
 export type { RecommendBook };
 
-type Filter = "all" | "required" | string;
+type Filter = "all" | string;
 
 // HABA 100처럼 "N/M권 · P%" 진행률 카드 + 분야별로 묶은 목록.
+// 추천도서는 그룹의 "책 서랍"이라 강제 표시(필독)는 두지 않는다 -- 꼭 읽어야
+// 할 책은 숙제로 낸다. 대신 책마다 두 가지 표시만 붙는다: 지금 진행 중인
+// 숙제에 들어간 책은 등불("숙제 중"), 아이가 다 읽은 책은 발자국 도장.
 export default function RecommendBookList({
   groupId,
   listName,
   books,
   activeChildId,
+  childAvatar = null,
 }: {
   groupId: string;
   listName: string;
   books: RecommendBook[];
   activeChildId: string | null;
+  childAvatar?: Avatar | null;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
@@ -38,14 +43,12 @@ export default function RecommendBookList({
     return [...standard, ...extra];
   }, [books]);
 
-  const requiredCount = books.filter((b) => b.required).length;
-  const doneCount = books.filter((b) => b.inShelf).length;
+  const doneCount = books.filter((b) => b.readStatus === "done").length;
   const totalCount = books.length;
   const percent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
   const filtered = useMemo(() => {
     if (filter === "all") return books;
-    if (filter === "required") return books.filter((b) => b.required);
     return books.filter((b) => b.categories.includes(filter));
   }, [books, filter]);
 
@@ -135,20 +138,6 @@ export default function RecommendBookList({
         >
           전체 {totalCount}
         </button>
-        {requiredCount > 0 && (
-          <button
-            type="button"
-            onClick={() => setFilter("required")}
-            className="d flex-none rounded-full border px-3 py-1 text-xs"
-            style={{
-              borderColor: filter === "required" ? "var(--point)" : "var(--rule)",
-              background: filter === "required" ? "rgba(47,168,79,0.08)" : "var(--card)",
-              color: filter === "required" ? "var(--point-deep)" : "var(--ink-2)",
-            }}
-          >
-            필독 {requiredCount}
-          </button>
-        )}
         {availableCategories.map((category) => (
           <button
             key={category}
@@ -192,7 +181,7 @@ export default function RecommendBookList({
                 >
                   <span className="d text-sm">{category}</span>
                   <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-                    {sectionBooks.filter((b) => b.inShelf).length}/{sectionBooks.length}
+                    {sectionBooks.filter((b) => b.readStatus === "done").length}/{sectionBooks.length}
                   </span>
                 </div>
               )}
@@ -218,12 +207,13 @@ export default function RecommendBookList({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm">{book.title}</p>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                      {book.required && (
+                      {book.inAssignment && (
                         <span
-                          className="rounded-full px-1.5 py-0.5 text-[10px]"
+                          className="inline-flex items-center gap-1 rounded-full py-0.5 pl-1 pr-2 text-[10px]"
                           style={{ background: "rgba(232,163,61,0.16)", color: "var(--lantern)" }}
                         >
-                          필독
+                          <Illustration name="lantern-on" height={14} />
+                          숙제 중
                         </span>
                       )}
                       {book.author && (
@@ -234,9 +224,22 @@ export default function RecommendBookList({
                     </div>
                   </div>
                   {activeChildId &&
-                    (book.inShelf ? (
-                      <span className="d flex-none text-xs" style={{ color: "var(--point-deep)" }}>
-                        책장에 있어요
+                    (book.readStatus === "done" ? (
+                      <span
+                        className="d flex flex-none items-center gap-1 text-xs"
+                        style={{ color: "var(--point-deep)" }}
+                        aria-label="읽었어요"
+                      >
+                        <PawStamp avatar={childAvatar} height={22} />
+                        읽었어요
+                      </span>
+                    ) : book.readStatus === "reading" ? (
+                      <span className="d flex-none text-xs" style={{ color: "var(--lantern)" }}>
+                        읽는 중
+                      </span>
+                    ) : book.readStatus === "want" ? (
+                      <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+                        읽고 싶어요
                       </span>
                     ) : (
                       <button

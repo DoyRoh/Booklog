@@ -28,10 +28,10 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
   const [manualTitle, setManualTitle] = useState("");
   const [manualAuthor, setManualAuthor] = useState("");
 
-  // 후보를 고르면 바로 추가하지 않고, 분야·필독 여부를 정한 뒤 확정한다.
+  // 후보를 고르면 바로 추가하지 않고, 분야를 정한 뒤 확정한다. "필독"
+  // 표시는 없앴다 -- 꼭 읽혀야 하는 책은 추천도서가 아니라 숙제로 낸다.
   const [pending, setPending] = useState<Candidate | null>(null);
   const [pendingCategories, setPendingCategories] = useState<Set<string>>(new Set());
-  const [pendingRequired, setPendingRequired] = useState(false);
 
   function switchMode(next: Mode) {
     setMode(next);
@@ -119,7 +119,6 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
   function pickCandidate(candidate: Candidate) {
     setPending(candidate);
     setPendingCategories(new Set());
-    setPendingRequired(false);
   }
 
   function toggleCategory(category: string) {
@@ -190,7 +189,7 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
     if (!already) {
       const { error: itemError } = await supabase
         .from("book_list_items")
-        .insert({ book_list_id: bookListId, book_id: bookId, required: pendingRequired });
+        .insert({ book_list_id: bookListId, book_id: bookId, required: false });
       if (itemError) {
         setError(itemError.message);
         setAdding(false);
@@ -260,15 +259,6 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
             </button>
           ))}
         </div>
-
-        <label className="mt-3 flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={pendingRequired}
-            onChange={(e) => setPendingRequired(e.target.checked)}
-          />
-          필독 도서로 표시
-        </label>
 
         {error && (
           <p className="mt-2 text-sm" style={{ color: "var(--berry)" }}>

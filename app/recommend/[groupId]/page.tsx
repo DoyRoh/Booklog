@@ -142,6 +142,7 @@ export default async function GroupDetailPage({
             listName={listName}
             books={recommendBooks}
             activeChildId={activeChild?.id ?? null}
+            childAvatar={activeChild?.avatar ?? null}
           />
         </div>
       </div>
@@ -155,7 +156,7 @@ export default async function GroupDetailPage({
       {/* 부모가 보는 숙제 목록/진행 현황은 숲길 탭(그룹 필터)에서 다룬다 --
           여기는 운영진이 새 숙제를 만드는 자리로만 남겨둔다. */}
       {isOperator && (
-        <div className="mt-8">
+        <div className="mt-8" id="assignment">
           <p className="d text-base">숙제 만들기</p>
           <div className="mt-3">
             <CreateAssignment

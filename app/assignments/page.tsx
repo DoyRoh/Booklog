@@ -85,6 +85,7 @@ export default async function AssignmentsPage({
               listName={recommend.listName}
               books={recommend.books}
               activeChildId={activeChild.id}
+              childAvatar={activeChild.avatar}
             />
           </div>
         </div>

@@ -8,13 +8,6 @@ import { randomInviteCode } from "@/lib/invite-code";
 
 type GroupType = "kindergarten" | "school" | "library" | "family" | "community" | "creator";
 type JoinPolicy = "approval" | "open";
-type OperatorRole = "teacher" | "curator";
-
-const OPERATOR_ROLES: { value: OperatorRole; label: string; description: string }[] = [
-  { value: "teacher", label: "선생님", description: "학급 추천도서·숙제를 관리해요" },
-  { value: "curator", label: "기관·인플루언서", description: "승인 없이 팔로우 가능한 추천도서를 발행해요" },
-];
-
 const TYPES: { value: GroupType; label: string }[] = [
   { value: "kindergarten", label: "유치원" },
   { value: "school", label: "학교" },
@@ -29,7 +22,6 @@ export default function CreateGroupPage() {
   const [name, setName] = useState("");
   const [type, setType] = useState<GroupType>("school");
   const [joinPolicy, setJoinPolicy] = useState<JoinPolicy>("approval");
-  const [operatorRole, setOperatorRole] = useState<OperatorRole>("teacher");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const savingRef = useRef(false);
@@ -78,7 +70,9 @@ export default function CreateGroupPage() {
     const { error: memberError } = await supabase.from("group_members").insert({
       group_id: groupId,
       user_id: user.id,
-      role: operatorRole,
+      // 선생님/기관/인플루언서 구분 없이 전부 "숲지기"라 그룹을 만든 사람은
+      // 항상 같은 운영 역할로 들어간다(DB의 역할 값은 예전 이름 그대로).
+      role: "teacher",
       status: "approved",
       approved_at: new Date().toISOString(),
     });
@@ -119,29 +113,6 @@ export default function CreateGroupPage() {
       </div>
 
       <div className="mt-8 flex flex-col gap-4">
-        <div>
-          <p className="d text-sm">이 그룹을 운영할 나는</p>
-          <div className="mt-2 flex flex-col gap-2">
-            {OPERATOR_ROLES.map((r) => (
-              <button
-                key={r.value}
-                type="button"
-                onClick={() => setOperatorRole(r.value)}
-                className="rounded-[var(--r)] border px-4 py-3 text-left"
-                style={{
-                  borderColor: operatorRole === r.value ? "var(--point)" : "var(--rule)",
-                  background: operatorRole === r.value ? "rgba(47,168,79,0.08)" : "var(--card)",
-                }}
-              >
-                <p className="d text-sm">{r.label}</p>
-                <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                  {r.description}
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
-
         <input
           type="text"
           placeholder="그룹 이름 (예: 7세 은빛반)"

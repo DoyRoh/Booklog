@@ -8,14 +8,17 @@ import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/sign-out-button";
 import { AvatarIllustration } from "@/components/illustration";
 
-type Role = "parent" | "teacher" | "curator";
+type Role = "parent" | "teacher";
 type Avatar = "rabbit" | "dog" | "cat";
 type Step = "role" | "consent" | "child";
 
 const ROLES: { value: Role; label: string; description: string }[] = [
   { value: "parent", label: "아이 & 부모", description: "아이와 독서를 기록해요" },
-  { value: "teacher", label: "교사", description: "학급 추천도서·숙제를 관리해요" },
-  { value: "curator", label: "큐레이터", description: "기관·크리에이터로 추천도서를 발행해요" },
+  {
+    value: "teacher",
+    label: "숲지기",
+    description: "선생님·기관·인플루언서 -- 추천도서를 올리고 숙제를 내고 아이들의 읽기를 살펴요",
+  },
 ];
 
 const AVATARS: { value: Avatar; label: string }[] = [
@@ -179,7 +182,7 @@ export default function OnboardingPage() {
           <div>
             <p className="d text-lg">어떤 역할로 함께하시나요?</p>
             <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-              일단 하나를 골라 시작해요. 나중에 더보기에서 다른 프로필(아이/선생님/기관)도 이 계정에 추가할 수 있어요.
+              일단 하나를 골라 시작해요. 나중에 더보기에서 다른 프로필(아이/숲지기)도 이 계정에 추가할 수 있어요.
             </p>
           </div>
 
