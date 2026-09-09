@@ -7,6 +7,7 @@ import { getTodayAssignments } from "@/lib/assignments";
 import AssignmentSummary from "@/components/assignment-summary";
 import RecentRecords, { type RecentRecord } from "@/components/recent-records";
 import ForestStrip from "@/components/forest-strip";
+import { MILESTONE_COUNTS } from "@/lib/badges";
 
 export default async function TodayPage() {
   const supabase = await createClient();
@@ -146,10 +147,15 @@ export default async function TodayPage() {
         className="mt-3 rounded-[var(--r)] border p-4"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
-        {/* 이번 달에 읽은 책만큼 나무가 자라는 작은 숲 + 아이 아바타 + 등불
-            든 곰(디자인 가이드의 "오늘 탭: 곰+등불 헤더"를 아이가 보고 좋아할
-            장면으로). 숫자는 그 아래. */}
-        <ForestStrip treeCount={monthCount} avatar={activeChild.avatar} className="mb-4" href="/forest" />
+        {/* 우리 숲 미리보기 -- 권수 배지("숲이 자라요")를 딴 만큼 나무가 서
+            있고, 누르면 전체 숲(배지 화면)으로. 배지 계산 전체를 여기서 또
+            돌리지 않고 완독 수로 권수 배지만 센다(추가 조회 없음). */}
+        <ForestStrip
+          treeCount={MILESTONE_COUNTS.filter((c) => totalDone >= c).length}
+          avatar={activeChild.avatar}
+          className="mb-4"
+          href="/forest"
+        />
         <span className="text-xs" style={{ color: "var(--ink-2)" }}>
           읽은 책
         </span>

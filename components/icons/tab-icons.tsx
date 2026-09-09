@@ -115,3 +115,13 @@ export function BadgeIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+// 상단바 "우리 숲" -- 전나무 한 그루(손그림 느낌의 살짝 기운 삼각형 두 단 + 기둥).
+export function TreeIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 3.5l4.2 6h-2.4l3.7 5.5H6.5l3.7-5.5H7.8z" />
+      <path d="M12 15v5.5" />
+    </IconBase>
+  );
+}

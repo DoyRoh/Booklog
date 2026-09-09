@@ -1,11 +1,10 @@
 import Link from "next/link";
 import Illustration, { AvatarIllustration, type Avatar, type IllustrationName } from "@/components/illustration";
 
-// 오늘 탭 요약 카드 맨 위의 "이번 달 숲" -- 이번 달에 다 읽은 책 한 권이
-// 나무 한 그루가 되어 자라고, 그 숲길 끝에 아이(아바타)와 등불 든 곰이
-// 서 있다. 숫자보다 그림이 먼저 눈에 들어오게 하려는 아이용 장치라,
-// 나무 종류·크기는 순서대로 돌려 쓰고(같은 달엔 항상 같은 모양) 별은
-// 고정 위치에 몇 개만 둔다.
+// 오늘 탭 요약 카드 맨 위의 우리 숲 미리보기 -- "숲이 자라요"(권수) 배지를
+// 딸 때마다 나무가 한 그루씩 심기고, 그 숲길 끝에 아이(아바타)와 등불 든
+// 곰이 서 있다. 전체 숲(장식 포함)은 /forest. 나무 종류·크기는 순서대로
+// 돌려 쓰고 별은 고정 위치에 몇 개만 둔다.
 const TREES: { name: IllustrationName; height: number }[] = [
   { name: "tree-light", height: 40 },
   { name: "tree-bushy", height: 44 },
@@ -35,9 +34,7 @@ export default function ForestStrip({
   // 나무가 많아지면 한 줄에 다 들어가도록 조금씩 작게
   const scale = shown <= 5 ? 1 : shown <= 8 ? 0.8 : 0.66;
   const caption =
-    treeCount === 0
-      ? "이번 달 첫 책을 읽으면 나무가 자라나요"
-      : `이번 달에 나무 ${treeCount}그루가 자랐어요`;
+    treeCount === 0 ? "첫 책을 다 읽으면 첫 나무가 심겨요" : `우리 숲에 나무 ${treeCount}그루가 자랐어요`;
 
   const body = (
     <>

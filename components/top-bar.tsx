@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MoreIcon, BadgeIcon } from "@/components/icons/tab-icons";
+import { MoreIcon, TreeIcon } from "@/components/icons/tab-icons";
 import { useProfile } from "@/components/profile-context";
 import { isChromeHidden } from "@/lib/nav";
 
@@ -30,7 +30,7 @@ export default function TopBar() {
         ? `face-${operatorAvatar ?? "bear"}`
         : null;
   const moreActive = pathname === "/more" || pathname.startsWith("/more/");
-  const badgesActive = pathname === "/badges" || pathname.startsWith("/badges/");
+  const badgesActive = pathname === "/forest" || pathname.startsWith("/forest/") || pathname.startsWith("/badges");
 
   return (
     <div
@@ -60,13 +60,13 @@ export default function TopBar() {
         <div className="flex items-center gap-4">
           {role === "parent" && (
             <Link
-              href="/badges"
-              aria-label="배지"
+              href="/forest"
+              aria-label="우리 숲"
               className="flex items-center gap-1"
               style={{ color: badgesActive ? "var(--ink)" : "var(--ink-2)" }}
             >
-              <span className="d text-xs">배지</span>
-              <BadgeIcon width={20} height={20} strokeWidth={badgesActive ? 2.4 : 1.9} />
+              <span className="d text-xs">우리 숲</span>
+              <TreeIcon width={20} height={20} strokeWidth={badgesActive ? 2.4 : 1.9} />
             </Link>
           )}
           <Link
