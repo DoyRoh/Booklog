@@ -6,7 +6,7 @@ import { getActiveProfile } from "@/lib/active-profile";
 import { getTodayAssignments } from "@/lib/assignments";
 import AssignmentSummary from "@/components/assignment-summary";
 import RecentRecords, { type RecentRecord } from "@/components/recent-records";
-import Illustration from "@/components/illustration";
+import ForestStrip from "@/components/forest-strip";
 
 export default async function TodayPage() {
   const supabase = await createClient();
@@ -129,14 +129,9 @@ export default async function TodayPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      {/* 등불 든 곰이 오늘의 길을 비춰 주는 헤더 -- 디자인 가이드의
-          "오늘 탭: 곰+등불 헤더 일러스트". */}
-      <div className="flex items-end justify-between gap-3">
-        <p className="hand text-xl" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
-          {activeChild.name}, 오늘도 책숲을 걸어볼까요?
-        </p>
-        <Illustration name="bear-lantern" height={88} priority className="flex-none" />
-      </div>
+      <p className="hand text-xl" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
+        {activeChild.name}, 오늘도 책숲을 걸어볼까요?
+      </p>
 
       {recordsError && (
         <p className="mt-4 text-sm" style={{ color: "var(--berry)" }}>
@@ -151,6 +146,10 @@ export default async function TodayPage() {
         className="mt-3 rounded-[var(--r)] border p-4"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
+        {/* 이번 달에 읽은 책만큼 나무가 자라는 작은 숲 + 아이 아바타 + 등불
+            든 곰(디자인 가이드의 "오늘 탭: 곰+등불 헤더"를 아이가 보고 좋아할
+            장면으로). 숫자는 그 아래. */}
+        <ForestStrip treeCount={monthCount} avatar={activeChild.avatar} className="mb-4" />
         <span className="text-xs" style={{ color: "var(--ink-2)" }}>
           읽은 책
         </span>

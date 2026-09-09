@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import { computeBadges } from "@/lib/badges";
-import { BadgeIcon } from "@/components/icons/misc-icons";
+import BadgeArt from "@/components/badge-art";
 import SceneBanner from "@/components/scene-banner";
 
 export default async function BadgesPage() {
@@ -62,14 +62,9 @@ export default async function BadgesPage() {
             style={{
               borderColor: badge.achieved ? "var(--point)" : "var(--rule)",
               background: badge.achieved ? "rgba(47,168,79,0.06)" : "var(--card)",
-              opacity: badge.achieved ? 1 : 0.55,
             }}
           >
-            <BadgeIcon
-              width={28}
-              height={28}
-              style={{ color: badge.achieved ? "var(--point)" : "var(--ink-2)" }}
-            />
+            <BadgeArt id={badge.id} avatar={activeChild.avatar} achieved={badge.achieved} />
             <span className="d text-xs">{badge.label}</span>
             <span className="text-[10px]" style={{ color: "var(--ink-2)" }}>
               {badge.description}

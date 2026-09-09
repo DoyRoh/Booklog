@@ -16,6 +16,13 @@ export const ILLUSTRATIONS = {
   "paw-rabbit": [228, 299],
   "paw-dog": [306, 286],
   "paw-cat": [290, 249],
+  // 패턴 그림(docs/illustrations/pattern-v3-src.png)에서 잘라낸 숲 조각들 --
+  // 오늘 탭의 "이번 달 숲"과 배지 그림에 쓴다.
+  "tree-round": [116, 189],
+  "tree-bushy": [140, 185],
+  "tree-pine": [145, 225],
+  "tree-light": [109, 195],
+  star: [59, 57],
 } as const;
 
 export type IllustrationName = keyof typeof ILLUSTRATIONS;
