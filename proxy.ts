@@ -48,6 +48,7 @@ export async function proxy(request: NextRequest) {
     "/more",
     "/assignments",
     "/badges",
+    "/forest",
     "/teacher",
     "/curator",
   ];

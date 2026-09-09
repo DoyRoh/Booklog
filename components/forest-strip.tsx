@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Illustration, { AvatarIllustration, type Avatar, type IllustrationName } from "@/components/illustration";
 
 // 오늘 탭 요약 카드 맨 위의 "이번 달 숲" -- 이번 달에 다 읽은 책 한 권이
@@ -22,10 +23,13 @@ export default function ForestStrip({
   treeCount,
   avatar,
   className,
+  href,
 }: {
   treeCount: number;
   avatar: Avatar | null | undefined;
   className?: string;
+  /** 있으면 장면 전체가 이 주소(우리 숲 전체 보기)로 가는 링크가 된다. */
+  href?: string;
 }) {
   const shown = Math.min(treeCount, MAX_TREES);
   // 나무가 많아지면 한 줄에 다 들어가도록 조금씩 작게
@@ -35,8 +39,8 @@ export default function ForestStrip({
       ? "이번 달 첫 책을 읽으면 나무가 자라나요"
       : `이번 달에 나무 ${treeCount}그루가 자랐어요`;
 
-  return (
-    <div className={className}>
+  const body = (
+    <>
       <div
         className="relative overflow-hidden rounded-[16px] px-3 pt-5 pb-2"
         style={{ background: "#DCE6D0" }}
@@ -75,9 +79,25 @@ export default function ForestStrip({
           <Illustration name="bear-lantern" height={72} className="flex-none" priority />
         </div>
       </div>
-      <p className="hand mt-2 text-base" style={{ color: "var(--point-deep)" }}>
-        {caption}
-      </p>
-    </div>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="hand text-base" style={{ color: "var(--point-deep)" }}>
+          {caption}
+        </p>
+        {href && (
+          <span className="flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+            우리 숲 보기 ›
+          </span>
+        )}
+      </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className={`block ${className ?? ""}`}>
+        {body}
+      </Link>
+    );
+  }
+  return <div className={className}>{body}</div>;
 }

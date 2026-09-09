@@ -149,7 +149,7 @@ export default async function TodayPage() {
         {/* 이번 달에 읽은 책만큼 나무가 자라는 작은 숲 + 아이 아바타 + 등불
             든 곰(디자인 가이드의 "오늘 탭: 곰+등불 헤더"를 아이가 보고 좋아할
             장면으로). 숫자는 그 아래. */}
-        <ForestStrip treeCount={monthCount} avatar={activeChild.avatar} className="mb-4" />
+        <ForestStrip treeCount={monthCount} avatar={activeChild.avatar} className="mb-4" href="/forest" />
         <span className="text-xs" style={{ color: "var(--ink-2)" }}>
           읽은 책
         </span>
