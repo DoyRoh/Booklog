@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
+import { loadBadges } from "@/lib/badge-data";
 import ForestView, { type ForestTree } from "@/components/forest-view";
 
 // "우리 숲" -- 지금까지 다 읽은 책 전부가 나무 한 그루씩으로 서 있는 화면.
@@ -35,13 +36,17 @@ export default async function ForestPage() {
     );
   }
 
-  const { data: rows, error } = await supabase
-    .from("reading_records")
-    .select("id, book_id, read_date, books(title)")
-    .eq("child_id", activeChild.id)
-    .eq("status", "done")
-    .order("read_date", { ascending: true })
-    .order("created_at", { ascending: true });
+  // 나무(완독 기록)와 장식(딴 배지)은 서로 무관하니 동시에 조회한다.
+  const [{ data: rows, error }, badges] = await Promise.all([
+    supabase
+      .from("reading_records")
+      .select("id, book_id, read_date, books(title)")
+      .eq("child_id", activeChild.id)
+      .eq("status", "done")
+      .order("read_date", { ascending: true })
+      .order("created_at", { ascending: true }),
+    loadBadges(supabase, activeChild.id),
+  ]);
 
   const trees: ForestTree[] = (rows ?? []).map((r) => ({
     id: r.id,
@@ -61,7 +66,7 @@ export default async function ForestPage() {
         </p>
       )}
       <div className="mt-3">
-        <ForestView childName={activeChild.name} avatar={activeChild.avatar} trees={trees} />
+        <ForestView childName={activeChild.name} avatar={activeChild.avatar} trees={trees} badges={badges} />
       </div>
     </div>
   );
