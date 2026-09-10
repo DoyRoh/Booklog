@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
-import Illustration from "@/components/illustration";
-import { LogGroup, LogRow, shortMd } from "@/components/log-row";
+import { shortMd } from "@/components/log-row";
+import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
 import { categoryColor } from "@/lib/categories";
 import { kstDate } from "@/lib/kst";
 
 type BookCard = {
+  itemId: string;
   bookId: string;
   title: string;
   author: string | null;
@@ -54,6 +55,7 @@ export default async function TeacherBooksPage() {
   type ListRow = {
     group_id: string;
     book_list_items: {
+      id: string;
       book_id: string;
       created_at: string;
       books: { id: string; title: string; author: string | null; cover_url: string | null } | null;
@@ -63,7 +65,7 @@ export default async function TeacherBooksPage() {
     ? await Promise.all([
         supabase
           .from("book_lists")
-          .select("group_id, book_list_items(book_id, created_at, books(id, title, author, cover_url))")
+          .select("group_id, book_list_items(id, book_id, created_at, books(id, title, author, cover_url))")
           .in("group_id", groupIds),
         supabase
           .from("group_members")
@@ -127,6 +129,7 @@ export default async function TeacherBooksPage() {
       .flatMap((r) => r.book_list_items ?? [])
       .filter((item) => item.books)
       .map((item) => ({
+        itemId: item.id,
         bookId: item.books!.id,
         title: item.books!.title,
         author: item.books!.author,
@@ -172,59 +175,36 @@ export default async function TeacherBooksPage() {
         </div>
       ) : (
         <div className="mt-6 flex flex-col gap-4">
-          {sections.map((section) => (
-            <LogGroup
-              key={section.id}
-              heading={section.name}
-              headingSub={`${section.books.length}권`}
-              headingRight={
-                <Link href={`/teacher/books/add?group=${section.id}`} className="d" style={{ color: "var(--point)" }}>
-                  + 책 추가
-                </Link>
-              }
-            >
-              {section.books.length === 0 ? (
-                <p className="px-4 pb-4 text-sm" style={{ color: "var(--ink-2)" }}>
-                  아직 추천도서가 없어요. 위의 ‘+ 책 추가’로 올려 주세요.
-                </p>
-              ) : (
-                section.books.map((book, index) => {
-                  const [firstCategory, secondCategory] = book.categories;
-                  const sameDayAsPrev =
-                    index > 0 && section.books[index - 1].addedAt.slice(0, 10) === book.addedAt.slice(0, 10);
-                  return (
-                    <LogRow
-                      key={book.bookId}
-                      first={index === 0}
-                      hideDate={sameDayAsPrev}
-                      href={`/teacher/books/${book.bookId}?group=${section.id}`}
-                      dateTop={shortMd(book.addedAt)}
-                      chip={{ label: firstCategory ?? "책", color: categoryColor(firstCategory), sub: secondCategory }}
-                      title={book.title}
-                      subtitle={
-                        book.author || book.inAssignment ? (
-                          <>
-                            {book.inAssignment && (
-                              <span className="mr-1.5 inline-flex items-center gap-0.5 align-middle" style={{ color: "var(--lantern)" }}>
-                                <Illustration name="lantern-on" height={13} />
-                                숙제 중
-                              </span>
-                            )}
-                            {book.author}
-                          </>
-                        ) : undefined
-                      }
-                      right={
-                        <span className="d text-xs" style={{ color: book.readCount > 0 ? "var(--point-deep)" : "var(--ink-2)" }}>
-                          {book.readCount}/{section.memberCount}명
-                        </span>
-                      }
-                    />
-                  );
-                })
-              )}
-            </LogGroup>
-          ))}
+          {sections.map((section) => {
+            const rows: ManagedRow[] = section.books.map((book, index) => {
+              const [firstCategory, secondCategory] = book.categories;
+              return {
+                id: book.itemId,
+                href: `/teacher/books/${book.bookId}?group=${section.id}`,
+                dateTop: shortMd(book.addedAt),
+                hideDate: index > 0 && section.books[index - 1].addedAt.slice(0, 10) === book.addedAt.slice(0, 10),
+                chip: { label: firstCategory ?? "책", color: categoryColor(firstCategory), sub: secondCategory },
+                title: book.title,
+                subtitle: book.author ?? undefined,
+                lantern: book.inAssignment,
+                right: `${book.readCount}/${section.memberCount}명`,
+                rightTone: book.readCount > 0 ? "good" : "muted",
+              };
+            });
+            return (
+              <ManagedLogList
+                key={section.id}
+                heading={section.name}
+                headingSub={`${section.books.length}권`}
+                addHref={`/teacher/books/add?group=${section.id}`}
+                addLabel="+ 책 추가"
+                rows={rows}
+                emptyText="아직 추천도서가 없어요. 위의 ‘+ 책 추가’로 올려 주세요."
+                table="book_list_items"
+                deleteNoun="추천도서에서 뺄까요? (아이들의 기록은 남아요)"
+              />
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
-import { LogGroup, LogRow, shortMd } from "@/components/log-row";
+import { shortMd } from "@/components/log-row";
+import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
 import { missionChip } from "@/lib/assignment-chip";
 
 type AssignmentCard = {
@@ -135,50 +136,33 @@ export default async function TeacherAssignmentsPage() {
         <div className="mt-6 flex flex-col gap-4">
           {groups.map((group) => {
             const groupCards = cards.filter((c) => c.groupId === group.id);
+            const rows: ManagedRow[] = groupCards.map((card) => {
+              const allDone = card.total > 0 && card.completed === card.total;
+              return {
+                id: card.id,
+                href: `/teacher/assignments/${card.id}`,
+                dateTop: card.startDate ? shortMd(card.startDate) : "상시",
+                dateBottom: card.endDate ? `~${shortMd(card.endDate)}` : undefined,
+                chip: missionChip(card.missions),
+                title: card.title,
+                titleBold: true,
+                subtitle: card.bookTitles.length ? card.bookTitles.join(" · ") : card.description ?? undefined,
+                right: `${card.completed}/${card.total}명 완료`,
+                rightTone: allDone ? "good" : "muted",
+              };
+            });
             return (
-              <LogGroup
+              <ManagedLogList
                 key={group.id}
                 heading={group.name}
                 headingSub={`숙제 ${groupCards.length}개`}
-                headingRight={
-                  <Link href={`/teacher/assignments/new?group=${group.id}`} className="d" style={{ color: "var(--point)" }}>
-                    + 숙제 만들기
-                  </Link>
-                }
-              >
-                {groupCards.length === 0 ? (
-                  <p className="px-4 pb-4 text-sm" style={{ color: "var(--ink-2)" }}>
-                    아직 낸 숙제가 없어요.
-                  </p>
-                ) : (
-                  groupCards.map((card, index) => {
-                    const allDone = card.total > 0 && card.completed === card.total;
-                    return (
-                      <LogRow
-                        key={card.id}
-                        first={index === 0}
-                        href={`/teacher/assignments/${card.id}`}
-                        dateTop={card.startDate ? shortMd(card.startDate) : "상시"}
-                        dateBottom={card.endDate ? `~${shortMd(card.endDate)}` : undefined}
-                        chip={missionChip(card.missions)}
-                        title={<span className="d">{card.title}</span>}
-                        subtitle={card.bookTitles.length ? card.bookTitles.join(" · ") : card.description ?? undefined}
-                        right={
-                          <span
-                            className="d rounded-full px-2 py-0.5 text-[11px]"
-                            style={{
-                              background: allDone ? "rgba(47,168,79,0.12)" : "var(--paper)",
-                              color: allDone ? "var(--point-deep)" : "var(--ink-2)",
-                            }}
-                          >
-                            {card.completed}/{card.total}명 완료
-                          </span>
-                        }
-                      />
-                    );
-                  })
-                )}
-              </LogGroup>
+                addHref={`/teacher/assignments/new?group=${group.id}`}
+                addLabel="+ 숙제 만들기"
+                rows={rows}
+                emptyText="아직 낸 숙제가 없어요."
+                table="assignments"
+                deleteNoun="지울까요? (아이들의 독서기록은 남아요)"
+              />
             );
           })}
         </div>
