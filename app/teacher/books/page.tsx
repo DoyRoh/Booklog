@@ -178,7 +178,7 @@ export default async function TeacherBooksPage() {
               heading={section.name}
               headingSub={`${section.books.length}권`}
               headingRight={
-                <Link href={`/recommend/${section.id}`} className="d" style={{ color: "var(--point)" }}>
+                <Link href={`/teacher/books/add?group=${section.id}`} className="d" style={{ color: "var(--point)" }}>
                   + 책 추가
                 </Link>
               }

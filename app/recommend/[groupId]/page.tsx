@@ -11,7 +11,6 @@ import GroupFollow from "@/components/group-follow";
 import GroupIntroEditor from "@/components/group-intro-editor";
 import GroupRemoveButton from "@/components/group-remove-button";
 import Section from "@/components/section";
-import CreateAssignment from "@/components/create-assignment";
 import RecommendBookList from "@/components/recommend-book-list";
 import RecommendShelf from "@/components/recommend-shelf";
 
@@ -222,11 +221,14 @@ export default async function GroupDetailPage({
           여기는 운영진이 새 숙제를 만드는 자리로만 남겨둔다. */}
       {isOperator && (
         <div className="mt-5" id="assignment">
-          <Section title="숙제 만들기" description="추천도서 중에서 골라 기간과 미션을 붙여요.">
-            <CreateAssignment
-              groupId={groupId}
-              books={recommendBooks.map((book) => ({ id: book.bookId, title: book.title }))}
-            />
+          <Section title="숙제" description="추천도서 중에서 골라 기간과 미션을 붙여요.">
+            <Link
+              href={`/teacher/assignments/new?group=${groupId}`}
+              className="d block rounded-[14px] border border-dashed px-4 py-3 text-center text-sm"
+              style={{ borderColor: "var(--rule)", color: "var(--point-deep)" }}
+            >
+              + 새 숙제 만들기
+            </Link>
           </Section>
         </div>
       )}

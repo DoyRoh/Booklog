@@ -17,12 +17,21 @@ const MISSION_LABELS: Record<MissionType, string> = {
 export default function CreateAssignment({
   groupId,
   books,
+  defaultOpen = false,
+  afterSaveHref,
+  cancelHref,
 }: {
   groupId: string;
   books: BookOption[];
+  /** 전용 화면(/teacher/assignments/new)에서는 처음부터 폼이 펼쳐진다. */
+  defaultOpen?: boolean;
+  /** 저장 뒤 이동할 곳(없으면 제자리에서 접힘). */
+  afterSaveHref?: string;
+  /** 취소 시 이동할 곳(없으면 제자리에서 접힘). */
+  cancelHref?: string;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -152,6 +161,11 @@ export default function CreateAssignment({
 
     setSaving(false);
     reset();
+    if (afterSaveHref) {
+      router.push(afterSaveHref);
+      router.refresh();
+      return;
+    }
     setOpen(false);
     router.refresh();
   }
@@ -330,6 +344,10 @@ export default function CreateAssignment({
           type="button"
           onClick={() => {
             reset();
+            if (cancelHref) {
+              router.push(cancelHref);
+              return;
+            }
             setOpen(false);
           }}
           className="d flex-1 rounded-[14px] border py-2.5 text-sm"

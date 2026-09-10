@@ -108,11 +108,24 @@ export default async function TeacherAssignmentsPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
-      <h1 className="d text-xl">숙제</h1>
-      <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-        추천도서 서랍에서 골라 기간을 정해 낸 숙제예요. 시작일·종류(읽기/질문/낭독)·제목 순으로 보이고, 오른쪽은 몇
-        명이 끝냈는지예요. 누르면 아이별로 자세히 보여요.
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="d text-xl">숙제</h1>
+          <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+            추천도서 서랍에서 골라 기간을 정해 낸 숙제예요. 오른쪽은 몇 명이 끝냈는지, 누르면 아이별로 자세히
+            보여요.
+          </p>
+        </div>
+        {groups.length > 0 && (
+          <Link
+            href="/teacher/assignments/new"
+            className="d flex-none rounded-[14px] px-3 py-2 text-sm text-white"
+            style={{ background: "var(--point)" }}
+          >
+            + 숙제 만들기
+          </Link>
+        )}
+      </div>
 
       {groups.length === 0 ? (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
@@ -128,7 +141,7 @@ export default async function TeacherAssignmentsPage() {
                 heading={group.name}
                 headingSub={`숙제 ${groupCards.length}개`}
                 headingRight={
-                  <Link href={`/recommend/${group.id}#assignment`} className="d" style={{ color: "var(--point)" }}>
+                  <Link href={`/teacher/assignments/new?group=${group.id}`} className="d" style={{ color: "var(--point)" }}>
                     + 숙제 만들기
                   </Link>
                 }
