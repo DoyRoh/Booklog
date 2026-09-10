@@ -161,21 +161,16 @@ export default function CreateAssignment({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="d w-full rounded-[var(--r)] border px-4 py-3 text-sm"
-        style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
+        className="d w-full rounded-[14px] border border-dashed px-4 py-3 text-sm"
+        style={{ borderColor: "var(--rule)", color: "var(--point-deep)" }}
       >
-        + 숙제 만들기
+        + 새 숙제 만들기
       </button>
     );
   }
 
   return (
-    <div
-      className="rounded-[var(--r)] border p-4"
-      style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-    >
-      <p className="d text-sm">숙제 만들기</p>
-
+    <div>
       <input
         type="text"
         placeholder="숙제 제목 (예: 이번 주 숲 탐험)"

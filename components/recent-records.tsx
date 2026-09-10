@@ -33,10 +33,7 @@ export default function RecentRecords({
   const [editing, setEditing] = useState<RecentRecord | null>(null);
 
   return (
-    <div
-      className="overflow-hidden rounded-[var(--r)] border"
-      style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-    >
+    <div>
       {records.map((record, index) => (
         <div key={record.id}>
           {index > 0 && <div className="mx-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />}

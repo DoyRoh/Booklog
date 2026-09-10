@@ -79,12 +79,8 @@ export default function JoinByCode({ activeChildId }: { activeChildId: string | 
   }
 
   return (
-    <div
-      className="rounded-[var(--r)] border p-4"
-      style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-    >
-      <p className="d text-sm">초대 코드로 참가하기</p>
-      <div className="mt-2 flex gap-2">
+    <div>
+      <div className="flex gap-2">
         <input
           type="text"
           placeholder="예: A1B2C3"

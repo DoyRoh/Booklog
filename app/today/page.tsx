@@ -6,6 +6,7 @@ import { getActiveProfile } from "@/lib/active-profile";
 import { getTodayAssignments } from "@/lib/assignments";
 import AssignmentSummary from "@/components/assignment-summary";
 import RecentRecords, { type RecentRecord } from "@/components/recent-records";
+import Section from "@/components/section";
 import ForestStrip from "@/components/forest-strip";
 import { MILESTONE_COUNTS } from "@/lib/badges";
 import { kstDate, kstMonth, kstWeekStart } from "@/lib/kst";
@@ -210,42 +211,40 @@ export default async function TodayPage() {
         + 책 기록하기
       </Link>
 
-      <div className="mx-1 mt-8" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
-
-      <div className="mt-6">
-        <div className="flex items-center justify-between">
-          <p className="d text-base">오늘의 숙제</p>
-          {activeAssignments.length > 0 && (
+      <Section
+        className="mt-6"
+        title="오늘의 숙제"
+        flush={activeAssignments.length > 0}
+        action={
+          activeAssignments.length > 0 ? (
             <Link href="/assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
               전체 보기 ›
             </Link>
-          )}
-        </div>
+          ) : undefined
+        }
+      >
         {activeAssignments.length === 0 ? (
-          <p className="mt-3 text-sm" style={{ color: "var(--ink-2)" }}>
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             지금 진행 중인 숙제가 없어요. 책장에서 자유롭게 책을 기록해 보세요.
           </p>
         ) : (
           <AssignmentSummary assignments={activeAssignments} />
         )}
-      </div>
+      </Section>
 
       {recentRecords.length > 0 && (
-        <>
-          <div className="mx-1 mt-8" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
-
-          <div className="mt-6">
-            <div className="flex items-center justify-between">
-              <p className="d text-base">최근 기록</p>
-              <Link href="/library?view=list" className="text-xs" style={{ color: "var(--ink-2)" }}>
-                전체 보기 ›
-              </Link>
-            </div>
-            <div className="mt-3">
-              <RecentRecords childId={activeChild.id} childName={activeChild.name} records={recentRecords} />
-            </div>
-          </div>
-        </>
+        <Section
+          className="mt-5"
+          title="최근 기록"
+          flush
+          action={
+            <Link href="/library?view=list" className="text-xs" style={{ color: "var(--ink-2)" }}>
+              전체 보기 ›
+            </Link>
+          }
+        >
+          <RecentRecords childId={activeChild.id} childName={activeChild.name} records={recentRecords} />
+        </Section>
       )}
     </div>
   );

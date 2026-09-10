@@ -45,17 +45,17 @@ export default function GroupApprovals({ pending }: { pending: PendingMember[] }
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col">
       {error && (
-        <p className="text-sm" style={{ color: "var(--berry)" }}>
+        <p className="pb-2 text-sm" style={{ color: "var(--berry)" }}>
           {error}
         </p>
       )}
-      {pending.map((member) => (
+      {pending.map((member, index) => (
         <div
           key={member.id}
-          className="flex items-center justify-between gap-3 rounded-[var(--r)] border p-4"
-          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          className="flex items-center justify-between gap-3 py-2"
+          style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
         >
           <p className="text-sm">{member.childName}</p>
           <div className="flex gap-2">

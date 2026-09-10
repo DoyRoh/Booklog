@@ -39,7 +39,11 @@ export default function ChildSwitcher({
   const [error, setError] = useState<string | null>(null);
 
   async function selectChild(childId: string) {
-    if (childId === activeChildId) return;
+    // 이미 고른 아이를 또 누르면 "아무 일도 없음" 대신 그 아이의 오늘 탭으로.
+    if (childId === activeChildId) {
+      router.push("/today");
+      return;
+    }
     setSwitching(childId);
     setError(null);
 
@@ -58,6 +62,9 @@ export default function ChildSwitcher({
     // 다시 그리고, 이 제목은 클라이언트에서 따로 들고 있는 상태라서) --
     // 전역으로 이벤트를 쏴서 즉시 다시 불러오게 한다.
     window.dispatchEvent(new Event("chaeksup:profile-changed"));
+    // 전환됐다는 게 눈에 보이게 그 아이의 오늘 탭으로 간다(숲지기 → 아이
+    // 전환도 이 경로라, 하단 탭이 바뀌는 게 바로 보인다).
+    router.push("/today");
     router.refresh();
   }
 
@@ -137,11 +144,9 @@ export default function ChildSwitcher({
                 </p>
               )}
             </div>
-            {active && (
-              <span className="d text-xs" style={{ color: "var(--point-deep)" }}>
-                선택됨
-              </span>
-            )}
+            <span className="d text-xs" style={{ color: active ? "var(--point-deep)" : "var(--ink-2)" }}>
+              {switching === child.id ? "전환 중…" : active ? "보는 중 ›" : "이 아이로 보기"}
+            </span>
           </button>
         );
       })}

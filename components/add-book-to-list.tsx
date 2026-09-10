@@ -290,14 +290,9 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
   }
 
   return (
-    <div
-      className="rounded-[var(--r)] border p-4"
-      style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-    >
-      <p className="d text-sm">책 추가</p>
-
+    <div>
       {!manualMode && (
-        <div className="mt-2 flex gap-2">
+        <div className="flex gap-2">
           {(
             [
               { key: "search", label: "제목 검색" },

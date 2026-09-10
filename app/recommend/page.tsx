@@ -7,6 +7,7 @@ import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
 import GroupRemoveButton from "@/components/group-remove-button";
+import Section from "@/components/section";
 
 type GroupRow = {
   id: string;
@@ -116,19 +117,18 @@ export default async function RecommendPage() {
         </div>
       )}
 
-      <div className={activeProfile.type === "operator" ? "mt-6" : ""}>
-        <p className="d text-base">내 그룹</p>
+      <Section className={activeProfile.type === "operator" ? "mt-5" : ""} title="내 그룹" flush={myGroups.length > 0}>
         {myGroups.length === 0 ? (
-          <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 속한 그룹이 없어요. 아래에서 둘러보거나 초대 코드로 참가해 보세요.
           </p>
         ) : (
-          <div className="mt-3 flex flex-col gap-3">
-            {myGroups.map((group) => (
+          <div className="flex flex-col">
+            {myGroups.map((group, index) => (
               <div
                 key={group.id}
-                className="flex items-center justify-between gap-3 rounded-[var(--r)] border p-4"
-                style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+                className="flex items-center justify-between gap-3 px-4 py-3"
+                style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
               >
                 <Link href={`/recommend/${group.id}`} className="min-w-0 flex-1">
                   <p className="d truncate text-sm">{group.name}</p>
@@ -158,20 +158,20 @@ export default async function RecommendPage() {
             ))}
           </div>
         )}
-      </div>
+      </Section>
 
       {activeChild && (
-        <div className="mt-8">
+        <Section className="mt-5" title="초대 코드로 참가하기" description="선생님·가족에게 받은 6자리 코드를 넣어요.">
           <JoinByCode activeChildId={activeChild.id} />
-        </div>
+        </Section>
       )}
 
-      <div className="mt-8">
+      <div className="mt-6">
         <p className="d text-base">둘러보기</p>
-        <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+        <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
           공개된 기관·크리에이터의 추천도서예요. 누르면 소개와 최근 추천도서 10권을 먼저 둘러보고, 마음에 들면 팔로우해요.
         </p>
-        <div className="mt-3">
+        <div className="mt-2">
           <BrowseGroups groups={browseGroups} followingIds={[]} activeChildId={activeChild?.id ?? null} />
         </div>
       </div>

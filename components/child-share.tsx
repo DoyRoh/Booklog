@@ -142,10 +142,7 @@ export default function ChildShare({ childList }: { childList: Child[] }) {
         </p>
       )}
 
-      <div
-        className="rounded-[var(--r)] border p-4"
-        style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-      >
+      <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}>
         <p className="d text-sm">공유 코드로 참여하기</p>
         <div className="mt-2 flex gap-2">
           <input

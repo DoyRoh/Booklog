@@ -14,10 +14,7 @@ export default function AssignmentSummary({ assignments }: { assignments: TodayA
   }
 
   return (
-    <div
-      className="mt-3 overflow-hidden rounded-[var(--r)] border"
-      style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-    >
+    <div>
       {sections.map((section, sIndex) => (
         <div
           key={section.groupName}

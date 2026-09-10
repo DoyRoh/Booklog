@@ -33,13 +33,21 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
   const [state, setState] = useState<Profile>({ role: null, childName: null, childAvatar: null, operatorAvatar: null, operatorName: null, loading: true });
 
   useEffect(() => {
+    // 이벤트·auth 변화로 load()가 겹쳐 불리면 먼저 시작한 조회의 결과가
+    // 나중에 도착해 새 상태를 덮어쓸 수 있다(프로필을 바꿨는데 하단 탭이
+    // 예전 것으로 남던 원인 후보). 마지막 호출의 결과만 반영한다.
+    let seq = 0;
     async function load() {
+      const my = ++seq;
+      const apply = (next: Profile) => {
+        if (my === seq) setState(next);
+      };
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        setState({ role: null, childName: null, childAvatar: null, operatorAvatar: null, operatorName: null, loading: false });
+        apply({ role: null, childName: null, childAvatar: null, operatorAvatar: null, operatorName: null, loading: false });
         return;
       }
       // users.role은 온보딩 때 고른 최초 기본값일 뿐이고, 실제로 지금
@@ -59,7 +67,7 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
       }
       const operatorAvatar = activeProfile.type === "operator" ? activeProfile.operatorAvatar : null;
       const operatorName = activeProfile.type === "operator" ? activeProfile.operatorName : null;
-      setState({ role, childName, childAvatar, operatorAvatar, operatorName, loading: false });
+      apply({ role, childName, childAvatar, operatorAvatar, operatorName, loading: false });
     }
 
     load();

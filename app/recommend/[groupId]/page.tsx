@@ -10,6 +10,7 @@ import AddBookToList from "@/components/add-book-to-list";
 import GroupFollow from "@/components/group-follow";
 import GroupIntroEditor from "@/components/group-intro-editor";
 import GroupRemoveButton from "@/components/group-remove-button";
+import Section from "@/components/section";
 import CreateAssignment from "@/components/create-assignment";
 import RecommendBookList from "@/components/recommend-book-list";
 import RecommendShelf from "@/components/recommend-shelf";
@@ -172,13 +173,10 @@ export default async function GroupDetailPage({
         </div>
       )}
 
-      {isOperator && (
-        <div className="mt-8">
-          <p className="d text-base">가입 승인 대기</p>
-          <div className="mt-3">
-            <GroupApprovals pending={pending} />
-          </div>
-        </div>
+      {isOperator && group.join_policy === "approval" && (
+        <Section className="mt-5" title="가입 승인 대기" description={pending.length > 0 ? `${pending.length}명이 기다리고 있어요` : undefined}>
+          <GroupApprovals pending={pending} />
+        </Section>
       )}
 
       {/* 숲지기에겐 관리 순서로: "책 추가"(검색·바코드·ISBN)가 먼저, 그 아래
@@ -186,20 +184,18 @@ export default async function GroupDetailPage({
           꽂기")이 먼저 떠서, 숲지기가 "책장에 꽂아야 추천도서/숙제가 되나"로
           헷갈렸다 -- 추천도서는 책장과 무관하게 여기서 검색해 바로 올린다. */}
       {isOperator && bookListId && (
-        <div className="mt-8">
-          <p className="d text-base">추천도서에 책 올리기</p>
-          <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
-            제목을 검색하거나 바코드를 찍어 바로 올려요. 책장에 먼저 꽂을 필요 없어요.
-          </p>
-          <div className="mt-3">
-            <AddBookToList bookListId={bookListId} />
-          </div>
-        </div>
+        <Section
+          className="mt-5"
+          title="추천도서에 책 올리기"
+          description="제목을 검색하거나 바코드를 찍어 바로 올려요. 책장에 먼저 꽂을 필요 없어요."
+        >
+          <AddBookToList bookListId={bookListId} />
+        </Section>
       )}
 
-      <div className="mt-8">
-        <p className="d text-base">{isOperator ? `추천도서 ${recommendBooks.length}권` : "추천도서"}</p>
-        <div className="mt-3">
+      <div className="mt-6">
+        <p className="d text-base">{isOperator ? `올린 추천도서 ${recommendBooks.length}권` : "추천도서"}</p>
+        <div className="mt-2">
           {isOperator ? (
             <RecommendBookList groupId={groupId} listName={listName} books={recommendBooks} activeChildId={null} manage />
           ) : (
@@ -225,14 +221,13 @@ export default async function GroupDetailPage({
       {/* 부모가 보는 숙제 목록/진행 현황은 숲길 탭(그룹 필터)에서 다룬다 --
           여기는 운영진이 새 숙제를 만드는 자리로만 남겨둔다. */}
       {isOperator && (
-        <div className="mt-8" id="assignment">
-          <p className="d text-base">숙제 만들기</p>
-          <div className="mt-3">
+        <div className="mt-5" id="assignment">
+          <Section title="숙제 만들기" description="추천도서 중에서 골라 기간과 미션을 붙여요.">
             <CreateAssignment
               groupId={groupId}
               books={recommendBooks.map((book) => ({ id: book.bookId, title: book.title }))}
             />
-          </div>
+          </Section>
         </div>
       )}
 

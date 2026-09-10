@@ -8,6 +8,8 @@ import OperatorProfileSwitcher, { type OperatorGroup } from "@/components/operat
 import ChildShare from "@/components/child-share";
 import ShelfTagManager from "@/components/shelf-tag-manager";
 import Illustration from "@/components/illustration";
+import Section from "@/components/section";
+import ProfileModeSwitch from "@/components/profile-mode-switch";
 
 export default async function MorePage() {
   const supabase = await createClient();
@@ -84,15 +86,19 @@ export default async function MorePage() {
       {/* 계정 하나가 아이 프로필(들)과 숲지기 프로필(들)을 동시에 가질
           수 있다 -- 예전처럼 계정을 나눠 만들 필요 없이, 여기서 프로필을
           고르면 그 프로필 기준으로 하단 탭·화면이 바뀐다. */}
-      <div className="mt-8">
-        <p className="d text-base">프로필</p>
-        <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-          지금 어떤 프로필로 볼지 골라 주세요. 언제든 여기서 바꿀 수 있어요.
-        </p>
+      <Section className="mt-6" title="프로필" description="지금 어떤 프로필로 볼지 골라 주세요. 언제든 여기서 바꿀 수 있어요.">
+        <ProfileModeSwitch
+          userId={userId}
+          mode={activeProfile.type}
+          childName={children.find((c) => c.id === profile?.active_child_id)?.name ?? children[0]?.name ?? null}
+          operatorName={(profile?.operator_name as string | null) ?? null}
+          hasChild={children.length > 0}
+          hasOperator={operatorGroups.length > 0}
+        />
 
-        <div className="mt-3">
+        <div className="mt-5 pt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}>
           <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-            아이 프로필
+            아이 프로필 <span style={{ opacity: 0.7 }}>· 아이가 여럿이면 여기서 골라요</span>
           </p>
           {guardianError && (
             <p className="mt-2 text-sm" style={{ color: "var(--berry)" }}>
@@ -122,53 +128,45 @@ export default async function MorePage() {
             />
           </div>
         </div>
-      </div>
+      </Section>
 
-      <div className="mt-8">
-        {/* 하얀 새가 편지를 물어다 주는 장면 -- 공유 코드가 곧 편지. */}
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="d text-base">책장 공유</p>
-            <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-              배우자·조부모 같은 다른 보호자를 초대해서 같은 아이의 책장을 함께 보고 기록할 수 있어요.
-            </p>
-          </div>
-          <Illustration name="bird-letter" height={56} className="flex-none" />
-        </div>
-        <div className="mt-3">
-          <ChildShare
-            childList={children.map((child) => ({ id: child.id, name: child.name, inviteCode: child.invite_code }))}
-          />
-        </div>
-      </div>
+      {/* 하얀 새가 편지를 물어다 주는 장면 -- 공유 코드가 곧 편지. */}
+      <Section
+        className="mt-5"
+        title="책장 공유"
+        description="배우자·조부모 같은 다른 보호자를 초대해서 같은 아이의 책장을 함께 보고 기록할 수 있어요."
+        action={<Illustration name="bird-letter" height={44} />}
+      >
+        <ChildShare
+          childList={children.map((child) => ({ id: child.id, name: child.name, inviteCode: child.invite_code }))}
+        />
+      </Section>
 
       {(profile?.active_child_id ?? children[0]?.id) && (
-        <div className="mt-8">
-          <p className="d text-base">책장 나누기</p>
-          <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-            &quot;6살 책장&quot;, &quot;7살 책장&quot;처럼 나눠 둔 책장의 이름을 바꾸거나 지울 수 있어요.
-          </p>
-          <div className="mt-3">
-            <ShelfTagManager childId={(profile?.active_child_id ?? children[0]?.id) as string} />
-          </div>
-        </div>
+        <Section
+          className="mt-5"
+          title="책장 나누기"
+          description={<>&quot;6살 책장&quot;, &quot;7살 책장&quot;처럼 나눠 둔 책장의 이름을 바꾸거나 지울 수 있어요.</>}
+        >
+          <ShelfTagManager childId={(profile?.active_child_id ?? children[0]?.id) as string} />
+        </Section>
       )}
 
       {children.length > 0 && (
-        <div className="mt-8">
-          <p className="d text-base">그룹 찾기 · 참가</p>
-          <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-            아이는 그룹에 <b>참가</b>해요 — 초대 코드로 학급이나 가족 그룹에 들어가거나, 도서관·크리에이터의 숲길을
-            팔로우해요. 그룹을 직접 만들어 운영하려면 위의 숲지기 프로필에서 시작해요.
-          </p>
-          <Link
-            href="/recommend"
-            className="mt-2 block rounded-[var(--r)] border p-4 text-sm"
-            style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
-          >
-            새 그룹 찾기
+        <Section
+          className="mt-5"
+          title="그룹 찾기 · 참가"
+          description={
+            <>
+              아이는 그룹에 <b>참가</b>해요 — 초대 코드로 학급이나 가족 그룹에 들어가거나, 도서관·크리에이터의 숲길을
+              팔로우해요. 그룹을 직접 만들어 운영하려면 위의 숲지기 프로필에서 시작해요.
+            </>
+          }
+        >
+          <Link href="/recommend" className="d block text-sm" style={{ color: "var(--point-deep)" }}>
+            새 그룹 찾기 ›
           </Link>
-        </div>
+        </Section>
       )}
     </div>
   );
