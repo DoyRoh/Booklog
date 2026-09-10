@@ -21,10 +21,13 @@ export default function Forest3DScreen({
   childName,
   avatar,
   badges,
+  groups = [],
 }: {
   childName: string;
   avatar: Avatar | null | undefined;
   badges: Badge[];
+  /** 속한 그룹(숲지기)들 -- 곰과 백로가 이 수만큼. */
+  groups?: { id: string; name: string }[];
 }) {
   const [mood, setMood] = useState<Mood>("day");
   const [picked, setPicked] = useState<string | null>(null);
@@ -59,6 +62,7 @@ export default function Forest3DScreen({
     counts.lantern ? `등불 ${counts.lantern}개` : null,
     counts.bird ? `새 ${counts.bird}마리` : null,
     counts.paw ? `버섯 ${counts.paw}개` : null,
+    groups.length > 1 ? `숲지기 곰 ${groups.length}마리` : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -113,7 +117,7 @@ export default function Forest3DScreen({
         className="mt-4 h-[62vh] min-h-[380px] overflow-hidden rounded-[var(--r)] border"
         style={{ borderColor: "var(--rule)", background: mood === "day" ? "#EAF0E5" : "#1B2A22" }}
       >
-        <Forest3D items={items} avatar={avatar} mood={mood} animate={animate} picked={picked} onPick={setPicked} />
+        <Forest3D items={items} avatar={avatar} groups={groups} mood={mood} animate={animate} picked={picked} onPick={setPicked} />
       </div>
     </div>
   );

@@ -59,11 +59,16 @@ export default function ForestView({
   childName,
   avatar,
   badges,
+  groups = [],
 }: {
   childName: string;
   avatar: Avatar | null | undefined;
   badges: Badge[];
+  /** 속한 그룹(숲지기)들 -- 숲길 끝의 곰과 하늘의 백로가 이 수만큼. */
+  groups?: { id: string; name: string }[];
 }) {
+  // 숲지기 곰: 그룹마다 한 마리(그룹이 없어도 길잡이 곰 한 마리는 있다).
+  const keepers = groups.length ? groups.slice(0, 4) : [{ id: "guide", name: "길잡이" }];
   const [picked, setPicked] = useState<Item | null>(null);
 
   const trees = useMemo(() => badges.filter((b) => b.achieved && b.count !== undefined), [badges]);
@@ -106,7 +111,9 @@ export default function ForestView({
           style={{ background: "#DCE6D0" }}
         >
           <AvatarIllustration avatar={avatar} height={96} />
-          <Illustration name="bear-lantern" height={120} />
+          {keepers.map((g, i) => (
+            <Illustration key={g.id} name="bear-lantern" height={i === 0 ? 120 : 96} />
+          ))}
         </div>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           첫 책을 다 읽으면 ‘씨앗 하나’ 배지와 함께 첫 나무가 심겨요. 배지를 딸 때마다 나무·별·등불이 늘어나요.
@@ -191,6 +198,17 @@ export default function ForestView({
             style={{ left: `${(i * 37 + 7) % 92}%`, top: `${6 + ((i * 13) % 14)}px`, opacity: 0.8 }}
           />
         ))}
+        {/* 숲지기(그룹)마다 편지 물고 나는 백로 한 마리 -- 하늘 위쪽에 줄지어. */}
+        {groups.slice(0, 5).map((g, i) => (
+          <span
+            key={g.id}
+            title={`${g.name}의 백로`}
+            className="absolute"
+            style={{ left: `${12 + ((i * 29) % 70)}%`, top: `${4 + ((i * 11) % 18)}px`, opacity: 0.95 }}
+          >
+            <Illustration name="bird-letter" height={22} />
+          </span>
+        ))}
 
         <div className="flex flex-wrap items-end gap-x-1.5 gap-y-4">
           {items.map((item) => {
@@ -228,7 +246,11 @@ export default function ForestView({
           })}
           <span className="ml-auto flex flex-none items-end gap-1 pl-2">
             <AvatarIllustration avatar={avatar} height={56} />
-            <Illustration name="bear-lantern" height={72} />
+            {keepers.map((g, i) => (
+              <span key={g.id} title={`${g.name} 숲지기`} style={{ marginLeft: i > 0 ? -10 : 0 }}>
+                <Illustration name="bear-lantern" height={i === 0 ? 72 : 60} />
+              </span>
+            ))}
           </span>
         </div>
       </div>

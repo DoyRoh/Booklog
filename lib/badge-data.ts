@@ -3,17 +3,32 @@ import { computeBadges, type Badge } from "@/lib/badges";
 
 // 배지 계산에 필요한 조회를 한곳에 모은다 -- 배지 탭과 "우리 숲"(딴 배지가
 // 숲의 장식이 됨) 두 화면이 같은 결과를 써야 해서.
+export type ForestData = {
+  badges: Badge[];
+  /** 아이가 속한 그룹(숲지기) 이름들 -- 숲의 곰·백로 수가 이 수만큼 늘어난다. */
+  groups: { id: string; name: string }[];
+};
+
 export async function loadBadges(supabase: SupabaseClient, childId: string): Promise<Badge[]> {
+  return (await loadForestData(supabase, childId)).badges;
+}
+
+export async function loadForestData(supabase: SupabaseClient, childId: string): Promise<ForestData> {
   const [{ data: rows }, { data: memberRows }, { data: completionRows }] = await Promise.all([
     supabase
       .from("reading_records")
       .select("status, read_date, book_id, photo_url, voice_url, favorite, books(author)")
       .eq("child_id", childId),
-    supabase.from("group_members").select("group_id").eq("child_id", childId).eq("status", "approved"),
+    supabase.from("group_members").select("group_id, groups(name)").eq("child_id", childId).eq("status", "approved"),
     supabase.from("assignment_completion").select("assignment_id, completed").eq("child_id", childId),
   ]);
 
   const groupIds = Array.from(new Set((memberRows ?? []).map((m) => m.group_id as string)));
+  const groups = groupIds.map((id) => ({
+    id,
+    name:
+      ((memberRows ?? []).find((m) => m.group_id === id)?.groups as unknown as { name: string } | null)?.name ?? "그룹",
+  }));
   const { data: listRows } = groupIds.length
     ? await supabase.from("book_lists").select("book_list_items(book_id)").in("group_id", groupIds)
     : { data: [] };
@@ -48,5 +63,8 @@ export async function loadBadges(supabase: SupabaseClient, childId: string): Pro
   }
   const assignmentsDone = Array.from(byAssignment.values()).filter(Boolean).length;
 
-  return computeBadges(records, { groupCount: groupIds.length, recommendedRead, assignmentsDone });
+  return {
+    badges: computeBadges(records, { groupCount: groupIds.length, recommendedRead, assignmentsDone }),
+    groups,
+  };
 }

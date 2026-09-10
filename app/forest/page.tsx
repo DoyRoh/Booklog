@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
-import { loadBadges } from "@/lib/badge-data";
+import { loadForestData } from "@/lib/badge-data";
 import ForestView from "@/components/forest-view";
 import BadgeGrid from "@/components/badge-grid";
 
@@ -35,11 +35,11 @@ export default async function ForestPage() {
     );
   }
 
-  const badges = await loadBadges(supabase, activeChild.id);
+  const { badges, groups } = await loadForestData(supabase, activeChild.id);
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <ForestView childName={activeChild.name} avatar={activeChild.avatar} badges={badges} />
+      <ForestView childName={activeChild.name} avatar={activeChild.avatar} badges={badges} groups={groups} />
       <div className="mx-1 mt-8" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
       <BadgeGrid badges={badges} avatar={activeChild.avatar} />
     </div>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
-import { loadBadges } from "@/lib/badge-data";
+import { loadForestData } from "@/lib/badge-data";
 import Forest3DScreen from "@/components/forest-3d-screen";
 
 // 우리 숲 3D -- 딴 배지가 나무·별·등불·새·버섯이 되어 서 있는 작은 숲을
@@ -33,7 +33,7 @@ export default async function Forest3DPage() {
     );
   }
 
-  const badges = await loadBadges(supabase, activeChild.id);
+  const { badges, groups } = await loadForestData(supabase, activeChild.id);
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -41,7 +41,7 @@ export default async function Forest3DPage() {
         ← 우리 숲
       </Link>
       <div className="mt-3">
-        <Forest3DScreen childName={activeChild.name} avatar={activeChild.avatar} badges={badges} />
+        <Forest3DScreen childName={activeChild.name} avatar={activeChild.avatar} badges={badges} groups={groups} />
       </div>
     </div>
   );

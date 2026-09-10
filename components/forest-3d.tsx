@@ -260,6 +260,25 @@ function FlyingBird({ phase, animate }: { phase: number; animate: boolean }) {
   );
 }
 
+/** 하늘 높이 큰 원을 그리며 나는 백로(그룹 수만큼). */
+function SkyBird({ index, animate }: { index: number; animate: boolean }) {
+  const ref = useRef<Group>(null);
+  const radius = 5 + index * 1.3;
+  const height = 4.2 + index * 0.5;
+  const phase = index * 1.9;
+  useFrame(({ clock }) => {
+    if (!animate || !ref.current) return;
+    const t = clock.getElapsedTime() * 0.22 + phase;
+    ref.current.position.set(Math.cos(t) * radius, height + Math.sin(t * 2.3) * 0.25, Math.sin(t) * radius);
+    ref.current.rotation.y = -t + Math.PI / 2;
+  });
+  return (
+    <group ref={ref} position={[Math.cos(phase) * radius, height, Math.sin(phase) * radius]} rotation-y={-phase + Math.PI / 2} scale={1.15}>
+      <BirdBody letter />
+    </group>
+  );
+}
+
 function PerchedBird() {
   return (
     <group>
@@ -422,6 +441,7 @@ function Hills({ mood }: { mood: Mood }) {
 export default function Forest3D({
   items,
   avatar,
+  groups = [],
   mood,
   animate,
   picked,
@@ -429,11 +449,14 @@ export default function Forest3D({
 }: {
   items: SceneItem[];
   avatar: Avatar | null | undefined;
+  /** 속한 그룹(숲지기)들 -- 곰과 백로가 이 수만큼(곰은 최소 1). */
+  groups?: { id: string; name: string }[];
   mood: Mood;
   animate: boolean;
   picked: string | null;
   onPick: (key: string | null) => void;
 }) {
+  const keepers = groups.length ? groups.slice(0, 5) : [{ id: "guide", name: "길잡이" }];
   const bg = mood === "day" ? C.paper : C.night;
   // 진짜 광원은 비싸서 밤에 등불 세 개까지만 켠다(나머지는 발광 재질만).
   const litKeys = useMemo(
@@ -500,9 +523,21 @@ export default function Forest3D({
       <group position={[-0.9, 0, 0.9]} rotation-y={0.5}>
         <Animal kind={avatar ?? "rabbit"} />
       </group>
-      <group position={[0.7, 0, 1.1]} rotation-y={-0.4}>
-        <BearWithLantern mood={mood} animate={animate} />
-      </group>
+      {/* 숲지기 곰: 그룹마다 한 마리, 아이 옆에서 바깥쪽으로 부채꼴. */}
+      {keepers.map((g, i) => (
+        <group
+          key={g.id}
+          position={[0.7 + i * 1.3, 0, 1.1 - i * 0.75]}
+          rotation-y={-0.4 - i * 0.25}
+          scale={i === 0 ? 1 : 0.92}
+        >
+          <BearWithLantern mood={mood} animate={animate} />
+        </group>
+      ))}
+      {/* 숲지기마다 편지 물고 하늘을 크게 도는 백로 한 마리. */}
+      {groups.slice(0, 5).map((g, i) => (
+        <SkyBird key={g.id} index={i} animate={animate} />
+      ))}
 
       {items.map((item, i) => {
         const selected = picked === item.key;
