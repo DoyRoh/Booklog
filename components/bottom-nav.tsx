@@ -93,6 +93,14 @@ export default function BottomNav() {
   // 로그인 직후 탭이 매번 깜빡이지 않도록.
   const tabs = role === "operator" ? OPERATOR_TABS : PARENT_TABS;
 
+  // 숲지기 탭은 /teacher 아래에 전부 있어서 단순 startsWith로는 "대시보드"
+  // (/teacher)가 어느 화면에서나 켜져 보였다. 경로가 맞는 탭 중 가장 긴
+  // 것 하나만 켠다.
+  const activeHref = tabs
+    .map((t) => t.href)
+    .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
+    .sort((a, b) => b.length - a.length)[0];
+
   return (
     <nav
       aria-label="주 메뉴"
@@ -106,7 +114,7 @@ export default function BottomNav() {
       }}
     >
       {tabs.map(({ href, label, Icon }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`);
+        const active = href === activeHref;
         return (
           <Link
             key={href}

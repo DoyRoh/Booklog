@@ -52,7 +52,8 @@ export default async function TeacherChildrenPage() {
 
   // 그룹 id 목록으로 한 번씩만 물어보고 자바스크립트에서 묶는다(N+1 회피).
   type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null };
-  const [{ data: memberRows }, { data: assignmentRows }, { data: listRows }, { data: doneRows }] = groupIds.length
+  const [{ data: memberRows }, { data: assignmentRows }, { data: listRows }, { data: doneRows }, { data: completionRows }] =
+    groupIds.length
     ? await Promise.all([
         supabase
           .from("group_members")
@@ -69,8 +70,12 @@ export default async function TeacherChildrenPage() {
           .select("child_id, book_id, group_id")
           .in("group_id", groupIds)
           .eq("status", "done"),
+        // 완료 현황(assignment_completion)은 security_invoker 뷰라 RLS상 내가
+        // 볼 수 있는 숙제 행만 온다 -- 숙제 id를 기다렸다가 한 번 더 왕복하지
+        // 않고 여기서 같이 가져온 뒤 자기 숙제 id로만 찾아 쓴다.
+        supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
 
   const listBooksByGroup = new Map<string, Set<string>>();
   for (const row of listRows ?? []) {
@@ -89,16 +94,11 @@ export default async function TeacherChildrenPage() {
     readByGroupChild.set(key, set);
   }
 
-  const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
   // 완료 통계를 그룹별로 정확히 나누려면(같은 아이가 여러 그룹에 속할 수
-  // 있음) assignment_id → group_id 매핑이 필요하다.
+  // 있음) assignment_id → group_id 매핑이 필요하다. 이 매핑에 없는 숙제의
+  // completion 행(예: 같은 계정의 아이가 다른 그룹에서 받은 숙제)은 아래에서
+  // 걸러진다.
   const groupIdByAssignment = new Map((assignmentRows ?? []).map((a) => [a.id, a.group_id]));
-  const { data: completionRows } = assignmentIds.length
-    ? await supabase
-        .from("assignment_completion")
-        .select("assignment_id, child_id, completed")
-        .in("assignment_id", assignmentIds)
-    : { data: [] };
 
   // 숙제 하나에 책이 여러 권이면 completion 행도 책 수만큼이라, 숙제 단위로
   // "전부 완료했는지"를 다시 묶는다.

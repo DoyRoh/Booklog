@@ -56,21 +56,19 @@ export default async function TeacherAssignmentsPage() {
 
   // 그룹마다, 그리고 숙제마다 따로 물어보던 걸(N+1) 한 번씩만 물어보고
   // 자바스크립트에서 묶는 방식으로 바꿨다.
-  const { data: assignmentRows } = groupIds.length
-    ? await supabase
-        .from("assignments")
-        .select("id, group_id, title, description, start_date, end_date, created_at, assignment_books(books(title)), assignment_missions(type)")
-        .in("group_id", groupIds)
-        .order("created_at", { ascending: false })
-    : { data: [] };
-
-  const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
-  const { data: completionRows } = assignmentIds.length
-    ? await supabase
-        .from("assignment_completion")
-        .select("assignment_id, child_id, completed")
-        .in("assignment_id", assignmentIds)
-    : { data: [] };
+  const [{ data: assignmentRows }, { data: completionRows }] = groupIds.length
+    ? await Promise.all([
+        supabase
+          .from("assignments")
+          .select("id, group_id, title, description, start_date, end_date, created_at, assignment_books(books(title)), assignment_missions(type)")
+          .in("group_id", groupIds)
+          .order("created_at", { ascending: false }),
+        // 완료 현황(assignment_completion)은 security_invoker 뷰라 RLS상 내가
+        // 볼 수 있는 숙제 행만 온다 -- 숙제 id를 기다렸다가 한 번 더 왕복하지
+        // 않고 여기서 같이 가져온 뒤 자기 숙제 id로만 찾아 쓴다.
+        supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
+      ])
+    : [{ data: [] }, { data: [] }];
 
   // completion 뷰는 (숙제, 책, 아이) 단위라, "아이가 그 숙제의 책을 전부
   // 읽었는지"로 다시 묶어서 "N/M명 완료"로 보여준다.
