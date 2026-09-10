@@ -6,8 +6,9 @@ import { getActiveProfile } from "@/lib/active-profile";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
+import GroupRemoveButton from "@/components/group-remove-button";
 
-type GroupRow = { id: string; name: string; type: string; join_policy: string };
+type GroupRow = { id: string; name: string; type: string; join_policy: string; owner_id?: string };
 
 export default async function RecommendPage() {
   const supabase = await createClient();
@@ -31,7 +32,7 @@ export default async function RecommendPage() {
     getActiveProfile(supabase, userId),
     supabase
       .from("group_members")
-      .select("groups(id, name, type, join_policy)")
+      .select("groups(id, name, type, join_policy, owner_id)")
       .eq("user_id", userId)
       .eq("status", "approved"),
     supabase.from("groups").select("id, name, type").eq("join_policy", "open"),
@@ -89,17 +90,35 @@ export default async function RecommendPage() {
         ) : (
           <div className="mt-3 flex flex-col gap-3">
             {myGroups.map((group) => (
-              <Link
+              <div
                 key={group.id}
-                href={`/recommend/${group.id}`}
-                className="block rounded-[var(--r)] border p-4"
+                className="flex items-center justify-between gap-3 rounded-[var(--r)] border p-4"
                 style={{ borderColor: "var(--rule)", background: "var(--card)" }}
               >
-                <p className="d text-sm">{group.name}</p>
-                <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                  {GROUP_TYPE_LABELS[group.type] ?? group.type}
-                </p>
-              </Link>
+                <Link href={`/recommend/${group.id}`} className="min-w-0 flex-1">
+                  <p className="d truncate text-sm">{group.name}</p>
+                  <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                    {GROUP_TYPE_LABELS[group.type] ?? group.type}
+                  </p>
+                </Link>
+                {/* 그룹 빼기: 아이는 나가기(팔로우 끊기·탈퇴), 그룹장은 삭제,
+                    그룹장이 아닌 운영진은 운영 그만두기. */}
+                {activeProfile.type === "operator" ? (
+                  <GroupRemoveButton
+                    groupId={group.id}
+                    groupName={group.name}
+                    mode={group.owner_id === userId ? { kind: "delete" } : { kind: "leave-operator", userId }}
+                  />
+                ) : (
+                  activeChild && (
+                    <GroupRemoveButton
+                      groupId={group.id}
+                      groupName={group.name}
+                      mode={{ kind: "leave-child", childId: activeChild.id }}
+                    />
+                  )
+                )}
+              </div>
             ))}
           </div>
         )}

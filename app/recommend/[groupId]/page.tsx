@@ -9,6 +9,7 @@ import GroupApprovals from "@/components/group-approvals";
 import AddBookToList from "@/components/add-book-to-list";
 import GroupFollow from "@/components/group-follow";
 import GroupIntroEditor from "@/components/group-intro-editor";
+import GroupRemoveButton from "@/components/group-remove-button";
 import CreateAssignment from "@/components/create-assignment";
 import RecommendBookList from "@/components/recommend-book-list";
 import RecommendShelf from "@/components/recommend-shelf";
@@ -36,7 +37,7 @@ export default async function GroupDetailPage({
   // 프로필)을 먼저 동시에 왕복한다 -- 추천도서 목록은 활성 아이 id가
   // 있어야 조회할 수 있어서 그 다음 단계로 미룬다.
   const [{ data: group }, { data: myMembership }, activeChild, activeProfile] = await Promise.all([
-    supabase.from("groups").select("id, name, type, join_policy, invite_code, description").eq("id", groupId).single(),
+    supabase.from("groups").select("id, name, type, join_policy, invite_code, description, owner_id").eq("id", groupId).single(),
     supabase
       .from("group_members")
       .select("role, status")
@@ -209,6 +210,27 @@ export default async function GroupDetailPage({
               books={recommendBooks.map((book) => ({ id: book.bookId, title: book.title }))}
             />
           </div>
+        </div>
+      )}
+
+      {/* 그룹 정리: 그룹장은 삭제, 그룹장이 아닌 운영진은 운영 그만두기.
+          지우면 그룹 목록으로 돌아간다. */}
+      {isOperator && (
+        <div
+          className="mt-10 flex items-center justify-between gap-3 border-t pt-4"
+          style={{ borderColor: "rgba(38,54,43,0.08)" }}
+        >
+          <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+            {group.owner_id === userId
+              ? "그룹을 지우면 추천도서·숙제도 함께 지워져요. 아이들의 독서기록은 남아요."
+              : "운영을 그만두면 그룹은 남고 내 숲지기 목록에서만 빠져요."}
+          </p>
+          <GroupRemoveButton
+            groupId={group.id}
+            groupName={group.name}
+            mode={group.owner_id === userId ? { kind: "delete" } : { kind: "leave-operator", userId }}
+            afterHref="/teacher"
+          />
         </div>
       )}
     </div>
