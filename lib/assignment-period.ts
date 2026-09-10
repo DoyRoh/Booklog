@@ -44,13 +44,15 @@ export function isPast(a: PeriodLike): boolean {
   return effectiveRange(a).end < kstWeekStart();
 }
 
-/** 제목·안내·그룹·책 제목에서 검색(공백으로 나눈 단어 전부 포함). */
+/** 제목·안내·그룹·책 제목·작가에서 검색(공백으로 나눈 단어 전부 포함). */
 export function matchesQuery(
-  a: { title: string; description: string | null; groupName: string; books: { title: string }[] },
+  a: { title: string; description: string | null; groupName: string; books: { title: string; author?: string | null }[] },
   query: string
 ): boolean {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return true;
-  const hay = [a.title, a.description ?? "", a.groupName, ...a.books.map((b) => b.title)].join(" ").toLowerCase();
+  const hay = [a.title, a.description ?? "", a.groupName, ...a.books.flatMap((b) => [b.title, b.author ?? ""])]
+    .join(" ")
+    .toLowerCase();
   return words.every((w) => hay.includes(w));
 }

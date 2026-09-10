@@ -56,7 +56,7 @@ export default function AssignmentsBrowser({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={mode === "past" ? "지난 숙제 검색 (제목·책·그룹)" : "숙제 검색 (제목·책·그룹)"}
+          placeholder={mode === "past" ? "지난 숙제 검색 (제목·책·작가·그룹)" : "숙제 검색 (제목·책·작가·그룹)"}
           className="min-w-0 flex-1 bg-transparent text-sm outline-none"
         />
       </label>

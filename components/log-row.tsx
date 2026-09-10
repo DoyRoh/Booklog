@@ -19,6 +19,7 @@ export function LogRow({
   onClick,
   first,
   hideDate,
+  rightInteractive,
   children,
 }: {
   dateTop: string;
@@ -32,73 +33,100 @@ export function LogRow({
   first?: boolean;
   /** 바로 위 줄과 같은 날짜면 날짜 칸을 비워 같은 날끼리 묶어 보이게 한다. */
   hideDate?: boolean;
+  /** right에 버튼(토글)이 들어가면 true -- 링크/버튼 바깥에 배치한다. */
+  rightInteractive?: boolean;
   /** 제목 아래에 들어가는 확장 내용(숙제의 책 목록·미션 등). */
   children?: ReactNode;
 }) {
-  const body = (
-    <>
-      <div className="flex w-14 flex-none flex-col pt-0.5" aria-hidden={hideDate || undefined}>
-        {!hideDate && (
-          <>
-            <span className="d text-sm leading-tight" style={{ color: "var(--ink-2)" }}>
-              {dateTop}
-            </span>
-            {dateBottom && (
-              <span className="text-[9px] leading-tight" style={{ color: "var(--ink-2)", opacity: 0.6 }}>
-                {dateBottom}
-              </span>
-            )}
-          </>
-        )}
-      </div>
-      <div className="flex w-12 flex-none flex-col items-center gap-0.5">
-        <span
-          className="d inline-block rounded-full px-2 py-0.5 text-[11px] leading-tight text-white"
-          style={{ background: chip.color }}
-        >
-          {chip.label}
-        </span>
-        {chip.sub && (
-          <span className="text-[10px] leading-tight" style={{ color: chip.color }}>
-            {chip.sub}
+  const dateCol = (
+    <div className="flex w-11 flex-none flex-col pt-3.5" aria-hidden={hideDate || undefined}>
+      {!hideDate && (
+        <>
+          <span className="d text-sm leading-tight" style={{ color: "var(--ink-2)" }}>
+            {dateTop}
           </span>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-sm leading-snug" style={{ wordBreak: "keep-all" }}>
-            {title}
-          </p>
-          {right && <span className="flex-none">{right}</span>}
-        </div>
-        {subtitle && (
-          <p className="mt-0.5 text-xs leading-snug" style={{ color: "var(--ink-2)" }}>
-            {subtitle}
-          </p>
-        )}
-        {children}
-      </div>
+          {dateBottom && (
+            <span className="text-[9px] leading-tight" style={{ color: "var(--ink-2)", opacity: 0.6 }}>
+              {dateBottom}
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  );
+  // 구분선은 날짜 칸을 비우고 칩부터 시작한다 -- 끝까지 이어진 선이 표처럼
+  // 보여 촌스럽다는 피드백.
+  const chipCol = (
+    <div className="flex w-11 flex-none flex-col items-center gap-0.5">
+      <span
+        className="d inline-block rounded-full px-2 py-0.5 text-[11px] leading-tight text-white"
+        style={{ background: chip.color }}
+      >
+        {chip.label}
+      </span>
+      {chip.sub && (
+        <span className="text-[10px] leading-tight" style={{ color: chip.color }}>
+          {chip.sub}
+        </span>
+      )}
+    </div>
+  );
+  const text = (
+    <div className="min-w-0 flex-1">
+      {/* 제목은 두 줄까지만, 넘치면 … (긴 참고서 제목이 네 줄씩 차지하던 문제) */}
+      <p
+        className="text-sm leading-snug"
+        style={{
+          overflowWrap: "anywhere",
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {title}
+      </p>
+      {subtitle && (
+        <p className="mt-0.5 truncate text-xs leading-snug" style={{ color: "var(--ink-2)" }}>
+          {subtitle}
+        </p>
+      )}
+      {children}
+    </div>
+  );
+  // 오른쪽에 토글 버튼이 있으면(rightInteractive) 링크 밖에 두고, 글자만
+  // 있으면 링크 안에 넣어 줄 전체가 눌리게 한다(a 안에 button 중첩 금지).
+  const rightNode = right ? <span className="flex flex-none items-start">{right}</span> : null;
+  const main = (
+    <>
+      {chipCol}
+      {text}
+      {!rightInteractive && rightNode}
     </>
   );
-  const cls = "flex w-full items-start gap-2 px-3 py-3 text-left";
-  const style = first ? undefined : { borderTop: "1px solid rgba(38,54,43,0.08)" };
-  if (href) {
-    return (
-      <Link href={href} className={cls} style={style}>
-        {body}
-      </Link>
-    );
-  }
-  if (onClick) {
-    return (
-      <button type="button" onClick={onClick} className={cls} style={style}>
-        {body}
-      </button>
-    );
-  }
+  const mainCls = "flex min-w-0 flex-1 items-start gap-2 text-left";
+  const mainEl = href ? (
+    <Link href={href} className={mainCls}>
+      {main}
+    </Link>
+  ) : onClick ? (
+    <button type="button" onClick={onClick} className={mainCls}>
+      {main}
+    </button>
+  ) : (
+    <div className={mainCls}>{main}</div>
+  );
+
   return (
-    <div className={cls} style={style}>
-      {body}
+    <div className="flex w-full items-stretch gap-2 px-4">
+      {dateCol}
+      <div
+        className="flex min-w-0 flex-1 items-start gap-1 py-3.5"
+        style={first ? undefined : { borderTop: "1px solid rgba(38,54,43,0.08)" }}
+      >
+        {mainEl}
+        {rightInteractive && rightNode}
+      </div>
     </div>
   );
 }
@@ -117,7 +145,7 @@ export function LogGroup({
 }) {
   return (
     <div className="overflow-hidden rounded-[var(--r)] border" style={{ borderColor: "var(--rule)", background: "var(--card)" }}>
-      <div className="flex items-end justify-between gap-2 px-4 pt-4 pb-2">
+      <div className="flex items-end justify-between gap-2 px-5 pt-5 pb-2">
         <p className="d text-lg leading-none">
           {heading}
           {headingSub && (

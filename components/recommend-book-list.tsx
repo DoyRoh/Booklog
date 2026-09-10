@@ -162,6 +162,12 @@ export default function RecommendBookList({
                   key={book.itemId}
                   first={index === 0}
                   hideDate={sameDayAsPrev}
+                  rightInteractive
+                  href={
+                    manage
+                      ? undefined
+                      : `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(groupId)}`
+                  }
                   dateTop={shortMd(book.addedAt)}
                   chip={{
                     label: firstCategory ?? "책",
@@ -169,21 +175,12 @@ export default function RecommendBookList({
                     sub: secondCategory,
                   }}
                   title={book.title}
-                  subtitle={
-                    book.author || book.inAssignment ? (
-                      <>
-                        {book.inAssignment && (
-                          <Illustration name="lantern-on" height={13} className="mr-1 inline-block align-middle" aria-label="숙제 중" />
-                        )}
-                        {book.author}
-                      </>
-                    ) : undefined
-                  }
+                  subtitle={book.author ?? undefined}
                   right={
                     manage || !activeChildId ? null : (
                       <span className="-my-1.5 -mr-2 flex items-center">
-                        <ShelfBookmark childId={activeChildId} bookId={book.bookId} groupId={groupId} status={book.readStatus} />
-                        <ReadCheck childId={activeChildId} bookId={book.bookId} groupId={groupId} done={book.readStatus === "done"} />
+                        <ShelfBookmark childId={activeChildId} bookId={book.bookId} groupId={groupId} status={book.readStatus} size={20} />
+                        <ReadCheck childId={activeChildId} bookId={book.bookId} groupId={groupId} done={book.readStatus === "done"} size={24} />
                       </span>
                     )
                   }

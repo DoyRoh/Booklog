@@ -21,7 +21,7 @@ export default async function GroupDetailPage({
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-6 pt-8">
         <Link href="/login" className="text-sm" style={{ color: "var(--point)" }}>
           로그인하기
         </Link>
@@ -46,7 +46,7 @@ export default async function GroupDetailPage({
 
   if (!group) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-6 pt-8">
         <h1 className="d text-xl">그룹</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           그룹을 찾을 수 없어요.
@@ -93,7 +93,7 @@ export default async function GroupDetailPage({
     .filter((row) => row.childName);
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
       <Link href="/recommend" className="text-sm" style={{ color: "var(--ink-2)" }}>
         ← 그룹 목록
       </Link>

@@ -14,7 +14,7 @@ export default async function RecommendPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-6 pt-8">
         <h1 className="d text-xl">추천</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -56,7 +56,7 @@ export default async function RecommendPage() {
   const myGroupIds = myGroups.map((g) => g.id);
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
       {/* 선생님/기관 프로필도 이 계정에서 바로 추가할 수 있으므로(더보기의
           "프로필" 섹션과 같은 목적지), 역할과 무관하게 항상 보여준다. */}
       <div className="flex justify-end">

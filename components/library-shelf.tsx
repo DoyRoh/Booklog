@@ -70,9 +70,14 @@ const SPINE_COLORS = ["#6B8F71", "#A6763F", "#D9A441", "#7C9C82", "#B5654A", "#5
 // 나무 선반 -- 숲길 배경 그림의 나무 기둥 색(밝은 결 → 몸통 → 아래 그늘)을
 // 그대로 뽑아 왔다. 나뭇결 무늬는 일부러 넣지 않는다(표지 이미지와 싸워서
 // 산만해짐). 그림의 기둥도 결이 거의 없는 평면이라 톤만 맞추면 충분하다.
+// 선반은 얇은 판 하나 -- 두꺼운 통나무 느낌이 아니라 벽에 붙인 가는 선반.
+// 위쪽 밝은 결 한 줄 + 앞면 몸통, 아래로 옅은 그림자만(사용자 피드백:
+// "두꺼움이 맘에 안 든다, 더 얇고 세련되게").
 const PLANK_STYLE = {
-  background: "linear-gradient(#867556, #735838 55%, #4C412F)",
-  boxShadow: "0 3px 4px rgba(38,54,43,0.18)",
+  height: 5,
+  background: "linear-gradient(#9C8A6B, #7A6247)",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.28), 0 2px 3px rgba(38,54,43,0.22), 0 6px 10px -6px rgba(38,54,43,0.25)",
+  borderRadius: 2,
 } as const;
 
 // 책등 보기에서 책마다 높이를 조금씩 다르게 -- 전부 같은 높이면 막대그래프처럼
@@ -439,7 +444,7 @@ export default function LibraryShelf({
                   </button>
                 ))}
               </div>
-              <div className="h-3 rounded-[3px]" style={PLANK_STYLE} />
+              <div style={PLANK_STYLE} />
               <div className="mt-1.5 grid grid-cols-3 gap-4 px-3">
                 {row.map((book) => (
                   <div key={book.bookId} className="flex flex-col items-center gap-1">
@@ -495,7 +500,7 @@ export default function LibraryShelf({
                   </button>
                 ))}
               </div>
-              <div className="h-3 rounded-[3px]" style={PLANK_STYLE} />
+              <div style={PLANK_STYLE} />
             </div>
           ))}
         </div>

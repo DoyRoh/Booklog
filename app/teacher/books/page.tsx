@@ -28,7 +28,7 @@ export default async function TeacherBooksPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-6 pt-8">
         <h1 className="d text-xl">추천도서</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -142,7 +142,7 @@ export default async function TeacherBooksPage() {
   });
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
       <h1 className="d text-xl">추천도서</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         그룹의 책 서랍이에요. 올린 날짜·분야·제목 순으로 보이고, 오른쪽은 우리 아이들 중 몇 명이 읽었는지예요.

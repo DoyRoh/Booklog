@@ -250,51 +250,75 @@ export default function AssignmentToday({
                       {completedCount}/{assignment.books.length}
                     </span>
                   }
-                >
-                  <div className="mt-2 flex flex-col gap-1.5">
-                    {assignment.books.map((book) => (
-                      <div
-                        key={book.id}
-                        className="flex items-center gap-1 rounded-[10px] pl-3 pr-1"
-                        style={{ background: "var(--paper)" }}
-                      >
-                        {/* 제목을 누르면 기록 화면(안 읽음) / 기록 고치기(읽음). 오른쪽 체크는
-                            기록 화면 없이 바로 "읽었어요"만 켜고 끈다. */}
-                        {book.completed ? (
-                          <button
-                            type="button"
-                            disabled={!book.recordId}
-                            onClick={() => setEditing(book)}
-                            className="min-w-0 flex-1 py-2 text-left text-sm"
+                />
+                {/* 책 줄과 미션은 LogRow 안에 넣지 않고(글 칸이 좁아 제목이 잘림) 그 아래에
+                    따로 둔다. 왼쪽은 날짜 칸(w-11 + 간격) 만큼 비워 칩 칸부터 시작하고
+                    오른쪽은 박스 끝까지 -- 숲길 목록의 책 줄과 같은 폭·같은 형식
+                    (제목 두 줄까지 + 작은 작가명, 오른쪽 체크). */}
+                {(assignment.books.length > 0 || assignment.missions.length > 0) && (
+                  <div className="pr-4 pl-[4.25rem] pb-2">
+                    {assignment.books.map((book, bookIndex) => {
+                      const label = (
+                        <span className="block min-w-0">
+                          <span
+                            className="block text-sm leading-snug"
+                            style={{ overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
                           >
                             {book.title}
-                          </button>
-                        ) : (
-                          <Link
-                            href={`/library/add?bookId=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(assignment.groupId)}`}
-                            className="min-w-0 flex-1 py-2 text-sm"
-                          >
-                            {book.title}
-                            {book.targetPage && (
+                            {book.targetPage && !book.completed && (
                               <span className="ml-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
                                 {book.targetPage}쪽까지
                               </span>
                             )}
-                          </Link>
-                        )}
-                        <ReadCheck childId={childId} bookId={book.id} groupId={assignment.groupId} done={book.completed} size={24} />
-                      </div>
-                    ))}
-                  </div>
+                          </span>
+                          {book.author && (
+                            <span className="mt-0.5 block truncate text-xs leading-snug" style={{ color: "var(--ink-2)" }}>
+                              {book.author}
+                            </span>
+                          )}
+                        </span>
+                      );
+                      return (
+                        <div
+                          key={book.id}
+                          className="flex items-center gap-2"
+                          style={bookIndex > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
+                        >
+                          {/* 제목을 누르면 기록 화면(안 읽음) / 기록 고치기(읽음). 오른쪽 체크는
+                              기록 화면 없이 바로 "읽었어요"만 켜고 끈다. */}
+                          {book.completed ? (
+                            <button
+                              type="button"
+                              disabled={!book.recordId}
+                              onClick={() => setEditing(book)}
+                              className="min-w-0 flex-1 py-2.5 text-left"
+                            >
+                              {label}
+                            </button>
+                          ) : (
+                            <Link
+                              href={`/library/add?bookId=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(assignment.groupId)}`}
+                              className="min-w-0 flex-1 py-2.5"
+                            >
+                              {label}
+                            </Link>
+                          )}
+                          <span className="-mr-2 flex flex-none items-center">
+                            <ReadCheck childId={childId} bookId={book.id} groupId={assignment.groupId} done={book.completed} size={24} />
+                          </span>
+                        </div>
+                      );
+                    })}
 
-                  {assignment.missions.map((mission) =>
-                    mission.type === "question" ? (
-                      <QuestionMission key={mission.id} childId={childId} mission={mission} />
-                    ) : mission.type === "voice" ? (
-                      <VoiceMission key={mission.id} childId={childId} mission={mission} voiceAllowed={voiceAllowed} />
-                    ) : null
-                  )}
-                </LogRow>
+                    {assignment.missions.map((mission) =>
+                      mission.type === "question" ? (
+                        <QuestionMission key={mission.id} childId={childId} mission={mission} />
+                      ) : mission.type === "voice" ? (
+                        <VoiceMission key={mission.id} childId={childId} mission={mission} voiceAllowed={voiceAllowed} />
+                      ) : null
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

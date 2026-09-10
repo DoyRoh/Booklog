@@ -24,7 +24,7 @@ export default async function TeacherAssignmentsPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-6 pt-8">
         <h1 className="d text-xl">숙제</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -107,7 +107,7 @@ export default async function TeacherAssignmentsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
       <h1 className="d text-xl">숙제</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         추천도서 서랍에서 골라 기간을 정해 낸 숙제예요. 시작일·종류(읽기/질문/낭독)·제목 순으로 보이고, 오른쪽은 몇

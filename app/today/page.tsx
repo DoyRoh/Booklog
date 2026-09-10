@@ -16,7 +16,7 @@ export default async function TodayPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-6 pt-8">
         <h1 className="d text-xl">오늘</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -35,7 +35,7 @@ export default async function TodayPage() {
 
   if (activeProfile.type === "operator") {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-6 pt-8">
         <h1 className="d text-xl">오늘</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           숲지기 프로필로 보고 있어요. 대시보드에서 그룹 아이들의 읽기·숙제 상황을 볼 수 있어요.
@@ -53,7 +53,7 @@ export default async function TodayPage() {
 
   if (!activeChild) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-6 pt-8">
         <h1 className="d text-xl">오늘</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           아이를 등록하면 오늘의 숙제가 여기에 표시돼요. 더보기에서 아이를 추가해 주세요.
@@ -127,7 +127,7 @@ export default async function TodayPage() {
   });
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
       <p className="hand text-xl" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
         {activeChild.name}, 오늘도 책숲을 걸어볼까요?
       </p>
@@ -142,7 +142,7 @@ export default async function TodayPage() {
           요약이라, 요약 박스를 맨 위로 올리고 기록 버튼은 그 아래로
           내렸다(레거시 "유안이 독서 기록" 화면 구조 참고). */}
       <div
-        className="mt-3 rounded-[var(--r)] border p-4"
+        className="mt-4 rounded-[var(--r)] border p-5"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
         {/* 우리 숲 미리보기 -- 권수 배지("숲이 자라요")를 딴 만큼 나무가 서

@@ -17,7 +17,7 @@ export default async function LibraryPage({
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-6 pt-8">
         <h1 className="d text-xl">책장</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -86,7 +86,7 @@ export default async function LibraryPage({
   const books: ShelfBook[] = Array.from(byBook.values());
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
       {!activeChild && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
           아이를 등록하면 책장이 시작돼요. 더보기에서 아이를 추가해 주세요.

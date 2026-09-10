@@ -43,7 +43,7 @@ export function ReadCheck({
       onClick={toggle}
       aria-pressed={value}
       aria-label={value ? "읽었어요 (누르면 해제)" : "읽었어요로 표시"}
-      className="flex h-9 w-9 items-center justify-center rounded-full"
+      className="flex h-8 w-8 items-center justify-center rounded-full"
       style={{ color: value ? "var(--point)" : "rgba(38,54,43,0.28)" }}
     >
       <CheckCircleIcon filled={value} width={size} height={size} />
@@ -87,7 +87,7 @@ export function ShelfBookmark({
       onClick={toggle}
       aria-pressed={shelved}
       aria-label={shelved ? "책장에 있어요" : "책장에 꽂기"}
-      className="flex h-9 w-9 items-center justify-center rounded-full"
+      className="flex h-8 w-8 items-center justify-center rounded-full"
       style={{ color: shelved ? "var(--lantern)" : "rgba(38,54,43,0.28)" }}
     >
       <BookmarkIcon filled={shelved} width={size} height={size} />
