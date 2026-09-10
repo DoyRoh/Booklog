@@ -14,7 +14,7 @@ export type OperatorGroup = {
   operatorRole: "teacher" | "admin" | "curator";
 };
 
-// 더보기의 "프로필" 목록 중 숲지기(선생님·기관·인플루언서) 프로필 부분.
+// 더보기의 "프로필" 목록 중 숲지기(그룹을 운영하는 사람 -- 선생님·가족·기관·인플루언서) 프로필 부분.
 // 계정 하나가 아이 프로필과 동시에 가질 수 있는 다른 종류의 프로필이라,
 // ChildSwitcher와 나란히 놓고 쓴다. 그룹을 고르면 active_profile_type을
 // "operator"로 바꾸고 숲지기 대시보드로 이동한다 -- 여러 그룹을 운영해도

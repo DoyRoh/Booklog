@@ -17,7 +17,7 @@ const ROLES: { value: Role; label: string; description: string }[] = [
   {
     value: "teacher",
     label: "숲지기",
-    description: "선생님·기관·인플루언서 -- 추천도서를 올리고 숙제를 내고 아이들의 읽기를 살펴요",
+    description: "선생님·가족·도서관·크리에이터 누구나 -- 그룹을 만들어 추천도서를 올리고 숙제를 내요",
   },
 ];
 
