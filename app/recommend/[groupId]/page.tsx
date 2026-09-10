@@ -225,7 +225,7 @@ export default async function GroupDetailPage({
           여기는 운영진이 새 숙제를 만드는 자리로만 남겨둔다. */}
       {isOperator && (
         <div className="mt-5" id="assignment">
-          <Section title="숙제" description="추천도서 중에서 골라 기간과 미션을 붙여요.">
+          <Section title="숙제" description="읽을 책을 찾아 넣고 언제까지인지 정해요.">
             <Link
               href={`/teacher/assignments/new?group=${groupId}`}
               className="d block rounded-[14px] border border-dashed px-4 py-3 text-center text-sm"

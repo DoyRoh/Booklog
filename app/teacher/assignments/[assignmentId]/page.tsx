@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { periodLabel } from "@/lib/assignment-period";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { AvatarIllustration } from "@/components/illustration";
@@ -29,7 +30,7 @@ export default async function TeacherAssignmentDetailPage({
   const { data: assignment } = await supabase
     .from("assignments")
     .select(
-      "id, group_id, title, description, start_date, end_date, groups(name), assignment_books(book_id, target_page, books(title, cover_url)), assignment_missions(id, type, question)"
+      "id, group_id, title, description, start_date, end_date, created_at, groups(name), assignment_books(book_id, target_page, books(title, cover_url)), assignment_missions(id, type, question)"
     )
     .eq("id", assignmentId)
     .maybeSingle();
@@ -96,11 +97,9 @@ export default async function TeacherAssignmentDetailPage({
         {group?.name}
       </p>
       <h1 className="d text-xl">{assignment.title}</h1>
-      {(assignment.start_date || assignment.end_date) && (
-        <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-          {assignment.start_date ?? ""} ~ {assignment.end_date ?? ""}
-        </p>
-      )}
+      <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+        {periodLabel({ startDate: assignment.start_date, endDate: assignment.end_date, createdAt: assignment.created_at })}
+      </p>
       {assignment.description && (
         <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>
           {assignment.description}

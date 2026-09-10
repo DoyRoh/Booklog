@@ -73,7 +73,7 @@ async function NewAssignmentForm({ groupId, groupName, multi }: { groupId: strin
     <Section
       className="mt-5"
       title={groupName}
-      description="추천도서 중에서 골라 기간과 미션을 붙여요."
+      description="읽을 책을 찾아 넣고 언제까지인지 정해요. 추천도서에서 골라 넣을 수도 있어요."
       action={
         multi ? (
           <Link href="/teacher/assignments/new" className="text-xs" style={{ color: "var(--ink-2)" }}>
@@ -82,23 +82,13 @@ async function NewAssignmentForm({ groupId, groupName, multi }: { groupId: strin
         ) : undefined
       }
     >
-      {books.length === 0 ? (
-        <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-          이 그룹의 추천도서가 아직 없어요. 숙제 책은 추천도서에서 고르니{" "}
-          <Link href={`/teacher/books/add?group=${groupId}`} style={{ color: "var(--point)" }}>
-            먼저 책을 올려 주세요
-          </Link>
-          .
-        </p>
-      ) : (
-        <CreateAssignment
-          groupId={groupId}
-          books={books.map((book) => ({ id: book.bookId, title: book.title }))}
-          defaultOpen
-          afterSaveHref="/teacher/assignments"
-          cancelHref="/teacher/assignments"
-        />
-      )}
+      <CreateAssignment
+        groupId={groupId}
+        books={books.map((book) => ({ id: book.bookId, title: book.title, author: book.author, coverUrl: book.coverUrl }))}
+        defaultOpen
+        afterSaveHref="/teacher/assignments"
+        cancelHref="/teacher/assignments"
+      />
     </Section>
   );
 }

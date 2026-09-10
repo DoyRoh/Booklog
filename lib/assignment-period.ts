@@ -19,6 +19,13 @@ export function effectiveRange(a: PeriodLike): { start: string; end: string } {
   return { start, end };
 }
 
+/** "9/10 낸 숙제 · ~9/16" -- 낸 날(등록일)과 마감을 한 줄로. */
+export function periodLabel(a: PeriodLike): string {
+  const { start, end } = effectiveRange(a);
+  const md = (iso: string) => `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`;
+  return `${md(start)} 낸 숙제 · ~${md(end)}까지`;
+}
+
 /** 오늘(한국) 기준으로 진행 중인지 -- 오늘 탭 요약용. */
 export function isCurrent(a: PeriodLike, today = kstDate()): boolean {
   const { start, end } = effectiveRange(a);

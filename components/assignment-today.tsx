@@ -10,6 +10,7 @@ import RecordEditModal, { type EditableRecord } from "@/components/record-edit-m
 import type { ReadingStatus } from "@/lib/reading-status";
 import { ReadCheck } from "@/components/read-toggles";
 import { LogGroup, LogRow, shortMd } from "@/components/log-row";
+import { effectiveRange } from "@/lib/assignment-period";
 import { missionChip } from "@/lib/assignment-chip";
 import { kstDate } from "@/lib/kst";
 
@@ -233,8 +234,8 @@ export default function AssignmentToday({
               <div key={assignment.id} id={assignment.id} className="scroll-mt-4">
                 <LogRow
                   first={index === 0}
-                  dateTop={assignment.startDate ? shortMd(assignment.startDate) : "상시"}
-                  dateBottom={assignment.endDate ? `~${shortMd(assignment.endDate)}` : undefined}
+                  dateTop={shortMd(effectiveRange(assignment).start)}
+                  dateBottom={`~${shortMd(effectiveRange(assignment).end)}`}
                   chip={missionChip(assignment.missions)}
                   title={<span className="d">{assignment.title}</span>}
                   subtitle={assignment.description ?? undefined}

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { shortMd } from "@/components/log-row";
 import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
+import { effectiveRange } from "@/lib/assignment-period";
 import { missionChip } from "@/lib/assignment-chip";
 
 type AssignmentCard = {
@@ -15,6 +16,7 @@ type AssignmentCard = {
   missions: { type: string }[];
   startDate: string | null;
   endDate: string | null;
+  createdAt: string;
   completed: number;
   total: number;
 };
@@ -57,7 +59,7 @@ export default async function TeacherAssignmentsPage() {
   const { data: assignmentRows } = groupIds.length
     ? await supabase
         .from("assignments")
-        .select("id, group_id, title, description, start_date, end_date, assignment_books(books(title)), assignment_missions(type)")
+        .select("id, group_id, title, description, start_date, end_date, created_at, assignment_books(books(title)), assignment_missions(type)")
         .in("group_id", groupIds)
         .order("created_at", { ascending: false })
     : { data: [] };
@@ -102,6 +104,7 @@ export default async function TeacherAssignmentsPage() {
       missions: (assignment.assignment_missions as unknown as { type: string }[] | null) ?? [],
       startDate: assignment.start_date,
       endDate: assignment.end_date,
+      createdAt: assignment.created_at,
       completed: stat.completed,
       total: stat.total,
     };
@@ -141,8 +144,8 @@ export default async function TeacherAssignmentsPage() {
               return {
                 id: card.id,
                 href: `/teacher/assignments/${card.id}`,
-                dateTop: card.startDate ? shortMd(card.startDate) : "상시",
-                dateBottom: card.endDate ? `~${shortMd(card.endDate)}` : undefined,
+                dateTop: shortMd(effectiveRange(card).start),
+                dateBottom: `~${shortMd(effectiveRange(card).end)}`,
                 chip: missionChip(card.missions),
                 title: card.title,
                 titleBold: true,

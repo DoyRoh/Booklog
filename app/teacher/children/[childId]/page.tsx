@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { periodLabel } from "@/lib/assignment-period";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getRecommendBooks } from "@/lib/recommend-books";
@@ -8,6 +9,7 @@ type AssignmentRow = {
   id: string;
   title: string;
   start_date: string | null;
+  created_at: string;
   end_date: string | null;
   assignment_books: { book_id: string; target_page: number | null; books: { title: string } | null }[] | null;
   assignment_missions: { id: string; type: string; question: string | null }[] | null;
@@ -73,7 +75,7 @@ export default async function TeacherChildDetailPage({
     supabase
       .from("assignments")
       .select(
-        "id, title, start_date, end_date, assignment_books(book_id, target_page, books(title)), assignment_missions(id, type, question)"
+        "id, title, start_date, end_date, created_at, assignment_books(book_id, target_page, books(title)), assignment_missions(id, type, question)"
       )
       .eq("group_id", groupId)
       .order("created_at", { ascending: false }),
@@ -214,11 +216,9 @@ export default async function TeacherChildDetailPage({
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <p className="d truncate text-sm">{assignment.title}</p>
-                      {(assignment.start_date || assignment.end_date) && (
-                        <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                          {assignment.start_date ?? ""} ~ {assignment.end_date ?? ""}
-                        </p>
-                      )}
+                      <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                        {periodLabel({ startDate: assignment.start_date, endDate: assignment.end_date, createdAt: assignment.created_at })}
+                      </p>
                     </div>
                     <span
                       className="d flex-none rounded-full px-2 py-0.5 text-xs"
