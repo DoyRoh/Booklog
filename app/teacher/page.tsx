@@ -170,6 +170,13 @@ export default async function TeacherDashboardPage() {
               )}
             </div>
           ))}
+          <Link
+            href="/recommend/create"
+            className="d flex items-center justify-center rounded-[var(--r)] border border-dashed px-4 py-3 text-sm"
+            style={{ borderColor: "rgba(38,54,43,0.28)", color: "var(--ink-2)" }}
+          >
+            + 새 그룹 만들기 (예: 6살 추천도서)
+          </Link>
         </div>
       )}
     </div>

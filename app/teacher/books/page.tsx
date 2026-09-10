@@ -143,11 +143,23 @@ export default async function TeacherBooksPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
-      <h1 className="d text-xl">추천도서</h1>
-      <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-        그룹의 책 서랍이에요. 올린 날짜·분야·제목 순으로 보이고, 오른쪽은 우리 아이들 중 몇 명이 읽었는지예요.
-        지금 숙제에 들어간 책에는 등불이 켜져요.
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="d text-xl">추천도서</h1>
+          <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+            그룹마다 책 서랍이 하나씩 있어요. 오른쪽 숫자는 우리 아이들 중 몇 명이 읽었는지예요.
+          </p>
+        </div>
+        {/* 숲지기 한 명이 그룹을 여러 개 운영할 수 있다(7살 추천도서, 6살 추천도서 …).
+            빈 상태에서만 보이던 만들기 링크를 항상 보이는 버튼으로. */}
+        <Link
+          href="/recommend/create"
+          className="d flex-none rounded-[14px] px-3 py-2 text-sm text-white"
+          style={{ background: "var(--point)" }}
+        >
+          + 새 그룹
+        </Link>
+      </div>
 
       {sections.length === 0 ? (
         <div className="mt-6">
