@@ -11,6 +11,7 @@ type OpenGroup = {
   name: string;
   type: string;
   description?: string | null;
+  operatorName?: string | null;
   bookCount?: number;
   covers?: string[];
 };
@@ -112,6 +113,12 @@ export default function BrowseGroups({
             <Link href={`/recommend/${group.id}`} className="min-w-0 flex-1">
               <p className="d text-sm">{group.name}</p>
               <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                {group.operatorName && (
+                  <>
+                    <span style={{ color: "var(--point-deep)" }}>숲지기 {group.operatorName}</span>
+                    {" · "}
+                  </>
+                )}
                 {GROUP_TYPE_LABELS[group.type] ?? group.type}
                 {typeof group.bookCount === "number" && ` · 추천도서 ${group.bookCount}권`}
               </p>

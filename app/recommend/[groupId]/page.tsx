@@ -41,7 +41,7 @@ export default async function GroupDetailPage({
   // 프로필)을 먼저 동시에 왕복한다 -- 추천도서 목록은 활성 아이 id가
   // 있어야 조회할 수 있어서 그 다음 단계로 미룬다.
   const [{ data: group }, { data: myMembership }, activeChild, activeProfile] = await Promise.all([
-    supabase.from("groups").select("id, name, type, join_policy, invite_code, description, owner_id").eq("id", groupId).single(),
+    supabase.from("groups").select("id, name, type, join_policy, invite_code, description, owner_id, operator_name").eq("id", groupId).single(),
     supabase
       .from("group_members")
       .select("role, status")
@@ -117,6 +117,12 @@ export default async function GroupDetailPage({
         <div className="min-w-0">
           <h1 className="d text-xl">{group.name}</h1>
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+            {group.operator_name && (
+              <>
+                <span style={{ color: "var(--point-deep)" }}>숲지기 {group.operator_name}</span>
+                {" · "}
+              </>
+            )}
             {GROUP_TYPE_LABELS[group.type] ?? group.type}
             {isOperatorMember && !isOperator && " · 내가 운영하는 그룹"}
           </p>

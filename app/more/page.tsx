@@ -30,7 +30,7 @@ export default async function MorePage() {
   // 목록)을 동시에 왕복한다.
   const [{ data: profile }, { data: guardianRows, error: guardianError }, { data: operatorRows }, activeProfile] =
     await Promise.all([
-    supabase.from("users").select("email, active_child_id, operator_avatar").eq("id", userId).single(),
+    supabase.from("users").select("email, active_child_id, operator_avatar, operator_name").eq("id", userId).single(),
     supabase
       .from("child_guardians")
       .select("children(id, name, avatar, birth_date, invite_code)")
@@ -118,6 +118,7 @@ export default async function MorePage() {
               groups={operatorGroups}
               isActive={activeProfile.type === "operator"}
               avatar={(profile?.operator_avatar as "bear" | "egret" | null) ?? null}
+              operatorName={(profile?.operator_name as string | null) ?? null}
             />
           </div>
         </div>

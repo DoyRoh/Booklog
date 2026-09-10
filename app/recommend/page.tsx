@@ -8,7 +8,14 @@ import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
 import GroupRemoveButton from "@/components/group-remove-button";
 
-type GroupRow = { id: string; name: string; type: string; join_policy: string; owner_id?: string };
+type GroupRow = {
+  id: string;
+  name: string;
+  type: string;
+  join_policy: string;
+  owner_id?: string;
+  operator_name?: string | null;
+};
 
 export default async function RecommendPage() {
   const supabase = await createClient();
@@ -32,19 +39,19 @@ export default async function RecommendPage() {
     getActiveProfile(supabase, userId),
     supabase
       .from("group_members")
-      .select("groups(id, name, type, join_policy, owner_id)")
+      .select("groups(id, name, type, join_policy, owner_id, operator_name)")
       .eq("user_id", userId)
       .eq("status", "approved"),
     supabase
       .from("groups")
-      .select("id, name, type, description, book_lists(book_list_items(created_at, books(cover_url)))")
+      .select("id, name, type, description, operator_name, book_lists(book_list_items(created_at, books(cover_url)))")
       .eq("join_policy", "open"),
   ]);
 
   const { data: memberRows } = activeChild
     ? await supabase
         .from("group_members")
-        .select("groups(id, name, type, join_policy)")
+        .select("groups(id, name, type, join_policy, operator_name)")
         .eq("child_id", activeChild.id)
         .eq("status", "approved")
     : { data: null };
@@ -69,6 +76,7 @@ export default async function RecommendPage() {
     name: string;
     type: string;
     description: string | null;
+    operator_name: string | null;
     book_lists: { book_list_items: { created_at: string | null; books: { cover_url: string | null } | null }[] }[] | null;
   };
   const browseGroups = ((openGroupRows ?? []) as unknown as OpenRow[])
@@ -82,6 +90,7 @@ export default async function RecommendPage() {
         name: g.name,
         type: g.type,
         description: g.description,
+        operatorName: g.operator_name,
         bookCount: items.length,
         covers: items.map((it) => it.books?.cover_url ?? null).filter((c): c is string => Boolean(c)).slice(0, 4),
       };
@@ -124,6 +133,7 @@ export default async function RecommendPage() {
                 <Link href={`/recommend/${group.id}`} className="min-w-0 flex-1">
                   <p className="d truncate text-sm">{group.name}</p>
                   <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                    {group.operator_name && `숲지기 ${group.operator_name} · `}
                     {GROUP_TYPE_LABELS[group.type] ?? group.type}
                   </p>
                 </Link>

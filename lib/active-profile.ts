@@ -8,7 +8,7 @@ export type OperatorAvatar = "bear" | "egret";
 // (teacher/admin/curator)은 그대로 두되 화면에서는 전부 같은 뜻으로 본다.
 export type ActiveProfile =
   | { type: "child" }
-  | { type: "operator"; operatorAvatar: OperatorAvatar | null };
+  | { type: "operator"; operatorAvatar: OperatorAvatar | null; operatorName: string | null };
 
 /**
  * 계정 하나가 아이 프로필과 숲지기 프로필을 동시에 가질 수 있다.
@@ -23,7 +23,7 @@ export async function getActiveProfile(
 ): Promise<ActiveProfile> {
   const { data: user } = await supabase
     .from("users")
-    .select("active_profile_type, operator_avatar")
+    .select("active_profile_type, operator_avatar, operator_name")
     .eq("id", userId)
     .single();
 
@@ -39,5 +39,9 @@ export async function getActiveProfile(
     .in("role", ["teacher", "admin", "curator"]);
 
   if ((memberships ?? []).length === 0) return { type: "child" };
-  return { type: "operator", operatorAvatar: (user.operator_avatar as OperatorAvatar | null) ?? null };
+  return {
+    type: "operator",
+    operatorAvatar: (user.operator_avatar as OperatorAvatar | null) ?? null,
+    operatorName: (user.operator_name as string | null) ?? null,
+  };
 }

@@ -12,10 +12,11 @@ type Profile = {
   childName: string | null;
   childAvatar: ChildAvatar | null;
   operatorAvatar: OperatorAvatar | null;
+  operatorName: string | null;
   loading: boolean;
 };
 
-const ProfileContext = createContext<Profile>({ role: null, childName: null, childAvatar: null, operatorAvatar: null, loading: true });
+const ProfileContext = createContext<Profile>({ role: null, childName: null, childAvatar: null, operatorAvatar: null, operatorName: null, loading: true });
 
 export function useProfile() {
   return useContext(ProfileContext);
@@ -29,7 +30,7 @@ export function useProfile() {
 // 서버 컴포넌트만 새로 그리고 이 클라이언트 컴포넌트는 다시 실행하지
 // 않아서, 이벤트 없이는 상단 제목이 아이를 바꿔도 안 바뀌는 문제가 있었다).
 export default function ProfileProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Profile>({ role: null, childName: null, childAvatar: null, operatorAvatar: null, loading: true });
+  const [state, setState] = useState<Profile>({ role: null, childName: null, childAvatar: null, operatorAvatar: null, operatorName: null, loading: true });
 
   useEffect(() => {
     async function load() {
@@ -38,7 +39,7 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        setState({ role: null, childName: null, childAvatar: null, operatorAvatar: null, loading: false });
+        setState({ role: null, childName: null, childAvatar: null, operatorAvatar: null, operatorName: null, loading: false });
         return;
       }
       // users.role은 온보딩 때 고른 최초 기본값일 뿐이고, 실제로 지금
@@ -57,7 +58,8 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
         childAvatar = child?.avatar ?? null;
       }
       const operatorAvatar = activeProfile.type === "operator" ? activeProfile.operatorAvatar : null;
-      setState({ role, childName, childAvatar, operatorAvatar, loading: false });
+      const operatorName = activeProfile.type === "operator" ? activeProfile.operatorName : null;
+      setState({ role, childName, childAvatar, operatorAvatar, operatorName, loading: false });
     }
 
     load();

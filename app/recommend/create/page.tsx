@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +20,8 @@ const TYPES: { value: GroupType; label: string }[] = [
 export default function CreateGroupPage() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [operatorName, setOperatorName] = useState("");
+  const [hadOperatorName, setHadOperatorName] = useState(false);
   const [description, setDescription] = useState("");
   const [type, setType] = useState<GroupType>("school");
   const [joinPolicy, setJoinPolicy] = useState<JoinPolicy>("approval");
@@ -27,10 +29,32 @@ export default function CreateGroupPage() {
   const [error, setError] = useState<string | null>(null);
   const savingRef = useRef(false);
 
+  // 숲지기 이름은 계정당 하나(users.operator_name). 이미 정해 뒀으면
+  // 채워 두고, 두 번째 그룹부터는 같은 이름으로 만들어진다(고칠 수는 있음).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("users").select("operator_name").eq("id", user.id).single();
+      if (cancelled || !data?.operator_name) return;
+      setOperatorName(data.operator_name);
+      setHadOperatorName(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const canSave = Boolean(name.trim() && operatorName.trim());
+
   async function create() {
     // state로만 막으면 리렌더 전 짧은 틈에 두 번 눌려 그룹이 두 개
     // 생길 수 있다(library/add·팔로우 버튼과 같은 가드).
-    if (!name.trim() || savingRef.current) return;
+    if (!canSave || savingRef.current) return;
     savingRef.current = true;
     setSaving(true);
     setError(null);
@@ -53,10 +77,27 @@ export default function CreateGroupPage() {
       return;
     }
 
+    // 숲지기 이름은 계정(원본)과 그룹(다른 사람이 보는 복사본) 양쪽에.
+    const trimmedOperator = operatorName.trim();
+    const { error: nameError } = await supabase
+      .from("users")
+      .update({ operator_name: trimmedOperator })
+      .eq("id", user.id);
+    if (nameError) {
+      setError(nameError.message);
+      setSaving(false);
+      return;
+    }
+    if (hadOperatorName) {
+      // 이름을 고쳐서 만들었다면 기존 그룹들의 복사본도 맞춘다.
+      await supabase.from("groups").update({ operator_name: trimmedOperator }).eq("owner_id", user.id);
+    }
+
     const groupId = crypto.randomUUID();
     const { error: groupError } = await supabase.from("groups").insert({
       id: groupId,
       name: name.trim(),
+      operator_name: trimmedOperator,
       description: description.trim() || null,
       type,
       join_policy: joinPolicy,
@@ -115,14 +156,32 @@ export default function CreateGroupPage() {
       </div>
 
       <div className="mt-8 flex flex-col gap-4">
-        <input
-          type="text"
-          placeholder="그룹 이름 (예: 7세 은빛반)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="rounded-[14px] border px-4 py-3 text-sm outline-none"
-          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-        />
+        <label className="flex flex-col gap-1.5">
+          <span className="d text-sm">숲지기 이름</span>
+          <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+            아이와 부모에게 보이는 내 이름이에요. 그룹이 여러 개여도 숲지기 이름은 하나예요.
+          </span>
+          <input
+            type="text"
+            placeholder="예: 책읽는곰, 은빛반 선생님, 별빛도서관"
+            value={operatorName}
+            onChange={(e) => setOperatorName(e.target.value)}
+            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="d text-sm">그룹 이름</span>
+          <input
+            type="text"
+            placeholder="예: 7세 추천도서, 은빛반"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          />
+        </label>
 
         <textarea
           placeholder="소개 (선택 · 예: 7살 아이들이 좋아한 그림책을 매주 골라 올려요)"
@@ -196,7 +255,7 @@ export default function CreateGroupPage() {
 
         <button
           type="button"
-          disabled={!name.trim() || saving}
+          disabled={!canSave || saving}
           onClick={create}
           className="d rounded-[14px] py-3 text-sm text-white disabled:opacity-40"
           style={{ background: "var(--point)" }}

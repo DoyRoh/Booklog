@@ -11,7 +11,7 @@ import { isChromeHidden } from "@/lib/nav";
 // 하단 탭 강조 표시로 이미 알 수 있다. '더보기'도 같은 줄 우측에 둔다.
 export default function TopBar() {
   const pathname = usePathname();
-  const { role, childName, childAvatar, operatorAvatar, loading } = useProfile();
+  const { role, childName, childAvatar, operatorAvatar, operatorName, loading } = useProfile();
 
   // 인증 화면에서는 항상 숨기고, 로그인이 안 된 상태(역할 조회가 끝났는데
   // role이 없음)에서도 숨긴다 -- 로그아웃 상태로 /teacher 같은 경로에
@@ -20,7 +20,13 @@ export default function TopBar() {
     return null;
   }
 
-  const title = role === "parent" && childName ? `${childName}의 책숲` : "책숲";
+  // 아이 프로필은 "{아이}의 책숲", 숲지기 프로필은 "{숲지기 이름}의 책숲".
+  const title =
+    role === "parent" && childName
+      ? `${childName}의 책숲`
+      : role === "operator" && operatorName
+        ? `${operatorName}의 책숲`
+        : "책숲";
   // 제목 옆 얼굴: 아이 프로필이면 아이가 고른 아바타, 숲지기 프로필이면
   // 곰(기본) 또는 백로. 아직 역할을 모르는 로딩 중에는 안 그린다.
   const face =
