@@ -69,6 +69,24 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
 }
 
+/* iOS 사파리의 날짜 입력칸은 기본 모양(-webkit-appearance)일 때 width:100%를
+   무시하고 고유 너비로 그려져서 카드 밖으로 삐져나갔다(숙제 만들기의
+   "언제까지"). 기본 모양을 끄고 블록으로 두면 다른 입력칸과 같은 폭·높이로
+   맞는다. 비어 있을 때 높이가 0으로 접히는 것도 min-height로 막는다. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.75rem;
+  text-align: left;
+  background: var(--card);
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 .d {
   font-family: var(--disp);
   /* 제목·라벨(.d)과 본문 텍스트 사이에 위계가 잘 안 보인다는 피드백으로,

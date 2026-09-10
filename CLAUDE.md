@@ -1300,3 +1300,7 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **`lib/operator-books.ts`(신규)**: 추천도서 탭에 있던 조회(임베드 한 번)와 줄 만들기를 `loadOperatorBookSections(supabase, userId, groupId?)`·`operatorBookRows(section, books?)`로 빼서 두 화면이 공유합니다.
 - **추천도서 탭(`/teacher/books`)**: 그룹 카드마다 최근 올린 **10권까지만**(`PREVIEW_LIMIT`), 머리글 오른쪽은 **"관리 ›"** 하나(추가·선택 없음), 10권 넘으면 카드 맨 아래 "나머지 N권 · 전체 보기 ›". `ManagedLogList`에 `preview?: { href, total }` prop을 추가해 이 모드를 켭니다(없으면 기존대로 추가·선택·삭제).
 - **그룹별 관리 화면(`/teacher/books/manage?group=`, 신규)**: 그룹 이름 + "추천도서 N권 · 그룹원 M명" + "그룹 설정 ›"(그룹 상세), 전체 목록을 `ManagedLogList`로(책 추가·선택·삭제 그대로), 그룹이 여럿이면 아래 "다른 그룹" 목록. `?group=` 없이 들어오면 그룹 고르기(`OperatorGroupPicker`), 그룹이 하나면 바로. `[bookId]`와 같은 자리에 동적 세그먼트를 둘 수 없어 쿼리 방식(`/teacher/books/add?group=`과 동일). DB 변경 없음.
+
+## 아이폰에서 날짜 입력칸이 카드 밖으로 삐져나가던 것 (사용자 스크린샷)
+
+iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 때 `width: 100%`를 무시하고 고유 너비로 그려져 숙제 만들기의 "언제까지" 칸이 카드 오른쪽 밖으로 나갔습니다. `app/globals.css`에 날짜 입력칸 전역 규칙을 두었습니다 — 기본 모양 끄기(`appearance: none`), `display: block`, `min-width: 0` / `max-width: 100%`, 비어 있을 때 높이가 접히지 않게 `min-height`, 글자 왼쪽 정렬(`::-webkit-date-and-time-value` 포함). 기록 남기기의 "언제 읽었어", 아이 등록의 생년월일 칸도 같은 규칙을 받습니다. DB 변경 없음.
