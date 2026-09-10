@@ -6,7 +6,14 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 
-type OpenGroup = { id: string; name: string; type: string };
+type OpenGroup = {
+  id: string;
+  name: string;
+  type: string;
+  description?: string | null;
+  bookCount?: number;
+  covers?: string[];
+};
 
 export default function BrowseGroups({
   groups,
@@ -99,14 +106,46 @@ export default function BrowseGroups({
         return (
           <div
             key={group.id}
-            className="flex items-center justify-between gap-3 rounded-[var(--r)] border p-4"
+            className="flex items-start justify-between gap-3 rounded-[var(--r)] border p-4"
             style={{ borderColor: "var(--rule)", background: "var(--card)" }}
           >
-            <Link href={`/recommend/${group.id}`} className="flex-1">
+            <Link href={`/recommend/${group.id}`} className="min-w-0 flex-1">
               <p className="d text-sm">{group.name}</p>
               <p className="text-xs" style={{ color: "var(--ink-2)" }}>
                 {GROUP_TYPE_LABELS[group.type] ?? group.type}
+                {typeof group.bookCount === "number" && ` · 추천도서 ${group.bookCount}권`}
               </p>
+              {group.description && (
+                <p
+                  className="mt-1 text-xs"
+                  style={{
+                    color: "var(--ink)",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {group.description}
+                </p>
+              )}
+              {group.covers && group.covers.length > 0 && (
+                <div className="mt-2 flex gap-1.5">
+                  {group.covers.map((cover, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={i}
+                      src={cover}
+                      alt=""
+                      className="h-12 w-9 flex-none rounded-[4px] object-cover"
+                      style={{ boxShadow: "0 1px 2px rgba(38,54,43,0.25)" }}
+                    />
+                  ))}
+                  <span className="self-center pl-1 text-[11px]" style={{ color: "var(--ink-2)" }}>
+                    미리보기 ›
+                  </span>
+                </div>
+              )}
             </Link>
             {following ? (
               <button

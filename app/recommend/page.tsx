@@ -35,7 +35,10 @@ export default async function RecommendPage() {
       .select("groups(id, name, type, join_policy, owner_id)")
       .eq("user_id", userId)
       .eq("status", "approved"),
-    supabase.from("groups").select("id, name, type").eq("join_policy", "open"),
+    supabase
+      .from("groups")
+      .select("id, name, type, description, book_lists(book_list_items(created_at, books(cover_url)))")
+      .eq("join_policy", "open"),
   ]);
 
   const { data: memberRows } = activeChild
@@ -61,7 +64,30 @@ export default async function RecommendPage() {
   const myGroupIds = myGroups.map((g) => g.id);
   // 둘러보기에는 아직 안 따라가는 그룹만 -- 내 그룹에 있는 게 아래에 또
   // 뜨면 같은 그룹이 두 번 보인다. 끊기는 그룹 상세의 "팔로잉"에서.
-  const browseGroups = (openGroupRows ?? []).filter((g) => !myGroupIds.includes(g.id));
+  type OpenRow = {
+    id: string;
+    name: string;
+    type: string;
+    description: string | null;
+    book_lists: { book_list_items: { created_at: string | null; books: { cover_url: string | null } | null }[] }[] | null;
+  };
+  const browseGroups = ((openGroupRows ?? []) as unknown as OpenRow[])
+    .filter((g) => !myGroupIds.includes(g.id))
+    .map((g) => {
+      const items = (g.book_lists ?? [])
+        .flatMap((list) => list.book_list_items ?? [])
+        .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+      return {
+        id: g.id,
+        name: g.name,
+        type: g.type,
+        description: g.description,
+        bookCount: items.length,
+        covers: items.map((it) => it.books?.cover_url ?? null).filter((c): c is string => Boolean(c)).slice(0, 4),
+      };
+    })
+    // 추천도서가 많은 그룹이 위로 -- 고를 거리가 있는 순.
+    .sort((a, b) => b.bookCount - a.bookCount);
 
   return (
     <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
@@ -133,7 +159,7 @@ export default async function RecommendPage() {
       <div className="mt-8">
         <p className="d text-base">둘러보기</p>
         <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-          공개된 기관·크리에이터 추천도서 리스트예요. 이름을 누르면 소개와 추천도서를 먼저 둘러볼 수 있어요.
+          공개된 기관·크리에이터의 추천도서예요. 누르면 소개와 최근 추천도서 10권을 먼저 둘러보고, 마음에 들면 팔로우해요.
         </p>
         <div className="mt-3">
           <BrowseGroups groups={browseGroups} followingIds={[]} activeChildId={activeChild?.id ?? null} />

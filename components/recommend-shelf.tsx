@@ -39,10 +39,13 @@ export default function RecommendShelf({
   groupId,
   books,
   activeChildId,
+  footnote,
 }: {
   groupId: string;
   books: RecommendBook[];
   activeChildId: string | null;
+  /** 선반 아래 한 줄 안내(예: 팔로우 전 미리보기 안내). */
+  footnote?: React.ReactNode;
 }) {
   const [filter, setFilter] = useState<"all" | string>("all");
 
@@ -162,6 +165,11 @@ export default function RecommendShelf({
           </div>
         ))}
       </div>
+      {footnote && (
+        <p className="mt-2 text-center text-xs" style={{ color: "var(--ink-2)" }}>
+          {footnote}
+        </p>
+      )}
     </div>
   );
 }

@@ -14,6 +14,10 @@ import CreateAssignment from "@/components/create-assignment";
 import RecommendBookList from "@/components/recommend-book-list";
 import RecommendShelf from "@/components/recommend-shelf";
 
+// 팔로우 전 미리보기로 보여줄 추천도서 수. 전부 공개하면 팔로우할 이유가
+// 없고, 아예 안 보이면 "어떤 그룹인지" 고를 수가 없다.
+const PREVIEW_LIMIT = 10;
+
 export default async function GroupDetailPage({
   params,
 }: {
@@ -188,12 +192,20 @@ export default async function GroupDetailPage({
           {isOperator ? (
             <RecommendBookList groupId={groupId} listName={listName} books={recommendBooks} activeChildId={null} manage />
           ) : (
-            // 팔로우 전에는 표지만 둘러보고(책갈피·체크 토글 없음), 팔로우한
-            // 뒤부터 내 책장에 꽂고 읽음 표시를 할 수 있다.
+            // 팔로우 전에는 미리보기 -- 최근 올라온 10권까지만, 표지만
+            // 둘러보고(책갈피·체크 토글 없음). 팔로우한 뒤부터 전부 보이고
+            // 내 책장에 꽂고 읽음 표시를 할 수 있다.
             <RecommendShelf
               groupId={groupId}
-              books={recommendBooks}
+              books={isChildMember ? recommendBooks : recommendBooks.slice(0, PREVIEW_LIMIT)}
               activeChildId={isChildMember ? (activeChild?.id ?? null) : null}
+              footnote={
+                !isChildMember && recommendBooks.length > PREVIEW_LIMIT
+                  ? `미리보기 ${PREVIEW_LIMIT}권 · 팔로우하면 ${recommendBooks.length}권 전부 볼 수 있어요`
+                  : !isChildMember && recommendBooks.length > 0
+                    ? "팔로우하면 책갈피로 내 책장에 꽂을 수 있어요"
+                    : undefined
+              }
             />
           )}
         </div>
