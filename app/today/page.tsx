@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
-import { getActiveChild } from "@/lib/active-child";
-import { getActiveProfile } from "@/lib/active-profile";
+import { getProfileSnapshot } from "@/lib/profile-snapshot";
 import { getTodayAssignments } from "@/lib/assignments";
 import AssignmentSummary from "@/components/assignment-summary";
 import RecentRecords, { type RecentRecord } from "@/components/recent-records";
@@ -29,10 +28,7 @@ export default async function TodayPage() {
   // 지금 활성화된 프로필과 활성 아이는 둘 다 userId에만 의존하고 서로
   // 무관하므로 동시에 물어본다(아이 프로필이 아니면 activeChild 조회는
   // 버려지지만, 흔한 아이 프로필 쪽에서 왕복 하나를 아끼는 게 더 이득이다).
-  const [activeProfile, activeChild] = await Promise.all([
-    getActiveProfile(supabase, userId),
-    getActiveChild(supabase, userId),
-  ]);
+  const { activeProfile, activeChild } = await getProfileSnapshot(supabase, userId);
 
   if (activeProfile.type === "operator") {
     return (

@@ -99,9 +99,8 @@ export default function BottomNav() {
       className="no-print fixed inset-x-0 z-50 mx-auto flex w-fit max-w-[calc(100%-32px)] items-center gap-[2px] rounded-full p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
       style={{
         bottom: "calc(var(--sb) + 14px)",
-        background: "rgba(255,255,255,0.86)",
-        backdropFilter: "blur(14px)",
-        WebkitBackdropFilter: "blur(14px)",
+        background: "rgba(255,255,255,0.96)",
+        willChange: "transform",
         boxShadow: "0 8px 28px -10px rgba(38,54,43,0.35), 0 0 0 1px rgba(38,54,43,0.06)",
         transform: hidden ? "translateY(calc(100% + var(--sb) + 20px))" : "translateY(0)",
       }}

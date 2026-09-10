@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getActiveChild } from "@/lib/active-child";
-import { getActiveProfile, type OperatorAvatar } from "@/lib/active-profile";
+import { getProfileSnapshot } from "@/lib/profile-snapshot";
+import type { OperatorAvatar } from "@/lib/active-profile";
 
 export type ChildAvatar = "rabbit" | "dog" | "cat";
 
@@ -43,9 +43,12 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
         if (my === seq) setState(next);
       };
       const supabase = createClient();
+      // getUser()는 매번 Auth 서버 왕복이라, 여기선 쿠키에 있는 세션(로컬)으로
+      // id만 읽는다 -- 이후 조회는 어차피 RLS가 서버에서 검증한다.
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) {
         apply({ role: null, childName: null, childAvatar: null, operatorAvatar: null, operatorName: null, loading: false });
         return;
@@ -55,16 +58,10 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
       // active_profile_type + 실제 group_members 운영진 여부로 정한다
       // (계정 하나가 두 프로필을 동시에 가질 수 있어서, 고정된 role
       // 하나로는 표현이 안 된다). "parent" | "operator" 두 값만 쓴다.
-      const activeProfile = await getActiveProfile(supabase, user.id);
+      const { activeProfile, activeChild: child } = await getProfileSnapshot(supabase, user.id);
       const role = activeProfile.type === "operator" ? "operator" : "parent";
-
-      let childName: string | null = null;
-      let childAvatar: ChildAvatar | null = null;
-      if (activeProfile.type === "child") {
-        const child = await getActiveChild(supabase, user.id);
-        childName = child?.name ?? null;
-        childAvatar = child?.avatar ?? null;
-      }
+      const childName: string | null = activeProfile.type === "child" ? (child?.name ?? null) : null;
+      const childAvatar: ChildAvatar | null = activeProfile.type === "child" ? (child?.avatar ?? null) : null;
       const operatorAvatar = activeProfile.type === "operator" ? activeProfile.operatorAvatar : null;
       const operatorName = activeProfile.type === "operator" ? activeProfile.operatorName : null;
       apply({ role, childName, childAvatar, operatorAvatar, operatorName, loading: false });

@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
-import { getActiveChild } from "@/lib/active-child";
-import { getActiveProfile } from "@/lib/active-profile";
+import { getProfileSnapshot } from "@/lib/profile-snapshot";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import { getRecommendBooks } from "@/lib/recommend-books";
 import GroupApprovals from "@/components/group-approvals";
@@ -40,7 +39,7 @@ export default async function GroupDetailPage({
   // 서로 무관한 조회 넷(그룹 정보, 내 운영진 멤버십, 활성 아이, 활성
   // 프로필)을 먼저 동시에 왕복한다 -- 추천도서 목록은 활성 아이 id가
   // 있어야 조회할 수 있어서 그 다음 단계로 미룬다.
-  const [{ data: group }, { data: myMembership }, activeChild, activeProfile] = await Promise.all([
+  const [{ data: group }, { data: myMembership }, { activeChild, activeProfile }] = await Promise.all([
     supabase.from("groups").select("id, name, type, join_policy, invite_code, description, owner_id, operator_name").eq("id", groupId).single(),
     supabase
       .from("group_members")
@@ -49,8 +48,7 @@ export default async function GroupDetailPage({
       .eq("user_id", userId)
       .eq("status", "approved")
       .maybeSingle(),
-    getActiveChild(supabase, userId),
-    getActiveProfile(supabase, userId),
+    getProfileSnapshot(supabase, userId),
   ]);
 
   if (!group) {

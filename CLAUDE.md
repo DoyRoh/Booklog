@@ -1264,3 +1264,12 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 
 - **`components/managed-log-list.tsx`(신규)**: 숲지기의 그룹별 목록 한 묶음(`LogGroup` 안). 머리글 오른쪽 "선택"을 누르면 줄마다 동그라미 체크가 나오고(줄을 누르면 토글, 상세 링크는 잠시 꺼짐), 아래에 "모두 선택 · N개 선택 · 삭제" 바. 삭제는 확인창 뒤 `delete().in("id", …)` 한 번 — `book_list_items`/`assignments` 모두 기존 "operators manage …" `for all` 정책으로 허용됩니다. 추천도서에서 빼도 아이들의 독서기록은 남고, 숙제를 지우면 그 숙제의 책·미션·응답은 cascade로 함께 지워지지만 독서기록은 남습니다(확인 문구에 명시).
 - **적용**: 숲지기 추천도서(`/teacher/books`, 행 id = `book_list_items.id`를 select에 추가)와 숙제(`/teacher/assignments`). 줄 모양·"N/M명"·숙제 중 등불은 그대로.
+
+## 속도 정리 라운드 (사용자: "수정 많이 하다 보니 너무 느려졌다")
+
+원인은 최근 라운드에서 늘어난 **순차 왕복**과 하단 바의 **블러**였습니다.
+- **`lib/profile-snapshot.ts`(신규) `getProfileSnapshot()`**: 활성 프로필과 활성 아이를 `users` 조회 **한 번**으로(+숲지기일 때만 `group_members`, active_child_id가 없을 때만 첫 아이 — 둘은 병렬). 예전엔 `getActiveProfile`(users → group_members)과 `getActiveChild`(users)를 따로 불러 같은 행을 두 번 읽었고, 클라이언트 `ProfileProvider`는 그걸 **순차로** 기다려 화면 전환·프로필 변경마다 왕복 3~4번이었습니다. 오늘·그룹 찾기·그룹 상세·상단바/하단 탭이 전부 이걸 씁니다.
+- **`ProfileProvider`가 `auth.getUser()`(Auth 서버 왕복) 대신 `auth.getSession()`(로컬 쿠키)로 사용자 id를 읽습니다** — 이후 조회는 어차피 RLS가 서버에서 검증하므로 안전합니다. 왕복 1번 더 절약.
+- **`getRecommendBooks`**: `book_lists` → `book_list_items` 순차 2번을 임베드 한 번으로. 숲길 "전체"는 그룹 수만큼 이 함수를 부르므로 절약이 곱해집니다.
+- **하단 알약 바의 `backdrop-filter: blur`를 뺐습니다**(불투명 96% 흰색 + `will-change: transform`). fixed 요소에 블러 + 스크롤마다 transform 전환은 iOS 사파리에서 스크롤 자체를 버벅이게 하는 대표적 원인입니다.
+- 서버 측 왕복 수는 원래도 화면당 2~3단계였고 이번엔 그 첫 단계를 1로 줄인 것이라, 남은 체감 지연은 대부분 Vercel↔Supabase 왕복 1회 시간(리전)입니다.

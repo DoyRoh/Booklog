@@ -34,9 +34,11 @@ export async function getRecommendBooks(
   groupId: string,
   childId: string | null
 ): Promise<{ bookListId: string | null; listName: string; books: RecommendBook[] }> {
+  // 목록 행과 그 안의 책들을 임베드로 한 번에(예전엔 book_lists → book_list_items
+  // 순차 왕복 2번). 숲길 "전체"는 그룹마다 이 함수를 부르니 여기서 줄인 왕복이 곱해진다.
   const { data: bookList } = await supabase
     .from("book_lists")
-    .select("id, name")
+    .select("id, name, book_list_items(id, created_at, books(id, title, author, cover_url))")
     .eq("group_id", groupId)
     .limit(1)
     .maybeSingle();
@@ -45,13 +47,11 @@ export async function getRecommendBooks(
     return { bookListId: null, listName: "추천도서", books: [] };
   }
 
-  const { data: itemRows } = await supabase
-    .from("book_list_items")
-    .select("id, created_at, books(id, title, author, cover_url)")
-    .eq("book_list_id", bookList.id)
-    .order("created_at", { ascending: false });
+  const itemRows = ((bookList.book_list_items as unknown as { id: string; created_at: string; books: unknown }[] | null) ?? [])
+    .slice()
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
-  const items = (itemRows ?? [])
+  const items = itemRows
     .map((row) => ({
       id: row.id,
       addedAt: row.created_at as string,

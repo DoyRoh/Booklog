@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
-import { getActiveChild } from "@/lib/active-child";
-import { getActiveProfile } from "@/lib/active-profile";
+import { getProfileSnapshot } from "@/lib/profile-snapshot";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
@@ -35,9 +34,8 @@ export default async function RecommendPage() {
 
   // 서로 무관한 조회 셋(활성 아이, 내가 운영진인 그룹, 공개 그룹 목록)을
   // 동시에 왕복한다.
-  const [activeChild, activeProfile, { data: operatorRows }, { data: openGroupRows }] = await Promise.all([
-    getActiveChild(supabase, userId),
-    getActiveProfile(supabase, userId),
+  const [{ activeChild, activeProfile }, { data: operatorRows }, { data: openGroupRows }] = await Promise.all([
+    getProfileSnapshot(supabase, userId),
     supabase
       .from("group_members")
       .select("groups(id, name, type, join_policy, owner_id, operator_name)")
