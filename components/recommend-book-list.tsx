@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Illustration, { PawStamp, type Avatar } from "@/components/illustration";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import Illustration from "@/components/illustration";
+import { ReadCheck, ShelfBookmark } from "@/components/read-toggles";
 import { BOOK_CATEGORIES, categoryColor } from "@/lib/categories";
 import { LogGroup, LogRow, monthOf, shortDate, shortMd } from "@/components/log-row";
 import type { RecommendBook } from "@/lib/recommend-books";
@@ -21,20 +20,16 @@ export default function RecommendBookList({
   listName,
   books,
   activeChildId,
-  childAvatar = null,
   manage = false,
 }: {
   groupId: string;
   listName: string;
   books: RecommendBook[];
   activeChildId: string | null;
-  childAvatar?: Avatar | null;
   /** 숲지기 관리 화면: 진행률·"책장에 꽂기" 없이 목록만. */
   manage?: boolean;
 }) {
-  const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
-  const [pinning, setPinning] = useState<string | null>(null);
 
   const availableCategories = useMemo(() => {
     const set = new Set<string>();
@@ -68,20 +63,6 @@ export default function RecommendBookList({
     }
     return groups;
   }, [filtered]);
-
-  async function pinToShelf(book: RecommendBook) {
-    if (!activeChildId || pinning) return;
-    setPinning(book.bookId);
-    const supabase = createClient();
-    await supabase.from("reading_records").insert({
-      child_id: activeChildId,
-      book_id: book.bookId,
-      group_id: groupId,
-      status: "want",
-    });
-    setPinning(null);
-    router.refresh();
-  }
 
   const lanternTotal = Math.min(totalCount, 10);
   const lanternLit = totalCount > 0 ? Math.round((doneCount / totalCount) * lanternTotal) : 0;
@@ -191,46 +172,18 @@ export default function RecommendBookList({
                     book.author || book.inAssignment ? (
                       <>
                         {book.inAssignment && (
-                          <span
-                            className="mr-1.5 inline-flex items-center gap-0.5 align-middle"
-                            style={{ color: "var(--lantern)" }}
-                          >
-                            <Illustration name="lantern-on" height={13} />
-                            숙제 중
-                          </span>
+                          <Illustration name="lantern-on" height={13} className="mr-1 inline-block align-middle" aria-label="숙제 중" />
                         )}
                         {book.author}
                       </>
                     ) : undefined
                   }
                   right={
-                    manage || !activeChildId ? null : book.readStatus === "done" ? (
-                      <span
-                        className="d flex items-center gap-1 text-xs"
-                        style={{ color: "var(--point-deep)" }}
-                        aria-label="읽었어요"
-                      >
-                        <PawStamp avatar={childAvatar} height={20} />
-                        읽었어요
+                    manage || !activeChildId ? null : (
+                      <span className="-my-1.5 -mr-2 flex items-center">
+                        <ShelfBookmark childId={activeChildId} bookId={book.bookId} groupId={groupId} status={book.readStatus} />
+                        <ReadCheck childId={activeChildId} bookId={book.bookId} groupId={groupId} done={book.readStatus === "done"} />
                       </span>
-                    ) : book.readStatus === "reading" ? (
-                      <span className="d text-xs" style={{ color: "var(--lantern)" }}>
-                        읽는 중
-                      </span>
-                    ) : book.readStatus === "want" ? (
-                      <span className="d text-xs" style={{ color: "var(--ink-2)" }}>
-                        읽고 싶어요
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={pinning === book.bookId}
-                        onClick={() => pinToShelf(book)}
-                        className="d rounded-full border px-2.5 py-1 text-[11px] disabled:opacity-40"
-                        style={{ borderColor: "var(--point)", color: "var(--point-deep)" }}
-                      >
-                        {pinning === book.bookId ? "꽂는 중" : "책장에 꽂기"}
-                      </button>
                     )
                   }
                 />

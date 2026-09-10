@@ -90,7 +90,6 @@ export default async function TrailPage({ searchParams }: { searchParams: Promis
           listName={recommend.listName}
           books={recommend.books}
           activeChildId={activeChild.id}
-          childAvatar={activeChild.avatar}
         />
       </div>
 

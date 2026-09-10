@@ -60,3 +60,22 @@ export function SearchIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+// 목록 줄 오른쪽의 두 토글 -- "읽었어요"(동그라미 체크)와 "책장에 꽂힘"(책갈피).
+// 글자 대신 아이콘으로만 상태를 보여주고, 누르면 바로 바뀐다.
+export function CheckCircleIcon({ filled, ...props }: IconProps & { filled?: boolean }) {
+  return (
+    <IconBase {...props} fill={filled ? "currentColor" : "none"}>
+      <path d="M12 2.8c5 0 9.2 4.1 9.2 9.2S17 21.2 12 21.2 2.8 17 2.8 12 7 2.8 12 2.8z" />
+      <path d="M7.8 12.3l2.9 2.8 5.6-6" stroke={filled ? "#fff" : "currentColor"} />
+    </IconBase>
+  );
+}
+
+export function BookmarkIcon({ filled, ...props }: IconProps & { filled?: boolean }) {
+  return (
+    <IconBase {...props} fill={filled ? "currentColor" : "none"}>
+      <path d="M6.5 3.6h11c.3 0 .5.2.5.5v16.4l-6-3.9-6 3.9V4.1c0-.3.2-.5.5-.5z" />
+    </IconBase>
+  );
+}

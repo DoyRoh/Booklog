@@ -158,7 +158,6 @@ export default async function GroupDetailPage({
             listName={listName}
             books={recommendBooks}
             activeChildId={isOperator ? null : (activeChild?.id ?? null)}
-            childAvatar={activeChild?.avatar ?? null}
             manage={isOperator}
           />
         </div>

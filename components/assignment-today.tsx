@@ -8,7 +8,7 @@ import { uploadMissionVoice } from "@/lib/storage";
 import VoiceRecorder from "@/components/voice-recorder";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 import type { ReadingStatus } from "@/lib/reading-status";
-import { PawStamp, type Avatar } from "@/components/illustration";
+import { ReadCheck } from "@/components/read-toggles";
 import { LogGroup, LogRow, shortMd } from "@/components/log-row";
 import { missionChip } from "@/lib/assignment-chip";
 
@@ -202,13 +202,11 @@ function VoiceMission({
 export default function AssignmentToday({
   childId,
   childName,
-  childAvatar = null,
   assignments,
   voiceAllowed,
 }: {
   childId: string;
   childName: string | null;
-  childAvatar?: Avatar | null;
   assignments: TodayAssignment[];
   voiceAllowed: boolean;
 }) {
@@ -247,48 +245,44 @@ export default function AssignmentToday({
                         color: allDone ? "var(--point-deep)" : "var(--ink-2)",
                       }}
                     >
-                      {completedCount}/{assignment.books.length} 완료
+                      {completedCount}/{assignment.books.length}
                     </span>
                   }
                 >
                   <div className="mt-2 flex flex-col gap-1.5">
-                    {assignment.books.map((book) =>
-                      book.completed ? (
-                        <button
-                          key={book.id}
-                          type="button"
-                          disabled={!book.recordId}
-                          onClick={() => setEditing(book)}
-                          className="flex items-center justify-between gap-2 rounded-[10px] px-3 py-2 text-left"
-                          style={{ background: "var(--paper)" }}
-                        >
-                          <span className="text-sm">{book.title}</span>
-                          <span className="d flex items-center gap-1 text-xs" style={{ color: "var(--point-deep)" }}>
-                            <PawStamp avatar={childAvatar} height={18} />
-                            읽었어요
-                          </span>
-                        </button>
-                      ) : (
-                        <Link
-                          key={book.id}
-                          href={`/library/add?bookId=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(assignment.groupId)}`}
-                          className="flex items-center justify-between gap-2 rounded-[10px] px-3 py-2"
-                          style={{ background: "var(--paper)" }}
-                        >
-                          <div>
-                            <span className="text-sm">{book.title}</span>
+                    {assignment.books.map((book) => (
+                      <div
+                        key={book.id}
+                        className="flex items-center gap-1 rounded-[10px] pl-3 pr-1"
+                        style={{ background: "var(--paper)" }}
+                      >
+                        {/* 제목을 누르면 기록 화면(안 읽음) / 기록 고치기(읽음). 오른쪽 체크는
+                            기록 화면 없이 바로 "읽었어요"만 켜고 끈다. */}
+                        {book.completed ? (
+                          <button
+                            type="button"
+                            disabled={!book.recordId}
+                            onClick={() => setEditing(book)}
+                            className="min-w-0 flex-1 py-2 text-left text-sm"
+                          >
+                            {book.title}
+                          </button>
+                        ) : (
+                          <Link
+                            href={`/library/add?bookId=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(assignment.groupId)}`}
+                            className="min-w-0 flex-1 py-2 text-sm"
+                          >
+                            {book.title}
                             {book.targetPage && (
                               <span className="ml-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
                                 {book.targetPage}쪽까지
                               </span>
                             )}
-                          </div>
-                          <span className="d text-xs" style={{ color: "var(--point)" }}>
-                            기록하기
-                          </span>
-                        </Link>
-                      )
-                    )}
+                          </Link>
+                        )}
+                        <ReadCheck childId={childId} bookId={book.id} groupId={assignment.groupId} done={book.completed} size={24} />
+                      </div>
+                    ))}
                   </div>
 
                   {assignment.missions.map((mission) =>

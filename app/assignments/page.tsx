@@ -51,7 +51,6 @@ export default async function AssignmentsPage() {
           <AssignmentToday
             childId={activeChild.id}
             childName={activeChild.name}
-            childAvatar={activeChild.avatar}
             assignments={assignments}
             voiceAllowed={voiceAllowed}
           />
