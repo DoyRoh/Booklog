@@ -75,14 +75,16 @@ export default async function TrailPage({ searchParams }: { searchParams: Promis
     );
   }
 
-  // 쿼리의 group이 실제 소속 그룹일 때만 인정, 아니면 첫 그룹.
-  const selectedGroup = myGroups.find((g) => g.id === groupParam) ?? myGroups[0];
+  // 쿼리의 group이 실제 소속 그룹이면 그 그룹, 아니면 "전체"(숙제 탭과 같은 기준).
+  const selectedGroup = myGroups.find((g) => g.id === groupParam) ?? null;
+  const groupsToLoad = selectedGroup ? [selectedGroup] : myGroups;
 
   // 그룹 타일의 배지 = 최근 일주일 새로 올라온 추천도서 수. 추천도서 조회와
-  // 무관하니 동시에 왕복.
+  // 무관하니 동시에 왕복. "전체"면 모든 그룹의 추천도서를 합쳐(같은 책은
+  // 먼저 나온 그룹 것 하나만) 최근 올린 순으로 보여준다.
   const sinceIso = `${kstDate(-7)}T00:00:00+09:00`;
-  const [recommend, { data: recentRows }] = await Promise.all([
-    getRecommendBooks(supabase, selectedGroup.id, activeChild.id),
+  const [perGroup, { data: recentRows }] = await Promise.all([
+    Promise.all(groupsToLoad.map((g) => getRecommendBooks(supabase, g.id, activeChild.id))),
     supabase
       .from("book_lists")
       .select("group_id, book_list_items(created_at)")
@@ -99,14 +101,20 @@ export default async function TrailPage({ searchParams }: { searchParams: Promis
   }
   const tiles: GroupTile[] = myGroups.map((g) => ({ id: g.id, name: g.name, newCount: newCountByGroup.get(g.id) ?? 0 }));
 
+  const seen = new Set<string>();
+  const books = perGroup
+    .flatMap((r, i) => r.books.map((b) => ({ ...b, groupId: groupsToLoad[i].id })))
+    .sort((a, b) => b.addedAt.localeCompare(a.addedAt))
+    .filter((b) => (seen.has(b.bookId) ? false : (seen.add(b.bookId), true)));
+
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <GroupTiles groups={tiles} selectedId={selectedGroup.id} basePath="/trail" />
+      <GroupTiles groups={tiles} selectedId={selectedGroup?.id ?? "all"} basePath="/trail" allLabel="전체" />
 
-      <p className="d mt-5 text-base">{selectedGroup.name}의 추천도서</p>
+      <p className="d mt-5 text-base">{selectedGroup ? `${selectedGroup.name}의 추천도서` : "모든 그룹의 추천도서"}</p>
 
       <div className="mt-3">
-        <RecommendShelf groupId={selectedGroup.id} books={recommend.books} activeChildId={activeChild.id} />
+        <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
       </div>
 
     </div>

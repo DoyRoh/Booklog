@@ -15,6 +15,8 @@ export type RecommendBook = {
   inAssignment: boolean;
   /** 목록에 올린 날짜(ISO). 목록 줄의 날짜 칸. */
   addedAt: string;
+  /** 여러 그룹을 합쳐 볼 때(숲길 "전체") 이 책이 어느 그룹 것인지. */
+  groupId?: string;
 };
 
 const STATUS_RANK: Record<ReadingStatus, number> = { want: 0, reading: 1, done: 2 };

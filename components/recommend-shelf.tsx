@@ -106,7 +106,8 @@ export default function RecommendShelf({
           <div key={rowIndex}>
             <div className="grid grid-cols-3 gap-4 px-3">
               {row.map((book) => {
-                const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(groupId)}`;
+                const bookGroupId = book.groupId ?? groupId;
+                const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(bookGroupId)}`;
                 return (
                   <div key={book.itemId} className="relative">
                     <Link
@@ -133,10 +134,10 @@ export default function RecommendShelf({
                     {activeChildId && (
                       <>
                         <span className="absolute -top-1 -right-1">
-                          <ShelfBookmark childId={activeChildId} bookId={book.bookId} groupId={groupId} status={book.readStatus} size={16} className={OVERLAY_BTN} />
+                          <ShelfBookmark childId={activeChildId} bookId={book.bookId} groupId={bookGroupId} status={book.readStatus} size={16} className={OVERLAY_BTN} />
                         </span>
                         <span className="absolute -bottom-1 -right-1">
-                          <ReadCheck childId={activeChildId} bookId={book.bookId} groupId={groupId} done={book.readStatus === "done"} size={18} className={OVERLAY_BTN} />
+                          <ReadCheck childId={activeChildId} bookId={book.bookId} groupId={bookGroupId} done={book.readStatus === "done"} size={18} className={OVERLAY_BTN} />
                         </span>
                       </>
                     )}
