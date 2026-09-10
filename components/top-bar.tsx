@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MoreIcon, TreeIcon } from "@/components/icons/tab-icons";
+import { TreeIcon } from "@/components/icons/tab-icons";
 import { useProfile } from "@/components/profile-context";
 import { isChromeHidden } from "@/lib/nav";
 
@@ -44,9 +44,10 @@ export default function TopBar() {
       style={{ paddingTop: "var(--st)", background: "var(--paper)", borderColor: "var(--rule)" }}
     >
       <div className="mx-auto flex max-w-[520px] items-center justify-between px-5 py-[10px]">
-        <span className="flex items-center gap-2">
-          {/* 전신 그림(public/illustrations/*.png)에서 얼굴만 동그랗게 잘라 둔
-              face-*.png -- 아이는 토끼/강아지/고양이, 운영진은 곰/백로. */}
+        {/* 얼굴 + 이름이 곧 "더보기"(프로필 전환·설정) 입구다 -- 따로 더보기
+            메뉴를 두지 않는다(사용자 피드백). 얼굴은 전신 그림에서 잘라 둔
+            face-*.png -- 아이는 토끼/강아지/고양이, 운영진은 곰/백로. */}
+        <Link href="/more" aria-label="프로필과 설정" className="flex min-w-0 items-center gap-2">
           {face && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -56,13 +57,13 @@ export default function TopBar() {
               width={30}
               height={30}
               className="h-[30px] w-[30px] flex-none rounded-full"
-              style={{ boxShadow: "0 0 0 1.5px var(--rule)" }}
+              style={{ boxShadow: moreActive ? "0 0 0 2px var(--point)" : "0 0 0 1.5px var(--rule)" }}
             />
           )}
-          <span className="d text-lg" style={{ color: "var(--ink)" }}>
+          <span className="d truncate text-lg" style={{ color: "var(--ink)" }}>
             {title}
           </span>
-        </span>
+        </Link>
         <div className="flex items-center gap-4">
           {role === "parent" && (
             <Link
@@ -75,15 +76,6 @@ export default function TopBar() {
               <TreeIcon width={20} height={20} strokeWidth={badgesActive ? 2.4 : 1.9} />
             </Link>
           )}
-          <Link
-            href="/more"
-            aria-label="더보기"
-            className="flex items-center gap-1"
-            style={{ color: moreActive ? "var(--ink)" : "var(--ink-2)" }}
-          >
-            <span className="d text-xs">더보기</span>
-            <MoreIcon width={20} height={20} strokeWidth={moreActive ? 2.4 : 1.9} />
-          </Link>
         </div>
       </div>
     </div>

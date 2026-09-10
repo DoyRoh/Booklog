@@ -73,7 +73,7 @@ export default async function MorePage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <h1 className="d text-xl">더보기</h1>
+      <h1 className="d text-xl">프로필 · 설정</h1>
 
       <div
         className="mt-6 flex items-center justify-between gap-3 rounded-[var(--r)] border p-4"
