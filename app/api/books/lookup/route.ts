@@ -55,33 +55,57 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const kakaoUrl = new URL("https://dapi.kakao.com/v3/search/book");
+  const headers = { Authorization: `KakaoAK ${apiKey}` };
+
   if (isbn) {
+    const kakaoUrl = new URL("https://dapi.kakao.com/v3/search/book");
     kakaoUrl.searchParams.set("target", "isbn");
     kakaoUrl.searchParams.set("query", isbn);
-  } else {
-    // target 없이 query만 보내면 제목/저자/출판사 키워드 검색이 된다.
-    kakaoUrl.searchParams.set("query", query!);
-    kakaoUrl.searchParams.set("size", "10");
-  }
-
-  const kakaoRes = await fetch(kakaoUrl, {
-    headers: { Authorization: `KakaoAK ${apiKey}` },
-  });
-
-  if (!kakaoRes.ok) {
-    return NextResponse.json({ error: "카카오 책 검색 요청이 실패했어요." }, { status: 502 });
-  }
-
-  const data = await kakaoRes.json();
-  const docs: KakaoDoc[] = data.documents ?? [];
-
-  if (isbn) {
+    const kakaoRes = await fetch(kakaoUrl, { headers });
+    if (!kakaoRes.ok) {
+      return NextResponse.json({ error: "카카오 책 검색 요청이 실패했어요." }, { status: 502 });
+    }
+    const data = await kakaoRes.json();
+    const docs: KakaoDoc[] = data.documents ?? [];
     if (!docs[0]) {
       return NextResponse.json({ error: "이 ISBN으로 책을 찾지 못했어요." }, { status: 404 });
     }
     return NextResponse.json(normalize(docs[0], isbn));
   }
 
-  return NextResponse.json({ results: docs.map((doc) => normalize(doc)) });
+  // 키워드 검색은 두 갈래를 동시에 부른다 -- 제목만 대상(target=title)과
+  // 제목/저자/출판사 전체. 카카오는 "과학공룡"을 과학+공룡으로 나눠 관련
+  // 책을 정확도순으로 주기 때문에, 제목에 그 말이 그대로 들어간 책
+  // ("내친구 과학공룡")이 10건 안에 못 드는 일이 있었다. 결과는 합쳐서
+  // (ISBN/제목으로 중복 제거) 검색어가 제목에 통째로 들어간 책을 맨 위로.
+  const [titleRes, anyRes] = await Promise.all(
+    [true, false].map((titleOnly) => {
+      const kakaoUrl = new URL("https://dapi.kakao.com/v3/search/book");
+      kakaoUrl.searchParams.set("query", query!);
+      kakaoUrl.searchParams.set("size", "20");
+      if (titleOnly) kakaoUrl.searchParams.set("target", "title");
+      return fetch(kakaoUrl, { headers });
+    })
+  );
+  if (!titleRes.ok && !anyRes.ok) {
+    return NextResponse.json({ error: "카카오 책 검색 요청이 실패했어요." }, { status: 502 });
+  }
+  const docsOf = async (res: Response): Promise<KakaoDoc[]> =>
+    res.ok ? ((await res.json()).documents ?? []) : [];
+  const [titleDocs, anyDocs] = await Promise.all([docsOf(titleRes), docsOf(anyRes)]);
+
+  const seen = new Set<string>();
+  const merged = [...titleDocs, ...anyDocs].filter((doc) => {
+    const key = (doc.isbn && doc.isbn.trim()) || `${doc.title}|${doc.publisher}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const compact = (text: string) => text.replace(/\s+/g, "").toLowerCase();
+  const needle = compact(query!);
+  const exact = merged.filter((doc) => compact(doc.title ?? "").includes(needle));
+  const rest = merged.filter((doc) => !compact(doc.title ?? "").includes(needle));
+
+  return NextResponse.json({ results: [...exact, ...rest].slice(0, 30).map((doc) => normalize(doc)) });
 }
