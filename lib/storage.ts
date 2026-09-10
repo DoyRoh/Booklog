@@ -21,15 +21,26 @@ export async function uploadChildPhoto(
   return path;
 }
 
+// 녹음 blob의 실제 형식(아이폰 mp4 / 크롬 webm / ogg)에 맞춰 확장자와
+// Content-Type을 정한다 -- 형식을 잘못 붙이면 사파리가 재생을 거부한다.
+function audioExt(blob: Blob): { ext: string; contentType: string } {
+  const type = (blob.type || "audio/webm").split(";")[0];
+  if (type === "audio/mp4" || type === "audio/aac" || type === "audio/x-m4a") return { ext: "m4a", contentType: "audio/mp4" };
+  if (type === "audio/ogg") return { ext: "ogg", contentType: "audio/ogg" };
+  if (type === "audio/mpeg") return { ext: "mp3", contentType: "audio/mpeg" };
+  return { ext: "webm", contentType: "audio/webm" };
+}
+
 export async function uploadChildVoice(
   supabase: AnyClient,
   childId: string,
   blob: Blob
 ): Promise<string> {
-  const path = `${childId}/voice-${crypto.randomUUID()}.webm`;
+  const { ext, contentType } = audioExt(blob);
+  const path = `${childId}/voice-${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
     .from(READING_MEDIA_BUCKET)
-    .upload(path, blob, { contentType: "audio/webm" });
+    .upload(path, blob, { contentType });
   if (error) throw error;
   return path;
 }
@@ -42,10 +53,11 @@ export async function uploadMissionVoice(
   missionId: string,
   blob: Blob
 ): Promise<string> {
-  const path = `${childId}/mission-${missionId}.webm`;
+  const { ext, contentType } = audioExt(blob);
+  const path = `${childId}/mission-${missionId}.${ext}`;
   const { error } = await supabase.storage
     .from(READING_MEDIA_BUCKET)
-    .upload(path, blob, { contentType: "audio/webm", upsert: true });
+    .upload(path, blob, { contentType, upsert: true });
   if (error) throw error;
   return path;
 }

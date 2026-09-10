@@ -1165,3 +1165,11 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **`lib/assignment-period.ts`(신규)**: 기간 규칙을 한 곳에 — 시작일 없으면 만든 날, **마감 없으면 시작일부터 일주일**(`effectiveRange`). 이걸로 `isCurrent`(오늘, 오늘 탭 요약), `isThisWeek`(이번 주 월~일과 겹침), `isUpcoming`, `isPast`, 그리고 `matchesQuery`(제목·안내·그룹·책 제목 단어 검색). `lib/assignments.ts`는 이제 날짜 조건을 DB에 걸지 않고 아이의 숙제를 전부 가져와(`getAllAssignments`) 화면에서 나눕니다(`created_at` 포함, `TodayAssignment.createdAt`). `getTodayAssignments`는 같은 규칙의 `isCurrent`로 거릅니다.
 - **`components/assignments-browser.tsx`(신규)**: 숙제 탭 = 검색창 → "이번 주 숙제" → "다가오는 숙제"(있을 때만) → "지난 숙제 보기 (N)". 검색어를 넣으면 지난 것까지 전체에서 찾습니다. `/assignments/past`도 같은 컴포넌트(mode="past", 최근에 끝난 순)라 그룹 드롭다운은 뺐습니다(검색이 그룹명도 봄).
 - **추천도서 목록 날짜(같은 턴의 추가 지적: "추천해준 날짜가 나와야 하고 같은 날짜는 묶어, 26-09-10은 거의 불필요")**: 마이그레이션 0021을 적용한 날 기존 책들이 전부 그날 날짜가 된 건 예전에 올린 날짜가 어디에도 없어서이고, 앞으로 올리는 책부터 실제 날짜가 남습니다. 같은 날 올린 책은 첫 줄에만 날짜를 쓰고 나머지 줄은 비웁니다(`LogRow`의 `hideDate`, 추천도서·숲지기 추천도서 목록). 추천도서 줄의 작은 "26-09-10"은 뺐고(달 머리글과 중복), 숙제 줄의 "~9/13"은 마감이라 남기되 더 작고 옅게.
+
+## 아이폰 녹음이 "오류"로 안 열리던 문제 (실사용 피드백: "다시 녹음해도 과거 오류가 안 사라진다")
+
+낭독 녹음·음성 메모를 아이폰에서 하면 재생 자리에 "오류"만 뜨고 다시 녹음해도 같았습니다. 원인은 형식 라벨: 아이폰 사파리의 `MediaRecorder`는 `audio/mp4`(AAC)로만 녹음하는데, `components/voice-recorder.tsx`가 결과 blob을 무조건 `audio/webm`으로 이름 붙이고 `lib/storage.ts`가 `.webm` 확장자 + `audio/webm` Content-Type으로 올려서, 사파리가 "webm 오디오"라고 믿고 재생을 거부한 것입니다(내용은 멀쩡한 mp4). 크롬/안드로이드는 실제로 webm이라 문제가 없어 그동안 안 드러났습니다.
+
+- **`voice-recorder.tsx`**: `MediaRecorder.isTypeSupported`로 `audio/mp4 → audio/webm;codecs=opus → audio/webm → audio/ogg` 순으로 되는 형식을 골라 녹음하고, blob 타입도 녹음기가 실제로 쓴 `mimeType`으로 붙입니다.
+- **`lib/storage.ts`의 `audioExt()`**: blob 타입에 맞춰 확장자(`m4a`/`webm`/`ogg`/`mp3`)와 Content-Type을 정해 올립니다(음성 메모·낭독 미션 둘 다). 낭독 미션 경로는 `mission-{id}.{ext}`라 형식이 바뀌면 예전 `.webm` 파일은 그대로 남지만 제출 기록은 새 경로를 가리킵니다.
+- 이미 잘못 저장된 예전 녹음은 파일 자체가 사파리에서 안 열리므로 다시 녹음해야 합니다(이번 수정 뒤부터는 다시 녹음하면 바로 재생됨).

@@ -14,6 +14,13 @@ type Props = {
   onRemoveExisting?: () => void;
 };
 
+const MIME_CANDIDATES = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
+
+function pickMimeType(): string | undefined {
+  if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) return undefined;
+  return MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t));
+}
+
 export default function VoiceRecorder({
   onRecorded,
   onClear,
@@ -41,12 +48,18 @@ export default function VoiceRecorder({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       chunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
+      // 브라우저마다 녹음 형식이 다르다 -- 아이폰 사파리는 audio/mp4(AAC)만,
+      // 크롬/안드로이드는 audio/webm(Opus). 예전엔 무조건 "audio/webm"으로
+      // 이름 붙여 올려서 아이폰에서 녹음한 파일이 아이폰에서 "오류"로 안
+      // 열렸다. 지원하는 형식을 골라 녹음하고, 그 형식 그대로 저장한다.
+      const mimeType = pickMimeType();
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const type = (recorder.mimeType || mimeType || "audio/webm").split(";")[0];
+        const blob = new Blob(chunksRef.current, { type });
         setPreviewUrl((prev) => {
           if (prev) URL.revokeObjectURL(prev);
           return URL.createObjectURL(blob);
