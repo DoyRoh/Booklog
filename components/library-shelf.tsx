@@ -451,14 +451,17 @@ export default function LibraryShelf({
                     <p className="w-full truncate text-center text-xs" style={{ color: "var(--ink-2)" }}>
                       {book.title}
                     </p>
-                    {book.status !== "done" && (
-                      <span
-                        className="d rounded-full px-2 py-0.5 text-[10px]"
-                        style={{ background: "rgba(232,163,61,0.16)", color: "var(--lantern)" }}
-                      >
-                        {STATUS_LABELS[book.status]}
-                      </span>
-                    )}
+                    {/* 세 상태 모두 배지로 -- 다 읽은 책만 없으면 "왜 안 뜨지"로 읽힌다(사용자 피드백). */}
+                    <span
+                      className="d rounded-full px-2 py-0.5 text-[10px]"
+                      style={
+                        book.status === "done"
+                          ? { background: "rgba(47,168,79,0.14)", color: "var(--point-deep)" }
+                          : { background: "rgba(232,163,61,0.16)", color: "var(--lantern)" }
+                      }
+                    >
+                      {STATUS_LABELS[book.status]}
+                    </span>
                   </div>
                 ))}
               </div>

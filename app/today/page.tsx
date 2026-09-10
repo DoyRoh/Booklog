@@ -135,7 +135,7 @@ export default async function TodayPage() {
   });
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-[24px] pb-[40px]">
+    <div className="mx-auto max-w-[520px] px-5 pt-[12px] pb-[40px]">
       <p className="hand text-[24px] leading-[32px]" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
         {activeChild.name}, 오늘도 책숲을 걸어볼까요?
       </p>
@@ -150,7 +150,7 @@ export default async function TodayPage() {
           요약이라, 요약 박스를 맨 위로 올리고 기록 버튼은 그 아래로
           내렸다(레거시 "유안이 독서 기록" 화면 구조 참고). */}
       <div
-        className="mt-[28px] rounded-[var(--r)] border p-[24px]"
+        className="mt-[12px] rounded-[var(--r)] border p-[16px]"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
         {/* 우리 숲 미리보기 -- 권수 배지("숲이 자라요")를 딴 만큼 나무가 서
@@ -159,23 +159,25 @@ export default async function TodayPage() {
         <ForestStrip
           treeCount={MILESTONE_COUNTS.filter((c) => totalDone >= c).length}
           avatar={activeChild.avatar}
-          className="mb-[20px]"
+          className="mb-[16px]"
           href="/forest"
         />
-        {/* 카드 제목 행: 라벨 + 큰 숫자(32px semibold). '권'은 작고 연하게. */}
-        <p className="text-[14px] leading-[20px]" style={{ color: "var(--ink-2)" }}>
-          읽은 책
-        </p>
-        <p className="d mt-[4px] text-[32px] font-semibold leading-[36px]" style={{ color: "var(--point-deep)" }}>
-          {totalDone}
-          <span className="ml-[4px] text-[14px] font-normal" style={{ color: "var(--ink-2)" }}>
-            권
+        {/* 제목 행: "읽은 책"과 큰 숫자를 한 줄, baseline 맞춤. '권'은 작고 연하게. */}
+        <p className="flex items-baseline gap-[8px]">
+          <span className="text-[14px] leading-[20px]" style={{ color: "var(--ink-2)" }}>
+            읽은 책
+          </span>
+          <span className="d text-[28px] font-semibold leading-[32px]" style={{ color: "var(--point-deep)" }}>
+            {totalDone}
+            <span className="ml-[3px] text-[14px] font-normal" style={{ color: "var(--ink-2)" }}>
+              권
+            </span>
           </span>
         </p>
 
         <div
-          className="mt-[28px] flex justify-between pt-[20px]"
-          style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}
+          className="mt-[16px] grid pt-[12px]"
+          style={{ borderTop: "1px solid rgba(38,54,43,0.08)", gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}
         >
           {(
             [
@@ -194,11 +196,11 @@ export default async function TodayPage() {
               </>
             );
             return stat.href ? (
-              <Link key={stat.label} href={stat.href} className="flex flex-col items-start gap-[4px]">
+              <Link key={stat.label} href={stat.href} className="flex flex-col items-center gap-[4px] text-center">
                 {inner}
               </Link>
             ) : (
-              <div key={stat.label} className="flex flex-col items-start gap-[4px]">
+              <div key={stat.label} className="flex flex-col items-center gap-[4px] text-center">
                 {inner}
               </div>
             );
@@ -208,14 +210,14 @@ export default async function TodayPage() {
 
       <Link
         href="/library/add"
-        className="d mt-[16px] block rounded-[14px] py-[14px] text-center text-[16px] font-semibold text-white"
+        className="d mt-[12px] flex h-[52px] items-center justify-center rounded-[14px] text-center text-[16px] font-semibold text-white"
         style={{ background: "var(--berry)" }}
       >
         + 책 기록하기
       </Link>
 
       <Section
-        className="mt-[32px]"
+        className="mt-[24px]"
         title="오늘의 숙제"
         flush={activeAssignments.length > 0}
         action={

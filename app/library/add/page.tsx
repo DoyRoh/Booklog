@@ -101,6 +101,10 @@ function AddBookForm() {
   const [voiceAllowed, setVoiceAllowed] = useState(false);
   const [childName, setChildName] = useState<string | null>(null);
   const [childId, setChildId] = useState<string | null>(null);
+  // 이 아이의 책장에 같은 책 기록이 몇 개 있는지. 카탈로그(book_isbns)에 있는
+  // 것과 "내 책장에 있는 것"은 다르다 -- 예전엔 카탈로그에만 있어도 "이미
+  // 책장에 있는 책"이라고 잘못 말했다.
+  const [shelfCount, setShelfCount] = useState<number | null>(null);
   const [childAvatar, setChildAvatar] = useState<Avatar | null>(null);
   const [shelfTagId, setShelfTagId] = useState<string | null>(null);
 
@@ -161,6 +165,27 @@ function AddBookForm() {
     }, 400);
     return () => clearTimeout(handle);
   }, [title]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!bookId || !childId) {
+        await Promise.resolve();
+        if (!cancelled) setShelfCount(null);
+        return;
+      }
+      const supabase = createClient();
+      const { count } = await supabase
+        .from("reading_records")
+        .select("id", { count: "exact", head: true })
+        .eq("child_id", childId)
+        .eq("book_id", bookId);
+      if (!cancelled) setShelfCount(count ?? 0);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bookId, childId]);
 
   async function findExistingByIsbn(supabase: ReturnType<typeof createClient>, value: string) {
     const { data: existingIsbn } = await supabase
@@ -497,7 +522,11 @@ function AddBookForm() {
                   />
                 )}
                 <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                  {bookId ? "이미 책장에 있는 책이에요" : "새로 등록하는 책이에요"}
+                  {!bookId
+                    ? "새로 등록하는 책이에요"
+                    : shelfCount && shelfCount > 0
+                      ? `이미 내 책장에 있는 책이에요 · 기록이 하나 더 남아요`
+                      : "책 정보를 찾았어요"}
                 </p>
               </div>
             )}
