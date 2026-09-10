@@ -4,7 +4,8 @@ import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { shortMd } from "@/components/log-row";
 import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
 import { categoryColor } from "@/lib/categories";
-import { kstDate } from "@/lib/kst";
+import { isCurrent } from "@/lib/assignment-period";
+import { operatorGroupsQuery } from "@/lib/operator-groups";
 
 type BookCard = {
   itemId: string;
@@ -38,95 +39,58 @@ export default async function TeacherBooksPage() {
     );
   }
 
-  const { data: operatorRows } = await supabase
-    .from("group_members")
-    .select("groups(id, name)")
-    .eq("user_id", userId)
-    .in("role", ["teacher", "admin", "curator"])
-    .eq("status", "approved");
-
-  type GroupRow = { id: string; name: string };
-  const groups = (operatorRows ?? [])
-    .map((row) => row.groups as unknown as GroupRow | null)
-    .filter((g): g is GroupRow => Boolean(g));
-  const groupIds = groups.map((g) => g.id);
-  const today = kstDate();
-
-  type ListRow = {
-    group_id: string;
-    book_list_items: {
+  // 운영 그룹 + 추천도서(+분야) + 그룹원 수 + 완독 기록 + 숙제를 임베드 한
+  // 번으로(예전엔 세 번 순차 왕복: 그룹 → 그룹별 데이터 → 분야).
+  type ItemRow = {
+    id: string;
+    book_id: string;
+    created_at: string;
+    books: {
       id: string;
-      book_id: string;
+      title: string;
+      author: string | null;
+      cover_url: string | null;
+      book_categories: { category: string }[] | null;
+    } | null;
+  };
+  type GroupRow = {
+    id: string;
+    name: string;
+    book_lists: { book_list_items: ItemRow[] | null }[] | null;
+    members: { child_id: string | null; status: string }[] | null;
+    reading_records: { child_id: string; book_id: string }[] | null;
+    assignments: {
+      start_date: string | null;
+      end_date: string | null;
       created_at: string;
-      books: { id: string; title: string; author: string | null; cover_url: string | null } | null;
+      assignment_books: { book_id: string }[] | null;
     }[] | null;
   };
-  const [{ data: listRows }, { data: memberRows }, { data: doneRows }, { data: activeRows }] = groupIds.length
-    ? await Promise.all([
-        supabase
-          .from("book_lists")
-          .select("group_id, book_list_items(id, book_id, created_at, books(id, title, author, cover_url))")
-          .in("group_id", groupIds),
-        supabase
-          .from("group_members")
-          .select("group_id, child_id")
-          .in("group_id", groupIds)
-          .eq("status", "approved")
-          .not("child_id", "is", null),
-        supabase
-          .from("reading_records")
-          .select("child_id, book_id, group_id")
-          .in("group_id", groupIds)
-          .eq("status", "done"),
-        supabase
-          .from("assignments")
-          .select("group_id, assignment_books(book_id)")
-          .in("group_id", groupIds)
-          .or(`start_date.is.null,start_date.lte.${today}`)
-          .or(`end_date.is.null,end_date.gte.${today}`),
-      ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
-
-  // 목록 줄의 분야 칩 -- 올라온 책 전부의 분야를 한 번에 가져온다.
-  const listedBookIds = Array.from(
-    new Set(
-      ((listRows ?? []) as unknown as ListRow[]).flatMap((r) => (r.book_list_items ?? []).map((item) => item.book_id))
-    )
-  );
-  const { data: categoryRows } = listedBookIds.length
-    ? await supabase.from("book_categories").select("book_id, category").in("book_id", listedBookIds)
-    : { data: [] };
-  const categoriesByBook = new Map<string, string[]>();
-  for (const row of categoryRows ?? []) {
-    const list = categoriesByBook.get(row.book_id) ?? [];
-    list.push(row.category);
-    categoriesByBook.set(row.book_id, list);
-  }
-
-  const memberCountByGroup = new Map<string, number>();
-  for (const row of memberRows ?? []) {
-    memberCountByGroup.set(row.group_id, (memberCountByGroup.get(row.group_id) ?? 0) + 1);
-  }
-  // (그룹:책) → 읽은 아이 집합
-  const readersByGroupBook = new Map<string, Set<string>>();
-  for (const row of doneRows ?? []) {
-    if (!row.group_id) continue;
-    const key = `${row.group_id}:${row.book_id}`;
-    const set = readersByGroupBook.get(key) ?? new Set<string>();
-    set.add(row.child_id);
-    readersByGroupBook.set(key, set);
-  }
-  const assignedByGroup = new Map<string, Set<string>>();
-  for (const row of activeRows ?? []) {
-    const set = assignedByGroup.get(row.group_id) ?? new Set<string>();
-    for (const b of (row.assignment_books as unknown as { book_id: string }[] | null) ?? []) set.add(b.book_id);
-    assignedByGroup.set(row.group_id, set);
-  }
+  const { data: groupRows } = await operatorGroupsQuery(
+    supabase,
+    userId,
+    "book_lists(book_list_items(id, book_id, created_at, books(id, title, author, cover_url, book_categories(category)))), members:group_members(child_id, status), reading_records(child_id, book_id), assignments(start_date, end_date, created_at, assignment_books(book_id))"
+  )
+    .eq("reading_records.status", "done")
+    .overrideTypes<GroupRow[], { merge: false }>();
+  const groups = groupRows ?? [];
 
   const sections: GroupSection[] = groups.map((group) => {
-    const rows = ((listRows ?? []) as unknown as ListRow[]).filter((r) => r.group_id === group.id);
-    const books: BookCard[] = rows
-      .flatMap((r) => r.book_list_items ?? [])
+    // 책 → 읽은 아이 집합
+    const readersByBook = new Map<string, Set<string>>();
+    for (const row of group.reading_records ?? []) {
+      const set = readersByBook.get(row.book_id) ?? new Set<string>();
+      set.add(row.child_id);
+      readersByBook.set(row.book_id, set);
+    }
+    // 지금 진행 중인 숙제에 들어간 책(기간 규칙은 lib/assignment-period).
+    const assigned = new Set<string>();
+    for (const a of group.assignments ?? []) {
+      if (!isCurrent({ startDate: a.start_date, endDate: a.end_date, createdAt: a.created_at })) continue;
+      for (const b of a.assignment_books ?? []) assigned.add(b.book_id);
+    }
+    const books: BookCard[] = (group.book_lists ?? [])
+      .flatMap((l) => l.book_list_items ?? [])
       .filter((item) => item.books)
       .map((item) => ({
         itemId: item.id,
@@ -134,14 +98,15 @@ export default async function TeacherBooksPage() {
         title: item.books!.title,
         author: item.books!.author,
         coverUrl: item.books!.cover_url,
-        categories: categoriesByBook.get(item.books!.id) ?? [],
+        categories: (item.books!.book_categories ?? []).map((c) => c.category),
         addedAt: item.created_at,
-        readCount: readersByGroupBook.get(`${group.id}:${item.books!.id}`)?.size ?? 0,
-        inAssignment: assignedByGroup.get(group.id)?.has(item.books!.id) ?? false,
+        readCount: readersByBook.get(item.books!.id)?.size ?? 0,
+        inAssignment: assigned.has(item.books!.id),
       }))
       // 최근에 올린 책이 위(육아 기록 앱의 목록처럼 날짜순).
       .sort((a, b) => b.addedAt.localeCompare(a.addedAt));
-    return { id: group.id, name: group.name, memberCount: memberCountByGroup.get(group.id) ?? 0, books };
+    const memberCount = (group.members ?? []).filter((m) => m.status === "approved" && m.child_id).length;
+    return { id: group.id, name: group.name, memberCount, books };
   });
 
   return (

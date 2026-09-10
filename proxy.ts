@@ -21,11 +21,13 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Refreshes the auth session if expired, so Server Components can
-  // read a valid session from cookies.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // 세션이 만료됐으면 여기서 갱신되고, 서버 컴포넌트는 쿠키의 유효한
+  // 세션을 읽는다. getUser()는 요청마다 Auth 서버에 왕복하지만, getClaims()는
+  // 프로젝트의 서명 키(JWKS, 한 번 받아 캐시)로 토큰을 **로컬에서** 검증해
+  // 화면 전환마다 붙던 왕복 하나를 없앤다(비대칭 키가 아닌 프로젝트면
+  // 내부적으로 서버 검증으로 대체되므로 지금보다 나빠지진 않는다).
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims?.sub ? { id: claimsData.claims.sub } : null;
 
   // 이 요청이 검증한 사용자 id를 헤더로 실어 페이지들에게 넘긴다(자세한
   // 이유는 lib/supabase/verified-user.ts 참고) -- 클라이언트가 보낸 같은

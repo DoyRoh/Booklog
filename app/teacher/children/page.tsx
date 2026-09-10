@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { AvatarIllustration } from "@/components/illustration";
+import { operatorGroupsQuery } from "@/lib/operator-groups";
 
 type ChildCard = {
   id: string;
@@ -37,77 +38,51 @@ export default async function TeacherChildrenPage() {
     );
   }
 
-  const { data: operatorRows } = await supabase
-    .from("group_members")
-    .select("groups(id, name)")
-    .eq("user_id", userId)
-    .in("role", ["teacher", "admin", "curator"])
-    .eq("status", "approved");
-
-  type GroupRow = { id: string; name: string };
-  const groups = (operatorRows ?? [])
-    .map((row) => row.groups as unknown as GroupRow | null)
-    .filter((g): g is GroupRow => Boolean(g));
-  const groupIds = groups.map((g) => g.id);
-
-  // 그룹 id 목록으로 한 번씩만 물어보고 자바스크립트에서 묶는다(N+1 회피).
+  // 운영 그룹 + 그룹원(아이) + 숙제 + 추천도서 + 우리 그룹에서 남긴 완독
+  // 기록을 임베드 한 번으로, 완료 현황은 나란히(예전엔 세 번 순차 왕복).
   type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null };
-  const [{ data: memberRows }, { data: assignmentRows }, { data: listRows }, { data: doneRows }, { data: completionRows }] =
-    groupIds.length
-    ? await Promise.all([
-        supabase
-          .from("group_members")
-          .select("group_id, children(id, name, avatar)")
-          .in("group_id", groupIds)
-          .eq("status", "approved")
-          .not("child_id", "is", null),
-        supabase.from("assignments").select("id, group_id").in("group_id", groupIds),
-        supabase.from("book_lists").select("group_id, book_list_items(book_id)").in("group_id", groupIds),
-        // 숲지기는 자기 그룹으로 기록된 독서기록만 볼 수 있다(RLS) -- 그래서
-        // "우리 그룹의 추천도서를 우리 그룹에서 읽은 것" 기준으로 센다.
-        supabase
-          .from("reading_records")
-          .select("child_id, book_id, group_id")
-          .in("group_id", groupIds)
-          .eq("status", "done"),
-        // 완료 현황(assignment_completion)은 security_invoker 뷰라 RLS상 내가
-        // 볼 수 있는 숙제 행만 온다 -- 숙제 id를 기다렸다가 한 번 더 왕복하지
-        // 않고 여기서 같이 가져온 뒤 자기 숙제 id로만 찾아 쓴다.
-        supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
-      ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
-
-  const listBooksByGroup = new Map<string, Set<string>>();
-  for (const row of listRows ?? []) {
-    const items = (row.book_list_items as unknown as { book_id: string }[] | null) ?? [];
-    const set = listBooksByGroup.get(row.group_id) ?? new Set<string>();
-    for (const item of items) set.add(item.book_id);
-    listBooksByGroup.set(row.group_id, set);
-  }
-  // (그룹, 아이) → 읽은 추천도서 id 집합
-  const readByGroupChild = new Map<string, Set<string>>();
-  for (const row of doneRows ?? []) {
-    if (!row.group_id || !listBooksByGroup.get(row.group_id)?.has(row.book_id)) continue;
-    const key = `${row.group_id}:${row.child_id}`;
-    const set = readByGroupChild.get(key) ?? new Set<string>();
-    set.add(row.book_id);
-    readByGroupChild.set(key, set);
-  }
-
-  // 완료 통계를 그룹별로 정확히 나누려면(같은 아이가 여러 그룹에 속할 수
-  // 있음) assignment_id → group_id 매핑이 필요하다. 이 매핑에 없는 숙제의
-  // completion 행(예: 같은 계정의 아이가 다른 그룹에서 받은 숙제)은 아래에서
-  // 걸러진다.
-  const groupIdByAssignment = new Map((assignmentRows ?? []).map((a) => [a.id, a.group_id]));
+  type GroupRow = {
+    id: string;
+    name: string;
+    members: { child_id: string | null; status: string; children: ChildRow | null }[] | null;
+    assignments: { id: string }[] | null;
+    book_lists: { book_list_items: { book_id: string }[] | null }[] | null;
+    reading_records: { child_id: string; book_id: string }[] | null;
+  };
+  const [{ data: groupRows }, { data: completionRows }] = await Promise.all([
+    operatorGroupsQuery(
+      supabase,
+      userId,
+      "members:group_members(child_id, status, children(id, name, avatar)), assignments(id), book_lists(book_list_items(book_id)), reading_records(child_id, book_id)"
+    )
+      // 숲지기는 자기 그룹으로 기록된 독서기록만 볼 수 있다(RLS) -- 그래서
+      // "우리 그룹의 추천도서를 우리 그룹에서 읽은 것" 기준으로 센다.
+      .eq("reading_records.status", "done")
+      .overrideTypes<GroupRow[], { merge: false }>(),
+    // security_invoker 뷰라 RLS상 내가 볼 수 있는 숙제 행만 온다. 이 그룹
+    // 숙제가 아닌 행(같은 계정의 아이가 다른 그룹에서 받은 숙제)은 아래
+    // 숙제 id 집합에서 걸러진다.
+    supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
+  ]);
+  const groups = groupRows ?? [];
 
   // 숙제 하나에 책이 여러 권이면 completion 행도 책 수만큼이라, 숙제 단위로
   // "전부 완료했는지"를 다시 묶는다.
   const sections: GroupSection[] = groups.map((group) => {
-    const children = (memberRows ?? [])
-      .filter((row) => row.group_id === group.id)
-      .map((row) => row.children as unknown as ChildRow | null)
+    const children = (group.members ?? [])
+      .filter((row) => row.status === "approved" && row.child_id)
+      .map((row) => row.children)
       .filter((c): c is ChildRow => Boolean(c));
-    const listCount = listBooksByGroup.get(group.id)?.size ?? 0;
+    const listBooks = new Set((group.book_lists ?? []).flatMap((l) => (l.book_list_items ?? []).map((i) => i.book_id)));
+    const assignmentIds = new Set((group.assignments ?? []).map((a) => a.id));
+    // 아이 → 읽은 추천도서 id 집합
+    const readByChild = new Map<string, Set<string>>();
+    for (const row of group.reading_records ?? []) {
+      if (!listBooks.has(row.book_id)) continue;
+      const set = readByChild.get(row.child_id) ?? new Set<string>();
+      set.add(row.book_id);
+      readByChild.set(row.child_id, set);
+    }
 
     return {
       id: group.id,
@@ -115,15 +90,15 @@ export default async function TeacherChildrenPage() {
       children: children.map((child) => {
         const byAssignment = new Map<string, boolean>();
         for (const row of completionRows ?? []) {
-          if (row.child_id !== child.id || groupIdByAssignment.get(row.assignment_id) !== group.id) continue;
+          if (row.child_id !== child.id || !assignmentIds.has(row.assignment_id)) continue;
           byAssignment.set(row.assignment_id, (byAssignment.get(row.assignment_id) ?? true) && row.completed);
         }
         return {
           id: child.id,
           name: child.name,
           avatar: child.avatar,
-          readCount: readByGroupChild.get(`${group.id}:${child.id}`)?.size ?? 0,
-          listCount,
+          readCount: readByChild.get(child.id)?.size ?? 0,
+          listCount: listBooks.size,
           completed: Array.from(byAssignment.values()).filter(Boolean).length,
           total: byAssignment.size,
         };

@@ -3,6 +3,7 @@ import Illustration from "@/components/illustration";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
+import { operatorGroupsQuery } from "@/lib/operator-groups";
 
 type GroupCard = {
   id: string;
@@ -32,47 +33,24 @@ export default async function TeacherDashboardPage() {
   // 그룹이 있는지로 이 화면을 볼 수 있는지 정한다 -- 계정 하나가 아이
   // 프로필과 선생님 프로필을 동시에 가질 수 있어서, users.role 하나로는
   // 더 이상 판단할 수 없다.
-  const { data: operatorRows } = await supabase
-    .from("group_members")
-    .select("groups(id, name, type)")
-    .eq("user_id", userId)
-    .in("role", ["teacher", "admin", "curator"])
-    .eq("status", "approved");
+  // 운영 그룹 + 그룹원 + 숙제를 임베드 한 번으로, 완료 현황은 나란히.
+  type GroupRow = {
+    id: string;
+    name: string;
+    type: string;
+    members: { child_id: string | null; status: string }[] | null;
+    assignments: { id: string; title: string }[] | null;
+  };
+  const [{ data: groupRows }, { data: completionRows }] = await Promise.all([
+    operatorGroupsQuery(supabase, userId, "members:group_members(child_id, status), assignments(id, title)").overrideTypes<
+      GroupRow[],
+      { merge: false }
+    >(),
+    // security_invoker 뷰라 RLS상 내가 볼 수 있는 숙제 행만 온다.
+    supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
+  ]);
+  const groups = groupRows ?? [];
 
-  type GroupRow = { id: string; name: string; type: string };
-  const groups = (operatorRows ?? [])
-    .map((row) => row.groups as unknown as GroupRow | null)
-    .filter((g): g is GroupRow => Boolean(g));
-  const groupIds = groups.map((g) => g.id);
-
-  // 그룹마다 멤버수/승인대기/숙제/완료현황을 따로따로 물어보던 걸(N+1),
-  // 그룹 id 목록으로 한 번씩만 물어보고 자바스크립트에서 그룹별로 묶는
-  // 방식으로 바꿨다 -- 그룹이 몇 개든 왕복 횟수는 그대로다.
-  const [{ data: memberRows }, { data: pendingRows }, { data: assignmentRows }, { data: completionRows }] = groupIds.length
-    ? await Promise.all([
-        supabase
-          .from("group_members")
-          .select("group_id")
-          .in("group_id", groupIds)
-          .eq("status", "approved")
-          .not("child_id", "is", null),
-        supabase.from("group_members").select("group_id").in("group_id", groupIds).eq("status", "pending"),
-        supabase.from("assignments").select("id, group_id, title").in("group_id", groupIds),
-        // 완료 현황(assignment_completion)은 security_invoker 뷰라 RLS상 내가
-        // 볼 수 있는 숙제 행만 온다 -- 숙제 id를 기다렸다가 한 번 더 왕복하지
-        // 않고 여기서 같이 가져온 뒤 자기 숙제 id로만 찾아 쓴다.
-        supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
-      ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
-
-  const memberCountByGroup = new Map<string, number>();
-  for (const row of memberRows ?? []) {
-    memberCountByGroup.set(row.group_id, (memberCountByGroup.get(row.group_id) ?? 0) + 1);
-  }
-  const pendingCountByGroup = new Map<string, number>();
-  for (const row of pendingRows ?? []) {
-    pendingCountByGroup.set(row.group_id, (pendingCountByGroup.get(row.group_id) ?? 0) + 1);
-  }
   // (숙제, 책, 아이) 단위 행을 "아이가 그 숙제를 다 끝냈는지"로 묶어 명 단위로.
   const completionByAssignment = new Map<string, { completed: number; total: number }>();
   {
@@ -94,10 +72,9 @@ export default async function TeacherDashboardPage() {
     id: group.id,
     name: group.name,
     type: group.type,
-    memberCount: memberCountByGroup.get(group.id) ?? 0,
-    pendingCount: pendingCountByGroup.get(group.id) ?? 0,
-    assignmentProgress: (assignmentRows ?? [])
-      .filter((a) => a.group_id === group.id)
+    memberCount: (group.members ?? []).filter((m) => m.status === "approved" && m.child_id).length,
+    pendingCount: (group.members ?? []).filter((m) => m.status === "pending").length,
+    assignmentProgress: (group.assignments ?? [])
       .map((a) => {
         const stat = completionByAssignment.get(a.id) ?? { completed: 0, total: 0 };
         return { title: a.title, completed: stat.completed, total: stat.total };

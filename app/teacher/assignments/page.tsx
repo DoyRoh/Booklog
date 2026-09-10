@@ -5,6 +5,7 @@ import { shortMd } from "@/components/log-row";
 import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
 import { effectiveRange } from "@/lib/assignment-period";
 import { missionChip } from "@/lib/assignment-chip";
+import { operatorGroupsQuery } from "@/lib/operator-groups";
 
 type AssignmentCard = {
   id: string;
@@ -40,35 +41,28 @@ export default async function TeacherAssignmentsPage() {
   // 있는지로 판단한다(계정 하나가 아이 프로필과 선생님 프로필을 동시에
   // 가질 수 있음). 그룹이 하나도 없으면 아래 "아직 만든 숙제가 없어요"
   // 안내가 그대로 자연스럽게 뜬다.
-  const { data: operatorRows } = await supabase
-    .from("group_members")
-    .select("groups(id, name)")
-    .eq("user_id", userId)
-    .in("role", ["teacher", "admin", "curator"])
-    .eq("status", "approved");
-
-  type GroupRow = { id: string; name: string };
-  const groups = (operatorRows ?? [])
-    .map((row) => row.groups as unknown as GroupRow | null)
-    .filter((g): g is GroupRow => Boolean(g));
-  const groupIds = groups.map((g) => g.id);
-  const groupById = new Map(groups.map((g) => [g.id, g]));
-
-  // 그룹마다, 그리고 숙제마다 따로 물어보던 걸(N+1) 한 번씩만 물어보고
-  // 자바스크립트에서 묶는 방식으로 바꿨다.
-  const [{ data: assignmentRows }, { data: completionRows }] = groupIds.length
-    ? await Promise.all([
-        supabase
-          .from("assignments")
-          .select("id, group_id, title, description, start_date, end_date, created_at, assignment_books(books(title)), assignment_missions(type)")
-          .in("group_id", groupIds)
-          .order("created_at", { ascending: false }),
-        // 완료 현황(assignment_completion)은 security_invoker 뷰라 RLS상 내가
-        // 볼 수 있는 숙제 행만 온다 -- 숙제 id를 기다렸다가 한 번 더 왕복하지
-        // 않고 여기서 같이 가져온 뒤 자기 숙제 id로만 찾아 쓴다.
-        supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
-      ])
-    : [{ data: [] }, { data: [] }];
+  // 운영 그룹 + 숙제(책 제목·미션)를 임베드 한 번으로, 완료 현황은 나란히.
+  type AssignmentRow = {
+    id: string;
+    title: string;
+    description: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    created_at: string;
+    assignment_books: { books: { title: string } | null }[] | null;
+    assignment_missions: { type: string }[] | null;
+  };
+  type GroupRow = { id: string; name: string; assignments: AssignmentRow[] | null };
+  const [{ data: groupRows }, { data: completionRows }] = await Promise.all([
+    operatorGroupsQuery(
+      supabase,
+      userId,
+      "assignments(id, title, description, start_date, end_date, created_at, assignment_books(books(title)), assignment_missions(type))"
+    ).overrideTypes<GroupRow[], { merge: false }>(),
+    // security_invoker 뷰라 RLS상 내가 볼 수 있는 숙제 행만 온다.
+    supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
+  ]);
+  const groups = groupRows ?? [];
 
   // completion 뷰는 (숙제, 책, 아이) 단위라, "아이가 그 숙제의 책을 전부
   // 읽었는지"로 다시 묶어서 "N/M명 완료"로 보여준다.
@@ -88,18 +82,22 @@ export default async function TeacherAssignmentsPage() {
     }
   }
 
-  const cards: AssignmentCard[] = (assignmentRows ?? []).map((assignment) => {
+  const cards: AssignmentCard[] = groups
+    .flatMap((group) => (group.assignments ?? []).map((assignment) => ({ group, assignment })))
+    // 최근에 낸 숙제가 위.
+    .sort((a, b) => b.assignment.created_at.localeCompare(a.assignment.created_at))
+    .map(({ group, assignment }) => {
     const stat = completionByAssignment.get(assignment.id) ?? { completed: 0, total: 0 };
     return {
       id: assignment.id,
-      groupId: assignment.group_id,
-      groupName: groupById.get(assignment.group_id)?.name ?? "",
+      groupId: group.id,
+      groupName: group.name,
       title: assignment.title,
       description: assignment.description,
-      bookTitles: ((assignment.assignment_books as unknown as { books: { title: string } | null }[] | null) ?? [])
+      bookTitles: (assignment.assignment_books ?? [])
         .map((ab) => ab.books?.title)
         .filter((t): t is string => Boolean(t)),
-      missions: (assignment.assignment_missions as unknown as { type: string }[] | null) ?? [],
+      missions: assignment.assignment_missions ?? [],
       startDate: assignment.start_date,
       endDate: assignment.end_date,
       createdAt: assignment.created_at,
