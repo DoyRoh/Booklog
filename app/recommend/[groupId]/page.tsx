@@ -9,6 +9,7 @@ import AddBookToList from "@/components/add-book-to-list";
 import BrowseGroups from "@/components/browse-groups";
 import CreateAssignment from "@/components/create-assignment";
 import RecommendBookList from "@/components/recommend-book-list";
+import RecommendShelf from "@/components/recommend-shelf";
 
 export default async function GroupDetailPage({
   params,
@@ -153,13 +154,11 @@ export default async function GroupDetailPage({
       <div className="mt-8">
         <p className="d text-base">{isOperator ? `추천도서 ${recommendBooks.length}권` : "추천도서"}</p>
         <div className="mt-3">
-          <RecommendBookList
-            groupId={groupId}
-            listName={listName}
-            books={recommendBooks}
-            activeChildId={isOperator ? null : (activeChild?.id ?? null)}
-            manage={isOperator}
-          />
+          {isOperator ? (
+            <RecommendBookList groupId={groupId} listName={listName} books={recommendBooks} activeChildId={null} manage />
+          ) : (
+            <RecommendShelf groupId={groupId} books={recommendBooks} activeChildId={activeChild?.id ?? null} />
+          )}
         </div>
       </div>
 

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import { getRecommendBooks } from "@/lib/recommend-books";
-import RecommendBookList from "@/components/recommend-book-list";
+import RecommendShelf from "@/components/recommend-shelf";
 import GroupFilterSelect, { type FilterGroup } from "@/components/group-filter-select";
 import Illustration from "@/components/illustration";
 
@@ -85,12 +85,7 @@ export default async function TrailPage({ searchParams }: { searchParams: Promis
       )}
 
       <div className="mt-3">
-        <RecommendBookList
-          groupId={selectedGroup.id}
-          listName={recommend.listName}
-          books={recommend.books}
-          activeChildId={activeChild.id}
-        />
+        <RecommendShelf groupId={selectedGroup.id} books={recommend.books} activeChildId={activeChild.id} />
       </div>
 
       <Link

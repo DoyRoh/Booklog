@@ -15,12 +15,15 @@ export function ReadCheck({
   groupId,
   done,
   size = 26,
+  className = "flex h-8 w-8 items-center justify-center rounded-full",
 }: {
   childId: string;
   bookId: string;
   groupId: string | null;
   done: boolean;
   size?: number;
+  /** 표지 위에 얹을 때처럼 배경·크기를 바꾸고 싶으면 통째로 교체. */
+  className?: string;
 }) {
   const router = useRouter();
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
@@ -43,7 +46,7 @@ export function ReadCheck({
       onClick={toggle}
       aria-pressed={value}
       aria-label={value ? "읽었어요 (누르면 해제)" : "읽었어요로 표시"}
-      className="flex h-8 w-8 items-center justify-center rounded-full"
+      className={className}
       style={{ color: value ? "var(--point)" : "rgba(38,54,43,0.28)" }}
     >
       <CheckCircleIcon filled={value} width={size} height={size} />
@@ -57,12 +60,14 @@ export function ShelfBookmark({
   groupId,
   status,
   size = 22,
+  className = "flex h-8 w-8 items-center justify-center rounded-full",
 }: {
   childId: string;
   bookId: string;
   groupId: string | null;
   status: ReadingStatus | null;
   size?: number;
+  className?: string;
 }) {
   const router = useRouter();
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
@@ -87,7 +92,7 @@ export function ShelfBookmark({
       onClick={toggle}
       aria-pressed={shelved}
       aria-label={shelved ? "책장에 있어요" : "책장에 꽂기"}
-      className="flex h-8 w-8 items-center justify-center rounded-full"
+      className={className}
       style={{ color: shelved ? "var(--lantern)" : "rgba(38,54,43,0.28)" }}
     >
       <BookmarkIcon filled={shelved} width={size} height={size} />
