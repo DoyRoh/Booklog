@@ -86,7 +86,7 @@ export default async function LibraryPage({
   const books: ShelfBook[] = Array.from(byBook.values());
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
       {!activeChild && (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
           아이를 등록하면 책장이 시작돼요. 더보기에서 아이를 추가해 주세요.

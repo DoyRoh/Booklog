@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { SearchIcon, SpineViewIcon, CoverViewIcon, ListViewIcon } from "@/components/icons/misc-icons";
+import { MoreIcon } from "@/components/icons/tab-icons";
 import type { ReadingStatus } from "@/lib/reading-status";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 
@@ -163,6 +164,8 @@ export default function LibraryShelf({
   const [shelfFilter, setShelfFilter] = useState<ShelfFilter>("all");
   const [sort, setSort] = useState<SortMode>("new");
   const [editing, setEditing] = useState<DedupedBook | null>(null);
+  // 우측 상단 "⋯" 메뉴(보기 방식 · 내보내기). 자주 안 바꾸는 설정이라 첫 줄에서 뺐다.
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (initialMode) return;
@@ -285,47 +288,6 @@ export default function LibraryShelf({
             style={{ borderColor: "var(--rule)", background: "var(--card)" }}
           />
         </div>
-        <div className="flex overflow-hidden rounded-[14px] border" style={{ borderColor: "var(--rule)" }}>
-          <button
-            type="button"
-            onClick={() => switchMode("cover")}
-            aria-pressed={mode === "cover"}
-            aria-label="전면 책장으로 보기"
-            className="flex items-center justify-center px-3"
-            style={{
-              background: mode === "cover" ? "var(--point)" : "var(--card)",
-              color: mode === "cover" ? "#fff" : "var(--ink-2)",
-            }}
-          >
-            <CoverViewIcon />
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode("spine")}
-            aria-pressed={mode === "spine"}
-            aria-label="책등 책장으로 보기"
-            className="flex items-center justify-center px-3"
-            style={{
-              background: mode === "spine" ? "var(--point)" : "var(--card)",
-              color: mode === "spine" ? "#fff" : "var(--ink-2)",
-            }}
-          >
-            <SpineViewIcon />
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode("list")}
-            aria-pressed={mode === "list"}
-            aria-label="읽은 순서 목록으로 보기"
-            className="flex items-center justify-center px-3"
-            style={{
-              background: mode === "list" ? "var(--point)" : "var(--card)",
-              color: mode === "list" ? "#fff" : "var(--ink-2)",
-            }}
-          >
-            <ListViewIcon />
-          </button>
-        </div>
         <Link
           href="/library/add"
           className="d flex flex-none items-center rounded-[14px] px-3.5 text-sm text-white"
@@ -333,46 +295,94 @@ export default function LibraryShelf({
         >
           + 책
         </Link>
+        <div className="relative flex-none">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="보기 방식과 내보내기"
+            aria-expanded={menuOpen}
+            className="flex h-[42px] w-[42px] items-center justify-center rounded-[14px] border"
+            style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
+          >
+            <MoreIcon width={20} height={20} />
+          </button>
+          {menuOpen && (
+            <>
+              <button type="button" aria-label="메뉴 닫기" className="fixed inset-0 z-30 cursor-default" onClick={() => setMenuOpen(false)} />
+              <div
+                className="absolute right-0 z-40 mt-2 w-[180px] overflow-hidden rounded-[16px] border py-1"
+                style={{ borderColor: "var(--rule)", background: "var(--card)", boxShadow: "0 8px 24px -8px rgba(38,54,43,0.3)" }}
+              >
+                <p className="px-4 pt-2 pb-1 text-[11px]" style={{ color: "var(--ink-2)" }}>
+                  보기 방식
+                </p>
+                {(
+                  [
+                    { value: "cover", label: "전면 책장", Icon: CoverViewIcon },
+                    { value: "spine", label: "책등 책장", Icon: SpineViewIcon },
+                    { value: "list", label: "읽은 순서 목록", Icon: ListViewIcon },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      switchMode(opt.value);
+                      setMenuOpen(false);
+                    }}
+                    aria-pressed={mode === opt.value}
+                    className="flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm"
+                    style={{
+                      color: mode === opt.value ? "var(--point-deep)" : "var(--ink)",
+                      background: mode === opt.value ? "rgba(47,168,79,0.08)" : "transparent",
+                    }}
+                  >
+                    <opt.Icon />
+                    {opt.label}
+                  </button>
+                ))}
+                <div className="my-1" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+                <Link href="/library/export" className="block px-4 py-2 text-sm" style={{ color: "var(--ink)" }} onClick={() => setMenuOpen(false)}>
+                  내보내기
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      {shelfOptions.length > 0 && (
-        <div className="mt-2 flex items-center gap-2">
-          <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
-            그룹
-          </span>
-          <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
-            {shelfOptions.map((option) => (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => setShelfFilter(shelfFilter === option.key ? "all" : option.key)}
-                className="d flex-none rounded-full border px-3 py-1 text-xs"
-                style={{
-                  borderColor: shelfFilter === option.key ? "var(--point)" : "var(--rule)",
-                  background: shelfFilter === option.key ? "rgba(47,168,79,0.08)" : "var(--card)",
-                  color: shelfFilter === option.key ? "var(--point-deep)" : "var(--ink-2)",
-                }}
-              >
-                {option.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-[12px] flex items-center gap-2">
         <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
           {mode === "list" ? `${listRows.length}권` : `${filtered.length}권`}
         </span>
-        <div className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
-        {/* 상태 필터는 칩 한 줄 대신 정렬 옆 작은 드롭다운으로 -- 매일 쓰는
-            조작이 아니라서 첫눈에 보이는 줄 수를 줄인다(사용자 피드백).
-            걸려 있으면 초록 테두리로 표시. */}
+        <div className="h-px min-w-[4px] flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
+        {/* 그룹·상태·정렬은 전부 작은 드롭다운 한 줄로 -- 칩 줄 두 개를 없앴다
+            (사용자 피드백: 모바일에서 산만). 걸려 있으면 초록 테두리. */}
+        {shelfOptions.length > 0 && (
+          <select
+            value={shelfFilter}
+            onChange={(e) => setShelfFilter(e.target.value as ShelfFilter)}
+            aria-label="그룹 필터"
+            className="d w-[80px] flex-none truncate rounded-full border px-2 py-1 text-[12px] outline-none"
+            style={{
+              borderColor: shelfFilter === "all" ? "var(--rule)" : "var(--point)",
+              background: shelfFilter === "all" ? "var(--card)" : "rgba(47,168,79,0.08)",
+              color: shelfFilter === "all" ? "var(--ink-2)" : "var(--point-deep)",
+            }}
+          >
+            <option value="all">그룹</option>
+            {shelfOptions.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+        )}
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as ReadingStatus | "all")}
           aria-label="상태 필터"
-          className="d flex-none rounded-full border px-2.5 py-1 text-xs outline-none"
+          className="d w-[92px] flex-none truncate rounded-full border px-2 py-1 text-[12px] outline-none"
           style={{
             borderColor: statusFilter === "all" ? "var(--rule)" : "var(--point)",
             background: statusFilter === "all" ? "var(--card)" : "rgba(47,168,79,0.08)",
@@ -390,7 +400,7 @@ export default function LibraryShelf({
           value={sort}
           onChange={(e) => setSort(e.target.value as SortMode)}
           aria-label="정렬"
-          className="d flex-none rounded-full border px-2.5 py-1 text-xs outline-none"
+          className="d w-[76px] flex-none truncate rounded-full border px-2 py-1 text-[12px] outline-none"
           style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
         >
           {(Object.keys(SORT_LABELS) as SortMode[]).map((value) => (
@@ -399,19 +409,16 @@ export default function LibraryShelf({
             </option>
           ))}
         </select>
-        <Link href="/library/export" className="flex-none text-xs" style={{ color: "var(--point-deep)" }}>
-          내보내기
-        </Link>
       </div>
 
       {(mode === "list" ? listRows.length === 0 : filtered.length === 0) && (
-        <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
+        <p className="mt-[16px] text-sm" style={{ color: "var(--ink-2)" }}>
           검색 결과가 없어요.
         </p>
       )}
 
       {filtered.length > 0 && mode === "cover" && (
-        <div className="mt-5 flex flex-col gap-2">
+        <div className="mt-[16px] flex flex-col gap-2">
           {chunk(filtered, 3).map((row, rowIndex) => (
             <div key={rowIndex}>
               {/* 표지는 선반 위에 "올려진" 느낌으로 -- 바닥 그림자를 아래로만 */}
@@ -469,7 +476,7 @@ export default function LibraryShelf({
       )}
 
       {filtered.length > 0 && mode === "spine" && (
-        <div className="mt-5 flex flex-col gap-5">
+        <div className="mt-[16px] flex flex-col gap-5">
           {/* 한 줄에 8권(32px × 8 + 간격 6px × 7 = 298px -- 가장 좁은 폰의 안쪽 폭 326px에 들어감) */}
           {chunk(filtered, 8).map((row, rowIndex) => (
             <div key={rowIndex}>
@@ -508,7 +515,7 @@ export default function LibraryShelf({
       )}
 
       {listRows.length > 0 && mode === "list" && (
-        <div className="mt-4 flex flex-col gap-4">
+        <div className="mt-[16px] flex flex-col gap-4">
           {(sort === "new" ? listByMonth : [{ key: "", rows: listRows }]).map((group) => (
             <div key={group.key || "all"}>
               {group.key && (
