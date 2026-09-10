@@ -3,10 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import { hasVoiceConsent } from "@/lib/consent";
-import { getActiveAndUpcomingAssignments } from "@/lib/assignments";
-import AssignmentToday from "@/components/assignment-today";
+import { getAllAssignments } from "@/lib/assignments";
+import AssignmentsBrowser from "@/components/assignments-browser";
 
-// 숙제 탭 -- 진행 중·예정 숙제만. 그룹별 추천도서는 숲길 탭(/trail)으로 갔다.
+// 숙제 탭 -- 이번 주 숙제가 먼저, 다가오는 숙제, 지난 숙제 보기. 검색은 전체에서.
 export default async function AssignmentsPage() {
   const supabase = await createClient();
   const userId = await getVerifiedUserId();
@@ -36,34 +36,19 @@ export default async function AssignmentsPage() {
   }
 
   const [assignments, voiceAllowed] = await Promise.all([
-    getActiveAndUpcomingAssignments(supabase, activeChild.id),
+    getAllAssignments(supabase, activeChild.id),
     hasVoiceConsent(supabase, userId),
   ]);
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <div>
-        {assignments.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-            지금 진행 중이거나 예정된 숙제가 없어요. 숲길 탭에서 추천도서를 둘러보세요.
-          </p>
-        ) : (
-          <AssignmentToday
-            childId={activeChild.id}
-            childName={activeChild.name}
-            assignments={assignments}
-            voiceAllowed={voiceAllowed}
-          />
-        )}
-      </div>
-
-      <Link
-        href="/assignments/past"
-        className="d mt-8 block rounded-[14px] border py-3 text-center text-sm"
-        style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
-      >
-        지난 숙제 보기
-      </Link>
+      <AssignmentsBrowser
+        childId={activeChild.id}
+        childName={activeChild.name}
+        assignments={assignments}
+        voiceAllowed={voiceAllowed}
+        mode="current"
+      />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import Illustration from "@/components/illustration";
-import { LogGroup, LogRow, shortDate, shortMd } from "@/components/log-row";
+import { LogGroup, LogRow, shortMd } from "@/components/log-row";
 import { categoryColor } from "@/lib/categories";
 import { kstDate } from "@/lib/kst";
 
@@ -178,13 +178,15 @@ export default async function TeacherBooksPage() {
               ) : (
                 section.books.map((book, index) => {
                   const [firstCategory, secondCategory] = book.categories;
+                  const sameDayAsPrev =
+                    index > 0 && section.books[index - 1].addedAt.slice(0, 10) === book.addedAt.slice(0, 10);
                   return (
                     <LogRow
                       key={book.bookId}
                       first={index === 0}
+                      hideDate={sameDayAsPrev}
                       href={`/teacher/books/${book.bookId}?group=${section.id}`}
                       dateTop={shortMd(book.addedAt)}
-                      dateBottom={shortDate(book.addedAt)}
                       chip={{ label: firstCategory ?? "책", color: categoryColor(firstCategory), sub: secondCategory }}
                       title={book.title}
                       subtitle={

@@ -72,6 +72,7 @@ export type TodayAssignment = {
   description: string | null;
   startDate: string | null;
   endDate: string | null;
+  createdAt: string;
   books: TodayBook[];
   missions: TodayMission[];
 };

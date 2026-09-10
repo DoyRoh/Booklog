@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Illustration from "@/components/illustration";
 import { ReadCheck, ShelfBookmark } from "@/components/read-toggles";
 import { BOOK_CATEGORIES, categoryColor } from "@/lib/categories";
-import { LogGroup, LogRow, monthOf, shortDate, shortMd } from "@/components/log-row";
+import { LogGroup, LogRow, monthOf, shortMd } from "@/components/log-row";
 import type { RecommendBook } from "@/lib/recommend-books";
 
 export type { RecommendBook };
@@ -156,12 +156,13 @@ export default function RecommendBookList({
           <LogGroup key={group.key} heading={group.label} headingSub={`${group.books.length}권`}>
             {group.books.map((book, index) => {
               const [firstCategory, secondCategory] = book.categories;
+              const sameDayAsPrev = index > 0 && group.books[index - 1].addedAt.slice(0, 10) === book.addedAt.slice(0, 10);
               return (
                 <LogRow
                   key={book.itemId}
                   first={index === 0}
+                  hideDate={sameDayAsPrev}
                   dateTop={shortMd(book.addedAt)}
-                  dateBottom={shortDate(book.addedAt)}
                   chip={{
                     label: firstCategory ?? "책",
                     color: categoryColor(firstCategory),

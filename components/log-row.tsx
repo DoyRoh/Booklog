@@ -18,6 +18,7 @@ export function LogRow({
   href,
   onClick,
   first,
+  hideDate,
   children,
 }: {
   dateTop: string;
@@ -29,19 +30,25 @@ export function LogRow({
   href?: string;
   onClick?: () => void;
   first?: boolean;
+  /** 바로 위 줄과 같은 날짜면 날짜 칸을 비워 같은 날끼리 묶어 보이게 한다. */
+  hideDate?: boolean;
   /** 제목 아래에 들어가는 확장 내용(숙제의 책 목록·미션 등). */
   children?: ReactNode;
 }) {
   const body = (
     <>
-      <div className="flex w-14 flex-none flex-col pt-0.5">
-        <span className="d text-sm leading-tight" style={{ color: "var(--ink-2)" }}>
-          {dateTop}
-        </span>
-        {dateBottom && (
-          <span className="text-[10px] leading-tight" style={{ color: "var(--ink-2)", opacity: 0.8 }}>
-            {dateBottom}
-          </span>
+      <div className="flex w-14 flex-none flex-col pt-0.5" aria-hidden={hideDate || undefined}>
+        {!hideDate && (
+          <>
+            <span className="d text-sm leading-tight" style={{ color: "var(--ink-2)" }}>
+              {dateTop}
+            </span>
+            {dateBottom && (
+              <span className="text-[9px] leading-tight" style={{ color: "var(--ink-2)", opacity: 0.6 }}>
+                {dateBottom}
+              </span>
+            )}
+          </>
         )}
       </div>
       <div className="flex w-12 flex-none flex-col items-center gap-0.5">
