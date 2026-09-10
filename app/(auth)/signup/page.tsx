@@ -31,7 +31,7 @@ export default function SignupPage() {
 
   if (done) {
     return (
-      <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-16">
+      <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-16">
         <h1 className="d text-2xl">책숲</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           가입 확인 이메일을 보냈어요. 메일함을 확인한 뒤 로그인해 주세요.
@@ -44,7 +44,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-10">
+    <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-10">
       <SceneBanner scene="parade" height={170} />
       <h1 className="d mt-6 text-2xl">책숲</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>

@@ -76,12 +76,12 @@ export default function ForestStrip({
           <Illustration name="bear-lantern" height={72} className="flex-none" priority />
         </div>
       </div>
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <p className="hand min-w-0 truncate text-base" style={{ color: "var(--point-deep)" }}>
+      <div className="mt-[12px] flex items-center justify-between gap-2">
+        <p className="hand min-w-0 truncate text-[18px] leading-[24px]" style={{ color: "var(--point-deep)" }}>
           {caption}
         </p>
         {href && (
-          <span className="flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+          <span className="d flex-none text-[13px] leading-[18px]" style={{ color: "var(--ink-2)" }}>
             우리 숲 보기 ›
           </span>
         )}

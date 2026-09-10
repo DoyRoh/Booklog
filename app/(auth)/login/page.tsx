@@ -41,7 +41,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-10">
+    <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-10">
       <SceneBanner scene="forest-peek" height={200} />
       <h1 className="d mt-6 text-2xl">책숲</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>

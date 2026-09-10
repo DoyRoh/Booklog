@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
 
   if (!hasSession) {
     return (
-      <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-16">
+      <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-16">
         <h1 className="d text-2xl">책숲</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--berry)" }}>
           링크가 만료됐거나 이미 사용됐어요. 다시 요청해 주세요.
@@ -69,7 +69,7 @@ export default function ResetPasswordPage() {
 
   if (done) {
     return (
-      <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-16">
+      <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-16">
         <h1 className="d text-2xl">책숲</h1>
         <p className="hand mt-4 text-lg" style={{ color: "var(--point-deep)" }}>
           비밀번호가 바뀌었어요. 이동할게요.
@@ -79,7 +79,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-16">
+    <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-16">
       <h1 className="d text-2xl">책숲</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         새 비밀번호를 입력해 주세요.

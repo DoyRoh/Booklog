@@ -43,7 +43,7 @@ export default function TopBar() {
       className="no-print fixed inset-x-0 top-0 z-50 border-b"
       style={{ paddingTop: "var(--st)", background: "var(--paper)", borderColor: "var(--rule)" }}
     >
-      <div className="mx-auto flex max-w-[520px] items-center justify-between px-6 py-2.5">
+      <div className="mx-auto flex max-w-[520px] items-center justify-between px-5 py-[10px]">
         <span className="flex items-center gap-2">
           {/* 전신 그림(public/illustrations/*.png)에서 얼굴만 동그랗게 잘라 둔
               face-*.png -- 아이는 토끼/강아지/고양이, 운영진은 곰/백로. */}
@@ -59,7 +59,7 @@ export default function TopBar() {
               style={{ boxShadow: "0 0 0 1.5px var(--rule)" }}
             />
           )}
-          <span className="d text-lg" style={{ color: "var(--ink)" }}>
+          <span className="hand text-[22px] leading-none" style={{ color: "var(--ink)" }}>
             {title}
           </span>
         </span>

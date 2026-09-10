@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-16">
+      <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-16">
         <h1 className="d text-2xl">책숲</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           비밀번호 재설정 메일을 보냈어요. 메일함을 확인해 주세요.
@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-16">
+    <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-16">
       <h1 className="d text-2xl">책숲</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         가입한 이메일로 비밀번호 재설정 링크를 보내드려요.

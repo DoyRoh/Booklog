@@ -16,7 +16,7 @@ export default function OperatorGroupPicker({
         <Link
           key={group.id}
           href={`${basePath}?group=${group.id}`}
-          className="flex items-center justify-between px-4 py-3 text-sm"
+          className="flex items-center justify-between px-[24px] py-[14px] text-sm"
           style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
         >
           <span className="d">{group.name}</span>

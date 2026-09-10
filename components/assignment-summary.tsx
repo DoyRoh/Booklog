@@ -18,10 +18,10 @@ export default function AssignmentSummary({ assignments }: { assignments: TodayA
       {sections.map((section, sIndex) => (
         <div
           key={section.groupName}
-          className={sIndex > 0 ? "mx-4" : undefined}
+          className={sIndex > 0 ? "mx-[24px]" : undefined}
           style={sIndex > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
         >
-          <p className={`text-xs ${sIndex > 0 ? "pt-3" : "px-4 pt-3"}`} style={{ color: "var(--lantern)" }}>
+          <p className={`text-xs ${sIndex > 0 ? "pt-3" : "px-[24px] pt-3"}`} style={{ color: "var(--lantern)" }}>
             {section.groupName}
           </p>
           {section.assignments.map((assignment) => {
@@ -31,7 +31,7 @@ export default function AssignmentSummary({ assignments }: { assignments: TodayA
               <Link
                 key={assignment.id}
                 href={`/assignments#${assignment.id}`}
-                className={`flex items-center justify-between gap-3 py-2 ${sIndex > 0 ? "" : "px-4"}`}
+                className={`flex items-center justify-between gap-3 py-2 ${sIndex > 0 ? "" : "px-[24px]"}`}
               >
                 <p className="d truncate text-sm">{assignment.title}</p>
                 <span

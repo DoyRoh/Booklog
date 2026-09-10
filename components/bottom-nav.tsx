@@ -65,14 +65,13 @@ export default function BottomNav() {
           <Link
             key={href}
             href={href}
-            className="flex flex-1 flex-col items-center gap-1 py-2"
+            className="flex flex-1 flex-col items-center justify-center gap-[4px] pt-[8px] pb-[6px]"
             style={{ color: active ? "var(--ink)" : "var(--ink-2)" }}
           >
-            <Icon strokeWidth={active ? 2.4 : 1.9} />
-            <span
-              className="d relative text-[11px]"
-              style={{ fontFamily: "var(--disp)" }}
-            >
+            <span className="flex h-[24px] w-[24px] items-center justify-center">
+              <Icon strokeWidth={active ? 2.4 : 1.9} />
+            </span>
+            <span className="d relative text-[11px] leading-[14px]" style={{ fontFamily: "var(--disp)" }}>
               {label}
               {active && (
                 <span

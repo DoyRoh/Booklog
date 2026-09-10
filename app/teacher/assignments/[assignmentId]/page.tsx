@@ -18,7 +18,7 @@ export default async function TeacherAssignmentDetailPage({
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-8">
         <Link href="/teacher/assignments" className="text-sm" style={{ color: "var(--point)" }}>
           ← 숙제
         </Link>
@@ -36,7 +36,7 @@ export default async function TeacherAssignmentDetailPage({
 
   if (!assignment) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-8">
         <Link href="/teacher/assignments" className="text-sm" style={{ color: "var(--ink-2)" }}>
           ← 숙제
         </Link>
@@ -87,7 +87,7 @@ export default async function TeacherAssignmentDetailPage({
   const doneChildren = rows.filter((r) => r.allDone).length;
 
   return (
-    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <Link href="/teacher/assignments" className="text-sm" style={{ color: "var(--ink-2)" }}>
         ← 숙제
       </Link>

@@ -169,7 +169,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-[420px] flex-col px-6 pt-12 pb-10">
+    <div className="mx-auto flex min-h-screen max-w-[420px] flex-col px-5 pt-12 pb-10">
       <div className="flex items-center justify-between">
         <h1 className="d text-2xl">책숲</h1>
         <SignOutButton />

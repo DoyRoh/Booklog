@@ -27,20 +27,20 @@ export default function Section({
       style={{ borderColor: "var(--rule)", background: "var(--card)" }}
     >
       <header
-        className="flex items-start justify-between gap-3 px-4 pt-4 pb-3"
+        className="flex items-start justify-between gap-3 px-[24px] pt-[24px] pb-[16px]"
         style={{ borderBottom: "1px solid rgba(38,54,43,0.08)" }}
       >
         <div className="min-w-0 flex-1">
-          <p className="d text-base leading-tight">{title}</p>
+          <p className="d text-[20px] font-semibold leading-[26px]">{title}</p>
           {description && (
-            <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
+            <p className="mt-[4px] text-[13px] leading-[19px]" style={{ color: "var(--ink-2)" }}>
               {description}
             </p>
           )}
         </div>
-        {action && <div className="flex-none">{action}</div>}
+        {action && <div className="flex-none pt-[2px]">{action}</div>}
       </header>
-      <div className={flush ? "" : "p-4"}>{children}</div>
+      <div className={flush ? "" : "px-[24px] py-[20px]"}>{children}</div>
     </section>
   );
 }

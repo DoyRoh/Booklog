@@ -18,7 +18,7 @@ export default async function AddRecommendBookPage({
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-8">
         <Link href="/login" className="text-sm" style={{ color: "var(--point)" }}>
           로그인하기
         </Link>
@@ -43,7 +43,7 @@ export default async function AddRecommendBookPage({
     : { bookListId: null, books: [] };
 
   return (
-    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <Link href="/teacher/books" className="text-sm" style={{ color: "var(--ink-2)" }}>
         ← 추천도서
       </Link>

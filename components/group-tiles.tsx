@@ -25,7 +25,7 @@ export default function GroupTiles({
   addHref?: string;
 }) {
   return (
-    <div className="-mx-6 flex gap-4 overflow-x-auto px-6 pb-1" style={{ scrollbarWidth: "none" }}>
+    <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-1" style={{ scrollbarWidth: "none" }}>
       {groups.map((group) => {
         const active = group.id === selectedId;
         return (

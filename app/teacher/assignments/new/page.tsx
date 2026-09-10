@@ -20,7 +20,7 @@ export default async function NewAssignmentPage({
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-8">
         <Link href="/login" className="text-sm" style={{ color: "var(--point)" }}>
           로그인하기
         </Link>
@@ -42,7 +42,7 @@ export default async function NewAssignmentPage({
   const group = groups.find((g) => g.id === groupParam) ?? (groups.length === 1 ? groups[0] : null);
 
   return (
-    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <Link href="/teacher/assignments" className="text-sm" style={{ color: "var(--ink-2)" }}>
         ← 숙제
       </Link>

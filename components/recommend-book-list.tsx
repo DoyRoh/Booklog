@@ -100,7 +100,7 @@ export default function RecommendBookList({
       }
     >
       {monthGroups.length === 0 && (
-        <p className="px-4 py-4 text-sm" style={{ color: "var(--ink-2)" }}>
+        <p className="px-[24px] py-[20px] text-sm" style={{ color: "var(--ink-2)" }}>
           아직 추천도서가 없어요.
         </p>
       )}
@@ -109,7 +109,7 @@ export default function RecommendBookList({
           넣는다 -- 표지는 책장에서 보고, 여기선 "언제 어떤 책이 올라왔나"를 훑는 자리. */}
       {monthGroups.map((group, gIndex) => (
         <div key={group.key} style={gIndex > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}>
-          <p className="px-4 pt-3 pb-1 text-xs" style={{ color: "var(--ink-2)" }}>
+          <p className="px-[24px] pt-[12px] pb-[4px] text-xs" style={{ color: "var(--ink-2)" }}>
             <span className="d text-sm" style={{ color: "var(--ink)" }}>
               {group.label}
             </span>{" "}

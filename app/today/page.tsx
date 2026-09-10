@@ -17,7 +17,7 @@ export default async function TodayPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">오늘</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -36,7 +36,7 @@ export default async function TodayPage() {
 
   if (activeProfile.type === "operator") {
     return (
-      <div className="mx-auto max-w-[520px] px-6 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">오늘</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           숲지기 프로필로 보고 있어요. 대시보드에서 그룹 아이들의 읽기·숙제 상황을 볼 수 있어요.
@@ -54,7 +54,7 @@ export default async function TodayPage() {
 
   if (!activeChild) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">오늘</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           아이를 등록하면 오늘의 숙제가 여기에 표시돼요. 더보기에서 아이를 추가해 주세요.
@@ -135,8 +135,8 @@ export default async function TodayPage() {
   });
 
   return (
-    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
-      <p className="hand text-xl" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
+    <div className="mx-auto max-w-[520px] px-5 pt-[24px] pb-[40px]">
+      <p className="hand text-[24px] leading-[32px]" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
         {activeChild.name}, 오늘도 책숲을 걸어볼까요?
       </p>
 
@@ -150,7 +150,7 @@ export default async function TodayPage() {
           요약이라, 요약 박스를 맨 위로 올리고 기록 버튼은 그 아래로
           내렸다(레거시 "유안이 독서 기록" 화면 구조 참고). */}
       <div
-        className="mt-4 rounded-[var(--r)] border p-5"
+        className="mt-[28px] rounded-[var(--r)] border p-[24px]"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
         {/* 우리 숲 미리보기 -- 권수 배지("숲이 자라요")를 딴 만큼 나무가 서
@@ -159,60 +159,63 @@ export default async function TodayPage() {
         <ForestStrip
           treeCount={MILESTONE_COUNTS.filter((c) => totalDone >= c).length}
           avatar={activeChild.avatar}
-          className="mb-4"
+          className="mb-[20px]"
           href="/forest"
         />
-        <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+        {/* 카드 제목 행: 라벨 + 큰 숫자(32px semibold). '권'은 작고 연하게. */}
+        <p className="text-[14px] leading-[20px]" style={{ color: "var(--ink-2)" }}>
           읽은 책
-        </span>
-        <p className="d mt-1 text-2xl" style={{ color: "var(--point-deep)" }}>
+        </p>
+        <p className="d mt-[4px] text-[32px] font-semibold leading-[36px]" style={{ color: "var(--point-deep)" }}>
           {totalDone}
-          <span className="ml-1 text-base font-normal" style={{ color: "var(--ink-2)" }}>
+          <span className="ml-[4px] text-[14px] font-normal" style={{ color: "var(--ink-2)" }}>
             권
           </span>
         </p>
 
         <div
-          className="mt-4 flex justify-between"
-          style={{ borderTop: "1px solid var(--rule)", paddingTop: "0.875rem" }}
+          className="mt-[28px] flex justify-between pt-[20px]"
+          style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}
         >
-          <div className="flex flex-col items-start gap-0.5">
-            <span className="d text-lg">{todayCount}</span>
-            <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-              오늘
-            </span>
-          </div>
-          <div className="flex flex-col items-start gap-0.5">
-            <span className="d text-lg">{weekCount}</span>
-            <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-              이번 주
-            </span>
-          </div>
-          <div className="flex flex-col items-start gap-0.5">
-            <span className="d text-lg">{monthCount}</span>
-            <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-              이번 달
-            </span>
-          </div>
-          <Link href="/trail" className="flex flex-col items-start gap-0.5">
-            <span className="d text-lg">{groupCount}</span>
-            <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-              그룹
-            </span>
-          </Link>
+          {(
+            [
+              { value: todayCount, label: "오늘", href: null },
+              { value: weekCount, label: "이번 주", href: null },
+              { value: monthCount, label: "이번 달", href: null },
+              { value: groupCount, label: "그룹", href: "/trail" },
+            ] as const
+          ).map((stat) => {
+            const inner = (
+              <>
+                <span className="d text-[20px] font-semibold leading-[24px]">{stat.value}</span>
+                <span className="text-[13px] leading-[18px]" style={{ color: "var(--ink-2)" }}>
+                  {stat.label}
+                </span>
+              </>
+            );
+            return stat.href ? (
+              <Link key={stat.label} href={stat.href} className="flex flex-col items-start gap-[4px]">
+                {inner}
+              </Link>
+            ) : (
+              <div key={stat.label} className="flex flex-col items-start gap-[4px]">
+                {inner}
+              </div>
+            );
+          })}
         </div>
       </div>
 
       <Link
         href="/library/add"
-        className="d mt-3 block rounded-[14px] py-3.5 text-center text-base text-white"
+        className="d mt-[16px] block rounded-[14px] py-[14px] text-center text-[16px] font-semibold text-white"
         style={{ background: "var(--berry)" }}
       >
         + 책 기록하기
       </Link>
 
       <Section
-        className="mt-6"
+        className="mt-[32px]"
         title="오늘의 숙제"
         flush={activeAssignments.length > 0}
         action={
@@ -234,7 +237,7 @@ export default async function TodayPage() {
 
       {recentRecords.length > 0 && (
         <Section
-          className="mt-5"
+          className="mt-[20px]"
           title="최근 기록"
           flush
           action={

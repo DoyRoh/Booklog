@@ -3,7 +3,7 @@ import SceneBanner from "@/components/scene-banner";
 
 export default function NotFound() {
   return (
-    <div className="mx-auto flex max-w-[420px] flex-col px-6 pt-10">
+    <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-10">
       <SceneBanner scene="parade" height={170} />
       <p className="hand mt-6 text-xl" style={{ color: "var(--point-deep)" }}>
         숲길을 잘못 들었나 봐요.

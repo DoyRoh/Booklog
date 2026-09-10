@@ -36,11 +36,11 @@ export default function RecentRecords({
     <div>
       {records.map((record, index) => (
         <div key={record.id}>
-          {index > 0 && <div className="mx-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />}
+          {index > 0 && <div className="mx-[24px]" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />}
           <button
             type="button"
             onClick={() => setEditing(record)}
-            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left"
+            className="flex w-full items-center gap-2.5 px-[24px] py-[10px] text-left"
           >
             {record.coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

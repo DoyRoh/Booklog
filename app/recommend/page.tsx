@@ -24,7 +24,7 @@ export default async function RecommendPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">추천</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -100,7 +100,7 @@ export default async function RecommendPage() {
     .sort((a, b) => b.bookCount - a.bookCount);
 
   return (
-    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       {/* 그룹을 "만드는" 건 숲지기의 일이다. 아이 프로필로 볼 때는 여기서
           그룹을 만들 수 없고(찾기·참가만), 숲지기가 되려면 더보기 → 숲지기
           프로필에서 시작한다 -- 아이 화면과 숲지기 화면에 같은 버튼이 있어
@@ -127,7 +127,7 @@ export default async function RecommendPage() {
             {myGroups.map((group, index) => (
               <div
                 key={group.id}
-                className="flex items-center justify-between gap-3 px-4 py-3"
+                className="flex items-center justify-between gap-3 px-[24px] py-[14px]"
                 style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
               >
                 <Link href={`/recommend/${group.id}`} className="min-w-0 flex-1">

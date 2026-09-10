@@ -28,7 +28,7 @@ export default async function TeacherChildrenPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">아이들</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -132,7 +132,7 @@ export default async function TeacherChildrenPage() {
   });
 
   return (
-    <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <h1 className="d text-xl">아이들</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         아이마다 추천도서를 몇 권 읽었는지, 숙제를 몇 개 끝냈는지 볼 수 있어요. 누르면 책별·숙제별로 자세히 보여요.
