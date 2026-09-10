@@ -308,24 +308,34 @@ export default function OnboardingPage() {
             </p>
           </div>
 
-          <input
-            type="text"
-            required
-            placeholder="아이 이름"
-            value={childName}
-            onChange={(e) => setChildName(e.target.value)}
-            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          />
-          <input
-            type="date"
-            value={childBirthDate}
-            onChange={(e) => setChildBirthDate(e.target.value)}
-            min={MIN_BIRTH_DATE}
-            max={MAX_BIRTH_DATE}
-            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          />
+          {/* 입력칸 위에 이름표 -- 날짜 칸이 뭘 묻는지 안내가 없어 "이게 생일인지
+              뭔지" 헷갈린다는 피드백. */}
+          <label className="flex flex-col gap-1.5">
+            <span className="d text-xs" style={{ color: "var(--ink-2)" }}>아이 이름</span>
+            <input
+              type="text"
+              required
+              placeholder="예: 유안"
+              value={childName}
+              onChange={(e) => setChildName(e.target.value)}
+              className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+              style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="d text-xs" style={{ color: "var(--ink-2)" }}>
+              생년월일 <span style={{ opacity: 0.6 }}>(선택 · 나이에 맞는 책을 고를 때 써요)</span>
+            </span>
+            <input
+              type="date"
+              value={childBirthDate}
+              onChange={(e) => setChildBirthDate(e.target.value)}
+              min={MIN_BIRTH_DATE}
+              max={MAX_BIRTH_DATE}
+              className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+              style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+            />
+          </label>
 
           <div className="flex justify-between gap-3">
             {AVATARS.map(({ value, label }) => (

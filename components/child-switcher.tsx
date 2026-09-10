@@ -162,22 +162,30 @@ export default function ChildSwitcher({
           className="flex flex-col gap-3 rounded-[var(--r)] border p-4"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         >
-          <input
-            type="text"
-            placeholder="아이 이름"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
-            style={{ borderColor: "var(--rule)" }}
-          />
-          <input
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            max={new Date().toISOString().split("T")[0]}
-            className="rounded-[14px] border px-4 py-3 text-sm outline-none"
-            style={{ borderColor: "var(--rule)" }}
-          />
+          <label className="flex flex-col gap-1.5">
+            <span className="d text-xs" style={{ color: "var(--ink-2)" }}>아이 이름</span>
+            <input
+              type="text"
+              placeholder="예: 유안"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+              style={{ borderColor: "var(--rule)" }}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="d text-xs" style={{ color: "var(--ink-2)" }}>
+              생년월일 <span style={{ opacity: 0.6 }}>(선택)</span>
+            </span>
+            <input
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              max={new Date().toISOString().split("T")[0]}
+              className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+              style={{ borderColor: "var(--rule)" }}
+            />
+          </label>
           <div className="flex justify-between gap-3">
             {AVATAR_OPTIONS.map(({ value, label }) => (
               <button
