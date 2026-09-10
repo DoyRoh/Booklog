@@ -11,6 +11,7 @@ import type { ReadingStatus } from "@/lib/reading-status";
 import { ReadCheck } from "@/components/read-toggles";
 import { LogGroup, LogRow, shortMd } from "@/components/log-row";
 import { missionChip } from "@/lib/assignment-chip";
+import { kstDate } from "@/lib/kst";
 
 export type TodayMission = {
   id: string;
@@ -55,7 +56,7 @@ function toEditable(book: TodayBook, childId: string, childName: string | null):
     emotion: book.emotion,
     favorite: book.favorite,
     memo: book.memo ?? "",
-    readDate: book.readDate ?? new Date().toISOString().slice(0, 10),
+    readDate: book.readDate ?? kstDate(),
     pagesRead: book.pagesRead,
     shelfTagId: book.shelfTagId,
     photoPath: book.photoPath,

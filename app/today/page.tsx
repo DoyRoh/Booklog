@@ -8,6 +8,7 @@ import AssignmentSummary from "@/components/assignment-summary";
 import RecentRecords, { type RecentRecord } from "@/components/recent-records";
 import ForestStrip from "@/components/forest-strip";
 import { MILESTONE_COUNTS } from "@/lib/badges";
+import { kstDate, kstMonth, kstWeekStart } from "@/lib/kst";
 
 export default async function TodayPage() {
   const supabase = await createClient();
@@ -89,17 +90,14 @@ export default async function TodayPage() {
   const doneRecords = (allRecords ?? []).filter((r) => r.status === "done");
   const totalDone = doneRecords.length;
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = kstDate();
   const todayCount = doneRecords.filter((r) => r.read_date === todayKey).length;
 
-  // 이번 주 시작(월요일)은 lib/badges.ts의 "이번 주" 배지와 같은 공식을
-  // 쓴다 -- 두 곳 다 짧은 계산이라 별도 유틸로 뽑지 않고 그대로 둔다.
-  const weekStartDate = new Date();
-  weekStartDate.setDate(weekStartDate.getDate() - ((weekStartDate.getDay() + 6) % 7));
-  const weekKey = weekStartDate.toISOString().slice(0, 10);
+  // 이번 주 시작(월요일) -- 한국 시간 기준(lib/kst.ts), 배지 계산과 공유.
+  const weekKey = kstWeekStart();
   const weekCount = doneRecords.filter((r) => r.read_date >= weekKey).length;
 
-  const thisMonthKey = new Date().toISOString().slice(0, 7);
+  const thisMonthKey = kstMonth();
   const monthCount = doneRecords.filter((r) => r.read_date.startsWith(thisMonthKey)).length;
 
   const groupCount = (groupRows ?? []).length;

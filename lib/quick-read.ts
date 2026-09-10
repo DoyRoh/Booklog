@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { kstDate } from "@/lib/kst";
 
 // 목록 줄의 체크 토글 -- 기록 화면을 거치지 않고 "읽었어요"만 바로 표시한다.
 // 켜기: 이 아이의 이 책 기록이 있으면 전부 done(오늘 날짜)으로, 없으면
@@ -13,7 +14,7 @@ export async function setRead(
   groupId: string | null,
   done: boolean
 ) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = kstDate();
   if (done) {
     const { data: existing } = await supabase
       .from("reading_records")

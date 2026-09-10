@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ReadingStatus } from "@/lib/reading-status";
+import { kstDate } from "@/lib/kst";
 
 export type RecommendBook = {
   itemId: string;
@@ -59,7 +60,7 @@ export async function getRecommendBooks(
     .filter((row) => row.book);
 
   const listedBookIds = items.map((row) => row.book!.id);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = kstDate();
 
   // 분야, 아이의 읽기 기록, 진행 중인 숙제의 책 목록 -- 셋 다 서로 무관해서
   // 동시에 왕복한다.

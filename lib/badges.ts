@@ -1,3 +1,5 @@
+import { kstMonth, kstWeekStart } from "@/lib/kst";
+
 export type BadgeRecord = {
   status: "want" | "reading" | "done";
   read_date: string;
@@ -118,9 +120,7 @@ export function computeBadges(records: BadgeRecord[], extras?: Partial<BadgeExtr
   const favorites = new Set(records.filter((r) => r.favorite).map((r) => r.book_id)).size;
   const authors = new Set(done.map((r) => (r.author ?? "").trim()).filter(Boolean)).size;
 
-  const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
-  const weekKey = weekStart.toISOString().slice(0, 10);
+  const weekKey = kstWeekStart();
   const week = done.filter((r) => r.read_date >= weekKey).length;
 
   const perMonth = new Map<string, number>();
@@ -131,11 +131,8 @@ export function computeBadges(records: BadgeRecord[], extras?: Partial<BadgeExtr
   const bestMonth = Math.max(0, ...perMonth.values());
   // 최근 3개월 연속으로 한 권 이상 읽었는지
   const monthsInRow = (() => {
-    const now = new Date();
     for (let i = 0; i < 3; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      if (!perMonth.get(k)) return i;
+      if (!perMonth.get(kstMonth(i))) return i;
     }
     return 3;
   })();

@@ -5,6 +5,7 @@ import { getActiveChild } from "@/lib/active-child";
 import PrintButton from "@/components/print-button";
 import SceneBanner from "@/components/scene-banner";
 import GroupFilterSelect from "@/components/group-filter-select";
+import { kstMonth } from "@/lib/kst";
 
 const RATING_LABELS: Record<number, string> = {
   5: "최고예요",
@@ -78,7 +79,7 @@ export default async function LibraryExportPage({
 
   const totalRecords = rows.length;
   const uniqueBooks = new Set(rows.map((r) => r.book_id)).size;
-  const thisMonthPrefix = new Date().toISOString().slice(0, 7);
+  const thisMonthPrefix = kstMonth();
   const thisMonthCount = rows.filter((r) => r.read_date.startsWith(thisMonthPrefix)).length;
   const today = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
 

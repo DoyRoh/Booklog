@@ -1,11 +1,10 @@
 "use client";
 
 import { CalendarIcon } from "@/components/icons/record-icons";
+import { kstDate } from "@/lib/kst";
 
 function toDateStr(offsetDays: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - offsetDays);
-  return d.toISOString().slice(0, 10);
+  return kstDate(offsetDays);
 }
 
 const QUICK_OPTIONS = [

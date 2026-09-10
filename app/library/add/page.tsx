@@ -15,6 +15,7 @@ import QuestionPrompt from "@/components/question-prompt";
 import RatingPicker from "@/components/rating-picker";
 import ReadDatePicker from "@/components/read-date-picker";
 import ShelfTagPicker from "@/components/shelf-tag-picker";
+import { kstDate } from "@/lib/kst";
 
 type Step = "form" | "no-child" | "saved";
 type FindMode = "none" | "scan" | "isbn";
@@ -86,7 +87,7 @@ function AddBookForm() {
   const [saving, setSaving] = useState(false);
 
   const [status, setStatus] = useState<ReadingStatus>("done");
-  const [readDate, setReadDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [readDate, setReadDate] = useState(() => kstDate());
   const [rating, setRating] = useState<number | null>(null);
   // 기본 화면엔 제목·상태·날짜·평점·저장만 두고, 나머지(책장·즐겨찾기·
   // 메모·사진·목소리)는 "더 남기기"를 눌렀을 때만 펼친다 -- 30초 기록이

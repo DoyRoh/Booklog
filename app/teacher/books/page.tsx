@@ -4,6 +4,7 @@ import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import Illustration from "@/components/illustration";
 import { LogGroup, LogRow, shortDate, shortMd } from "@/components/log-row";
 import { categoryColor } from "@/lib/categories";
+import { kstDate } from "@/lib/kst";
 
 type BookCard = {
   bookId: string;
@@ -48,7 +49,7 @@ export default async function TeacherBooksPage() {
     .map((row) => row.groups as unknown as GroupRow | null)
     .filter((g): g is GroupRow => Boolean(g));
   const groupIds = groups.map((g) => g.id);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = kstDate();
 
   type ListRow = {
     group_id: string;

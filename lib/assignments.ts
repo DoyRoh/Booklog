@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSignedMediaUrl } from "@/lib/storage";
 import type { TodayAssignment } from "@/components/assignment-today";
+import { kstDate } from "@/lib/kst";
 
 type AssignmentRow = {
   id: string;
@@ -39,7 +40,7 @@ async function fetchAssignments(
   const groupIds = (memberGroupRows ?? []).map((row) => row.group_id);
   if (groupIds.length === 0) return [];
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = kstDate();
   let query = supabase
     .from("assignments")
     .select(

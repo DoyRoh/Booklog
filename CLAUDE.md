@@ -1147,3 +1147,10 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 - **적용한 목록**: 아이 숲길 탭·그룹 상세의 추천도서(`RecommendBookList` — 올린 달별 박스, 오른쪽에 읽었어요/읽는 중/책장에 꽂기), 아이 숙제 탭(`AssignmentToday` — 그룹별 박스, 줄마다 시작일~마감·종류 칩·제목·N/M 완료, 그 아래 책 줄(기록하기/발자국 읽었어요)과 질문·낭독 미션), 숲지기 추천도서(`/teacher/books` — 올린 순, 오른쪽 "N/M명"), 숲지기 숙제(`/teacher/assignments` — 부제에 책 제목들). `lib/assignments.ts`가 `startDate`/`endDate`를 함께 돌려주고, `lib/recommend-books.ts`가 `addedAt`을 돌려줍니다.
 - iPhone 뷰포트로 네 목록을 확인(임시 라우트, 삭제)했고 lint·build 통과.
 - **후속(사용자 지적: "글이 너무 많다 — 읽었는지는 토글로, 책장은 책갈피로")**: 목록 줄 오른쪽의 글자 상태("읽었어요"/"읽는 중"/"읽고 싶어요"/"책장에 꽂기" 버튼)를 전부 아이콘 두 개로 바꿨습니다(`components/read-toggles.tsx`). **책갈피**(호박색, `ShelfBookmark`) = 책장에 있음(어떤 상태든 기록이 있으면 켜짐; 비어 있을 때 누르면 want 기록으로 꽂고, want뿐일 때 누르면 뺌 — 읽는 중/읽은 책은 못 뺌). **동그라미 체크**(초록, `ReadCheck`) = 읽었어요(누르면 `lib/quick-read.ts`의 `setRead`: 기록이 있으면 done으로, 없으면 group_id 붙은 done 기록을 새로 만듦; 다시 누르면 want로 되돌림 — 지우지 않아서 평점·메모·사진은 남음). 아이 숙제의 책 줄도 "기록하기/읽었어요" 글자 대신 같은 체크 토글이고, 제목을 누르면 예전처럼 기록 화면/기록 고치기로. "숙제 중" 글자는 등불 아이콘만, "N/M 완료"는 "N/M"으로. `childAvatar` prop은 두 목록에서 더 안 써서 뺐습니다.
+
+## "오늘"을 한국 시간 기준으로 통일 (사용자 확인: "한국시간으로 해야지")
+
+체크 토글의 읽은 날짜가 어떤 날짜로 남는지 묻는 질문에 답하다가, 앱 전체가 `new Date().toISOString().slice(0, 10)`(UTC 날짜)로 "오늘"을 뽑고 있다는 걸 짚었습니다. Vercel 서버는 UTC로 돌기 때문에 한국 새벽 0~9시에는 전날 날짜가 됩니다 — 아침에 체크하면 읽은 날이 하루 밀리고, 숙제 시작·마감 판정과 오늘/이번 주/이번 달 통계, 배지의 주간·월간 계산도 같은 시간대에 어긋났습니다.
+
+- **`lib/kst.ts`(신규)**: `kstDate(offsetDays)`("YYYY-MM-DD"), `kstWeekStart()`(이번 주 월요일), `kstMonth(offsetMonths)`("YYYY-MM"). epoch에 9시간을 더한 뒤 UTC 필드를 읽는 방식이라 서버(UTC)에서도 폰(KST)에서도 같은 한국 달력 날짜가 나옵니다(경계 시각 세 가지를 node로 확인).
+- **바꾼 곳(10군데)**: 체크 토글(`lib/quick-read.ts`), 기록 남기기 기본 날짜(`app/library/add`)와 오늘/어제/그제 버튼(`components/read-date-picker.tsx`), 숙제 기록 고치기의 기본 날짜(`components/assignment-today.tsx`), 숙제 기간 판정(`lib/assignments.ts`), 진행 중 숙제 등불(`lib/recommend-books.ts`, `app/teacher/books`), 오늘 탭 통계(`app/today` — 오늘·이번 주·이번 달), 배지의 이번 주·3달 연속(`lib/badges.ts`), 독서 리포트의 이번 달(`app/library/export`). DB 변경 없음.
