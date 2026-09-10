@@ -139,7 +139,12 @@ export default async function GroupDetailPage({
 
       {isOperator ? (
         <div className="mt-4">
-          <GroupIntroEditor groupId={group.id} initial={group.description} />
+          <GroupIntroEditor
+            groupId={group.id}
+            initialName={group.name}
+            initialType={group.type}
+            initial={group.description}
+          />
         </div>
       ) : (
         group.description && (
