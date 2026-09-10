@@ -9,51 +9,12 @@ import Illustration, {
   type IllustrationName,
 } from "@/components/illustration";
 import type { Badge } from "@/lib/badges";
+import { ORNAMENT_BY_BADGE, ORNAMENT_LABEL, type OrnamentKind } from "@/lib/forest-scene";
 
 // 우리 숲 = 딴 배지를 한 장면으로 그린 것. "숲이 자라요"(권수) 배지 하나가
 // 나무 한 그루, 나머지 배지는 별·등불·새·발자국 장식. 책 한 권마다 나무를
 // 심으면 몇백 그루가 돼 버려서(사용자 지적), 배지 단위로만 심는다 --
 // 최대 38그루 + 장식 27개.
-type OrnamentKind = "star" | "lantern" | "bird-letter" | "bird-perched" | "paw";
-
-const ORNAMENT_BY_BADGE: Record<string, OrnamentKind> = {
-  d2: "star",
-  d3: "star",
-  week: "lantern",
-  d14: "lantern",
-  d30: "lantern",
-  week10: "star",
-  month20: "star",
-  months3: "star",
-  again: "paw",
-  again3: "paw",
-  same5: "paw",
-  fav1: "star",
-  fav5: "star",
-  group1: "bird-letter",
-  group3: "bird-letter",
-  rec10: "lantern",
-  rec30: "lantern",
-  rec100: "lantern",
-  hw1: "lantern",
-  hw5: "lantern",
-  hw20: "lantern",
-  photo10: "bird-letter",
-  photo30: "bird-letter",
-  voice5: "bird-perched",
-  voice20: "bird-perched",
-  author10: "star",
-  author30: "star",
-};
-
-const ORNAMENT_LABEL: Record<OrnamentKind, string> = {
-  star: "별",
-  lantern: "등불",
-  "bird-letter": "편지 새",
-  "bird-perched": "새",
-  paw: "발자국",
-};
-
 // 권수 배지의 나무 -- 권수가 커질수록 다른 종류·더 큰 나무.
 function milestoneTree(count: number): { name: IllustrationName; height: number } {
   if (count < 10) return { name: "tree-light", height: 36 };
@@ -157,6 +118,9 @@ export default function ForestView({
         >
           첫 나무 심으러 가기
         </Link>
+        <Link href="/forest/3d" className="d mt-3 block text-center text-sm" style={{ color: "var(--point-deep)" }}>
+          빈 들판을 3D로 둘러보기 ›
+        </Link>
       </div>
     );
   }
@@ -169,8 +133,17 @@ export default function ForestView({
         <p className="hand text-xl" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
           {childName}의 숲에 나무 {trees.length}그루가 자랐어요
         </p>
-        <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
-          배지 {achieved} / {badges.length}
+        <span className="flex flex-none items-center gap-2">
+          <span className="d text-sm" style={{ color: "var(--ink-2)" }}>
+            배지 {achieved} / {badges.length}
+          </span>
+          <Link
+            href="/forest/3d"
+            className="d rounded-full px-3 py-1 text-xs text-white"
+            style={{ background: "var(--point-deep)" }}
+          >
+            3D 숲 ›
+          </Link>
         </span>
       </div>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
