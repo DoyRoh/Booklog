@@ -360,34 +360,32 @@ export default function LibraryShelf({
         </div>
       )}
 
-      <div className="mt-2 flex items-center gap-2">
-        <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
-          상태
-        </span>
-        <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
-          {(Object.keys(STATUS_LABELS) as ReadingStatus[]).map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setStatusFilter(statusFilter === value ? "all" : value)}
-              className="d flex-none rounded-full border px-3 py-1 text-xs"
-              style={{
-                borderColor: statusFilter === value ? "var(--point)" : "var(--rule)",
-                background: statusFilter === value ? "rgba(47,168,79,0.08)" : "var(--card)",
-                color: statusFilter === value ? "var(--point-deep)" : "var(--ink-2)",
-              }}
-            >
-              {STATUS_LABELS[value]}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="mt-3 flex items-center gap-3">
         <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
           {mode === "list" ? `${listRows.length}권` : `${filtered.length}권`}
         </span>
         <div className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
+        {/* 상태 필터는 칩 한 줄 대신 정렬 옆 작은 드롭다운으로 -- 매일 쓰는
+            조작이 아니라서 첫눈에 보이는 줄 수를 줄인다(사용자 피드백).
+            걸려 있으면 초록 테두리로 표시. */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as ReadingStatus | "all")}
+          aria-label="상태 필터"
+          className="d flex-none rounded-full border px-2.5 py-1 text-xs outline-none"
+          style={{
+            borderColor: statusFilter === "all" ? "var(--rule)" : "var(--point)",
+            background: statusFilter === "all" ? "var(--card)" : "rgba(47,168,79,0.08)",
+            color: statusFilter === "all" ? "var(--ink-2)" : "var(--point-deep)",
+          }}
+        >
+          <option value="all">모든 상태</option>
+          {(Object.keys(STATUS_LABELS) as ReadingStatus[]).map((value) => (
+            <option key={value} value={value}>
+              {STATUS_LABELS[value]}
+            </option>
+          ))}
+        </select>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortMode)}
