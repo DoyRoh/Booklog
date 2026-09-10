@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
+import { getActiveProfile } from "@/lib/active-profile";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
@@ -25,8 +26,9 @@ export default async function RecommendPage() {
 
   // 서로 무관한 조회 셋(활성 아이, 내가 운영진인 그룹, 공개 그룹 목록)을
   // 동시에 왕복한다.
-  const [activeChild, { data: operatorRows }, { data: openGroupRows }] = await Promise.all([
+  const [activeChild, activeProfile, { data: operatorRows }, { data: openGroupRows }] = await Promise.all([
     getActiveChild(supabase, userId),
+    getActiveProfile(supabase, userId),
     supabase
       .from("group_members")
       .select("groups(id, name, type, join_policy)")
@@ -57,19 +59,23 @@ export default async function RecommendPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
-      {/* 선생님/기관 프로필도 이 계정에서 바로 추가할 수 있으므로(더보기의
-          "프로필" 섹션과 같은 목적지), 역할과 무관하게 항상 보여준다. */}
-      <div className="flex justify-end">
-        <Link
-          href="/recommend/create"
-          className="d rounded-[14px] px-4 py-2 text-sm text-white"
-          style={{ background: "var(--point)" }}
-        >
-          + 그룹 만들기
-        </Link>
-      </div>
+      {/* 그룹을 "만드는" 건 숲지기의 일이다. 아이 프로필로 볼 때는 여기서
+          그룹을 만들 수 없고(찾기·참가만), 숲지기가 되려면 더보기 → 숲지기
+          프로필에서 시작한다 -- 아이 화면과 숲지기 화면에 같은 버튼이 있어
+          "누가 그룹을 만드는 건지" 헷갈리던 걸 정리. */}
+      {activeProfile.type === "operator" && (
+        <div className="flex justify-end">
+          <Link
+            href="/recommend/create"
+            className="d rounded-[14px] px-4 py-2 text-sm text-white"
+            style={{ background: "var(--point)" }}
+          >
+            + 그룹 만들기
+          </Link>
+        </div>
+      )}
 
-      <div className="mt-6">
+      <div className={activeProfile.type === "operator" ? "mt-6" : ""}>
         <p className="d text-base">내 그룹</p>
         {myGroups.length === 0 ? (
           <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>

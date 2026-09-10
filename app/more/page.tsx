@@ -110,7 +110,7 @@ export default async function MorePage() {
 
         <div className="mt-5">
           <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-            숲지기 프로필 <span style={{ opacity: 0.7 }}>· 선생님·기관·인플루언서</span>
+            숲지기 프로필 <span style={{ opacity: 0.7 }}>· 그룹을 만들어 추천도서·숙제를 운영해요</span>
           </p>
           <div className="mt-2">
             <OperatorProfileSwitcher
@@ -155,9 +155,10 @@ export default async function MorePage() {
 
       {children.length > 0 && (
         <div className="mt-8">
-          <p className="d text-base">그룹 둘러보기</p>
+          <p className="d text-base">그룹 찾기 · 참가</p>
           <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-            아직 안 속한 기관·크리에이터 그룹을 찾아 팔로우하거나, 초대 코드로 학급에 참가할 수 있어요.
+            아이는 그룹에 <b>참가</b>해요 — 선생님이 준 초대 코드로 학급에 들어가거나, 도서관·크리에이터의 숲길을
+            팔로우해요. 그룹을 직접 만들어 운영하는 건 위의 숲지기 프로필에서.
           </p>
           <Link
             href="/recommend"

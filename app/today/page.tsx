@@ -75,7 +75,7 @@ export default async function TodayPage() {
       .eq("child_id", activeChild.id)
       .order("read_date", { ascending: false }),
     getTodayAssignments(supabase, activeChild.id),
-    supabase.from("group_members").select("group_id").eq("child_id", activeChild.id).eq("status", "approved"),
+    supabase.from("group_members").select("groups(id)").eq("child_id", activeChild.id).eq("status", "approved"),
   ]);
 
   // 마감일(end_date)을 안 정한 숙제는 날짜만으로는 절대 안 없어지므로,
@@ -100,7 +100,14 @@ export default async function TodayPage() {
   const thisMonthKey = kstMonth();
   const monthCount = doneRecords.filter((r) => r.read_date.startsWith(thisMonthKey)).length;
 
-  const groupCount = (groupRows ?? []).length;
+  // "그룹" 칸 = 아이가 속한(승인된) 그룹 수. 숲길 탭 드롭다운과 같은 기준으로,
+  // 실제로 보이는 그룹만 중복 없이 센다(같은 그룹에 행이 둘이거나 그룹이
+  // 안 보이는 행은 제외).
+  const groupCount = new Set(
+    (groupRows ?? [])
+      .map((row) => (row.groups as unknown as { id: string } | null)?.id)
+      .filter((id): id is string => Boolean(id))
+  ).size;
 
   const recentRecords: RecentRecord[] = (allRecords ?? []).slice(0, 5).map((r) => {
     const book = r.books as unknown as {

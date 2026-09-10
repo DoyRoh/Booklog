@@ -62,7 +62,7 @@ export default function OperatorProfileSwitcher({
         className="d block rounded-[var(--r)] border border-dashed px-4 py-3 text-sm"
         style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
       >
-        + 숲지기 프로필 추가 (그룹 만들기)
+        + 숲지기 되기 — 새 그룹 만들기
       </Link>
     );
   }
@@ -134,7 +134,7 @@ export default function OperatorProfileSwitcher({
         className="d rounded-[var(--r)] border border-dashed px-4 py-3 text-sm"
         style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
       >
-        + 숲지기 프로필 추가 (그룹 만들기)
+        + 숲지기 되기 — 새 그룹 만들기
       </Link>
     </div>
   );
