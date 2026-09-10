@@ -18,14 +18,41 @@ export default function GroupTiles({
   selectedId,
   basePath,
   addHref = "/recommend",
+  allLabel,
+  addLabel = "그룹 찾기",
 }: {
   groups: GroupTile[];
   selectedId: string;
   basePath: string;
   addHref?: string;
+  /** 있으면 맨 앞에 "전체" 타일(선택 id는 "all", 링크는 basePath 그대로). */
+  allLabel?: string;
+  addLabel?: string;
 }) {
+  const allActive = selectedId === "all";
   return (
     <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-1" style={{ scrollbarWidth: "none" }}>
+      {allLabel && (
+        <Link href={basePath} aria-current={allActive ? "true" : undefined} className="flex w-16 flex-none flex-col items-center gap-1.5">
+          <span
+            className="d flex h-14 w-14 items-center justify-center rounded-[18px] text-sm"
+            style={{
+              background: allActive ? "var(--point-deep)" : "var(--card)",
+              color: allActive ? "#fff" : "var(--ink)",
+              border: allActive ? "1px solid var(--point-deep)" : "1px solid var(--rule)",
+              boxShadow: allActive ? "0 4px 10px rgba(27,94,58,0.28)" : "0 2px 4px rgba(38,54,43,0.08)",
+            }}
+          >
+            {allLabel}
+          </span>
+          <span
+            className="w-full truncate text-center text-[11px] leading-tight"
+            style={{ color: allActive ? "var(--point-deep)" : "var(--ink-2)", fontWeight: allActive ? 600 : 400 }}
+          >
+            {allLabel}
+          </span>
+        </Link>
+      )}
       {groups.map((group) => {
         const active = group.id === selectedId;
         return (
@@ -75,7 +102,7 @@ export default function GroupTiles({
           <PlusIcon width={22} height={22} />
         </span>
         <span className="w-full truncate text-center text-[11px] leading-tight" style={{ color: "var(--ink-2)" }}>
-          그룹 찾기
+          {addLabel}
         </span>
       </Link>
     </div>
