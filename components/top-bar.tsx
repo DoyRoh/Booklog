@@ -59,7 +59,7 @@ export default function TopBar() {
               style={{ boxShadow: "0 0 0 1.5px var(--rule)" }}
             />
           )}
-          <span className="hand text-[22px] leading-none" style={{ color: "var(--ink)" }}>
+          <span className="d text-lg" style={{ color: "var(--ink)" }}>
             {title}
           </span>
         </span>
