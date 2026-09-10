@@ -1318,3 +1318,7 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **`lib/badge-data.ts`의 `loadForestData()`(신규)**: 배지와 함께 아이가 속한 그룹 `{ id, name }` 목록을 돌려줍니다(`group_members`에 `groups(name)` 임베드 — 왕복 추가 없음). `loadBadges()`는 그 배지만 꺼내는 얇은 포장으로 남겨 다른 호출처는 그대로.
 - **평면 숲(`forest-view.tsx`)**: 숲길 끝의 **곰 = 그룹마다 한 마리**(첫 곰 72px, 나머지 60px로 겹쳐 서며 최대 4마리; 그룹이 없어도 길잡이 곰 한 마리), 하늘에는 **그룹마다 편지 물고 나는 백로 한 마리**(최대 5, `title`에 그룹 이름). 빈 숲 화면도 같은 규칙. 배지로 얻은 편지 새(`group1`·`photo` 배지)는 그대로 따로 있어 그룹이 늘면 새가 더 많아집니다.
 - **3D 숲(`forest-3d.tsx`)**: 아이 옆으로 **그룹마다 곰 한 마리**가 줄지어 서고(첫 곰 옆으로 1.3씩 떨어져 살짝 뒤로, 두 번째부터 0.92배), **그룹마다 백로 한 마리**가 하늘 높이(4.2 + 0.5·i) 큰 원(반지름 5 + 1.3·i)을 천천히 돕니다(`SkyBird`). 요약 줄에 그룹이 둘 이상이면 "숲지기 곰 N마리". 처음엔 곰들을 부채꼴로 놓았더니 서로 겹쳐 보여 한 줄로 바꿨습니다(iPhone 뷰포트 스크린샷으로 확인, 임시 라우트 삭제). DB 변경 없음.
+
+## 3D 숲 임시 제거 (사이트가 무한 로딩 — 원인 격리용)
+
+배포(Ready)·Supabase(정상)인데 `/login`까지 흰 화면에서 무한 로딩이라는 신고를 받았습니다. 이 환경에선 배포 주소에 접속이 막혀 직접 재현이 안 되고, 로컬 프로덕션 빌드는 전 화면 정상이었습니다. 무료 플랜이라 3D 이전 배포로 Instant Rollback도 안 돼서, 사용자 제안대로 **3D 숲을 일단 뺀 버전**을 올려 3D 배포가 원인인지 가립니다 — `app/forest/3d`, `components/forest-3d.tsx`, `components/forest-3d-screen.tsx` 삭제, `three`/`@react-three/*` 의존성 제거, 우리 숲의 "3D 숲 ›" 링크 제거. `lib/forest-scene.ts`(나선 배치·장식 표)와 곰·백로 그룹 수 연동은 그대로 두었습니다. 3D 코드는 커밋 `a12029b`에 그대로 있어 원인이 다른 데 있으면 `git checkout a12029b -- app/forest/3d components/forest-3d.tsx components/forest-3d-screen.tsx` + 의존성 재설치로 되살립니다.
