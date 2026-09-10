@@ -287,14 +287,14 @@ export default function CreateAssignment({
                   type="number"
                   inputMode="numeric"
                   min={1}
-                  placeholder="완독"
+                  placeholder="쪽수"
                   value={targetPages[book.id] ?? ""}
                   onChange={(e) => setTargetPages((prev) => ({ ...prev, [book.id]: e.target.value }))}
-                  className="w-20 rounded-[8px] border px-2 py-1.5 text-xs outline-none"
+                  className="w-[72px] rounded-[8px] border px-2 py-1.5 text-xs outline-none"
                   style={{ borderColor: "var(--rule)" }}
                 />
-                <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-                  쪽까지 (비워두면 완독이 기준)
+                <span className="whitespace-nowrap text-xs" style={{ color: "var(--ink-2)" }}>
+                  쪽까지 · 비우면 완독
                 </span>
               </div>
             </div>
