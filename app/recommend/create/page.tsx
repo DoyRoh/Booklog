@@ -20,6 +20,7 @@ const TYPES: { value: GroupType; label: string }[] = [
 export default function CreateGroupPage() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [type, setType] = useState<GroupType>("school");
   const [joinPolicy, setJoinPolicy] = useState<JoinPolicy>("approval");
   const [saving, setSaving] = useState(false);
@@ -56,6 +57,7 @@ export default function CreateGroupPage() {
     const { error: groupError } = await supabase.from("groups").insert({
       id: groupId,
       name: name.trim(),
+      description: description.trim() || null,
       type,
       join_policy: joinPolicy,
       owner_id: user.id,
@@ -118,6 +120,15 @@ export default function CreateGroupPage() {
           placeholder="그룹 이름 (예: 7세 은빛반)"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+        />
+
+        <textarea
+          placeholder="소개 (선택 · 예: 7살 아이들이 좋아한 그림책을 매주 골라 올려요)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
           className="rounded-[14px] border px-4 py-3 text-sm outline-none"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         />

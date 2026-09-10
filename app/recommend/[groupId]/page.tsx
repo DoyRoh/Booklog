@@ -2,11 +2,13 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
+import { getActiveProfile } from "@/lib/active-profile";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import { getRecommendBooks } from "@/lib/recommend-books";
 import GroupApprovals from "@/components/group-approvals";
 import AddBookToList from "@/components/add-book-to-list";
-import BrowseGroups from "@/components/browse-groups";
+import GroupFollow from "@/components/group-follow";
+import GroupIntroEditor from "@/components/group-intro-editor";
 import CreateAssignment from "@/components/create-assignment";
 import RecommendBookList from "@/components/recommend-book-list";
 import RecommendShelf from "@/components/recommend-shelf";
@@ -30,11 +32,11 @@ export default async function GroupDetailPage({
     );
   }
 
-  // 서로 무관한 조회 셋(그룹 정보, 내 운영진 멤버십, 활성 아이)을 먼저
-  // 동시에 왕복한다 -- 추천도서 목록은 활성 아이 id가 있어야 조회할 수
-  // 있어서 그 다음 단계로 미룬다.
-  const [{ data: group }, { data: myMembership }, activeChild] = await Promise.all([
-    supabase.from("groups").select("id, name, type, join_policy, invite_code").eq("id", groupId).single(),
+  // 서로 무관한 조회 넷(그룹 정보, 내 운영진 멤버십, 활성 아이, 활성
+  // 프로필)을 먼저 동시에 왕복한다 -- 추천도서 목록은 활성 아이 id가
+  // 있어야 조회할 수 있어서 그 다음 단계로 미룬다.
+  const [{ data: group }, { data: myMembership }, activeChild, activeProfile] = await Promise.all([
+    supabase.from("groups").select("id, name, type, join_policy, invite_code, description").eq("id", groupId).single(),
     supabase
       .from("group_members")
       .select("role, status")
@@ -43,6 +45,7 @@ export default async function GroupDetailPage({
       .eq("status", "approved")
       .maybeSingle(),
     getActiveChild(supabase, userId),
+    getActiveProfile(supabase, userId),
   ]);
 
   if (!group) {
@@ -59,10 +62,14 @@ export default async function GroupDetailPage({
     );
   }
 
-  const isOperator =
+  // 같은 계정이 이 그룹의 숲지기이면서 아이 프로필로 들어올 수 있다.
+  // 관리 화면은 "운영진이고 + 지금 숲지기 프로필로 보고 있을 때"만 --
+  // 아이 프로필로 보면 다른 그룹원과 똑같은 둘러보기 화면을 본다.
+  const isOperatorMember =
     myMembership?.role === "teacher" ||
     myMembership?.role === "admin" ||
     myMembership?.role === "curator";
+  const isOperator = isOperatorMember && activeProfile.type === "operator";
 
   // 셋 다 activeChild.id/groupId에만 의존하고 서로 무관하므로 동시에
   // 왕복한다. 추천도서 목록 조회는 lib/recommend-books.ts로 옮겨서
@@ -84,7 +91,9 @@ export default async function GroupDetailPage({
         : Promise.resolve({ data: [] }),
     ]);
 
-  const isMember = Boolean(myMembership) || Boolean(childMembership);
+  // 아이 보기에서 "팔로잉/참가 중"은 아이 자신의 멤버십으로만 판단한다
+  // (숲지기 계정이라고 아이가 자동으로 그룹원인 건 아니다).
+  const isChildMember = Boolean(childMembership);
 
   const pending = (pendingRows ?? [])
     .map((row) => ({
@@ -99,10 +108,41 @@ export default async function GroupDetailPage({
         ← 그룹 목록
       </Link>
 
-      <h1 className="d mt-2 text-xl">{group.name}</h1>
-      <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-        {GROUP_TYPE_LABELS[group.type] ?? group.type}
-      </p>
+      <div className="mt-2 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="d text-xl">{group.name}</h1>
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+            {GROUP_TYPE_LABELS[group.type] ?? group.type}
+            {isOperatorMember && !isOperator && " · 내가 운영하는 그룹"}
+          </p>
+        </div>
+        {!isOperator && (
+          <GroupFollow
+            groupId={group.id}
+            joinPolicy={group.join_policy}
+            activeChildId={activeChild?.id ?? null}
+            isMember={isChildMember}
+          />
+        )}
+      </div>
+
+      {isOperator ? (
+        <div className="mt-4">
+          <GroupIntroEditor groupId={group.id} initial={group.description} />
+        </div>
+      ) : (
+        group.description && (
+          <p className="mt-4 whitespace-pre-line text-sm">{group.description}</p>
+        )
+      )}
+
+      {!isOperator && !isChildMember && (
+        <p className="mt-3 text-xs" style={{ color: "var(--ink-2)" }}>
+          {group.join_policy === "open"
+            ? "팔로우하면 숲길 탭에 이 그룹이 생기고, 책갈피로 내 책장에 꽂을 수 있어요."
+            : "초대 코드로 참가하면 숲길 탭에 이 그룹이 생기고, 숙제도 받아요."}
+        </p>
+      )}
 
       {isOperator && group.join_policy === "approval" && group.invite_code && (
         <div
@@ -113,16 +153,6 @@ export default async function GroupDetailPage({
             초대 코드
           </p>
           <p className="d text-base">{group.invite_code}</p>
-        </div>
-      )}
-
-      {!isOperator && group.join_policy === "open" && (
-        <div className="mt-4">
-          <BrowseGroups
-            groups={[{ id: group.id, name: group.name, type: group.type }]}
-            followingIds={isMember ? [group.id] : []}
-            activeChildId={activeChild?.id ?? null}
-          />
         </div>
       )}
 
@@ -157,7 +187,13 @@ export default async function GroupDetailPage({
           {isOperator ? (
             <RecommendBookList groupId={groupId} listName={listName} books={recommendBooks} activeChildId={null} manage />
           ) : (
-            <RecommendShelf groupId={groupId} books={recommendBooks} activeChildId={activeChild?.id ?? null} />
+            // 팔로우 전에는 표지만 둘러보고(책갈피·체크 토글 없음), 팔로우한
+            // 뒤부터 내 책장에 꽂고 읽음 표시를 할 수 있다.
+            <RecommendShelf
+              groupId={groupId}
+              books={recommendBooks}
+              activeChildId={isChildMember ? (activeChild?.id ?? null) : null}
+            />
           )}
         </div>
       </div>

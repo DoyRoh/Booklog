@@ -52,10 +52,15 @@ export default async function RecommendPage() {
     .map((row) => row.groups as unknown as GroupRow | null)
     .filter((g): g is GroupRow => Boolean(g));
 
-  const myGroups = [...operatorGroups, ...memberGroups].filter(
+  // 숲지기 프로필이면 운영하는 그룹, 아이 프로필이면 아이가 속한 그룹만
+  // "내 그룹"이다 -- 같은 계정이 둘 다여도 지금 보고 있는 프로필 기준.
+  const myGroups = (activeProfile.type === "operator" ? operatorGroups : memberGroups).filter(
     (g, i, arr) => arr.findIndex((other) => other.id === g.id) === i
   );
   const myGroupIds = myGroups.map((g) => g.id);
+  // 둘러보기에는 아직 안 따라가는 그룹만 -- 내 그룹에 있는 게 아래에 또
+  // 뜨면 같은 그룹이 두 번 보인다. 끊기는 그룹 상세의 "팔로잉"에서.
+  const browseGroups = (openGroupRows ?? []).filter((g) => !myGroupIds.includes(g.id));
 
   return (
     <div className="mx-auto max-w-[520px] px-6 pt-8 pb-10">
@@ -109,14 +114,10 @@ export default async function RecommendPage() {
       <div className="mt-8">
         <p className="d text-base">둘러보기</p>
         <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-          공개된 기관·크리에이터 추천도서 리스트예요.
+          공개된 기관·크리에이터 추천도서 리스트예요. 이름을 누르면 소개와 추천도서를 먼저 둘러볼 수 있어요.
         </p>
         <div className="mt-3">
-          <BrowseGroups
-            groups={openGroupRows ?? []}
-            followingIds={myGroupIds}
-            activeChildId={activeChild?.id ?? null}
-          />
+          <BrowseGroups groups={browseGroups} followingIds={[]} activeChildId={activeChild?.id ?? null} />
         </div>
       </div>
     </div>
