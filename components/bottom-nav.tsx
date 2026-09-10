@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useProfile } from "@/components/profile-context";
@@ -38,9 +39,51 @@ const OPERATOR_TABS = [
   { href: "/teacher/assignments", label: "숙제", Icon: AssignmentIcon },
 ] as const;
 
+// 스레드(Threads) 앱처럼 화면 아래에 떠 있는 둥근 알약 모양 바. 아래로
+// 스크롤하면(내용을 읽는 중) 스르륵 내려가 숨고, 위로 조금만 올리면
+// 다시 올라온다 -- "필요한 걸 알았다는 듯이". 맨 위·맨 아래 근처에서는
+// 항상 보인다. 움직임 최소화 설정이면 전환 없이 바로 나타나고 사라진다.
+function useHideOnScroll() {
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
+  const acc = useRef(0);
+
+  useEffect(() => {
+    lastY.current = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const y = window.scrollY;
+        const delta = y - lastY.current;
+        lastY.current = y;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        // 맨 위·맨 아래(바운스 포함) 근처에서는 항상 보인다.
+        if (y < 24 || y > max - 24) {
+          acc.current = 0;
+          setHidden(false);
+          return;
+        }
+        // 같은 방향으로 누적된 이동량이 문턱을 넘을 때만 바꾼다 -- 손가락
+        // 떨림이나 아주 작은 스크롤에 깜빡이지 않도록.
+        acc.current = Math.sign(delta) === Math.sign(acc.current) ? acc.current + delta : delta;
+        if (acc.current > 28) setHidden(true);
+        else if (acc.current < -12) setHidden(false);
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return hidden;
+}
+
 export default function BottomNav() {
   const pathname = usePathname();
   const { role, loading } = useProfile();
+  const hidden = useHideOnScroll();
 
   if (isChromeHidden(pathname) || (!loading && role === null)) {
     return null;
@@ -52,11 +95,15 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="no-print fixed inset-x-0 bottom-0 z-50 mx-auto flex max-w-[520px] items-stretch justify-between border-t px-2"
+      aria-label="주 메뉴"
+      className="no-print fixed inset-x-0 z-50 mx-auto flex w-fit max-w-[calc(100%-32px)] items-center gap-[2px] rounded-full p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
       style={{
-        background: "var(--card)",
-        borderColor: "var(--rule)",
-        paddingBottom: "var(--sb)",
+        bottom: "calc(var(--sb) + 14px)",
+        background: "rgba(255,255,255,0.86)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        boxShadow: "0 8px 28px -10px rgba(38,54,43,0.35), 0 0 0 1px rgba(38,54,43,0.06)",
+        transform: hidden ? "translateY(calc(100% + var(--sb) + 20px))" : "translateY(0)",
       }}
     >
       {tabs.map(({ href, label, Icon }) => {
@@ -65,21 +112,23 @@ export default function BottomNav() {
           <Link
             key={href}
             href={href}
-            className="flex flex-1 flex-col items-center justify-center gap-[4px] pt-[8px] pb-[6px]"
-            style={{ color: active ? "var(--ink)" : "var(--ink-2)" }}
+            aria-label={label}
+            aria-current={active ? "page" : undefined}
+            className="flex h-[48px] items-center gap-[6px] rounded-full px-[16px] transition-colors"
+            style={{
+              color: active ? "var(--point-deep)" : "var(--ink-2)",
+              background: active ? "rgba(47,168,79,0.14)" : "transparent",
+            }}
           >
             <span className="flex h-[24px] w-[24px] items-center justify-center">
               <Icon strokeWidth={active ? 2.4 : 1.9} />
             </span>
-            <span className="d relative text-[11px] leading-[14px]" style={{ fontFamily: "var(--disp)" }}>
-              {label}
-              {active && (
-                <span
-                  className="absolute -bottom-1 left-[-3px] right-[-3px] h-[3px] rounded-full"
-                  style={{ background: "var(--point)" }}
-                />
-              )}
-            </span>
+            {/* 켜진 탭만 이름을 옆에 펼친다 -- 아이콘만으로도 어디인지 읽히게. */}
+            {active && (
+              <span className="d whitespace-nowrap text-[13px] leading-none" style={{ fontFamily: "var(--disp)" }}>
+                {label}
+              </span>
+            )}
           </Link>
         );
       })}

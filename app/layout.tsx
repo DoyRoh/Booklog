@@ -63,7 +63,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SplashScreen />
         <ProfileProvider>
           <TopBar />
-          <main className="flex-1 pt-[56px] pb-[64px]">{children}</main>
+          <main className="flex-1 pt-[56px] pb-[96px]">{children}</main>
           <BottomNav />
         </ProfileProvider>
       </body>
