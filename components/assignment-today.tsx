@@ -181,10 +181,9 @@ function VoiceMission({
         </p>
       ) : (
         <div className="mt-2 flex flex-col gap-2">
-          {mission.voiceSignedUrl && (
-            <audio src={mission.voiceSignedUrl} controls className="h-9 w-full" />
-          )}
-          <VoiceRecorder onRecorded={handleRecorded} label="낭독 시작" />
+          {/* 이미 제출한 녹음은 녹음기 안에서 보여준다 -- 따로 <audio>를 두면
+              다시 녹음한 뒤 녹음기의 미리듣기와 제출본 두 개가 나란히 떴다. */}
+          <VoiceRecorder onRecorded={handleRecorded} label="낭독 시작" existingUrl={mission.voiceSignedUrl} />
           {saving && (
             <p className="text-xs" style={{ color: "var(--ink-2)" }}>
               저장 중...

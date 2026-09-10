@@ -110,13 +110,15 @@ export default function VoiceRecorder({
 
       {showingExisting && (
         <div className="flex items-center gap-3">
-          <audio src={existingUrl!} controls className="h-9" />
-          <button type="button" onClick={start} className="d text-sm" style={{ color: "var(--point)" }}>
+          <audio src={existingUrl!} controls className="h-9 min-w-0 flex-1" />
+          <button type="button" onClick={start} className="d flex-none whitespace-nowrap text-sm" style={{ color: "var(--point)" }}>
             다시 녹음
           </button>
-          <button type="button" onClick={removeExisting} className="d text-sm" style={{ color: "var(--berry)" }}>
-            지우기
-          </button>
+          {onRemoveExisting && (
+            <button type="button" onClick={removeExisting} className="d flex-none whitespace-nowrap text-sm" style={{ color: "var(--berry)" }}>
+              지우기
+            </button>
+          )}
         </div>
       )}
 
@@ -133,11 +135,11 @@ export default function VoiceRecorder({
 
       {previewUrl && (
         <div className="flex items-center gap-3">
-          <audio src={previewUrl} controls className="h-9" />
+          <audio src={previewUrl} controls className="h-9 min-w-0 flex-1" />
           <button
             type="button"
             onClick={reRecord}
-            className="d text-sm"
+            className="d flex-none whitespace-nowrap text-sm"
             style={{ color: "var(--ink-2)" }}
           >
             다시 녹음
