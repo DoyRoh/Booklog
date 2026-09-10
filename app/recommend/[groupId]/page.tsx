@@ -79,7 +79,7 @@ export default async function GroupDetailPage({
   // 셋 다 activeChild.id/groupId에만 의존하고 서로 무관하므로 동시에
   // 왕복한다. 추천도서 목록 조회는 lib/recommend-books.ts로 옮겨서
   // 숲길 탭(그룹 필터)과 로직을 공유한다.
-  const [{ data: childMembership }, { bookListId, listName, books: recommendBooks }, { data: pendingRows }] =
+  const [{ data: childMembership }, { bookListId, books: recommendBooks }, { data: pendingRows }] =
     await Promise.all([
       activeChild
         ? supabase
@@ -192,11 +192,17 @@ export default async function GroupDetailPage({
         </Section>
       )}
 
-      <div className="mt-6">
-        <p className="d text-base">{isOperator ? `올린 추천도서 ${recommendBooks.length}권` : "추천도서"}</p>
-        <div className="mt-2">
+      <div className={isOperator ? "mt-5" : "mt-6"}>
+        {!isOperator && <p className="d mb-2 text-base">추천도서</p>}
+        <div>
           {isOperator ? (
-            <RecommendBookList groupId={groupId} listName={listName} books={recommendBooks} activeChildId={null} manage />
+            <RecommendBookList
+              groupId={groupId}
+              books={recommendBooks}
+              activeChildId={null}
+              manage
+              title={`올린 추천도서 ${recommendBooks.length}권`}
+            />
           ) : (
             // 팔로우 전에는 미리보기 -- 최근 올라온 10권까지만, 표지만
             // 둘러보고(책갈피·체크 토글 없음). 팔로우한 뒤부터 전부 보이고
