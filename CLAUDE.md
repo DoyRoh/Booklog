@@ -1154,3 +1154,7 @@ Phase 7  AI (STT, 독서기록 요약, 성향 분석, 맞춤 추천) — V2 이�
 
 - **`lib/kst.ts`(신규)**: `kstDate(offsetDays)`("YYYY-MM-DD"), `kstWeekStart()`(이번 주 월요일), `kstMonth(offsetMonths)`("YYYY-MM"). epoch에 9시간을 더한 뒤 UTC 필드를 읽는 방식이라 서버(UTC)에서도 폰(KST)에서도 같은 한국 달력 날짜가 나옵니다(경계 시각 세 가지를 node로 확인).
 - **바꾼 곳(10군데)**: 체크 토글(`lib/quick-read.ts`), 기록 남기기 기본 날짜(`app/library/add`)와 오늘/어제/그제 버튼(`components/read-date-picker.tsx`), 숙제 기록 고치기의 기본 날짜(`components/assignment-today.tsx`), 숙제 기간 판정(`lib/assignments.ts`), 진행 중 숙제 등불(`lib/recommend-books.ts`, `app/teacher/books`), 오늘 탭 통계(`app/today` — 오늘·이번 주·이번 달), 배지의 이번 주·3달 연속(`lib/badges.ts`), 독서 리포트의 이번 달(`app/library/export`). DB 변경 없음.
+
+## 로딩 화면의 숲길 행렬 제거 (사용자 지적: "화면 전환할 때마다 떠서 정신 사납다, 가운데 맞춤도 아니다")
+
+`components/loading-skeleton.tsx`를 거의 빈 화면으로 되돌렸습니다 — 0.4초 안에 끝나는 전환에선 아무것도 안 보이고, 그보다 오래 걸릴 때만 화면 가운데(위에서 38%)에 초록 점 세 개가 조용히 깜빡입니다(`.loading-dot`, 움직임 최소화 설정이면 멈춘 점). 행렬 띠 애니메이션(`.parade-walk`) CSS는 지웠고, 그림 파일(`public/illustrations/parade-strip.jpg`, `parade.jpg`)과 원본은 다른 자리에 쓰려고 그대로 뒀습니다(회원가입·404 화면의 행렬 그림은 그대로).

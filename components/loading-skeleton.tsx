@@ -1,33 +1,25 @@
-// 화면 전환 시 하얗게 멈춘 것처럼 보이지 않도록, 데이터를 불러오는 동안
-// Next.js가 자동으로 이 화면을 먼저 보여준다(각 라우트의 loading.tsx가
-// 이 컴포넌트를 그대로 씀). 회색 펄스 대신 곰이 앞장선 숲길 행렬이 천천히
-// 지나가는 띠를 쓴다 -- 사용자가 그려온 그림. 150ms 안에 끝나는 빠른
-// 전환에서는 아예 안 보이고(지연 페이드인), 오래 걸릴 때만 나타난다.
+// 화면 전환 중에 보이는 자리. 예전엔 숲길 행렬 그림 + 손글씨 문구를 크게
+// 띄웠는데 탭을 옮길 때마다 떠서 정신 사납다는 피드백으로 거의 빈 화면으로
+// 되돌렸다 -- 0.4초 안에 끝나는 전환에선 아무것도 안 보이고, 그보다 오래
+// 걸릴 때만 화면 가운데에 작은 점 세 개가 조용히 깜빡인다. 행렬 그림
+// (public/illustrations/parade-strip.jpg)은 다른 자리에 쓰려고 남겨 둔다.
 export default function LoadingSkeleton() {
   return (
     <div
-      className="mx-auto max-w-[520px] px-5 pt-8 pb-10"
-      style={{
-        opacity: 0,
-        animation: "skeleton-delayed-fade-in 0.15s ease-out 0.15s forwards",
-      }}
+      className="flex justify-center pt-[38vh]"
+      style={{ opacity: 0, animation: "skeleton-delayed-fade-in 0.2s ease-out 0.4s forwards" }}
       aria-busy="true"
       aria-label="불러오는 중"
     >
-      <div
-        className="relative h-[120px] w-full overflow-hidden rounded-[var(--r)]"
-        style={{ background: "#DCE6D3" }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/illustrations/parade-strip.jpg"
-          alt=""
-          className="parade-walk absolute left-0 top-0 h-full w-auto max-w-none"
-        />
-      </div>
-      <p className="hand mt-4 text-center text-lg" style={{ color: "var(--point-deep)" }}>
-        숲길을 걷는 중이에요…
-      </p>
+      <span className="flex items-center gap-1.5" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="loading-dot h-2 w-2 rounded-full"
+            style={{ background: "var(--point)", animationDelay: `${i * 0.18}s` }}
+          />
+        ))}
+      </span>
     </div>
   );
 }
