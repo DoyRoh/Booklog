@@ -338,7 +338,7 @@ export default function LibraryShelf({
       {shelfOptions.length > 0 && (
         <div className="mt-2 flex items-center gap-2">
           <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
-            책장
+            그룹
           </span>
           <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
             {shelfOptions.map((option) => (
