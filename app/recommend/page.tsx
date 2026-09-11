@@ -167,15 +167,13 @@ export default async function RecommendPage() {
         </Section>
       )}
 
-      <div className="mt-6">
-        <p className="d text-base">둘러보기</p>
-        <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
-          공개된 기관·크리에이터의 추천도서예요. 누르면 소개와 최근 추천도서 10권을 먼저 둘러보고, 마음에 들면 팔로우해요.
-        </p>
-        <div className="mt-2">
-          <BrowseGroups groups={browseGroups} followingIds={[]} activeChildId={activeChild?.id ?? null} />
-        </div>
-      </div>
+      <Section
+        className="mt-5"
+        title="둘러보기"
+        description="공개된 기관·크리에이터의 추천도서예요. 누르면 소개와 최근 추천도서 10권을 먼저 둘러보고, 마음에 들면 팔로우해요."
+      >
+        <BrowseGroups groups={browseGroups} followingIds={[]} activeChildId={activeChild?.id ?? null} />
+      </Section>
     </div>
   );
 }

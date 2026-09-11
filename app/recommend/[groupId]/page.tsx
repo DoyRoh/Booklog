@@ -213,8 +213,7 @@ export default async function GroupDetailPage({
           </Section>
         </div>
       ) : (
-        <div className="mt-6">
-          <p className="d mb-2 text-base">추천도서</p>
+        <Section className="mt-5" title="추천도서">
           {/* 팔로우 전에는 미리보기 -- 최근 올라온 10권까지만, 표지만
               둘러보고(책갈피·체크 토글 없음). 팔로우한 뒤부터 전부 보이고
               내 책장에 꽂고 읽음 표시를 할 수 있다. */}
@@ -230,7 +229,7 @@ export default async function GroupDetailPage({
                   : undefined
             }
           />
-        </div>
+        </Section>
       )}
 
       {/* 그룹 정리: 그룹장은 삭제, 그룹장이 아닌 운영진은 운영 그만두기.

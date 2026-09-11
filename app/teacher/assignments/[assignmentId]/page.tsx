@@ -2,6 +2,7 @@ import Link from "next/link";
 import { periodLabel } from "@/lib/assignment-period";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
+import Section from "@/components/section";
 import { AvatarIllustration } from "@/components/illustration";
 
 type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null };
@@ -107,7 +108,7 @@ export default async function TeacherAssignmentDetailPage({
       )}
 
       <div
-        className="mt-4 rounded-[var(--r)] border p-4"
+        className="mt-5 rounded-[var(--r)] border p-[24px]"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
         <p className="d text-2xl">
@@ -143,21 +144,17 @@ export default async function TeacherAssignmentDetailPage({
         </div>
       </div>
 
-      <div className="mt-6">
-        <p className="d text-base">아이별</p>
+      <Section className="mt-5" title="아이별" flush={rows.length > 0}>
         {rows.length === 0 ? (
-          <p className="mt-3 text-sm" style={{ color: "var(--ink-2)" }}>
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 승인된 아이가 없어요.
           </p>
         ) : (
-          <div
-            className="mt-3 overflow-hidden rounded-[var(--r)] border"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
+          <div>
             {rows.map(({ child, done, allDone }, index) => (
               <div
                 key={child.id}
-                className="px-3 py-3"
+                className="px-[24px] py-[14px]"
                 style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
               >
                 <Link href={`/teacher/children/${child.id}?group=${assignment.group_id}`} className="flex items-center gap-3">
@@ -202,7 +199,7 @@ export default async function TeacherAssignmentDetailPage({
             ))}
           </div>
         )}
-      </div>
+      </Section>
     </div>
   );
 }

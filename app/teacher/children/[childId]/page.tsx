@@ -3,6 +3,7 @@ import { periodLabel } from "@/lib/assignment-period";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getRecommendBooks } from "@/lib/recommend-books";
+import Section from "@/components/section";
 import Illustration, { AvatarIllustration, PawStamp } from "@/components/illustration";
 
 type AssignmentRow = {
@@ -132,26 +133,26 @@ export default async function TeacherChildDetailPage({
       </div>
 
       {/* 추천도서: 책마다 이 아이의 읽기 상태 */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between">
-          <p className="d text-base">추천도서</p>
+      <Section
+        className="mt-5"
+        title="추천도서"
+        flush={books.length > 0}
+        action={
           <span className="d text-sm" style={{ color: "var(--ink-2)" }}>
             {readCount} / {books.length}권 읽음
           </span>
-        </div>
+        }
+      >
         {books.length === 0 ? (
-          <p className="mt-3 text-sm" style={{ color: "var(--ink-2)" }}>
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 추천도서가 없어요.
           </p>
         ) : (
-          <div
-            className="mt-3 overflow-hidden rounded-[var(--r)] border"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
+          <div>
             {books.map((book, index) => (
               <div
                 key={book.itemId}
-                className="flex items-center gap-3 px-3 py-2.5"
+                className="flex items-center gap-3 px-[24px] py-[10px]"
                 style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
               >
                 {book.coverUrl ? (
@@ -189,20 +190,16 @@ export default async function TeacherChildDetailPage({
             ))}
           </div>
         )}
-      </div>
+      </Section>
 
       {/* 숙제: 숙제마다 책별 완료 + 질문 답 */}
-      <div className="mt-8">
-        <p className="d text-base">숙제</p>
+      <Section className="mt-5" title="숙제" flush={assignments.length > 0}>
         {assignments.length === 0 ? (
-          <p className="mt-3 text-sm" style={{ color: "var(--ink-2)" }}>
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 낸 숙제가 없어요.
           </p>
         ) : (
-          <div
-            className="mt-3 overflow-hidden rounded-[var(--r)] border"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
+          <div>
             {assignments.map((assignment, index) => {
               const abooks = assignment.assignment_books ?? [];
               const done = abooks.filter((b) => completedKey.has(`${assignment.id}:${b.book_id}`)).length;
@@ -210,7 +207,7 @@ export default async function TeacherChildDetailPage({
               return (
                 <div
                   key={assignment.id}
-                  className="px-3 py-3"
+                  className="px-[24px] py-[14px]"
                   style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -281,7 +278,7 @@ export default async function TeacherChildDetailPage({
             })}
           </div>
         )}
-      </div>
+      </Section>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { getActiveChild } from "@/lib/active-child";
 import { getRecommendBooks } from "@/lib/recommend-books";
 import { getAllAssignments } from "@/lib/assignments";
 import { hasVoiceConsent } from "@/lib/consent";
+import Section from "@/components/section";
 import RecommendShelf from "@/components/recommend-shelf";
 import AssignmentsBrowser from "@/components/assignments-browser";
 import { CHILD_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
@@ -107,12 +108,9 @@ export default async function GroupPage({
       .sort((a, b) => b.addedAt.localeCompare(a.addedAt))
       .filter((b) => (seen.has(b.bookId) ? false : (seen.add(b.bookId), true)));
     content = (
-      <>
-        <p className="d text-base">{selectedGroup ? `${selectedGroup.name}의 추천도서` : "모든 그룹의 추천도서"}</p>
-        <div className="mt-3">
-          <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
-        </div>
-      </>
+      <Section title={selectedGroup ? `${selectedGroup.name}의 추천도서` : "모든 그룹의 추천도서"}>
+        <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
+      </Section>
     );
   } else {
     const [assignments, voiceAllowed] = await Promise.all([

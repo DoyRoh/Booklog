@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
+import Section from "@/components/section";
 import { AvatarIllustration, PawStamp } from "@/components/illustration";
 import type { ReadingStatus } from "@/lib/reading-status";
 
@@ -115,7 +116,7 @@ export default async function TeacherBookDetailPage({
             </p>
           )}
           <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
-            {group.name} · {doneCount}/{children.length}명 읽음
+            {group.name}
           </p>
         </div>
       </div>
@@ -126,24 +127,29 @@ export default async function TeacherBookDetailPage({
         </p>
       )}
 
-      <div className="mt-6">
-        <p className="d text-base">아이들</p>
+      <Section
+        className="mt-5"
+        title="아이들"
+        flush={sorted.length > 0}
+        action={
+          <span className="d text-sm" style={{ color: "var(--ink-2)" }}>
+            {doneCount} / {children.length}명 읽음
+          </span>
+        }
+      >
         {sorted.length === 0 ? (
-          <p className="mt-3 text-sm" style={{ color: "var(--ink-2)" }}>
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 승인된 아이가 없어요.
           </p>
         ) : (
-          <div
-            className="mt-3 overflow-hidden rounded-[var(--r)] border"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
+          <div>
             {sorted.map((child, index) => {
               const r = best.get(child.id);
               return (
                 <Link
                   key={child.id}
                   href={`/teacher/children/${child.id}?group=${groupId}`}
-                  className="flex items-center gap-3 px-3 py-2.5"
+                  className="flex items-center gap-3 px-[24px] py-[10px]"
                   style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
                 >
                   <div
@@ -176,7 +182,7 @@ export default async function TeacherBookDetailPage({
             })}
           </div>
         )}
-      </div>
+      </Section>
     </div>
   );
 }

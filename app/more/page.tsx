@@ -76,7 +76,7 @@ export default async function MorePage() {
       <h1 className="d text-xl">프로필 · 설정</h1>
 
       <div
-        className="mt-6 flex items-center justify-between gap-3 rounded-[var(--r)] border p-4"
+        className="mt-5 flex items-center justify-between gap-3 rounded-[var(--r)] border p-4"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
         <p className="text-sm">{profile?.email}</p>
@@ -86,7 +86,7 @@ export default async function MorePage() {
       {/* 계정 하나가 아이 프로필(들)과 숲지기 프로필(들)을 동시에 가질
           수 있다 -- 예전처럼 계정을 나눠 만들 필요 없이, 여기서 프로필을
           고르면 그 프로필 기준으로 하단 탭·화면이 바뀐다. */}
-      <Section className="mt-6" title="프로필" description="지금 어떤 프로필로 볼지 골라 주세요. 언제든 여기서 바꿀 수 있어요.">
+      <Section className="mt-5" title="프로필" description="지금 어떤 프로필로 볼지 골라 주세요. 언제든 여기서 바꿀 수 있어요.">
         <ProfileModeSwitch
           userId={userId}
           mode={activeProfile.type}

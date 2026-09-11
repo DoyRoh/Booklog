@@ -71,7 +71,7 @@ export default function RecommendShelf({
 
   if (books.length === 0) {
     return (
-      <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
+      <p className="text-sm" style={{ color: "var(--ink-2)" }}>
         아직 올라온 추천도서가 없어요.
       </p>
     );

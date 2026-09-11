@@ -75,7 +75,7 @@ export default function AssignmentsBrowser({
         )
       ) : (
         <>
-          <p className="d mt-5 text-base">이번 주 숙제</p>
+          <p className="d mt-6 text-base">이번 주 숙제</p>
           {thisWeek.length === 0 ? (
             empty("이번 주에는 숙제가 없어요.")
           ) : (

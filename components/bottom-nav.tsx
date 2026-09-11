@@ -133,10 +133,15 @@ export default function BottomNav() {
   // 역할 조회가 끝나기 전(role===null)에는 부모 탭을 기본값으로 보여준다 --
   // 로그인 직후 탭이 매번 깜빡이지 않도록.
   const tabs = role === "operator" ? OPERATOR_TABS : PARENT_TABS;
-  // 숲지기 탭은 아이콘만으로 대시보드/아이들/추천도서/숙제를 구분하기
-  // 어렵다는 지적("정신없네") -- 4개뿐이라 이름을 전부 상시 펼쳐도 되고,
-  // 그만큼 한 탭당 여백/글자를 줄여 가장 좁은 폰(360px)에서도 안 넘치게 한다.
-  const alwaysShowLabels = role === "operator";
+  // 아이콘만으로는 어느 탭인지 헷갈린다는 지적이 양쪽에서 나왔다 --
+  // 이제 부모·숲지기 모두 탭 이름을 항상 펼친다. 다만 한 탭당 쓸 수 있는
+  // 폭이 달라서(숲지기는 "대시보드"·"추천도서"처럼 긴 이름이 있고, 부모는
+  // 전부 두 글자) 여백을 역할별로 다르게 잡는다 -- 가장 좁은 폰(360px,
+  // 알약 최대 폭 328px)에서 실측한 값이다: 숲지기 326px / 부모 306px.
+  const tabClass =
+    role === "operator"
+      ? "flex h-[48px] items-center gap-[2px] rounded-full px-[6px] transition-colors"
+      : "flex h-[48px] items-center gap-[4px] rounded-full px-[10px] transition-colors";
 
   // 숲지기 탭은 /teacher 아래에 전부 있어서 단순 startsWith로는 "대시보드"
   // (/teacher)가 어느 화면에서나 켜져 보였다. 경로가 맞는 탭 중 가장 긴
@@ -169,11 +174,7 @@ export default function BottomNav() {
             href={href}
             aria-label={showHomeworkDot ? `${label} · ${homeworkBadge === "done" ? "오늘 숙제 완료" : "오늘 숙제 있음"}` : label}
             aria-current={active ? "page" : undefined}
-            className={
-              alwaysShowLabels
-                ? "flex h-[48px] items-center gap-[2px] rounded-full px-[6px] transition-colors"
-                : "flex h-[48px] items-center gap-[6px] rounded-full px-[12px] transition-colors"
-            }
+            className={tabClass}
             style={{
               color: isSprout ? "var(--sprout-deep)" : active ? "var(--point-deep)" : "var(--ink-2)",
               // "추가"는 다른 탭과 달리 항상 연두 알약으로 눈에 띄어야 한다
@@ -200,17 +201,11 @@ export default function BottomNav() {
                 />
               )}
             </span>
-            {/* 켜진 탭만 이름을 옆에 펼친다 -- 아이콘만으로도 어디인지 읽히게.
-                "추가"는 항상 CTA로 보여야 하니 이름도 항상 펼쳐 두고, 숲지기
-                탭은 4개뿐이라 전부 항상 펼쳐서 아이콘만으론 헷갈리던 문제를 없앤다. */}
-            {(active || isSprout || alwaysShowLabels) && (
-              <span
-                className={`d whitespace-nowrap leading-none ${alwaysShowLabels ? "text-[12px]" : "text-[13px]"}`}
-                style={{ fontFamily: "var(--disp)" }}
-              >
-                {label}
-              </span>
-            )}
+            {/* 탭 이름은 항상 펼쳐 둔다 -- 아이콘만으로는 어디인지
+                헷갈린다는 지적(숲지기 4탭 -> 부모 탭도 같게). */}
+            <span className="d whitespace-nowrap text-[12px] leading-none" style={{ fontFamily: "var(--disp)" }}>
+              {label}
+            </span>
           </Link>
         );
       })}
