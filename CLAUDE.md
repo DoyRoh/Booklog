@@ -1322,3 +1322,10 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 ## 3D 숲 임시 제거 (사이트가 무한 로딩 — 원인 격리용)
 
 배포(Ready)·Supabase(정상)인데 `/login`까지 흰 화면에서 무한 로딩이라는 신고를 받았습니다. 이 환경에선 배포 주소에 접속이 막혀 직접 재현이 안 되고, 로컬 프로덕션 빌드는 전 화면 정상이었습니다. 무료 플랜이라 3D 이전 배포로 Instant Rollback도 안 돼서, 사용자 제안대로 **3D 숲을 일단 뺀 버전**을 올려 3D 배포가 원인인지 가립니다 — `app/forest/3d`, `components/forest-3d.tsx`, `components/forest-3d-screen.tsx` 삭제, `three`/`@react-three/*` 의존성 제거, 우리 숲의 "3D 숲 ›" 링크 제거. `lib/forest-scene.ts`(나선 배치·장식 표)와 곰·백로 그룹 수 연동은 그대로 두었습니다. 3D 코드는 커밋 `a12029b`에 그대로 있어 원인이 다른 데 있으면 `git checkout a12029b -- app/forest/3d components/forest-3d.tsx components/forest-3d-screen.tsx` + 의존성 재설치로 되살립니다.
+
+## 무한 로딩의 진짜 원인 = Supabase DB 정지 → 3D 복구 + 요청 시간 제한 + 오류 화면
+
+- **원인**: 사이트 전체가 흰 화면에서 무한 로딩(시크릿 탭에서 로그인 화면만 열림 → 로그인 직후 다시 무한 로딩). Supabase SQL Editor마저 "Connection terminated due to connection timeout"이라 **DB 자체가 응답 불능**이었고(무료 플랜의 작은 인스턴스가 메모리/디스크 IO 한계에 걸려 굳은 것으로 추정 — 어제 이후 SQL·코드 변경 없음), 대시보드 Settings → General → **Restart project**로 복구됐습니다. 앱은 DB 대답을 기다리느라 첫 바이트도 못 보낸 것. **3D 숲은 무관**했으므로 임시 제거를 되돌려 `a12029b` 상태로 복구했습니다(`app/forest/3d`, `forest-3d*.tsx`, `three`/`@react-three/*`, "3D 숲 ›" 링크).
+- **`lib/supabase/fetch-with-timeout.ts`(신규)**: Supabase로 나가는 요청에 시간 제한 — 서버 컴포넌트·미들웨어 8초(`lib/supabase/server.ts`, `proxy.ts`), 브라우저 20초(`lib/supabase/client.ts`, 사진·음성 업로드 `/storage/v1/`은 제외). 넘기면 흰 화면 대신 supabase-js의 평범한 오류(`서버가 응답하지 않아요. 잠시 후 다시 시도해 주세요.`)로 돌아와 각 화면의 "불러오지 못했어요" 안내가 뜹니다. **함정 하나**: 오류 이름을 `TimeoutError`로 두면 postgrest-js가 네트워크 오류로 보고 1·2·4초 간격으로 세 번 더 재시도해 8초가 39초가 됐습니다(로컬에서 도달 불가 주소로 재현). `AbortError`/`ABORT_ERR`로 두면 재시도 없이 바로 돌아옵니다(재현 스크립트로 8.0초 확인).
+- **`app/error.tsx`(신규)**: 화면을 그리다 예외가 나면(시간 초과 포함) 흰 화면 대신 "숲이 잠시 조용하네요 / 다시 시도 / 오늘 화면으로".
+- 사용자가 Firebase 등으로 옮기자는 질문에는 권하지 않았습니다 — 원인은 "무료 플랜 서버 크기"라 어디로 가도 같고, 인증·RLS·스토리지를 통째로 다시 짜야 해 앱 절반을 새로 만드는 일. 실사용자가 생기면 Supabase Pro로 올리는 게 답이고, 정말 옮긴다면 같은 Postgres 계열(Neon 등)로.

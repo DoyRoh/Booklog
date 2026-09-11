@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { VERIFIED_USER_HEADER } from "@/lib/supabase/verified-user";
+import { fetchWithTimeout } from "@/lib/supabase/fetch-with-timeout";
 
 export async function proxy(request: NextRequest) {
   let cookiesToApply: { name: string; value: string; options: CookieOptions }[] = [];
@@ -9,6 +10,8 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // 인증 서버·DB가 멈춰도 미들웨어가 모든 요청을 붙들고 있지 않도록.
+      global: { fetch: fetchWithTimeout(8_000) },
       cookies: {
         getAll() {
           return request.cookies.getAll();

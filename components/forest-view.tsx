@@ -125,6 +125,9 @@ export default function ForestView({
         >
           첫 나무 심으러 가기
         </Link>
+        <Link href="/forest/3d" className="d mt-3 block text-center text-sm" style={{ color: "var(--point-deep)" }}>
+          빈 들판을 3D로 둘러보기 ›
+        </Link>
       </div>
     );
   }
@@ -137,8 +140,17 @@ export default function ForestView({
         <p className="hand text-xl" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
           {childName}의 숲에 나무 {trees.length}그루가 자랐어요
         </p>
-        <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
-          배지 {achieved} / {badges.length}
+        <span className="flex flex-none items-center gap-2">
+          <span className="d text-sm" style={{ color: "var(--ink-2)" }}>
+            배지 {achieved} / {badges.length}
+          </span>
+          <Link
+            href="/forest/3d"
+            className="d rounded-full px-3 py-1 text-xs text-white"
+            style={{ background: "var(--point-deep)" }}
+          >
+            3D 숲 ›
+          </Link>
         </span>
       </div>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
