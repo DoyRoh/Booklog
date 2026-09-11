@@ -5,21 +5,44 @@ import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
 import { effectiveRange } from "@/lib/assignment-period";
+import { kstDate } from "@/lib/kst";
 import { shortMd } from "@/components/log-row";
+import Section from "@/components/section";
 
-// 그룹 카드 안에는 마감이 이른 숙제 몇 개만 미리 보여준다(전부 다 보여주면
-// 숙제가 쌓일수록 카드가 한없이 길어진다는 지적) -- 나머지는 숙제 탭에서.
-const ASSIGNMENT_PREVIEW_LIMIT = 3;
+// 마감 임박 숙제 시각화에 보여줄 개수 -- 전부 다 보여주면 숙제 탭과
+// 다를 게 없어진다. "지금 신경 쓸 것" 몇 개만 고른다.
+const URGENT_LIMIT = 5;
 
-type GroupCard = {
+type GroupSummary = {
   id: string;
   name: string;
   type: string;
   memberCount: number;
   pendingCount: number;
-  assignmentTotal: number;
-  assignmentProgress: { title: string; due: string; completed: number; total: number }[];
 };
+
+type UrgentAssignment = {
+  id: string;
+  groupName: string;
+  title: string;
+  due: string;
+  completed: number;
+  total: number;
+  overdue: boolean;
+};
+
+function Stat({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <p className="d text-[20px] font-semibold" style={{ color: accent ?? "var(--ink)" }}>
+        {value}
+      </p>
+      <p className="text-[12px]" style={{ color: "var(--ink-2)" }}>
+        {label}
+      </p>
+    </div>
+  );
+}
 
 export default async function TeacherDashboardPage() {
   const supabase = await createClient();
@@ -37,9 +60,7 @@ export default async function TeacherDashboardPage() {
   }
 
   // "교사 계정"이라는 고정된 역할 대신, 실제로 교사/운영진으로 승인된
-  // 그룹이 있는지로 이 화면을 볼 수 있는지 정한다 -- 계정 하나가 아이
-  // 프로필과 선생님 프로필을 동시에 가질 수 있어서, users.role 하나로는
-  // 더 이상 판단할 수 없다.
+  // 그룹이 있는지로 이 화면을 볼 수 있는지 정한다.
   // 운영 그룹 + 그룹원 + 숙제를 임베드 한 번으로, 완료 현황은 나란히.
   type GroupRow = {
     id: string;
@@ -76,31 +97,46 @@ export default async function TeacherDashboardPage() {
     }
   }
 
-  const cards: GroupCard[] = groups.map((group) => {
-    const assignments = (group.assignments ?? []).map((a) => ({
-      id: a.id,
-      title: a.title,
-      startDate: a.start_date,
-      endDate: a.end_date,
-      createdAt: a.created_at,
-    }));
-    // 마감이 이른 순 -- 급한 숙제부터 보이게.
-    const sorted = [...assignments].sort(
-      (a, b) => effectiveRange(a).end.localeCompare(effectiveRange(b).end)
-    );
-    return {
-      id: group.id,
-      name: group.name,
-      type: group.type,
-      memberCount: (group.members ?? []).filter((m) => m.status === "approved" && m.child_id).length,
-      pendingCount: (group.members ?? []).filter((m) => m.status === "pending").length,
-      assignmentTotal: assignments.length,
-      assignmentProgress: sorted.slice(0, ASSIGNMENT_PREVIEW_LIMIT).map((a) => {
-        const stat = completionByAssignment.get(a.id) ?? { completed: 0, total: 0 };
-        return { title: a.title, due: effectiveRange(a).end, completed: stat.completed, total: stat.total };
-      }),
-    };
-  });
+  // "관리하기" 버튼 하나에 그룹 내용 관리(책/숙제 추가)까지 몰려 있어
+  // 헷갈린다는 지적 -- 대시보드는 그룹별 요약 카드 나열을 그만두고,
+  // 여러 그룹을 가로질러 "지금 신경 쓸 것"만 모아 보여준다. 그룹
+  // 자체(이름·소개·삭제)를 만지는 자리는 그룹 설정(/recommend/[id])
+  // 하나로, 책·숙제 내용을 채우는 자리는 추천도서·숙제 탭 하나로 좁힌다.
+  const summaries: GroupSummary[] = [];
+  const allChildIds = new Set<string>();
+  let totalPending = 0;
+  const urgent: UrgentAssignment[] = [];
+  const today = kstDate();
+
+  for (const group of groups) {
+    const members = group.members ?? [];
+    const memberCount = members.filter((m) => m.status === "approved" && m.child_id).length;
+    for (const m of members) {
+      if (m.status === "approved" && m.child_id) allChildIds.add(m.child_id);
+    }
+    const pendingCount = members.filter((m) => m.status === "pending").length;
+    totalPending += pendingCount;
+    summaries.push({ id: group.id, name: group.name, type: group.type, memberCount, pendingCount });
+
+    for (const a of group.assignments ?? []) {
+      const range = effectiveRange({ startDate: a.start_date, endDate: a.end_date, createdAt: a.created_at });
+      const stat = completionByAssignment.get(a.id) ?? { completed: 0, total: 0 };
+      if (stat.total > 0 && stat.completed >= stat.total) continue; // 이미 다 끝난 숙제는 굳이 안 보여준다
+      urgent.push({
+        id: a.id,
+        groupName: group.name,
+        title: a.title,
+        due: range.end,
+        completed: stat.completed,
+        total: stat.total,
+        overdue: range.end < today,
+      });
+    }
+  }
+
+  urgent.sort((a, b) => a.due.localeCompare(b.due));
+  const topUrgent = urgent.slice(0, URGENT_LIMIT);
+  const pendingGroups = summaries.filter((g) => g.pendingCount > 0);
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -114,7 +150,7 @@ export default async function TeacherDashboardPage() {
         <Illustration name="bear-lantern" height={72} className="flex-none" />
       </div>
 
-      {cards.length === 0 ? (
+      {summaries.length === 0 ? (
         <div className="mt-6">
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 운영하는 그룹이 없어요.
@@ -124,68 +160,129 @@ export default async function TeacherDashboardPage() {
           </Link>
         </div>
       ) : (
-        <div className="mt-6 flex flex-col gap-4">
-          {cards.map((card) => (
-            <div
-              key={card.id}
-              className="rounded-[var(--r)] border p-4"
-              style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="d text-sm">{card.name}</p>
+        <>
+          {/* 한눈에 보는 숫자 -- 그룹·아이들·숙제·추천도서 탭 각각을 안
+              열어봐도 전체 규모가 바로 보이게. */}
+          <div
+            className="mt-6 flex items-center justify-between rounded-[var(--r)] border p-5"
+            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+          >
+            <Stat label="그룹" value={`${summaries.length}개`} />
+            <Stat label="아이" value={`${allChildIds.size}명`} />
+            <Stat label="진행 중 숙제" value={`${urgent.length}개`} />
+            <Stat
+              label="승인 대기"
+              value={`${totalPending}건`}
+              accent={totalPending > 0 ? "var(--lantern)" : undefined}
+            />
+          </div>
+
+          {pendingGroups.length > 0 && (
+            <Section className="mt-5" title="승인 대기" description={`${totalPending}명이 기다리고 있어요`} flush>
+              {pendingGroups.map((g, i) => (
+                <Link
+                  key={g.id}
+                  href={`/recommend/${g.id}`}
+                  className="flex items-center justify-between px-[24px] py-[14px] text-sm"
+                  style={i > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
+                >
+                  <span className="d">{g.name}</span>
+                  <span style={{ color: "var(--lantern)" }}>{g.pendingCount}명 대기 · 확인 ›</span>
+                </Link>
+              ))}
+            </Section>
+          )}
+
+          {/* 마감 임박 숙제 시각화 -- 전체 목록이 아니라 그룹을 가로질러
+              가장 급한 것 몇 개만, 완료 인원을 막대로 보여준다. 전체
+              목록·관리는 숙제 탭에서. */}
+          <Section
+            className="mt-5"
+            title="마감 임박 숙제"
+            description={topUrgent.length > 0 ? "완료한 인원만큼 막대가 채워져요" : undefined}
+            action={
+              <Link href="/teacher/assignments" className="text-xs" style={{ color: "var(--point)" }}>
+                전체 보기 ›
+              </Link>
+            }
+          >
+            {topUrgent.length === 0 ? (
+              <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                지금 진행 중인 숙제가 없어요.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {topUrgent.map((a) => {
+                  const pct = a.total > 0 ? Math.round((a.completed / a.total) * 100) : 0;
+                  return (
+                    <div key={a.id}>
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="min-w-0 truncate">
+                          <span style={{ color: "var(--ink-2)" }}>{a.groupName} · </span>
+                          <span className="d" style={{ color: "var(--ink)" }}>
+                            {a.title}
+                          </span>
+                        </span>
+                        <span className="flex-none" style={{ color: "var(--ink-2)" }}>
+                          {a.completed}/{a.total}명
+                        </span>
+                      </div>
+                      <div
+                        className="mt-1.5 h-2 overflow-hidden rounded-full"
+                        style={{ background: "var(--rule)" }}
+                      >
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${pct}%`,
+                            background: a.overdue ? "var(--berry)" : "var(--point)",
+                          }}
+                        />
+                      </div>
+                      <p
+                        className="mt-1 text-[11px]"
+                        style={{ color: a.overdue ? "var(--berry)" : "var(--ink-2)" }}
+                      >
+                        {a.overdue ? "마감이 지났어요" : `${shortMd(a.due)}까지`}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Section>
+
+          {/* 그룹 자체(이름·소개·유형·삭제)를 만지는 자리는 여기 "설정"
+              하나뿐 -- 책·숙제를 올리고 고치는 건 각 탭에서 한다. */}
+          <Section className="mt-5" title="운영 중인 그룹" description={`${summaries.length}개`} flush>
+            {summaries.map((g, i) => (
+              <Link
+                key={g.id}
+                href={`/recommend/${g.id}`}
+                className="flex items-center justify-between px-[24px] py-[14px] text-sm"
+                style={i > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
+              >
+                <div className="min-w-0">
+                  <p className="d">{g.name}</p>
                   <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                    {GROUP_TYPE_LABELS[card.type] ?? card.type}
+                    {GROUP_TYPE_LABELS[g.type] ?? g.type} · 아이 {g.memberCount}명
                   </p>
                 </div>
-                <Link href={`/recommend/${card.id}`} className="text-xs" style={{ color: "var(--point)" }}>
-                  관리하기
-                </Link>
-              </div>
+                <span className="flex-none text-xs" style={{ color: "var(--point)" }}>
+                  설정 ›
+                </span>
+              </Link>
+            ))}
+          </Section>
 
-              <div className="mt-3 flex gap-4 text-xs" style={{ color: "var(--ink-2)" }}>
-                <span>아이 {card.memberCount}명</span>
-                {card.pendingCount > 0 && (
-                  <span style={{ color: "var(--lantern)" }}>승인 대기 {card.pendingCount}건</span>
-                )}
-              </div>
-
-              {card.assignmentProgress.length > 0 && (
-                <div className="mt-3 flex flex-col gap-1.5">
-                  {card.assignmentProgress.map((assignment) => (
-                    <div key={assignment.title} className="flex items-center justify-between gap-2 text-xs">
-                      <span className="min-w-0 truncate" style={{ color: "var(--ink)" }}>
-                        <span className="mr-1.5" style={{ color: "var(--ink-2)" }}>
-                          {shortMd(assignment.due)}까지
-                        </span>
-                        {assignment.title}
-                      </span>
-                      <span className="flex-none" style={{ color: "var(--ink-2)" }}>
-                        {assignment.completed}/{assignment.total}명
-                      </span>
-                    </div>
-                  ))}
-                  {card.assignmentTotal > card.assignmentProgress.length && (
-                    <Link
-                      href="/teacher/assignments"
-                      className="d mt-0.5 text-xs"
-                      style={{ color: "var(--point-deep)" }}
-                    >
-                      나머지 {card.assignmentTotal - card.assignmentProgress.length}개 · 전체 보기 ›
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
           <Link
             href="/recommend/create"
-            className="d flex items-center justify-center rounded-[var(--r)] border border-dashed px-4 py-3 text-sm"
+            className="d mt-5 flex items-center justify-center rounded-[var(--r)] border border-dashed px-4 py-3 text-sm"
             style={{ borderColor: "rgba(38,54,43,0.28)", color: "var(--ink-2)" }}
           >
             + 새 그룹 만들기 (예: 6살 추천도서)
           </Link>
-        </div>
+        </>
       )}
     </div>
   );

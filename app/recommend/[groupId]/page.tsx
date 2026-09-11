@@ -5,12 +5,10 @@ import { getProfileSnapshot } from "@/lib/profile-snapshot";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import { getRecommendBooks } from "@/lib/recommend-books";
 import GroupApprovals from "@/components/group-approvals";
-import AddBookToList from "@/components/add-book-to-list";
 import GroupFollow from "@/components/group-follow";
 import GroupIntroEditor from "@/components/group-intro-editor";
 import GroupRemoveButton from "@/components/group-remove-button";
 import Section from "@/components/section";
-import RecommendBookList from "@/components/recommend-book-list";
 import RecommendShelf from "@/components/recommend-shelf";
 
 // 팔로우 전 미리보기로 보여줄 추천도서 수. 전부 공개하면 팔로우할 이유가
@@ -176,54 +174,33 @@ export default async function GroupDetailPage({
         </Section>
       )}
 
-      {/* 숲지기에겐 관리 순서로: "책 추가"(검색·바코드·ISBN)가 먼저, 그 아래
-          올린 책 목록(날짜·분야·제목). 예전엔 부모용 목록(진행률·"책장에
-          꽂기")이 먼저 떠서, 숲지기가 "책장에 꽂아야 추천도서/숙제가 되나"로
-          헷갈렸다 -- 추천도서는 책장과 무관하게 여기서 검색해 바로 올린다. */}
+      {/* 이 화면은 그룹 자체(이름·소개·유형·승인·삭제)를 만지는 "그룹
+          설정"이다. 책·숙제 내용을 채우는 건 숲지기의 추천도서·숙제
+          탭에서 하나로 통일한다 -- 여기 또 검색·올리기 폼이 있으면
+          "관리를 들어가도 추가 기능이 또 있다"는 중복 진입점이 된다.
+          그래서 두 섹션 모두 전용 화면으로 가는 링크 하나씩만 둔다. */}
       {isOperator && bookListId && (
         <Section
           className="mt-5"
-          title="추천도서에 책 올리기"
-          description="제목을 검색하거나 바코드를 찍어 바로 올려요. 책장에 먼저 꽂을 필요 없어요."
+          title="추천도서"
+          description={`올린 책 ${recommendBooks.length}권`}
+          action={
+            <Link href={`/teacher/books/manage?group=${groupId}`} className="text-xs" style={{ color: "var(--point)" }}>
+              관리 ›
+            </Link>
+          }
         >
-          <AddBookToList bookListIds={[bookListId]} />
+          <Link
+            href={`/teacher/books/add?group=${groupId}`}
+            className="d block rounded-[14px] border border-dashed px-4 py-3 text-center text-sm"
+            style={{ borderColor: "var(--rule)", color: "var(--point-deep)" }}
+          >
+            + 책 추가
+          </Link>
         </Section>
       )}
 
-      <div className={isOperator ? "mt-5" : "mt-6"}>
-        {!isOperator && <p className="d mb-2 text-base">추천도서</p>}
-        <div>
-          {isOperator ? (
-            <RecommendBookList
-              groupId={groupId}
-              books={recommendBooks}
-              activeChildId={null}
-              manage
-              title={`올린 추천도서 ${recommendBooks.length}권`}
-            />
-          ) : (
-            // 팔로우 전에는 미리보기 -- 최근 올라온 10권까지만, 표지만
-            // 둘러보고(책갈피·체크 토글 없음). 팔로우한 뒤부터 전부 보이고
-            // 내 책장에 꽂고 읽음 표시를 할 수 있다.
-            <RecommendShelf
-              groupId={groupId}
-              books={isChildMember ? recommendBooks : recommendBooks.slice(0, PREVIEW_LIMIT)}
-              activeChildId={isChildMember ? (activeChild?.id ?? null) : null}
-              footnote={
-                !isChildMember && recommendBooks.length > PREVIEW_LIMIT
-                  ? `미리보기 ${PREVIEW_LIMIT}권 · 팔로우하면 ${recommendBooks.length}권 전부 볼 수 있어요`
-                  : !isChildMember && recommendBooks.length > 0
-                    ? "팔로우하면 책갈피로 내 책장에 꽂을 수 있어요"
-                    : undefined
-              }
-            />
-          )}
-        </div>
-      </div>
-
-      {/* 부모가 보는 숙제 목록/진행 현황은 숲길 탭(그룹 필터)에서 다룬다 --
-          여기는 운영진이 새 숙제를 만드는 자리로만 남겨둔다. */}
-      {isOperator && (
+      {isOperator ? (
         <div className="mt-5" id="assignment">
           <Section title="숙제" description="읽을 책을 찾아 넣고 언제까지인지 정해요.">
             <Link
@@ -234,6 +211,25 @@ export default async function GroupDetailPage({
               + 새 숙제 만들기
             </Link>
           </Section>
+        </div>
+      ) : (
+        <div className="mt-6">
+          <p className="d mb-2 text-base">추천도서</p>
+          {/* 팔로우 전에는 미리보기 -- 최근 올라온 10권까지만, 표지만
+              둘러보고(책갈피·체크 토글 없음). 팔로우한 뒤부터 전부 보이고
+              내 책장에 꽂고 읽음 표시를 할 수 있다. */}
+          <RecommendShelf
+            groupId={groupId}
+            books={isChildMember ? recommendBooks : recommendBooks.slice(0, PREVIEW_LIMIT)}
+            activeChildId={isChildMember ? (activeChild?.id ?? null) : null}
+            footnote={
+              !isChildMember && recommendBooks.length > PREVIEW_LIMIT
+                ? `미리보기 ${PREVIEW_LIMIT}권 · 팔로우하면 ${recommendBooks.length}권 전부 볼 수 있어요`
+                : !isChildMember && recommendBooks.length > 0
+                  ? "팔로우하면 책갈피로 내 책장에 꽂을 수 있어요"
+                  : undefined
+            }
+          />
         </div>
       )}
 
