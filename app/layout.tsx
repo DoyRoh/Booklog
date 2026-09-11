@@ -4,6 +4,7 @@ import { Gowun_Dodum, Gamja_Flower, Gowun_Batang } from "next/font/google";
 import BottomNav from "@/components/bottom-nav";
 import TopBar from "@/components/top-bar";
 import OperatorGroupBar from "@/components/operator-group-bar";
+import ChildGroupBar from "@/components/child-group-bar";
 import ProfileProvider from "@/components/profile-context";
 import SplashScreen from "@/components/splash-screen";
 import ScrollToTop from "@/components/scroll-to-top";
@@ -67,11 +68,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ScrollToTop />
         <ProfileProvider>
           <TopBar />
-          {/* 숲지기 아이들/추천도서/숙제 세 탭의 그룹 전환 바 -- TopBar처럼
-              루트에 한 번만 마운트해서 탭을 오가도 사라졌다 다시 나타나지
-              않는다(사용자 지적: "제목처럼 그 자리에 계속 있어야지"). */}
+          {/* 숲지기 아이들/추천도서/숙제, 부모 숲길/숙제 -- 그룹 전환 바를
+              TopBar처럼 루트에 한 번만 마운트해서 탭을 오가도 사라졌다
+              다시 나타나지 않는다(사용자 지적: "제목처럼 그 자리에 계속
+              있어야지"). 부모/숲지기 역할에 따라 둘 중 하나만 켜진다. */}
           <Suspense fallback={null}>
             <OperatorGroupBar />
+            <ChildGroupBar />
           </Suspense>
           <main className="flex-1 pt-[52px] pb-[96px]">{children}</main>
           <BottomNav />

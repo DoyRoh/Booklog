@@ -4,8 +4,8 @@ import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import { getRecommendBooks } from "@/lib/recommend-books";
 import RecommendShelf from "@/components/recommend-shelf";
-import GroupTiles, { type GroupTile } from "@/components/group-tiles";
-import { kstDate } from "@/lib/kst";
+import { CHILD_GROUP_BAR_HEIGHT } from "@/components/child-group-bar";
+import { pickActiveChildGroupId } from "@/lib/active-child-group";
 
 type FilterGroup = { id: string; name: string };
 import Illustration from "@/components/illustration";
@@ -75,31 +75,17 @@ export default async function TrailPage({ searchParams }: { searchParams: Promis
     );
   }
 
-  // 쿼리의 group이 실제 소속 그룹이면 그 그룹, 아니면 "전체"(숙제 탭과 같은 기준).
-  const selectedGroup = myGroups.find((g) => g.id === groupParam) ?? null;
+  // 그룹 선택은 숙제 탭과 공유한다(children.active_group_id) -- URL의
+  // ?group= > 저장된 값 > "전체" 순. 그룹 전환 바 자체는 루트 레이아웃의
+  // `ChildGroupBar`가 그린다(사용자 지적: "여기저기서 그룹전환하느라
+  // 정신없다" -- 숲길에서 고른 그룹이 숙제 탭에도 그대로 이어진다).
+  const selectedId = pickActiveChildGroupId(myGroups, groupParam, activeChild.activeGroupId);
+  const selectedGroup = selectedId !== "all" ? (myGroups.find((g) => g.id === selectedId) ?? null) : null;
   const groupsToLoad = selectedGroup ? [selectedGroup] : myGroups;
 
-  // 그룹 타일의 배지 = 최근 일주일 새로 올라온 추천도서 수. 추천도서 조회와
-  // 무관하니 동시에 왕복. "전체"면 모든 그룹의 추천도서를 합쳐(같은 책은
-  // 먼저 나온 그룹 것 하나만) 최근 올린 순으로 보여준다.
-  const sinceIso = `${kstDate(-7)}T00:00:00+09:00`;
-  const [perGroup, { data: recentRows }] = await Promise.all([
-    Promise.all(groupsToLoad.map((g) => getRecommendBooks(supabase, g.id, activeChild.id))),
-    supabase
-      .from("book_lists")
-      .select("group_id, book_list_items(created_at)")
-      .in(
-        "group_id",
-        myGroups.map((g) => g.id)
-      ),
-  ]);
-  const newCountByGroup = new Map<string, number>();
-  for (const row of recentRows ?? []) {
-    const items = (row.book_list_items as unknown as { created_at: string }[] | null) ?? [];
-    const n = items.filter((item) => item.created_at >= sinceIso).length;
-    newCountByGroup.set(row.group_id as string, (newCountByGroup.get(row.group_id as string) ?? 0) + n);
-  }
-  const tiles: GroupTile[] = myGroups.map((g) => ({ id: g.id, name: g.name, newCount: newCountByGroup.get(g.id) ?? 0 }));
+  // "전체"면 모든 그룹의 추천도서를 합쳐(같은 책은 먼저 나온 그룹 것
+  // 하나만) 최근 올린 순으로 보여준다.
+  const perGroup = await Promise.all(groupsToLoad.map((g) => getRecommendBooks(supabase, g.id, activeChild.id)));
 
   const seen = new Set<string>();
   const books = perGroup
@@ -108,15 +94,12 @@ export default async function TrailPage({ searchParams }: { searchParams: Promis
     .filter((b) => (seen.has(b.bookId) ? false : (seen.add(b.bookId), true)));
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <GroupTiles groups={tiles} selectedId={selectedGroup?.id ?? "all"} basePath="/trail" allLabel="전체" />
-
-      <p className="d mt-5 text-base">{selectedGroup ? `${selectedGroup.name}의 추천도서` : "모든 그룹의 추천도서"}</p>
+    <div className="mx-auto max-w-[520px] px-5 pb-10" style={{ paddingTop: `${32 + CHILD_GROUP_BAR_HEIGHT}px` }}>
+      <p className="d text-base">{selectedGroup ? `${selectedGroup.name}의 추천도서` : "모든 그룹의 추천도서"}</p>
 
       <div className="mt-3">
         <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
       </div>
-
     </div>
   );
 }

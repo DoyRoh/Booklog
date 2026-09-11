@@ -4,9 +4,9 @@ import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
 import { hasVoiceConsent } from "@/lib/consent";
 import { getAllAssignments } from "@/lib/assignments";
-import { isPast } from "@/lib/assignment-period";
 import AssignmentsBrowser from "@/components/assignments-browser";
-import GroupTiles, { type GroupTile } from "@/components/group-tiles";
+import { CHILD_GROUP_BAR_HEIGHT } from "@/components/child-group-bar";
+import { pickActiveChildGroupId } from "@/lib/active-child-group";
 
 // 숙제 탭 -- 숲길처럼 상단에 그룹 타일(전체 · 그룹들 · + 그룹 찾기)을 두고
 // 고른 그룹의 숙제만 본다. 그 아래 이번 주 숙제가 먼저, 다가오는 숙제,
@@ -52,30 +52,26 @@ export default async function AssignmentsPage({ searchParams }: { searchParams: 
     .filter((g): g is GroupRow => Boolean(g))
     .filter((g, i, arr) => arr.findIndex((o) => o.id === g.id) === i);
 
-  // 타일 배지 = 아직 안 끝난(마감 안 지났고 책이 남은) 숙제 수.
-  const tiles: GroupTile[] = myGroups.map((g) => ({
-    id: g.id,
-    name: g.name,
-    newCount: assignments.filter(
-      (a) => a.groupId === g.id && !isPast(a) && a.books.some((b) => !b.completed)
-    ).length,
-  }));
-
-  const selectedId = myGroups.some((g) => g.id === groupParam) ? (groupParam as string) : "all";
+  // 그룹 선택은 숲길 탭과 공유한다(children.active_group_id) -- 그룹
+  // 전환 바 자체는 루트 레이아웃의 `ChildGroupBar`가 그린다. 그룹이
+  // 하나도 없으면 그 바도 안 뜨므로(고를 게 없어서) 그만큼 위쪽 여백을
+  // 미리 마련하지 않는다.
+  const selectedId = pickActiveChildGroupId(myGroups, groupParam, activeChild.activeGroupId);
   const visible = selectedId === "all" ? assignments : assignments.filter((a) => a.groupId === selectedId);
+  const showGroupBar = myGroups.length > 0;
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <GroupTiles groups={tiles} selectedId={selectedId} basePath="/assignments" allLabel="전체" />
-      <div className="mt-5">
-        <AssignmentsBrowser
-          childId={activeChild.id}
-          childName={activeChild.name}
-          assignments={visible}
-          voiceAllowed={voiceAllowed}
-          mode="current"
-        />
-      </div>
+    <div
+      className="mx-auto max-w-[520px] px-5 pb-10"
+      style={{ paddingTop: showGroupBar ? `${32 + CHILD_GROUP_BAR_HEIGHT}px` : "32px" }}
+    >
+      <AssignmentsBrowser
+        childId={activeChild.id}
+        childName={activeChild.name}
+        assignments={visible}
+        voiceAllowed={voiceAllowed}
+        mode="current"
+      />
     </div>
   );
 }

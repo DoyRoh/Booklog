@@ -4,6 +4,8 @@ export type ActiveChild = {
   id: string;
   name: string;
   avatar: "rabbit" | "dog" | "cat" | null;
+  /** 숲길·숙제 탭이 공유하는 "지금 보고 있는 그룹"(children.active_group_id). */
+  activeGroupId: string | null;
 };
 
 /**
@@ -21,20 +23,23 @@ export async function getActiveChild(
   // 영향을 준다).
   const { data: profile } = await supabase
     .from("users")
-    .select("active_child_id, children(id, name, avatar)")
+    .select("active_child_id, children(id, name, avatar, active_group_id)")
     .eq("id", userId)
     .single();
 
-  const embeddedChild = profile?.children as unknown as ActiveChild | null | undefined;
-  if (embeddedChild) return embeddedChild;
+  type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null; active_group_id: string | null };
+  const embeddedChild = profile?.children as unknown as ChildRow | null | undefined;
+  if (embeddedChild) {
+    return { id: embeddedChild.id, name: embeddedChild.name, avatar: embeddedChild.avatar, activeGroupId: embeddedChild.active_group_id };
+  }
 
   const { data: guardianRows } = await supabase
     .from("child_guardians")
-    .select("children(id, name, avatar)")
+    .select("children(id, name, avatar, active_group_id)")
     .eq("user_id", userId)
     .order("created_at", { ascending: true })
     .limit(1);
 
-  const first = guardianRows?.[0]?.children as unknown as ActiveChild | null | undefined;
-  return first ?? null;
+  const first = guardianRows?.[0]?.children as unknown as ChildRow | null | undefined;
+  return first ? { id: first.id, name: first.name, avatar: first.avatar, activeGroupId: first.active_group_id } : null;
 }

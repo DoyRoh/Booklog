@@ -1503,3 +1503,13 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 
 - **`components/scroll-to-top.tsx`(신규)**: `usePathname()`으로 실제 경로(pathname)가 바뀔 때마다 `window.scrollTo(0, 0)`을 호출하는, 화면에 아무것도 안 그리는 전역 컴포넌트입니다. `app/layout.tsx`에 `TopBar`/`OperatorGroupBar`와 나란히 한 번만 마운트했습니다. **그룹 타일을 눌러 `?group=`만 바뀌는 경우(같은 탭 안에서 그룹만 전환)는 pathname 자체가 안 바뀌므로 이 효과가 발동하지 않습니다** — 그룹을 바꿀 때 스크롤 위치가 튀는 부작용 없이, 실제로 다른 화면으로 넘어갈 때만 맨 위로 돌아갑니다. 대시보드의 `#operating-groups`/`#pending-approvals` 앵커 스크롤도 같은 페이지 안의 해시 이동이라 pathname이 안 바뀌어 영향받지 않습니다(방금 고친 `scroll-margin-top`과 서로 간섭하지 않음).
 - DB 변경 없음. build+lint 통과.
+
+## 부모 쪽 숲길·숙제 탭도 그룹 전환을 고정 상단으로 + 두 탭이 그룹 선택 공유 (사용자 요청: "숲길과 숙제 메뉴에서 그룹전환은 상단 고정 화면으로 해줘... 자꾸 이것저것에서 그룹전환하느라 정신없어서")
+
+숲지기 쪽(아이들·추천도서·숙제)에 적용한 두 가지 개선 — 고정 상단 흰 바, 탭 간 공유 선택 — 을 부모가 보는 숲길·숙제 탭에도 그대로 적용해 달라는 요청입니다. 기존엔 두 탭이 각자 `?group=` URL만으로 독립적으로 그룹을 필터링해서, 숲길에서 "7살반"을 골라도 숙제 탭에서는 다시 "전체"로 보였습니다 — "여기저기서 그룹전환하느라 정신없다"는 지적의 실제 원인이었습니다.
+
+- **마이그레이션 0027**: `children.active_group_id`(부모 쪽 `users.active_child_id`, 숲지기 쪽 `users.active_operator_group_id`와 같은 패턴이지만, 그룹 소속은 아이 단위라 `children` 테이블에 둠)를 추가하고, 기존 "guardians update own children" 정책에 "이 값이 있으면 반드시 그 아이가 승인된 멤버로 있는 그룹이어야 한다"는 `with check`를 새로 달았습니다(이전엔 이 정책에 `with check` 자체가 없어서 보호자가 자녀 행의 어떤 컬럼이든 검증 없이 바꿀 수 있었던 것도 이번에 같이 좁혔습니다). 로컬 Postgres에서 실제로 검증했습니다 — (1) 아이가 속한 그룹으로 설정 → 성공, (2) 무관한 그룹으로 설정 시도 → RLS가 차단, (3) null로 되돌리기 → 성공. **SQL Editor에서 실행 필요.**
+- **`components/child-group-bar.tsx`(신규, `components/group-tiles.tsx` 대체)**: 숲지기 쪽 `OperatorGroupBar`와 똑같이 루트 레이아웃에 한 번만 마운트되는 자기완결형 컴포넌트입니다. 다른 점: (1) 부모 쪽엔 "전체"(모든 그룹의 추천도서/숙제를 합쳐 보기) 개념이 있어 타일 맨 앞에 항상 "전체"가 붙고, 그룹이 하나뿐이어도 바 자체는 뜹니다(숲지기 쪽은 그룹이 둘 이상일 때만 뜸). (2) 타일 크기는 기존 `GroupTiles`와 같은 56px을 유지했습니다(숲지기 쪽만 40px로 줄임 — 부모 화면은 원래 손가락 터치 영역을 크게 쓰는 원칙이라 그대로). (3) 그룹마다 있던 "새로 올라온 책 수"/"안 끝난 숙제 수" 배지는 뺐습니다 — 두 탭에서 배지가 의미하는 게 서로 달라서(추천도서 vs 숙제), 하나의 공용 바가 어느 쪽 숫자를 보여줘야 할지 애매해지는 걸 피했습니다(숲지기 쪽 바도 처음부터 배지가 없어 이제 통일). `lib/active-child-group.ts`의 `pickActiveChildGroupId()`가 URL `?group=` > `children.active_group_id` > "전체" 순으로 우선순위를 정합니다(숲지기 쪽 `pickActiveGroupId`와 같은 패턴, 기본값만 "첫 그룹" 대신 "전체").
+- **`lib/active-child.ts`의 `getActiveChild()`에 `activeGroupId` 추가**: 이미 거의 모든 부모 화면이 부르는 함수라 왕복 추가 없이 `children` 임베드에 `active_group_id`만 더 넣었습니다.
+- **`app/trail/page.tsx`/`app/assignments/page.tsx`**: `<GroupTiles>` 렌더링을 없애고 `CHILD_GROUP_BAR_HEIGHT`(93px) 상수로 본문 위쪽 여백만 예약합니다(숙제 탭은 그룹이 하나도 없으면 바가 안 뜨므로 그 경우엔 여백도 안 늘림). 숲길 탭은 배지 계산에 쓰이던 `book_lists` 조회(최근 일주일 신간 수)를 통째로 걷어내 왕복이 하나 줄었습니다.
+- Playwright 정적 렌더로 93px 높이를 실측 확인했습니다. DB 변경 있음(위 마이그레이션, SQL Editor 실행 필요). build+lint 통과.
