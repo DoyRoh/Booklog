@@ -41,6 +41,11 @@ const PARENT_TABS = [
 // 정리해서 보여준다 -- 아이별(아이들) / 책별(추천도서) / 숙제별(숙제).
 // 그룹 관리(책 추가·숙제 만들기·승인·초대 코드)는 대시보드의 "관리하기"와
 // 각 탭의 "+ 추가" 링크로 그룹 상세(/recommend/[groupId])에 들어가서 한다.
+// 맨 오른쪽은 프로필·설정(스레드의 프로필 탭과 같은 자리) -- 아이콘 대신
+// 지금 프로필의 얼굴(아이 아바타 / 곰·백로)을 그린다. 상단바의 얼굴+이름도
+// 같은 곳으로 가지만, 손이 닿는 아래쪽에도 입구가 있어야 한다는 요청.
+const PROFILE_TAB = { href: "/more", label: "프로필", face: true } as const;
+
 const OPERATOR_TABS = [
   { href: "/teacher", label: "대시보드", Icon: DashboardIcon },
   { href: "/teacher/children", label: "아이들", Icon: ChildrenIcon },
@@ -122,7 +127,7 @@ function useHomeworkBadge(role: string | null, childId: string | null, pathname:
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { role, loading, childId } = useProfile();
+  const { role, loading, childId, childAvatar, operatorAvatar } = useProfile();
   const hidden = useHideOnScroll();
   const homeworkBadge = useHomeworkBadge(role, childId, pathname);
 
@@ -132,16 +137,13 @@ export default function BottomNav() {
 
   // 역할 조회가 끝나기 전(role===null)에는 부모 탭을 기본값으로 보여준다 --
   // 로그인 직후 탭이 매번 깜빡이지 않도록.
-  const tabs = role === "operator" ? OPERATOR_TABS : PARENT_TABS;
-  // 아이콘만으로는 어느 탭인지 헷갈린다는 지적이 양쪽에서 나왔다 --
-  // 이제 부모·숲지기 모두 탭 이름을 항상 펼친다. 다만 한 탭당 쓸 수 있는
-  // 폭이 달라서(숲지기는 "대시보드"·"추천도서"처럼 긴 이름이 있고, 부모는
-  // 전부 두 글자) 여백을 역할별로 다르게 잡는다 -- 가장 좁은 폰(360px,
-  // 알약 최대 폭 328px)에서 실측한 값이다: 숲지기 326px / 부모 306px.
-  const tabClass =
-    role === "operator"
-      ? "flex h-[48px] items-center gap-[2px] rounded-full px-[6px] transition-colors"
-      : "flex h-[48px] items-center gap-[4px] rounded-full px-[10px] transition-colors";
+  // 알약 바는 화면 폭을 가로로 꽉 채우고(스레드처럼) 탭이 균등하게 나눠
+  // 갖는다 -- 내용 폭에 맞춰 가운데 몰려 있으면 5칸이 빡빡하고, 넓히면
+  // 아이콘 아래에 이름을 붙일 자리가 생긴다. 맨 오른쪽은 프로필·설정.
+  const tabs = [...(role === "operator" ? OPERATOR_TABS : PARENT_TABS), PROFILE_TAB];
+  // 프로필 탭에 그릴 얼굴 -- 상단바와 같은 규칙(아이는 고른 아바타,
+  // 숲지기는 곰 기본, 로딩 중엔 토끼).
+  const face = role === "operator" ? `face-${operatorAvatar ?? "bear"}` : `face-${childAvatar ?? "rabbit"}`;
 
   // 숲지기 탭은 /teacher 아래에 전부 있어서 단순 startsWith로는 "대시보드"
   // (/teacher)가 어느 화면에서나 켜져 보였다. 경로가 맞는 탭 중 가장 긴
@@ -154,7 +156,7 @@ export default function BottomNav() {
   return (
     <nav
       aria-label="주 메뉴"
-      className="no-print fixed inset-x-0 z-50 mx-auto flex w-fit max-w-[calc(100%-32px)] items-center gap-[2px] rounded-full p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
+      className="no-print fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-32px)] max-w-[420px] items-stretch rounded-[26px] p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
       style={{
         bottom: "calc(var(--sb) + 14px)",
         // 96% 반투명이면 스크롤 중에 알약 뒤의 글자가 비쳐 보여 "내용이랑
@@ -166,7 +168,8 @@ export default function BottomNav() {
       }}
     >
       {tabs.map((tab) => {
-        const { href, label, Icon } = tab;
+        const { href, label } = tab;
+        const Icon = "Icon" in tab ? tab.Icon : null;
         const active = href === activeHref;
         const isSprout = "accent" in tab && tab.accent === "sprout";
         const showHomeworkDot = href === "/group" && homeworkBadge !== "none";
@@ -176,7 +179,7 @@ export default function BottomNav() {
             href={href}
             aria-label={showHomeworkDot ? `${label} · ${homeworkBadge === "done" ? "오늘 숙제 완료" : "오늘 숙제 있음"}` : label}
             aria-current={active ? "page" : undefined}
-            className={tabClass}
+            className="flex flex-1 flex-col items-center justify-center gap-[3px] rounded-[20px] py-[6px] transition-colors"
             style={{
               color: isSprout ? "var(--sprout-deep)" : active ? "var(--point-deep)" : "var(--ink-2)",
               // "추가"는 다른 탭과 달리 항상 연두 알약으로 눈에 띄어야 한다
@@ -191,7 +194,20 @@ export default function BottomNav() {
             }}
           >
             <span className="relative flex h-[24px] w-[24px] items-center justify-center">
-              <Icon strokeWidth={active ? 2.4 : 1.9} />
+              {Icon ? (
+                <Icon strokeWidth={active ? 2.4 : 1.9} />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={`/illustrations/${face}.png`}
+                  alt=""
+                  aria-hidden="true"
+                  width={24}
+                  height={24}
+                  className="h-[24px] w-[24px] rounded-full"
+                  style={{ boxShadow: active ? "0 0 0 2px var(--point)" : "0 0 0 1.5px var(--rule)" }}
+                />
+              )}
               {showHomeworkDot && (
                 <span
                   aria-hidden
@@ -203,9 +219,9 @@ export default function BottomNav() {
                 />
               )}
             </span>
-            {/* 탭 이름은 항상 펼쳐 둔다 -- 아이콘만으로는 어디인지
-                헷갈린다는 지적(숲지기 4탭 -> 부모 탭도 같게). */}
-            <span className="d whitespace-nowrap text-[12px] leading-none" style={{ fontFamily: "var(--disp)" }}>
+            {/* 탭 이름은 항상 아이콘 아래에 붙여 둔다 -- 아이콘만으로는
+                어디인지 헷갈린다는 지적(숲지기 4탭 -> 부모 탭도 같게). */}
+            <span className="d whitespace-nowrap text-[11px] leading-[14px]" style={{ fontFamily: "var(--disp)" }}>
               {label}
             </span>
           </Link>
