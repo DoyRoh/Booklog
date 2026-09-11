@@ -19,10 +19,11 @@ import {
 
 // '더보기'와 '배지'는 하단 탭이 아니라 상단 우측 상시 아이콘(TopBar)으로
 // 옮겼다 -- 부모/교사/큐레이터 탭 어디에도 더 이상 포함하지 않는다.
-// '추천'과 '숙제'가 그룹 상세 화면에서 겹쳐 보인다는 피드백으로 하나의
-// 탭('숲길')으로 합쳤다 -- 그룹을 고르면 그 그룹의 추천도서와 숙제를 한
-// 화면에서 같이 본다(app/assignments). 아직 안 속한 그룹을 찾아
-// 팔로우/가입하는 기능은 더보기 화면으로 옮겼다.
+// '숲길'(추천도서)과 '숙제'는 둘 다 "그룹을 고르고 그 안의 내용을 본다"는
+// 같은 구조인데 하단 탭에 따로 있으면서 각자 그룹을 다시 골라야 해서
+// "여기저기서 그룹전환하느라 정신없다"는 지적을 받았다 -- 하나의
+// '그룹' 탭(app/group)으로 합치고, 그 안에서 추천도서/숙제 소제목 탭으로
+// 나눴다. 아직 안 속한 그룹을 찾아 팔로우/가입하는 기능은 더보기 화면으로.
 // '추가'는 책장 바로 다음에 둔 빠른 진입점 -- 기록 남기기(/library/add)로
 // 바로 가서 책을 찾아 넣으면 그 즉시 책장에 꽂힌다(사용자 요청: "책장에
 // 책 꽂는 메뉴도 하나 추가하자").
@@ -32,8 +33,7 @@ const PARENT_TABS = [
   { href: "/today", label: "오늘", Icon: TodayIcon },
   { href: "/library", label: "책장", Icon: LibraryIcon },
   { href: "/library/add", label: "추가", Icon: AddIcon, accent: "sprout" },
-  { href: "/trail", label: "숲길", Icon: RecommendIcon },
-  { href: "/assignments", label: "숙제", Icon: AssignmentIcon },
+  { href: "/group", label: "그룹", Icon: RecommendIcon },
 ] as const;
 
 // 숲지기(선생님·기관·인플루언서 통칭) 탭. 예전엔 교사/큐레이터 탭이
@@ -89,10 +89,11 @@ function useHideOnScroll() {
   return hidden;
 }
 
-// "숙제" 탭 아이콘 위 알림 점 -- 오늘 진행 중인 숙제가 있으면 빨간 점,
+// "그룹" 탭 아이콘 위 알림 점 -- 오늘 진행 중인 숙제가 있으면 빨간 점,
 // 그 책을 전부 읽었으면 초록 점(사용자 요청: "숙제가 있으면 빨간 점,
-// 숙제 했으면 초록색으로"). 화면을 옮길 때마다(pathname 변화) 다시
-// 확인해서, 숙제 탭에서 체크하고 다른 탭으로 돌아오면 바로 반영된다.
+// 숙제 했으면 초록색으로"). 숲길·숙제가 '그룹' 탭 하나로 합쳐지면서
+// 이 점도 그 탭 아이콘에 뜬다. 화면을 옮길 때마다(pathname 변화) 다시
+// 확인해서, 숙제를 체크하고 다른 탭으로 돌아오면 바로 반영된다.
 // 체크 토글은 화면 이동 없이 바로 상태가 바뀌므로 read-toggles.tsx가
 // 쏘는 "chaeksup:assignment-changed" 이벤트도 같이 듣는다.
 function useHomeworkBadge(role: string | null, childId: string | null, pathname: string): HomeworkBadge {
@@ -161,7 +162,7 @@ export default function BottomNav() {
         const { href, label, Icon } = tab;
         const active = href === activeHref;
         const isSprout = "accent" in tab && tab.accent === "sprout";
-        const showHomeworkDot = href === "/assignments" && homeworkBadge !== "none";
+        const showHomeworkDot = href === "/group" && homeworkBadge !== "none";
         return (
           <Link
             key={href}

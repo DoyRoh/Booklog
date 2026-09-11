@@ -51,6 +51,7 @@ export async function proxy(request: NextRequest) {
     "/records",
     "/recommend",
     "/more",
+    "/group",
     "/assignments",
     "/badges",
     "/forest",

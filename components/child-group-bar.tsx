@@ -8,22 +8,23 @@ import { useProfile } from "@/components/profile-context";
 import { PlusIcon } from "@/components/icons/misc-icons";
 
 /**
- * 숲길·숙제 탭 상단의 그룹 전환. 숲지기 쪽 `OperatorGroupBar`와 같은
- * 이유로 루트 레이아웃에 한 번만 마운트한다 -- 페이지마다 그리면 두 탭을
- * 오갈 때 언마운트돼 깜빡이고, 무엇보다 각자 다른 `?group=` 상태를 들고
- * 있어서 "숲길에서 고른 그룹이 숙제에는 안 이어지는" 것도 "여기저기서
- * 그룹전환하느라 정신없다"는 지적의 큰 원인이었다. `children.active_group_id`
- * 하나를 두 탭이 공유해서, 한 번 고르면 다른 탭에도 그대로 이어진다.
+ * '그룹' 탭(추천도서·숙제 소제목 탭을 한 화면에 합친 `/group`) 상단의
+ * 그룹 전환. 숲지기 쪽 `OperatorGroupBar`와 같은 이유로 루트 레이아웃에
+ * 한 번만 마운트한다 -- 화면을 옮길 때마다 그리면 언마운트돼 깜빡인다.
+ * `children.active_group_id`에 저장해 뒀다가, 추천도서/숙제 소제목 탭을
+ * 오갈 때도 같은 그룹이 그대로 이어진다("여기저기서 그룹전환하느라
+ * 정신없다"는 지적으로, 원래 따로였던 숲길·숙제 탭 자체를 하나로 합치고
+ * 그 안의 그룹 선택도 하나로 통일했다).
  *
  * 부모 쪽은 그룹이 하나뿐이어도 "전체" 개념이 있어(숲지기 쪽엔 없음)
  * 타일 목록이 항상 뜬다. 그룹별 "새로 올라온 책 수"/"안 끝난 숙제 수"
- * 배지는 두 탭에서 의미가 서로 달라(추천도서 vs 숙제) 하나의 공용 바가
+ * 배지는 추천도서/숙제 소제목 탭에서 의미가 서로 달라 하나의 공용 바가
  * 어느 쪽 숫자를 보여줘야 할지 애매해지므로 없앴다(숲지기 쪽 그룹 바도
  * 처음부터 배지가 없다 -- 통일).
  */
 export const CHILD_GROUP_BAR_HEIGHT = 93;
 
-const TAB_PATHS = ["/trail", "/assignments"];
+const GROUP_PATH = "/group";
 
 type GroupOption = { id: string; name: string };
 
@@ -35,7 +36,7 @@ export default function ChildGroupBar() {
   const [groups, setGroups] = useState<GroupOption[] | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
-  const onTab = TAB_PATHS.includes(pathname);
+  const onTab = pathname === GROUP_PATH;
 
   useEffect(() => {
     if (role !== "parent" || !onTab || !childId) return;
@@ -62,13 +63,20 @@ export default function ChildGroupBar() {
   const pick = useCallback(
     async (id: string | null) => {
       setActiveGroupId(id);
-      router.push(id ? `${pathname}?group=${id}` : pathname);
+      // 추천도서/숙제 중 어느 소제목 탭을 보고 있었는지(tab=)는 그대로
+      // 유지한 채 그룹만 바꾼다.
+      const tab = searchParams.get("tab");
+      const params = new URLSearchParams();
+      if (tab) params.set("tab", tab);
+      if (id) params.set("group", id);
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname);
       if (childId) {
         const supabase = createClient();
         await supabase.from("children").update({ active_group_id: id }).eq("id", childId);
       }
     },
-    [pathname, router, childId]
+    [pathname, router, childId, searchParams]
   );
 
   if (!onTab || role !== "parent" || !groups || groups.length === 0) return null;

@@ -41,7 +41,7 @@ export default async function PastAssignmentsPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <Link href="/assignments" className="text-sm" style={{ color: "var(--ink-2)" }}>
+      <Link href="/group?tab=assignments" className="text-sm" style={{ color: "var(--ink-2)" }}>
         ← 숙제
       </Link>
       <h1 className="d mt-2 mb-4 text-xl">지난 숙제</h1>

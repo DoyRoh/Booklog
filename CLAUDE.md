@@ -1513,3 +1513,14 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **`lib/active-child.ts`의 `getActiveChild()`에 `activeGroupId` 추가**: 이미 거의 모든 부모 화면이 부르는 함수라 왕복 추가 없이 `children` 임베드에 `active_group_id`만 더 넣었습니다.
 - **`app/trail/page.tsx`/`app/assignments/page.tsx`**: `<GroupTiles>` 렌더링을 없애고 `CHILD_GROUP_BAR_HEIGHT`(93px) 상수로 본문 위쪽 여백만 예약합니다(숙제 탭은 그룹이 하나도 없으면 바가 안 뜨므로 그 경우엔 여백도 안 늘림). 숲길 탭은 배지 계산에 쓰이던 `book_lists` 조회(최근 일주일 신간 수)를 통째로 걷어내 왕복이 하나 줄었습니다.
 - Playwright 정적 렌더로 93px 높이를 실측 확인했습니다. DB 변경 있음(위 마이그레이션, SQL Editor 실행 필요). build+lint 통과.
+
+## 숲길+숙제를 '그룹' 탭 하나로 합침 (사용자 확인: "숲길+숙제를 하나의 탭으로 합침")
+
+바로 앞 항목에서 그룹 전환을 고정 상단으로 옮기고 공유하게 만든 뒤, "숲길과 숙제 둘 다 그룹에 관한 메뉴인데 하단 탭에서 분리하고 싶다"는 지적에 어떻게 정리할지 `AskUserQuestion`으로 여쭤봤고, **"숲길+숙제를 하나의 탭으로 합침"**을 선택받았습니다.
+
+- **`app/group/page.tsx`(신규)**: 예전 `/trail`·`/assignments`의 데이터 조회 로직을 그대로 옮겨와 하나의 화면으로 합쳤습니다. 상단엔 그룹 전환 바(`ChildGroupBar`, 그대로 공유)를 두고, 그 아래 "추천도서 / 숙제" 소제목 탭(둥근 알약 버튼, `?tab=books|assignments` 쿼리로 전환)을 새로 추가했습니다. 그룹 선택은 두 소제목 탭이 완전히 같은 값을 공유하고(같은 `children.active_group_id`), 탭을 오갈 때도 방금 고른 그룹이 그대로 유지됩니다. 그룹이 하나도 없으면(숲길의 기존 빈 상태 화면 재사용) 소제목 탭 자체가 안 뜹니다 — 추천도서·숙제 둘 다 볼 게 없으니까요.
+- **`app/trail/page.tsx`/`app/assignments/page.tsx`를 리다이렉트로 축소**: 기존 링크·북마크가 계속 동작하도록 `?group=`을 그대로 이어 각각 `/group?tab=books`·`/group?tab=assignments`로 보냅니다. `/assignments/past`(지난 숙제)는 그대로 그 경로에 남아있고(자주 안 쓰이는 하위 화면이라 옮기지 않음), "← 숙제" 뒤로가기 링크만 `/group?tab=assignments`로 갱신했습니다.
+- **`components/bottom-nav.tsx`**: 부모 탭이 오늘·책장·추가·숲길·숙제(5개)에서 **오늘·책장·추가·그룹**(4개)으로 줄었습니다. "숙제 있음/완료" 알림 점은 이제 "그룹" 탭 아이콘에 뜹니다(href 체크를 `/assignments`→`/group`로).
+- **`components/child-group-bar.tsx`**: `TAB_PATHS`(배열, 예전엔 두 경로)를 `GROUP_PATH`(`/group` 하나)로 단순화했습니다. 그룹 타일을 누르면 URL을 바꾸는 `pick()`이 이제 `?group=`뿐 아니라 지금 보고 있던 `?tab=`도 그대로 유지해서 넘깁니다(그룹만 바꾸고 소제목 탭은 안 바뀌게).
+- **`app/today/page.tsx`**: 요약 박스의 "그룹" 칸(→ `/trail`)과 "오늘의 숙제"의 "전체 보기"(→ `/assignments`) 링크를 각각 `/group`·`/group?tab=assignments`로 갱신했습니다.
+- Playwright 정적 렌더(상단바+그룹바+소제목 탭+본문)로 겹침 없이 33px 여백이 나오는 걸 확인했고, 4탭으로 줄어든 하단 알약 바도 기존 5탭보다 여유로워 폭 문제가 없습니다. DB 변경 없음(바로 앞 항목의 마이그레이션 재사용). build+lint 통과.

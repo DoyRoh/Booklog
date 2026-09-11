@@ -78,7 +78,7 @@ export default async function TodayPage() {
   // 마감일(end_date)을 안 정한 숙제는 날짜만으로는 절대 안 없어지므로,
   // 오늘 탭 요약에서는 책을 전부 다 읽어서 완료된 숙제를 따로 걸러낸다
   // (실사용 피드백: 다 끝난 숙제가 계속 "오늘의 숙제"에 남아있던 문제).
-  // 숲길 탭(/assignments)은 관리 화면이라 완료된 것도 그대로 보여준다.
+  // 그룹 탭(/group?tab=assignments)은 관리 화면이라 완료된 것도 그대로 보여준다.
   const activeAssignments = assignments.filter((a) => {
     const completedCount = a.books.filter((b) => b.completed).length;
     return a.books.length === 0 || completedCount < a.books.length;
@@ -180,7 +180,7 @@ export default async function TodayPage() {
               { value: todayCount, label: "오늘", href: null },
               { value: weekCount, label: "이번 주", href: null },
               { value: monthCount, label: "이번 달", href: null },
-              { value: groupCount, label: "그룹", href: "/trail" },
+              { value: groupCount, label: "그룹", href: "/group" },
             ] as const
           ).map((stat) => {
             const inner = (
@@ -218,7 +218,7 @@ export default async function TodayPage() {
         flush={activeAssignments.length > 0}
         action={
           activeAssignments.length > 0 ? (
-            <Link href="/assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
+            <Link href="/group?tab=assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
               전체 보기 ›
             </Link>
           ) : undefined
