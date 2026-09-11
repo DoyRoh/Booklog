@@ -20,7 +20,7 @@ export default async function NewAssignmentPage({
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <Link href="/login" className="text-sm" style={{ color: "var(--point)" }}>
           로그인하기
         </Link>
@@ -54,7 +54,7 @@ export default async function NewAssignmentPage({
       : [];
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
       <Link
         href={selected.length === 1 ? `/teacher/assignments?group=${selected[0].id}` : "/teacher/assignments"}
         className="text-sm"

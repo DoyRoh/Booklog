@@ -24,7 +24,7 @@ export default async function TeacherBookDetailPage({
 
   if (!userId || !groupId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <Link href={groupId ? `/teacher/books?group=${groupId}` : "/teacher/books"} className="text-sm" style={{ color: "var(--point)" }}>
           ← 추천도서
         </Link>
@@ -47,7 +47,7 @@ export default async function TeacherBookDetailPage({
 
   if (!membership || !group || !book) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <Link href={`/teacher/books?group=${groupId}`} className="text-sm" style={{ color: "var(--ink-2)" }}>
           ← 추천도서
         </Link>
@@ -96,7 +96,7 @@ export default async function TeacherBookDetailPage({
   );
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
       <Link href={`/teacher/books?group=${groupId}`} className="text-sm" style={{ color: "var(--ink-2)" }}>
         ← 추천도서
       </Link>

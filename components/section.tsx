@@ -35,11 +35,11 @@ export default function Section({
       style={{ borderColor: "var(--rule)", background: "var(--card)", ...(id ? { scrollMarginTop: "68px" } : {}) }}
     >
       <header
-        className="flex items-start justify-between gap-3 px-[24px] pt-[24px] pb-[16px]"
+        className="flex items-start justify-between gap-3 px-[24px] pt-[18px] pb-[14px]"
         style={{ borderBottom: "1px solid rgba(38,54,43,0.08)" }}
       >
         <div className="min-w-0 flex-1">
-          <p className="d text-[20px] font-semibold leading-[26px]">{title}</p>
+          <p className="d text-[18px] font-semibold leading-[24px]">{title}</p>
           {description && (
             <p className="mt-[4px] text-[13px] leading-[19px]" style={{ color: "var(--ink-2)" }}>
               {description}
@@ -48,7 +48,7 @@ export default function Section({
         </div>
         {action && <div className="flex-none pt-[2px]">{action}</div>}
       </header>
-      <div className={flush ? "" : "px-[24px] py-[20px]"}>{children}</div>
+      <div className={flush ? "" : "px-[24px] py-[18px]"}>{children}</div>
     </section>
   );
 }

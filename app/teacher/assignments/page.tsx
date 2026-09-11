@@ -39,7 +39,7 @@ export default async function TeacherAssignmentsPage({
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <h1 className="d text-xl">숙제</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -136,7 +136,7 @@ export default async function TeacherAssignmentsPage({
   return (
     <div
       className="mx-auto max-w-[520px] px-5 pb-10"
-      style={{ paddingTop: showGroupTiles ? `${32 + OPERATOR_GROUP_BAR_HEIGHT}px` : "32px" }}
+      style={{ paddingTop: showGroupTiles ? `${20 + OPERATOR_GROUP_BAR_HEIGHT}px` : "20px" }}
     >
       <h1 className="d text-xl">숙제</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>

@@ -17,7 +17,7 @@ export default async function MorePage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <h1 className="d text-xl">프로필 · 설정</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -72,7 +72,7 @@ export default async function MorePage() {
     .filter((g): g is OperatorGroup => Boolean(g));
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
       <h1 className="d text-xl">프로필 · 설정</h1>
 
       <div

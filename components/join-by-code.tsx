@@ -86,7 +86,7 @@ export default function JoinByCode({ activeChildId }: { activeChildId: string | 
           placeholder="예: A1B2C3"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          className="flex-1 rounded-[14px] border px-4 py-2.5 text-sm outline-none"
+          className="min-w-0 flex-1 rounded-[14px] border px-4 py-2.5 text-sm outline-none"
           style={{ borderColor: "var(--rule)" }}
         />
         <button

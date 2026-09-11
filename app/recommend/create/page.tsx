@@ -147,7 +147,7 @@ export default function CreateGroupPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-[420px] flex-col px-5 pt-8 pb-10">
+    <div className="mx-auto flex min-h-screen max-w-[420px] flex-col px-5 pt-[20px] pb-[16px]">
       <div className="flex items-center justify-between">
         <h1 className="d text-xl">그룹 만들기</h1>
         <Link href="/recommend" className="text-sm" style={{ color: "var(--ink-2)" }}>

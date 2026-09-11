@@ -33,7 +33,7 @@ export default async function TeacherChildDetailPage({
 
   if (!userId || !groupId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <Link href={groupId ? `/teacher/children?group=${groupId}` : "/teacher/children"} className="text-sm" style={{ color: "var(--point)" }}>
           ← 아이들
         </Link>
@@ -58,7 +58,7 @@ export default async function TeacherChildDetailPage({
 
   if (!membership || !group || !child) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <Link href={`/teacher/children?group=${groupId}`} className="text-sm" style={{ color: "var(--ink-2)" }}>
           ← 아이들
         </Link>
@@ -112,7 +112,7 @@ export default async function TeacherChildDetailPage({
   const STATUS_LABEL = { done: "읽었어요", reading: "읽는 중", want: "읽고 싶어요" } as const;
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
       <Link href={`/teacher/children?group=${groupId}`} className="text-sm" style={{ color: "var(--ink-2)" }}>
         ← 아이들
       </Link>

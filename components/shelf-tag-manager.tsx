@@ -97,7 +97,7 @@ export default function ShelfTagManager({ childId }: { childId: string }) {
                   if (e.key === "Enter") rename(tag);
                   if (e.key === "Escape") setEditingId(null);
                 }}
-                className="flex-1 rounded-[14px] border px-3 py-1.5 text-sm outline-none"
+                className="min-w-0 flex-1 rounded-[14px] border px-3 py-1.5 text-sm outline-none"
                 style={{ borderColor: "var(--rule)" }}
               />
               <button

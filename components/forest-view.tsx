@@ -112,7 +112,7 @@ export default function ForestView({
         </p>
         <div
           className="mt-4 flex items-end justify-center gap-3 rounded-[var(--r)] px-4 pt-10 pb-6"
-          style={{ background: "#DCE6D0" }}
+          style={{ background: "var(--sprout-pale)" }}
         >
           <AvatarIllustration avatar={avatar} height={96} />
           {keepers.map((g, i) => (
@@ -199,7 +199,7 @@ export default function ForestView({
 
       <div
         className="relative mt-3 overflow-hidden rounded-[var(--r)] px-3 pt-10 pb-4"
-        style={{ background: "#DCE6D0" }}
+        style={{ background: "var(--sprout-pale)" }}
       >
         {Array.from({ length: skyStars }, (_, i) => (
           <Illustration

@@ -13,7 +13,7 @@ export default async function Forest3DPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <Link href="/login" className="text-sm" style={{ color: "var(--point)" }}>
           로그인하기
         </Link>
@@ -24,7 +24,7 @@ export default async function Forest3DPage() {
   const activeChild = await getActiveChild(supabase, userId);
   if (!activeChild) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <h1 className="d text-xl">우리 숲</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           아이를 등록하면 숲이 여기에 자라요.
@@ -36,7 +36,7 @@ export default async function Forest3DPage() {
   const { badges, groups, milestoneMemos } = await loadForestData(supabase, activeChild.id);
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
       <Link href="/forest" className="text-sm" style={{ color: "var(--ink-2)" }}>
         ← 우리 숲
       </Link>

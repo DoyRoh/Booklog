@@ -71,7 +71,7 @@ export default function BadgeArt({
         width: size,
         height: size,
         paddingBottom: px(10),
-        background: achieved ? "#DCE6D0" : "rgba(38,54,43,0.06)",
+        background: achieved ? "var(--sprout-pale)" : "rgba(38,54,43,0.06)",
         filter: achieved ? undefined : "grayscale(1)",
         opacity: achieved ? 1 : 0.55,
       }}

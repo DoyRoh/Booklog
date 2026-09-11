@@ -56,7 +56,7 @@ export default async function TeacherDashboardPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <h1 className="d text-xl">숲지기 대시보드</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -149,7 +149,7 @@ export default async function TeacherDashboardPage() {
   const dueTodayCount = urgent.filter((a) => a.due <= today).length;
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="text-xs" style={{ color: "var(--lantern)" }}>

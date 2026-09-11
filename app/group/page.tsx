@@ -34,7 +34,7 @@ export default async function GroupPage({
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <h1 className="d text-xl">그룹</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -46,7 +46,7 @@ export default async function GroupPage({
   const activeChild = await getActiveChild(supabase, userId);
   if (!activeChild) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
         <h1 className="d text-xl">그룹</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           아이를 등록하면 숲지기의 숙제·추천도서가 여기에 표시돼요. 위쪽 프로필에서 아이를 추가해 주세요.
@@ -68,7 +68,7 @@ export default async function GroupPage({
 
   if (myGroups.length === 0) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
         <div className="flex items-end gap-3">
           <Illustration name="bear-lantern" height={110} className="flex-none" />
           <p className="hand text-xl" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
