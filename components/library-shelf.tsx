@@ -234,9 +234,12 @@ export default function LibraryShelf({
     window.localStorage.setItem(STORAGE_KEY, next);
   }
 
-  // 실제 기록에 등장하는 책장(직접 나눈 것)과 그룹만 칩으로 뜬다. 직접
-  // 나눈 책장을 먼저, 그룹을 뒤에 둔다.
-  const shelfOptions = useMemo(() => {
+  // 실제 기록에 등장하는 것만 뜬다. 드롭다운 하나지만 안에서 두 묶음으로
+  // 나눠 보여준다 -- "내 책장"(직접 나눈 shelf_tags)과 "그룹"(학급·기관).
+  // 예전엔 한 목록에 섞여 있어서 "그룹 드롭다운인데 왜 책장이 나오냐"는
+  // 지적을 받았다. 드롭다운을 둘로 쪼개면 한 줄에 네 개가 되어 더 복잡해지므로
+  // optgroup 머리글로만 가른다.
+  const { tagOptions, groupOptions } = useMemo(() => {
     const tags = new Map<string, string>();
     const groups = new Map<string, string>();
     for (const book of books) {
@@ -245,10 +248,10 @@ export default function LibraryShelf({
         if (inst.groupId) groups.set(inst.groupId, inst.groupName ?? "그룹");
       }
     }
-    return [
-      ...Array.from(tags.entries()).map(([id, name]) => ({ key: `tag:${id}` as ShelfFilter, name })),
-      ...Array.from(groups.entries()).map(([id, name]) => ({ key: `group:${id}` as ShelfFilter, name })),
-    ];
+    return {
+      tagOptions: Array.from(tags.entries()).map(([id, name]) => ({ key: `tag:${id}` as ShelfFilter, name })),
+      groupOptions: Array.from(groups.entries()).map(([id, name]) => ({ key: `group:${id}` as ShelfFilter, name })),
+    };
   }, [books]);
 
   const deduped = useMemo<DedupedBook[]>(() => {
@@ -413,31 +416,44 @@ export default function LibraryShelf({
         </div>
       </div>
 
-      <div className="mt-[12px] flex items-center gap-2">
+      <div className="mt-[12px] flex items-center gap-1.5">
         <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
           {mode === "list" ? `${listRows.length}권` : `${filtered.length}권`}
         </span>
         <div className="h-px min-w-[4px] flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
         {/* 그룹·상태·정렬은 전부 작은 드롭다운 한 줄로 -- 칩 줄 두 개를 없앴다
             (사용자 피드백: 모바일에서 산만). 걸려 있으면 초록 테두리. */}
-        {shelfOptions.length > 0 && (
+        {tagOptions.length + groupOptions.length > 0 && (
           <select
             value={shelfFilter}
             onChange={(e) => setShelfFilter(e.target.value as ShelfFilter)}
-            aria-label="그룹 필터"
-            className="d w-[80px] flex-none truncate rounded-full border px-2 py-1 text-[12px] outline-none"
+            aria-label="책장·그룹 필터"
+            className="d w-[88px] flex-none truncate rounded-full border px-2 py-1 text-[12px] outline-none"
             style={{
               borderColor: shelfFilter === "all" ? "var(--rule)" : "var(--point)",
               background: shelfFilter === "all" ? "var(--card)" : "rgba(47,168,79,0.08)",
               color: shelfFilter === "all" ? "var(--ink-2)" : "var(--point-deep)",
             }}
           >
-            <option value="all">그룹</option>
-            {shelfOptions.map((option) => (
-              <option key={option.key} value={option.key}>
-                {option.name}
-              </option>
-            ))}
+            <option value="all">책장·그룹</option>
+            {tagOptions.length > 0 && (
+              <optgroup label="내 책장">
+                {tagOptions.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {groupOptions.length > 0 && (
+              <optgroup label="그룹">
+                {groupOptions.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         )}
         <select
