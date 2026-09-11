@@ -31,7 +31,7 @@ export default function GroupTiles({
 }) {
   const allActive = selectedId === "all";
   return (
-    <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-1" style={{ scrollbarWidth: "none" }}>
+    <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pt-2 pb-1" style={{ scrollbarWidth: "none" }}>
       {allLabel && (
         <Link href={basePath} aria-current={allActive ? "true" : undefined} className="flex w-16 flex-none flex-col items-center gap-1.5">
           <span

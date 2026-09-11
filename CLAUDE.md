@@ -1376,3 +1376,11 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **`components/bottom-nav.tsx`**: `useHomeworkBadge(role, childId, pathname)`가 부모 프로필일 때만 배지를 조회하고, "숙제" 탭(`/assignments`) 아이콘 오른쪽 위에 8px 점을 얹습니다 — 빨강(`--berry`)은 진행 중, 초록(`--point`)은 완료, 진행 중인 숙제가 없으면 점 자체가 없습니다. 화면을 옮길 때마다(pathname 변화) 다시 확인하고, `aria-label`에도 "숙제 · 오늘 숙제 있음/완료"를 붙였습니다.
 - **즉시 갱신**: 체크 토글(`components/read-toggles.tsx`의 `ReadCheck`)과 기록 고치기 저장/삭제(`components/record-edit-modal.tsx`), 새 기록 저장(`app/library/add/page.tsx`)은 전부 화면 이동 없이 끝나는 동작이라, 성공하면 `window.dispatchEvent(new Event("chaeksup:assignment-changed"))`를 쏘게 했습니다. `bottom-nav.tsx`가 이 이벤트를 들어서 숙제 탭으로 돌아가지 않아도 다음 화면 전환을 기다리지 않고 바로 점 색이 바뀝니다.
 - DB 스키마 변경 없음(기존 `assignment_completion` 뷰만 다시 읽음). build+lint로 확인했습니다.
+
+## 숙제 탭 마감일 그룹핑 + 책 줄에 표지 + 그룹 타일 배지 잘림 + ISBN 책 표지 수정 숨김 (사용자 스크린샷 피드백)
+
+- **`components/assignment-today.tsx` 그룹핑을 그룹명 → 마감일로**: "숙제 탭은 언제까지 해야 하는지 날짜로 묶는 게 좋겠다"는 요청으로, `LogGroup`의 묶음 기준을 `assignment.groupName`에서 `effectiveRange(assignment).end`(마감일)로 바꿨습니다. 헤딩은 "9/14까지"처럼 날짜, 그 밑 작은 글자(headingSub)에 그 마감일에 걸린 그룹 이름(들)과 숙제 개수를 적어 "이게 어느 그룹 숙제인지"가 여전히 보이게 했습니다. 마감이 이른 순으로 정렬됩니다. 각 숙제 줄 자체의 "9/11 ~9/14" 작은 날짜 칸(`LogRow`의 dateTop/dateBottom)은 그대로 남겨뒀습니다 — 마감일이 같아도 시작일이 다를 수 있어서, 정확한 기간은 줄마다 계속 보여줍니다.
+- **책 줄에 작은 표지**: "영유아는 그림으로 책을 먼저 알아본다"는 요청으로, 숙제의 책 줄(제목+작가만 있던 자리)에 `library-shelf.tsx` 목록 줄과 같은 44×32px 작은 표지(`h-11 w-8`, 없으면 `--paper` 색 빈 칸)를 표지→제목→작은 작가 순으로 왼쪽에 붙였습니다.
+- **그룹 타일 배지(빨간 숫자)가 위쪽이 잘려 보이던 버그**: `components/group-tiles.tsx`의 가로 스크롤 컨테이너가 `overflow-x-auto`만 걸려 있어서(overflow-y는 명시 안 함), CSS 스펙상 한쪽 축이 auto면 다른 쪽도 visible 대신 auto로 동작해 타일 오른쪽 위로 튀어나온 숫자 배지(`-top-1.5`) 윗부분이 컨테이너 상단에서 잘렸습니다. 컨테이너에 `pt-2`를 추가해 배지가 들어갈 여유 공간을 줬습니다(숲길·숙제 탭 둘 다 이 컴포넌트를 공유해서 함께 고쳐집니다).
+- **ISBN으로 이미 찾아진 책은 표지 수정 UI를 안 보여줌**: "책 isbn에 있는 책은 굳이 표지 사진 바꿀 필요 없다"는 지적으로, `app/library/add/page.tsx`의 표지 업로드 블록 조건을 `!bookId && title.trim()`에서 `!bookId && !isbn && title.trim()`으로 좁혔습니다. 카카오 검색으로 ISBN까지 찾아진 책(카탈로그엔 아직 없어 `bookId`는 null이지만 표지가 이미 있는 경우)은 표지가 멀쩡한데도 "사진 바꾸기/지우기"가 떠서 혼란스러웠던 문제였습니다 — 이제 정말 ISBN도 표지도 없는 전권 세트류에만 뜹니다.
+- DB 변경 없음. build+lint로 확인했습니다.

@@ -214,19 +214,31 @@ export default function AssignmentToday({
 }) {
   const [editing, setEditing] = useState<TodayBook | null>(null);
 
-  // 같은 그룹의 숙제끼리는 섹션으로 묶어, 그룹명을 카드마다 반복하지 않고
-  // 섹션 헤더 한 번만 보여준다(오늘 탭 요약의 그룹핑과 같은 패턴).
-  const sections: { groupName: string; assignments: TodayAssignment[] }[] = [];
+  // "언제까지 해야 하는지"가 가장 중요한 정보라, 그룹명 대신 마감일로
+  // 섹션을 묶는다(사용자 피드백 -- 날짜 중심으로 보고 싶다는 요청). 마감이
+  // 같은 숙제가 여러 그룹에 걸쳐 있을 수 있어, 그 밑에 작게 어느 그룹
+  // 숙제인지를 적는다. 마감이 이른 순으로 보여준다.
+  const sections: { due: string; groupNames: string[]; assignments: TodayAssignment[] }[] = [];
   for (const assignment of assignments) {
-    const section = sections.find((s) => s.groupName === assignment.groupName);
-    if (section) section.assignments.push(assignment);
-    else sections.push({ groupName: assignment.groupName, assignments: [assignment] });
+    const due = effectiveRange(assignment).end;
+    const section = sections.find((s) => s.due === due);
+    if (section) {
+      section.assignments.push(assignment);
+      if (!section.groupNames.includes(assignment.groupName)) section.groupNames.push(assignment.groupName);
+    } else {
+      sections.push({ due, groupNames: [assignment.groupName], assignments: [assignment] });
+    }
   }
+  sections.sort((a, b) => a.due.localeCompare(b.due));
 
   return (
     <div className="mt-4 flex flex-col gap-4">
       {sections.map((section) => (
-        <LogGroup key={section.groupName} heading={section.groupName} headingSub={`숙제 ${section.assignments.length}개`}>
+        <LogGroup
+          key={section.due}
+          heading={`${shortMd(section.due)}까지`}
+          headingSub={`${section.groupNames.join(" · ")} · 숙제 ${section.assignments.length}개`}
+        >
           {section.assignments.map((assignment, index) => {
             const completedCount = assignment.books.filter((book) => book.completed).length;
             const allDone = completedCount === assignment.books.length && assignment.books.length > 0;
@@ -258,24 +270,35 @@ export default function AssignmentToday({
                 {(assignment.books.length > 0 || assignment.missions.length > 0) && (
                   <div className="pr-4 pl-[4.25rem] pb-2">
                     {assignment.books.map((book, bookIndex) => {
+                      // 표지를 작게 곁들인다 -- 영유아는 글자보다 그림으로
+                      // 책을 먼저 알아본다는 피드백. 표지 옆에 제목, 그 아래
+                      // 작가를 작게(library-shelf.tsx 목록 줄과 같은 44×32).
                       const label = (
-                        <span className="block min-w-0">
-                          <span
-                            className="block text-sm leading-snug"
-                            style={{ overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-                          >
-                            {book.title}
-                            {book.targetPage && !book.completed && (
-                              <span className="ml-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
-                                {book.targetPage}쪽까지
+                        <span className="flex min-w-0 items-center gap-2">
+                          {book.coverUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={book.coverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
+                          ) : (
+                            <span className="block h-11 w-8 flex-none rounded" style={{ background: "var(--paper)" }} />
+                          )}
+                          <span className="min-w-0 flex-1">
+                            <span
+                              className="block text-sm leading-snug"
+                              style={{ overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+                            >
+                              {book.title}
+                              {book.targetPage && !book.completed && (
+                                <span className="ml-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
+                                  {book.targetPage}쪽까지
+                                </span>
+                              )}
+                            </span>
+                            {book.author && (
+                              <span className="mt-0.5 block truncate text-xs leading-snug" style={{ color: "var(--ink-2)" }}>
+                                {book.author}
                               </span>
                             )}
                           </span>
-                          {book.author && (
-                            <span className="mt-0.5 block truncate text-xs leading-snug" style={{ color: "var(--ink-2)" }}>
-                              {book.author}
-                            </span>
-                          )}
                         </span>
                       );
                       return (

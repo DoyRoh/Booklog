@@ -561,8 +561,10 @@ function AddBookForm() {
             )}
 
             {/* 전권 세트처럼 ISBN 검색으로 표지를 못 찾은, 새로 등록하는
-                책만 사진으로 표지를 직접 올릴 수 있게 한다. */}
-            {!bookId && title.trim() && (
+                책만 사진으로 표지를 직접 올릴 수 있게 한다. ISBN으로 이미
+                찾아진 책(=카카오 표지가 이미 있음)은 굳이 바꿀 필요가
+                없어서 이 UI 자체를 안 보여준다. */}
+            {!bookId && !isbn && title.trim() && (
               <div className="mt-2">
                 <PhotoPicker
                   onSelect={pickCoverPhoto}
