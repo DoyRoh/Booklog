@@ -27,7 +27,12 @@ export default function Section({
     <section
       id={id}
       className={`overflow-hidden rounded-[var(--r)] border ${className}`}
-      style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+      // 앵커로 스크롤해 오는 경우(대시보드 스탯 칸 클릭 등) 브라우저 기본
+      // 동작은 이 섹션의 맨 위를 뷰포트 맨 위(y=0)에 맞추는데, 거기엔
+      // 상단바(TopBar, 52px 고정)가 항상 떠 있어 제목 줄이 그 밑에 가려
+      // 보인다("이상한 위치로 이동해"). id가 있는 섹션에만 상단바 높이만큼
+      // 여유(scroll-margin-top)를 줘서 제목이 상단바 바로 아래에 보이게 한다.
+      style={{ borderColor: "var(--rule)", background: "var(--card)", ...(id ? { scrollMarginTop: "68px" } : {}) }}
     >
       <header
         className="flex items-start justify-between gap-3 px-[24px] pt-[24px] pb-[16px]"
