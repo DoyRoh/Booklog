@@ -6,6 +6,7 @@ import TopBar from "@/components/top-bar";
 import OperatorGroupBar from "@/components/operator-group-bar";
 import ProfileProvider from "@/components/profile-context";
 import SplashScreen from "@/components/splash-screen";
+import ScrollToTop from "@/components/scroll-to-top";
 import "./globals.css";
 
 const gowunDodum = Gowun_Dodum({
@@ -63,6 +64,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <SplashScreen />
+        <ScrollToTop />
         <ProfileProvider>
           <TopBar />
           {/* 숲지기 아이들/추천도서/숙제 세 탭의 그룹 전환 바 -- TopBar처럼
