@@ -4,6 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
+import { effectiveRange } from "@/lib/assignment-period";
+import { shortMd } from "@/components/log-row";
+
+// 그룹 카드 안에는 마감이 이른 숙제 몇 개만 미리 보여준다(전부 다 보여주면
+// 숙제가 쌓일수록 카드가 한없이 길어진다는 지적) -- 나머지는 숙제 탭에서.
+const ASSIGNMENT_PREVIEW_LIMIT = 3;
 
 type GroupCard = {
   id: string;
@@ -11,7 +17,8 @@ type GroupCard = {
   type: string;
   memberCount: number;
   pendingCount: number;
-  assignmentProgress: { title: string; completed: number; total: number }[];
+  assignmentTotal: number;
+  assignmentProgress: { title: string; due: string; completed: number; total: number }[];
 };
 
 export default async function TeacherDashboardPage() {
@@ -39,13 +46,14 @@ export default async function TeacherDashboardPage() {
     name: string;
     type: string;
     members: { child_id: string | null; status: string }[] | null;
-    assignments: { id: string; title: string }[] | null;
+    assignments: { id: string; title: string; start_date: string | null; end_date: string | null; created_at: string }[] | null;
   };
   const [{ data: groupRows }, { data: completionRows }] = await Promise.all([
-    operatorGroupsQuery(supabase, userId, "members:group_members(child_id, status), assignments(id, title)").overrideTypes<
-      GroupRow[],
-      { merge: false }
-    >(),
+    operatorGroupsQuery(
+      supabase,
+      userId,
+      "members:group_members(child_id, status), assignments(id, title, start_date, end_date, created_at)"
+    ).overrideTypes<GroupRow[], { merge: false }>(),
     // security_invoker 뷰라 RLS상 내가 볼 수 있는 숙제 행만 온다.
     supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
   ]);
@@ -68,18 +76,31 @@ export default async function TeacherDashboardPage() {
     }
   }
 
-  const cards: GroupCard[] = groups.map((group) => ({
-    id: group.id,
-    name: group.name,
-    type: group.type,
-    memberCount: (group.members ?? []).filter((m) => m.status === "approved" && m.child_id).length,
-    pendingCount: (group.members ?? []).filter((m) => m.status === "pending").length,
-    assignmentProgress: (group.assignments ?? [])
-      .map((a) => {
+  const cards: GroupCard[] = groups.map((group) => {
+    const assignments = (group.assignments ?? []).map((a) => ({
+      id: a.id,
+      title: a.title,
+      startDate: a.start_date,
+      endDate: a.end_date,
+      createdAt: a.created_at,
+    }));
+    // 마감이 이른 순 -- 급한 숙제부터 보이게.
+    const sorted = [...assignments].sort(
+      (a, b) => effectiveRange(a).end.localeCompare(effectiveRange(b).end)
+    );
+    return {
+      id: group.id,
+      name: group.name,
+      type: group.type,
+      memberCount: (group.members ?? []).filter((m) => m.status === "approved" && m.child_id).length,
+      pendingCount: (group.members ?? []).filter((m) => m.status === "pending").length,
+      assignmentTotal: assignments.length,
+      assignmentProgress: sorted.slice(0, ASSIGNMENT_PREVIEW_LIMIT).map((a) => {
         const stat = completionByAssignment.get(a.id) ?? { completed: 0, total: 0 };
-        return { title: a.title, completed: stat.completed, total: stat.total };
+        return { title: a.title, due: effectiveRange(a).end, completed: stat.completed, total: stat.total };
       }),
-  }));
+    };
+  });
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -132,13 +153,27 @@ export default async function TeacherDashboardPage() {
               {card.assignmentProgress.length > 0 && (
                 <div className="mt-3 flex flex-col gap-1.5">
                   {card.assignmentProgress.map((assignment) => (
-                    <div key={assignment.title} className="flex items-center justify-between text-xs">
-                      <span style={{ color: "var(--ink)" }}>{assignment.title}</span>
-                      <span style={{ color: "var(--ink-2)" }}>
-                        {assignment.completed}/{assignment.total}명 완료
+                    <div key={assignment.title} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="min-w-0 truncate" style={{ color: "var(--ink)" }}>
+                        <span className="mr-1.5" style={{ color: "var(--ink-2)" }}>
+                          {shortMd(assignment.due)}까지
+                        </span>
+                        {assignment.title}
+                      </span>
+                      <span className="flex-none" style={{ color: "var(--ink-2)" }}>
+                        {assignment.completed}/{assignment.total}명
                       </span>
                     </div>
                   ))}
+                  {card.assignmentTotal > card.assignmentProgress.length && (
+                    <Link
+                      href="/teacher/assignments"
+                      className="d mt-0.5 text-xs"
+                      style={{ color: "var(--point-deep)" }}
+                    >
+                      나머지 {card.assignmentTotal - card.assignmentProgress.length}개 · 전체 보기 ›
+                    </Link>
+                  )}
                 </div>
               )}
             </div>

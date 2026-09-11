@@ -37,15 +37,18 @@ export default async function TeacherBooksPage() {
             그룹마다 책 서랍이 하나씩 있어요. 최근 {PREVIEW_LIMIT}권만 보이고, ‘관리’에서 전부 보고 고쳐요.
           </p>
         </div>
-        {/* 숲지기 한 명이 그룹을 여러 개 운영할 수 있다(7살 추천도서, 6살 추천도서 …).
-            빈 상태에서만 보이던 만들기 링크를 항상 보이는 버튼으로. */}
-        <Link
-          href="/recommend/create"
-          className="d flex-none rounded-[14px] px-3 py-2 text-sm text-white"
-          style={{ background: "var(--point)" }}
-        >
-          + 새 그룹
-        </Link>
+        {/* 숙제 탭의 "+ 숙제 만들기"와 짝을 맞춘다 -- 이 버튼은 책을 올리는
+            동작이고, 새 그룹을 만드는 건 대시보드의 점선 버튼으로 옮겼다
+            (같은 버튼이 "새 그룹"과 "책 올리기" 둘 다를 뜻해 헷갈린다는 지적). */}
+        {sections.length > 0 && (
+          <Link
+            href="/teacher/books/add"
+            className="d flex-none rounded-[14px] px-3 py-2 text-sm text-white"
+            style={{ background: "var(--point)" }}
+          >
+            + 추천도서 만들기
+          </Link>
+        )}
       </div>
 
       {sections.length === 0 ? (
