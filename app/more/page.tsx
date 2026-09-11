@@ -5,7 +5,6 @@ import { getActiveProfile } from "@/lib/active-profile";
 import SignOutButton from "@/components/sign-out-button";
 import ChildSwitcher from "@/components/child-switcher";
 import OperatorProfileSwitcher, { type OperatorGroup } from "@/components/operator-profile-switcher";
-import ShelfTagManager from "@/components/shelf-tag-manager";
 import Section from "@/components/section";
 import ProfileModeSwitch from "@/components/profile-mode-switch";
 
@@ -125,16 +124,6 @@ export default async function MorePage() {
           </div>
         </div>
       </Section>
-
-      {(profile?.active_child_id ?? children[0]?.id) && (
-        <Section
-          className="mt-5"
-          title="책장 나누기"
-          description={<>&quot;6살 책장&quot;, &quot;7살 책장&quot;처럼 나눠 둔 책장의 이름을 바꾸거나 지울 수 있어요.</>}
-        >
-          <ShelfTagManager childId={(profile?.active_child_id ?? children[0]?.id) as string} />
-        </Section>
-      )}
 
       {children.length > 0 && (
         <Section

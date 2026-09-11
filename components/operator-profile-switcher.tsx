@@ -36,6 +36,7 @@ export default function OperatorProfileSwitcher({
   operatorName: string | null;
 }) {
   const router = useRouter();
+  const [switching, setSwitching] = useState(false);
   const [currentAvatar, setCurrentAvatar] = useState<OperatorAvatar>(avatar ?? "bear");
   const [nameDraft, setNameDraft] = useState(operatorName ?? "");
   const [savedName, setSavedName] = useState(operatorName ?? "");
@@ -59,6 +60,16 @@ export default function OperatorProfileSwitcher({
     setEditingName(false);
     window.dispatchEvent(new Event("chaeksup:profile-changed"));
     router.refresh();
+  }
+
+  // 아이 프로필로 보는 중에 이 링크를 타면 숲지기 화면이 열리는데 하단 탭은
+  // 아이 탭이라 화면이 섞여 보였다(사용자 지적) -- 프로필을 먼저 바꾸고 간다.
+  async function goToDashboard() {
+    setSwitching(true);
+    const supabase = createClient();
+    await supabase.from("users").update({ active_profile_type: "operator" }).eq("id", userId);
+    window.dispatchEvent(new Event("chaeksup:profile-changed"));
+    router.push("/teacher");
   }
 
   async function pickAvatar(next: OperatorAvatar) {
@@ -179,18 +190,20 @@ export default function OperatorProfileSwitcher({
           늘어놓으면 "선택됨"이 여러 개 뜨는 이상한 목록이 된다(사용자 지적).
           그룹 전환은 고정 상단 그룹 바, 그룹 설정·추가는 대시보드의 "운영 중인
           그룹"이 맡는다. 여기엔 몇 개인지와 가는 길만 남긴다. */}
-      <Link
-        href="/teacher"
-        className="flex items-center justify-between gap-3 rounded-[14px] border px-4 py-2.5"
+      <button
+        type="button"
+        onClick={goToDashboard}
+        disabled={switching}
+        className="flex items-center justify-between gap-3 rounded-[14px] border px-4 py-2.5 disabled:opacity-60"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
         <span className="text-xs" style={{ color: "var(--ink-2)" }}>
           운영 중인 그룹 {groups.length}개
         </span>
         <span className="d flex-none text-xs" style={{ color: "var(--point-deep)" }}>
-          대시보드에서 관리 ›
+          {switching ? "전환 중…" : "대시보드에서 관리 ›"}
         </span>
-      </Link>
+      </button>
     </div>
   );
 }

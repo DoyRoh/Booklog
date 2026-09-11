@@ -12,10 +12,13 @@ export default function ShelfTagPicker({
   childId,
   value,
   onChange,
+  label = "어느 책장에 꽂을까요? (선택)",
 }: {
   childId: string;
   value: string | null;
   onChange: (tagId: string | null) => void;
+  /** 쓰는 자리마다 묻는 말이 달라서(기록 화면 vs 책장 정리) 바꿔 끼운다. */
+  label?: string;
 }) {
   const [tags, setTags] = useState<Tag[]>([]);
   const [adding, setAdding] = useState(false);
@@ -58,7 +61,7 @@ export default function ShelfTagPicker({
 
   return (
     <div>
-      <p className="d text-sm">어느 책장에 꽂을까요? (선택)</p>
+      <p className="d text-sm">{label}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         <button
           type="button"

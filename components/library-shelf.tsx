@@ -6,6 +6,10 @@ import { SearchIcon, SpineViewIcon, CoverViewIcon, ListViewIcon } from "@/compon
 import { MoreIcon } from "@/components/icons/tab-icons";
 import type { ReadingStatus } from "@/lib/reading-status";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
+import ShelfTagPicker from "@/components/shelf-tag-picker";
+import ShelfTagManager from "@/components/shelf-tag-manager";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 // 같은 책이 여러 그룹의 숙제로 겹쳐서 나올 수 있으므로(child_id+book_id
 // 기준으로 reading_records가 여러 개 있을 수 있다), 책 한 권 = ShelfBook
@@ -164,8 +168,55 @@ export default function LibraryShelf({
   const [shelfFilter, setShelfFilter] = useState<ShelfFilter>("all");
   const [sort, setSort] = useState<SortMode>("new");
   const [editing, setEditing] = useState<DedupedBook | null>(null);
-  // 우측 상단 "⋯" 메뉴(보기 방식 · 내보내기). 자주 안 바꾸는 설정이라 첫 줄에서 뺐다.
+  // 우측 상단 "⋯" 메뉴(보기 방식 · 책장 정리 · 내보내기). 자주 안 바꾸는 설정이라 첫 줄에서 뺐다.
   const [menuOpen, setMenuOpen] = useState(false);
+  // 책장 정리 모드 -- 책을 눌러 고르고 한 번에 어느 책장으로 옮긴다.
+  // 예전엔 책 한 권씩 기록 고치기를 열어 "더 남기기"를 펼쳐야만 책장을
+  // 정할 수 있어서, 30권을 나누려면 30번을 반복해야 했다.
+  const router = useRouter();
+  const [organizing, setOrganizing] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [moveTo, setMoveTo] = useState<string | null>(null);
+  const [moving, setMoving] = useState(false);
+  const [moveError, setMoveError] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+
+  function toggleSelected(recordId: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(recordId)) next.delete(recordId);
+      else next.add(recordId);
+      return next;
+    });
+  }
+
+  function endOrganizing() {
+    setOrganizing(false);
+    setSelected(new Set());
+    setMoveTo(null);
+    setMoveError(null);
+    setRenaming(false);
+  }
+
+  // 고른 기록들의 shelf_tag_id를 한 번에 바꾼다. null이면 책장에서 뺀다
+  // (기록 자체는 그대로 남는다 -- 책장은 분류일 뿐이라서).
+  async function moveSelected(tagId: string | null) {
+    if (selected.size === 0) return;
+    setMoving(true);
+    setMoveError(null);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("reading_records")
+      .update({ shelf_tag_id: tagId })
+      .in("id", Array.from(selected));
+    setMoving(false);
+    if (error) {
+      setMoveError(error.message);
+      return;
+    }
+    endOrganizing();
+    router.refresh();
+  }
 
   useEffect(() => {
     if (initialMode) return;
@@ -342,6 +393,17 @@ export default function LibraryShelf({
                   </button>
                 ))}
                 <div className="my-1" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrganizing(true);
+                    setMenuOpen(false);
+                  }}
+                  className="block w-full px-4 py-2 text-left text-sm"
+                  style={{ color: "var(--ink)" }}
+                >
+                  책장 정리
+                </button>
                 <Link href="/library/export" className="block px-4 py-2 text-sm" style={{ color: "var(--ink)" }} onClick={() => setMenuOpen(false)}>
                   내보내기
                 </Link>
@@ -411,6 +473,90 @@ export default function LibraryShelf({
         </select>
       </div>
 
+      {/* 책장 정리 -- ⋯ 메뉴에서 켠다. 책을 눌러 고르고 한 번에 옮긴다.
+          책장 이름을 고치거나 지우는 것도 여기서(예전엔 프로필·설정에 있었는데,
+          정작 책을 나누는 화면은 책장 탭이라 여기로 옮겼다). */}
+      {organizing && (
+        <div
+          className="mt-[12px] rounded-[var(--r)] border p-4"
+          style={{ borderColor: "var(--point)", background: "var(--card)" }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="d min-w-0 flex-1 truncate text-sm" style={{ color: "var(--point-deep)" }}>
+              책장 정리
+            </p>
+            <div className="flex flex-none items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const ids = (mode === "list" ? listRows : filtered).map((b) => b.recordId);
+                  setSelected((prev) => (prev.size === ids.length ? new Set() : new Set(ids)));
+                }}
+                className="d rounded-[14px] border px-3 py-1.5 text-xs"
+                style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
+              >
+                {selected.size === (mode === "list" ? listRows.length : filtered.length) && selected.size > 0
+                  ? "선택 해제"
+                  : "모두 선택"}
+              </button>
+              <button
+                type="button"
+                onClick={endOrganizing}
+                className="d rounded-[14px] border px-3 py-1.5 text-xs"
+                style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
+              >
+                끝내기
+              </button>
+            </div>
+          </div>
+
+          <p className="mt-3 text-xs" style={{ color: "var(--ink-2)" }}>
+            {selected.size > 0 ? `${selected.size}권 선택 · ` : ""}책을 눌러 고른 다음, 넣을 책장을 고르세요.
+          </p>
+          <div className="mt-2">
+            <ShelfTagPicker childId={childId} value={moveTo} onChange={setMoveTo} label="어느 책장에 넣을까요?" />
+          </div>
+
+          {moveError && (
+            <p className="mt-2 text-xs" style={{ color: "var(--berry)" }}>
+              {moveError}
+            </p>
+          )}
+
+          {/* 버튼은 하나 -- 고른 책장이 "없음"이면 그대로 책장에서 빼는 동작이라
+              "빼기" 버튼을 따로 두면 같은 일을 두 군데서 하게 된다. */}
+          <button
+            type="button"
+            disabled={selected.size === 0 || moving}
+            onClick={() => moveSelected(moveTo)}
+            className="d mt-3 w-full rounded-[14px] py-2.5 text-sm text-white disabled:opacity-40"
+            style={{ background: "var(--point)" }}
+          >
+            {moving
+              ? "옮기는 중…"
+              : moveTo
+                ? `선택한 ${selected.size}권 넣기`
+                : `선택한 ${selected.size}권 책장에서 빼기`}
+          </button>
+
+          <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}>
+            <button
+              type="button"
+              onClick={() => setRenaming((v) => !v)}
+              className="d text-xs"
+              style={{ color: "var(--point-deep)" }}
+            >
+              책장 이름 고치기 · 지우기 {renaming ? "▴" : "▾"}
+            </button>
+            {renaming && (
+              <div className="mt-2">
+                <ShelfTagManager childId={childId} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {(mode === "list" ? listRows.length === 0 : filtered.length === 0) && (
         <p className="mt-[16px] text-sm" style={{ color: "var(--ink-2)" }}>
           검색 결과가 없어요.
@@ -427,13 +573,17 @@ export default function LibraryShelf({
                   <button
                     key={book.bookId}
                     type="button"
-                    onClick={() => setEditing(book)}
+                    onClick={() => (organizing ? toggleSelected(book.recordId) : setEditing(book))}
                     className="aspect-[3/4] overflow-hidden rounded-[8px] text-left"
                     style={{
                       background: "var(--card)",
                       border: "1px solid var(--rule)",
-                      boxShadow: "0 4px 6px rgba(38,54,43,0.2)",
+                      boxShadow: selected.has(book.recordId)
+                        ? "0 0 0 3px var(--point), 0 4px 6px rgba(38,54,43,0.2)"
+                        : "0 4px 6px rgba(38,54,43,0.2)",
+                      opacity: organizing && !selected.has(book.recordId) ? 0.55 : 1,
                     }}
+                    aria-pressed={organizing ? selected.has(book.recordId) : undefined}
                     aria-label={book.title}
                   >
                     {book.coverUrl ? (
@@ -485,13 +635,17 @@ export default function LibraryShelf({
                   <button
                     key={book.bookId}
                     type="button"
-                    onClick={() => setEditing(book)}
+                    onClick={() => (organizing ? toggleSelected(book.recordId) : setEditing(book))}
                     className="flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2"
                     style={{
                       height: spineHeight(book.title),
                       background: spineColor(book.title),
-                      boxShadow: "inset -2px 0 0 rgba(0,0,0,0.12)",
+                      boxShadow: selected.has(book.recordId)
+                        ? "0 0 0 3px var(--point)"
+                        : "inset -2px 0 0 rgba(0,0,0,0.12)",
+                      opacity: organizing && !selected.has(book.recordId) ? 0.55 : 1,
                     }}
+                    aria-pressed={organizing ? selected.has(book.recordId) : undefined}
                     title={book.title}
                   >
                     <span
@@ -535,8 +689,10 @@ export default function LibraryShelf({
                     {index > 0 && <div className="mx-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />}
                     <button
                       type="button"
-                      onClick={() => setEditing(row)}
+                      onClick={() => (organizing ? toggleSelected(row.recordId) : setEditing(row))}
                       className="flex w-full items-center gap-2.5 px-4 py-2 text-left"
+                      aria-pressed={organizing ? selected.has(row.recordId) : undefined}
+                      style={selected.has(row.recordId) ? { background: "rgba(47,168,79,0.10)" } : undefined}
                     >
                       {row.coverUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
