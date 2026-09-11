@@ -1414,3 +1414,9 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **`/teacher/assignments/new`**: `?groups=`(여러 그룹) 또는 기존 `?group=`(그룹 하나, 하위 호환) 둘 다 받습니다. 그룹을 하나도 못 정했으면(운영 그룹이 둘 이상인데 파라미터가 없음) 새 다중 선택 화면을 보여주고, 정해졌으면 `CreateAssignment`에 **`groupIds: string[]`**(기존엔 `groupId: string` 하나)를 넘깁니다. `CreateAssignment.submit()`은 이제 그룹마다 자기 id의 `assignments` 행을 하나씩 만들고(제목·설명·마감일은 전부 동일), `assignment_books`/`assignment_missions`도 그룹 수만큼 복제해 넣습니다(왕복은 그룹 수와 무관하게 여전히 3번 — 배열로 한 번에 insert). 그룹을 딱 하나 골랐을 때만 "추천도서에서 고르기"가 뜹니다(여러 그룹을 동시에 낼 땐 그룹마다 추천도서 서랍이 달라 후보를 하나로 합칠 수 없어서 — "책 찾아 넣기"는 그룹과 무관해 그대로 씁니다).
 - **`/teacher/books/add`**: 같은 패턴으로 `?groups=`를 받아 고른 그룹 전부의 `book_list_id`를 모으고, `AddBookToList`에 **`bookListIds: string[]`**(기존 `bookListId: string` 하나)를 넘깁니다. `AddBookToList.confirmAdd()`가 책 하나를 확정하면(카탈로그 등록/재사용은 한 번) `book_list_items`에 목록 수만큼 **upsert**(`onConflict: "book_list_id,book_id", ignoreDuplicates: true` — 마이그레이션 0014의 유니크 제약을 그대로 이용, 이미 있는 그룹엔 조용히 건너뜀)로 한 번에 넣습니다. 그룹 상세 화면(`/recommend/[groupId]`)의 단일 그룹 호출부는 `bookListIds={[bookListId]}`로만 바꿔 동작이 그대로입니다.
 - DB 변경 없음(기존 마이그레이션 0014의 유니크 제약을 재사용). build+lint로 확인했습니다.
+
+## 숙제·추천도서 탭 머리글 — 설명글이 버튼과 한 줄을 다투던 것 (사용자 지적: "설명글 배치 좀 가로 맞춰서")
+
+숙제 탭("+ 숙제")과 추천도서 탭("+ 추천도서 만들기") 머리글이 둘 다 "제목+설명글"과 오른쪽 버튼을 한 줄(`items-start justify-between`)에 나란히 두는 구조였습니다. 버튼은 `flex-none`이라 항상 제 너비를 다 차지하고, 그만큼 왼쪽 설명글 칸이 좁아지는데 — 버튼 라벨이 짧은 숙제 탭("+ 숙제 만들기", 7글자)은 설명글이 2줄로 끝났지만, 라벨이 더 긴 추천도서 탭("+ 추천도서 만들기", 9글자)은 같은 설명글 길이인데도 3줄로 밀려서 두 화면이 다르게 보였습니다.
+
+`app/teacher/books/page.tsx`, `app/teacher/assignments/page.tsx` 둘 다 구조를 바꿨습니다 — **제목과 버튼만 한 줄**(`items-center justify-between`)에 두고, **설명글은 그 아래 줄에 전체 너비로** 뺐습니다. 이제 설명글이 버튼과 폭을 다투지 않아 두 탭에서 항상 같은 줄 수로 접히고, 버튼 라벨 길이가 바뀌어도 설명글 레이아웃이 흔들리지 않습니다. DB 변경 없음. build+lint로 확인했습니다.

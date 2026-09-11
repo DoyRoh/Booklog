@@ -126,14 +126,10 @@ export default async function TeacherAssignmentsPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="d text-xl">숙제</h1>
-          <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-            추천도서 서랍에서 골라 기간을 정해 낸 숙제예요. 오른쪽은 몇 명이 끝냈는지, 누르면 아이별로 자세히
-            보여요.
-          </p>
-        </div>
+      {/* 제목·버튼을 한 줄에, 설명글은 그 아래 전체 너비로 -- 추천도서 탭과
+          같은 이유("설명글 배치 좀 가로 맞춰서" 피드백)로 통일한다. */}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="d text-xl">숙제</h1>
         {groups.length > 0 && (
           <Link
             href="/teacher/assignments/new"
@@ -144,6 +140,10 @@ export default async function TeacherAssignmentsPage() {
           </Link>
         )}
       </div>
+      <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+        추천도서 서랍에서 골라 기간을 정해 낸 숙제예요. 오른쪽은 몇 명이 끝냈는지, 누르면 아이별로 자세히
+        보여요.
+      </p>
 
       {groups.length === 0 ? (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>

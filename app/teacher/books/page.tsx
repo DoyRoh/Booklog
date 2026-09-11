@@ -30,13 +30,11 @@ export default async function TeacherBooksPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="d text-xl">추천도서</h1>
-          <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-            그룹마다 책 서랍이 하나씩 있어요. 최근 {PREVIEW_LIMIT}권만 보이고, ‘관리’에서 전부 보고 고쳐요.
-          </p>
-        </div>
+      {/* 제목·버튼을 한 줄에, 설명글은 그 아래 전체 너비로 -- 버튼과 같은
+          줄에 두면 버튼 라벨이 길어질수록 설명글 칸이 좁아져 줄바꿈이
+          늘어난다("설명글 배치 좀 가로 맞춰서" 피드백). */}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="d text-xl">추천도서</h1>
         {/* 숙제 탭의 "+ 숙제 만들기"와 짝을 맞춘다 -- 이 버튼은 책을 올리는
             동작이고, 새 그룹을 만드는 건 대시보드의 점선 버튼으로 옮겼다
             (같은 버튼이 "새 그룹"과 "책 올리기" 둘 다를 뜻해 헷갈린다는 지적). */}
@@ -50,6 +48,9 @@ export default async function TeacherBooksPage() {
           </Link>
         )}
       </div>
+      <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+        그룹마다 책 서랍이 하나씩 있어요. 최근 {PREVIEW_LIMIT}권만 보이고, ‘관리’에서 전부 보고 고쳐요.
+      </p>
 
       {sections.length === 0 ? (
         <div className="mt-6">
