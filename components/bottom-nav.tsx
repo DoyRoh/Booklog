@@ -8,6 +8,7 @@ import { isChromeHidden } from "@/lib/nav";
 import {
   TodayIcon,
   LibraryIcon,
+  AddIcon,
   RecommendIcon,
   DashboardIcon,
   AssignmentIcon,
@@ -20,9 +21,13 @@ import {
 // 탭('숲길')으로 합쳤다 -- 그룹을 고르면 그 그룹의 추천도서와 숙제를 한
 // 화면에서 같이 본다(app/assignments). 아직 안 속한 그룹을 찾아
 // 팔로우/가입하는 기능은 더보기 화면으로 옮겼다.
+// '추가'는 책장 바로 다음에 둔 빠른 진입점 -- 기록 남기기(/library/add)로
+// 바로 가서 책을 찾아 넣으면 그 즉시 책장에 꽂힌다(사용자 요청: "책장에
+// 책 꽂는 메뉴도 하나 추가하자").
 const PARENT_TABS = [
   { href: "/today", label: "오늘", Icon: TodayIcon },
   { href: "/library", label: "책장", Icon: LibraryIcon },
+  { href: "/library/add", label: "추가", Icon: AddIcon },
   { href: "/trail", label: "숲길", Icon: RecommendIcon },
   { href: "/assignments", label: "숙제", Icon: AssignmentIcon },
 ] as const;
@@ -121,7 +126,7 @@ export default function BottomNav() {
             href={href}
             aria-label={label}
             aria-current={active ? "page" : undefined}
-            className="flex h-[48px] items-center gap-[6px] rounded-full px-[16px] transition-colors"
+            className="flex h-[48px] items-center gap-[6px] rounded-full px-[13px] transition-colors"
             style={{
               color: active ? "var(--point-deep)" : "var(--ink-2)",
               background: active ? "rgba(47,168,79,0.14)" : "transparent",

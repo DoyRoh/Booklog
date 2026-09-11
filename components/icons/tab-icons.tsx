@@ -116,6 +116,16 @@ export function BadgeIcon(props: IconProps) {
   );
 }
 
+// 하단탭 "추가" -- 책장에 책을 바로 꽂는 빠른 진입점(원 안의 +).
+export function AddIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 8v8M8 12h8" />
+    </IconBase>
+  );
+}
+
 // 상단바 "우리 숲" -- 전나무 한 그루(손그림 느낌의 살짝 기운 삼각형 두 단 + 기둥).
 export function TreeIcon(props: IconProps) {
   return (
