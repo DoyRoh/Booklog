@@ -32,7 +32,7 @@ export default function BrowseGroups({
 
   async function follow(groupId: string) {
     if (!activeChildId) {
-      setError("먼저 더보기에서 아이를 등록해 주세요.");
+      setError("먼저 위쪽 프로필에서 아이를 등록해 주세요.");
       return;
     }
     // state 업데이트를 기다리지 않고 동기적으로 막아서, 버튼을 빠르게

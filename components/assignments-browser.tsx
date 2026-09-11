@@ -90,7 +90,7 @@ export default function AssignmentsBrowser({
           )}
 
           <Link
-            href="/assignments/past"
+            href="/group/past"
             className="d mt-8 block rounded-[14px] border py-3 text-center text-sm"
             style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
           >

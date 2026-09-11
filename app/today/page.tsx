@@ -53,7 +53,7 @@ export default async function TodayPage() {
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">오늘</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-          아이를 등록하면 오늘의 숙제가 여기에 표시돼요. 더보기에서 아이를 추가해 주세요.
+          아이를 등록하면 오늘의 숙제가 여기에 표시돼요. 위쪽 프로필에서 아이를 추가해 주세요.
         </p>
       </div>
     );
@@ -218,7 +218,7 @@ export default async function TodayPage() {
         flush={activeAssignments.length > 0}
         action={
           activeAssignments.length > 0 ? (
-            <Link href="/group?tab=assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
+            <Link href="/group" className="text-xs" style={{ color: "var(--ink-2)" }}>
               전체 보기 ›
             </Link>
           ) : undefined

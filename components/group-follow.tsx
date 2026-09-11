@@ -29,7 +29,7 @@ export default function GroupFollow({
 
   async function run(action: "follow" | "leave") {
     if (!activeChildId) {
-      setError("먼저 더보기에서 아이를 등록해 주세요.");
+      setError("먼저 위쪽 프로필에서 아이를 등록해 주세요.");
       return;
     }
     if (busyRef.current) return;

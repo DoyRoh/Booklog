@@ -151,8 +151,8 @@ export default async function GroupDetailPage({
       {!isOperator && !isChildMember && (
         <p className="mt-3 text-xs" style={{ color: "var(--ink-2)" }}>
           {group.join_policy === "open"
-            ? "팔로우하면 숲길 탭에 이 그룹이 생기고, 책갈피로 내 책장에 꽂을 수 있어요."
-            : "초대 코드로 참가하면 숲길 탭에 이 그룹이 생기고, 숙제도 받아요."}
+            ? "팔로우하면 그룹 탭에 이 그룹이 생기고, 책갈피로 내 책장에 꽂을 수 있어요."
+            : "초대 코드로 참가하면 그룹 탭에 이 그룹이 생기고, 숙제도 받아요."}
         </p>
       )}
 

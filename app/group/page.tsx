@@ -25,7 +25,9 @@ export default async function GroupPage({
   searchParams: Promise<{ group?: string; tab?: string }>;
 }) {
   const { group: groupParam, tab: tabParam } = await searchParams;
-  const tab: SubTab = tabParam === "assignments" ? "assignments" : "books";
+  // 기본은 숙제 -- 그룹 탭에 들어오는 가장 흔한 이유가 "오늘 뭐 해야 하지"라서
+  // 할 일을 먼저 보여주고, 둘러보기(추천도서)는 한 번 더 눌러서 본다.
+  const tab: SubTab = tabParam === "books" ? "books" : "assignments";
   const supabase = await createClient();
   const userId = await getVerifiedUserId();
 
@@ -46,7 +48,7 @@ export default async function GroupPage({
       <div className="mx-auto max-w-[520px] px-5 pt-8">
         <h1 className="d text-xl">그룹</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-          아이를 등록하면 숲지기의 추천도서·숙제가 여기에 표시돼요. 더보기에서 아이를 추가해 주세요.
+          아이를 등록하면 숲지기의 숙제·추천도서가 여기에 표시돼요. 위쪽 프로필에서 아이를 추가해 주세요.
         </p>
       </div>
     );
@@ -134,8 +136,8 @@ export default async function GroupPage({
       <div className="flex gap-2">
         {(
           [
-            { key: "books", label: "추천도서" },
             { key: "assignments", label: "숙제" },
+            { key: "books", label: "추천도서" },
           ] as const
         ).map((t) => {
           const active = t.key === tab;

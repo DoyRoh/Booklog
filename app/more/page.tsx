@@ -18,7 +18,7 @@ export default async function MorePage() {
   if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
-        <h1 className="d text-xl">더보기</h1>
+        <h1 className="d text-xl">프로필 · 설정</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
         </Link>
@@ -158,8 +158,8 @@ export default async function MorePage() {
           title="그룹 찾기 · 참가"
           description={
             <>
-              아이는 그룹에 <b>참가</b>해요 — 초대 코드로 학급이나 가족 그룹에 들어가거나, 도서관·크리에이터의 숲길을
-              팔로우해요. 그룹을 직접 만들어 운영하려면 위의 숲지기 프로필에서 시작해요.
+              아이는 그룹에 <b>참가</b>해요 — 초대 코드로 학급이나 가족 그룹에 들어가거나, 도서관·크리에이터의
+              추천도서를 팔로우해요. 그룹을 직접 만들어 운영하려면 위의 숲지기 프로필에서 시작해요.
             </>
           }
         >

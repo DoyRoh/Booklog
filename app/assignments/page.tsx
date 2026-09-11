@@ -11,5 +11,5 @@ export default async function AssignmentsRedirectPage({
   searchParams: Promise<{ group?: string }>;
 }) {
   const { group } = await searchParams;
-  redirect(`/group?tab=assignments${group ? `&group=${group}` : ""}`);
+  redirect(`/group${group ? `?group=${group}` : ""}`);
 }

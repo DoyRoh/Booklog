@@ -24,7 +24,7 @@ export default async function RecommendPage() {
   if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
-        <h1 className="d text-xl">추천</h1>
+        <h1 className="d text-xl">그룹 찾기</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
         </Link>
@@ -103,19 +103,22 @@ export default async function RecommendPage() {
           그룹을 만들 수 없고(찾기·참가만), 숲지기가 되려면 더보기 → 숲지기
           프로필에서 시작한다 -- 아이 화면과 숲지기 화면에 같은 버튼이 있어
           "누가 그룹을 만드는 건지" 헷갈리던 걸 정리. */}
-      {activeProfile.type === "operator" && (
-        <div className="flex justify-end">
+      {/* 이 화면엔 제목이 아예 없어서 어디로 들어온 건지 알기 어려웠다 --
+          더보기·그룹 타일의 "+"가 부르는 이름("그룹 찾기")과 맞춘다. */}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="d text-xl">그룹 찾기</h1>
+        {activeProfile.type === "operator" && (
           <Link
             href="/recommend/create"
-            className="d rounded-[14px] px-4 py-2 text-sm text-white"
+            className="d flex-none rounded-[14px] px-4 py-2 text-sm text-white"
             style={{ background: "var(--point)" }}
           >
             + 그룹 만들기
           </Link>
-        </div>
-      )}
+        )}
+      </div>
 
-      <Section className={activeProfile.type === "operator" ? "mt-5" : ""} title="내 그룹" flush={myGroups.length > 0}>
+      <Section className="mt-5" title="내 그룹" flush={myGroups.length > 0}>
         {myGroups.length === 0 ? (
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 속한 그룹이 없어요. 아래에서 둘러보거나 초대 코드로 참가해 보세요.
