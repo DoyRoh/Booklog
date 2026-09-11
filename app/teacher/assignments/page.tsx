@@ -106,6 +106,24 @@ export default async function TeacherAssignmentsPage() {
     };
   });
 
+  // "몇 개인지, 언제까지인지"가 한눈에 보여야 한다는 요청 -- 그룹별이
+  // 아니라 아이 쪽 숙제 탭(assignment-today.tsx)과 같은 기준인 마감일로
+  // 묶는다. 한 마감일에 여러 그룹의 숙제가 걸릴 수 있어 headingSub에
+  // 그 그룹 이름들을 적어 어디 숙제인지는 계속 보이게 한다.
+  type DueSection = { due: string; groupNames: string[]; cards: AssignmentCard[] };
+  const sections: DueSection[] = [];
+  for (const card of cards) {
+    const due = effectiveRange(card).end;
+    const section = sections.find((s) => s.due === due);
+    if (section) {
+      section.cards.push(card);
+      if (!section.groupNames.includes(card.groupName)) section.groupNames.push(card.groupName);
+    } else {
+      sections.push({ due, groupNames: [card.groupName], cards: [card] });
+    }
+  }
+  sections.sort((a, b) => a.due.localeCompare(b.due));
+
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
       <div className="flex items-start justify-between gap-3">
@@ -131,17 +149,19 @@ export default async function TeacherAssignmentsPage() {
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
           아직 운영하는 그룹이 없어요.
         </p>
+      ) : sections.length === 0 ? (
+        <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
+          아직 낸 숙제가 없어요.
+        </p>
       ) : (
         <div className="mt-6 flex flex-col gap-4">
-          {groups.map((group) => {
-            const groupCards = cards.filter((c) => c.groupId === group.id);
-            const rows: ManagedRow[] = groupCards.map((card) => {
+          {sections.map((section) => {
+            const rows: ManagedRow[] = section.cards.map((card) => {
               const allDone = card.total > 0 && card.completed === card.total;
               return {
                 id: card.id,
                 href: `/teacher/assignments/${card.id}`,
                 dateTop: shortMd(effectiveRange(card).start),
-                dateBottom: `~${shortMd(effectiveRange(card).end)}`,
                 chip: missionChip(card.missions),
                 title: card.title,
                 titleBold: true,
@@ -152,10 +172,10 @@ export default async function TeacherAssignmentsPage() {
             });
             return (
               <ManagedLogList
-                key={group.id}
-                heading={group.name}
-                headingSub={`숙제 ${groupCards.length}개`}
-                addHref={`/teacher/assignments/new?group=${group.id}`}
+                key={section.due}
+                heading={`${shortMd(section.due)}까지`}
+                headingSub={`${section.groupNames.join(" · ")} · 숙제 ${section.cards.length}개`}
+                addHref="/teacher/assignments/new"
                 addLabel="+ 숙제 만들기"
                 rows={rows}
                 emptyText="아직 낸 숙제가 없어요."

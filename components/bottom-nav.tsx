@@ -132,6 +132,10 @@ export default function BottomNav() {
   // 역할 조회가 끝나기 전(role===null)에는 부모 탭을 기본값으로 보여준다 --
   // 로그인 직후 탭이 매번 깜빡이지 않도록.
   const tabs = role === "operator" ? OPERATOR_TABS : PARENT_TABS;
+  // 숲지기 탭은 아이콘만으로 대시보드/아이들/추천도서/숙제를 구분하기
+  // 어렵다는 지적("정신없네") -- 4개뿐이라 이름을 전부 상시 펼쳐도 되고,
+  // 그만큼 한 탭당 여백/글자를 줄여 가장 좁은 폰(360px)에서도 안 넘치게 한다.
+  const alwaysShowLabels = role === "operator";
 
   // 숲지기 탭은 /teacher 아래에 전부 있어서 단순 startsWith로는 "대시보드"
   // (/teacher)가 어느 화면에서나 켜져 보였다. 경로가 맞는 탭 중 가장 긴
@@ -164,7 +168,11 @@ export default function BottomNav() {
             href={href}
             aria-label={showHomeworkDot ? `${label} · ${homeworkBadge === "done" ? "오늘 숙제 완료" : "오늘 숙제 있음"}` : label}
             aria-current={active ? "page" : undefined}
-            className="flex h-[48px] items-center gap-[6px] rounded-full px-[12px] transition-colors"
+            className={
+              alwaysShowLabels
+                ? "flex h-[48px] items-center gap-[2px] rounded-full px-[6px] transition-colors"
+                : "flex h-[48px] items-center gap-[6px] rounded-full px-[12px] transition-colors"
+            }
             style={{
               color: isSprout ? "var(--sprout-deep)" : active ? "var(--point-deep)" : "var(--ink-2)",
               // "추가"는 다른 탭과 달리 항상 연두 알약으로 눈에 띄어야 한다
@@ -192,9 +200,13 @@ export default function BottomNav() {
               )}
             </span>
             {/* 켜진 탭만 이름을 옆에 펼친다 -- 아이콘만으로도 어디인지 읽히게.
-                "추가"는 항상 CTA로 보여야 하니 이름도 항상 펼쳐 둔다. */}
-            {(active || isSprout) && (
-              <span className="d whitespace-nowrap text-[13px] leading-none" style={{ fontFamily: "var(--disp)" }}>
+                "추가"는 항상 CTA로 보여야 하니 이름도 항상 펼쳐 두고, 숲지기
+                탭은 4개뿐이라 전부 항상 펼쳐서 아이콘만으론 헷갈리던 문제를 없앤다. */}
+            {(active || isSprout || alwaysShowLabels) && (
+              <span
+                className={`d whitespace-nowrap leading-none ${alwaysShowLabels ? "text-[12px]" : "text-[13px]"}`}
+                style={{ fontFamily: "var(--disp)" }}
+              >
                 {label}
               </span>
             )}
