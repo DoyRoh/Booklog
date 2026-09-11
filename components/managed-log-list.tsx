@@ -101,9 +101,16 @@ export default function ManagedLogList({
       headingSub={headingSub}
       headingRight={
         preview ? (
-          <Link href={preview.href} className="d" style={{ color: "var(--point)" }}>
-            관리 ›
-          </Link>
+          // 미리보기 모드도 "관리"만 있으면 책을 어디서 추가하는지 안 보인다는
+          // 피드백 -- "+ 책 추가"를 바로 옆에 같이 보여준다.
+          <span className="flex items-center gap-3">
+            <Link href={addHref} className="d" style={{ color: "var(--point)" }}>
+              {addLabel}
+            </Link>
+            <Link href={preview.href} className="d" style={{ color: "var(--ink-2)" }}>
+              관리 ›
+            </Link>
+          </span>
         ) : (
         <span className="flex items-center gap-3">
           {!selecting && (
