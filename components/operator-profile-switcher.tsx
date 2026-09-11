@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import type { OperatorAvatar } from "@/lib/active-profile";
 
 export type OperatorGroup = {
@@ -14,11 +13,12 @@ export type OperatorGroup = {
   operatorRole: "teacher" | "admin" | "curator";
 };
 
-// 더보기의 "프로필" 목록 중 숲지기(그룹을 운영하는 사람 -- 선생님·가족·기관·인플루언서) 프로필 부분.
-// 계정 하나가 아이 프로필과 동시에 가질 수 있는 다른 종류의 프로필이라,
-// ChildSwitcher와 나란히 놓고 쓴다. 그룹을 고르면 active_profile_type을
-// "operator"로 바꾸고 숲지기 대시보드로 이동한다 -- 여러 그룹을 운영해도
-// 대시보드가 전부 한 화면에 모아서 보여주므로 목적지는 하나뿐이다.
+// 더보기의 "프로필" 중 숲지기(그룹을 운영하는 사람 -- 선생님·가족·기관·인플루언서)
+// 프로필 부분. 계정 하나가 아이 프로필과 동시에 가질 수 있는 다른 종류의
+// 프로필이라 ChildSwitcher와 나란히 놓는다. 여기서 하는 일은 **숲지기 프로필
+// 자체를 꾸미는 것**뿐이다 -- 이름과 얼굴(곰·백로). 아이 <-> 숲지기 전환은
+// 위쪽 ProfileModeSwitch가, 그룹 고르기·설정·추가는 고정 상단 그룹 바와
+// 대시보드가 맡는다.
 const AVATARS: { id: OperatorAvatar; label: string; hint: string }[] = [
   { id: "bear", label: "곰", hint: "등불로 길을 비춰 주는 숲지기" },
   { id: "egret", label: "백로", hint: "책 소식을 물어다 주는 숲지기" },
@@ -27,18 +27,15 @@ const AVATARS: { id: OperatorAvatar; label: string; hint: string }[] = [
 export default function OperatorProfileSwitcher({
   userId,
   groups,
-  isActive,
   avatar,
   operatorName,
 }: {
   userId: string;
   groups: OperatorGroup[];
-  isActive: boolean;
   avatar: OperatorAvatar | null;
   operatorName: string | null;
 }) {
   const router = useRouter();
-  const [switching, setSwitching] = useState(false);
   const [currentAvatar, setCurrentAvatar] = useState<OperatorAvatar>(avatar ?? "bear");
   const [nameDraft, setNameDraft] = useState(operatorName ?? "");
   const [savedName, setSavedName] = useState(operatorName ?? "");
@@ -69,15 +66,6 @@ export default function OperatorProfileSwitcher({
     const supabase = createClient();
     await supabase.from("users").update({ operator_avatar: next }).eq("id", userId);
     window.dispatchEvent(new Event("chaeksup:profile-changed"));
-  }
-
-  async function selectOperator() {
-    setSwitching(true);
-    const supabase = createClient();
-    await supabase.from("users").update({ active_profile_type: "operator" }).eq("id", userId);
-    setSwitching(false);
-    window.dispatchEvent(new Event("chaeksup:profile-changed"));
-    router.push("/teacher");
   }
 
   if (groups.length === 0) {
@@ -186,41 +174,22 @@ export default function OperatorProfileSwitcher({
         })}
       </div>
 
-      {groups.map((group) => {
-        const active = isActive;
-        return (
-          <button
-            key={group.groupId}
-            type="button"
-            onClick={() => selectOperator()}
-            disabled={switching}
-            className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3 text-left disabled:opacity-60"
-            style={{
-              borderColor: active ? "var(--point)" : "var(--rule)",
-              background: active ? "rgba(47,168,79,0.08)" : "var(--card)",
-            }}
-          >
-            <div className="flex-1">
-              <p className="d text-sm">숲지기 · {group.groupName}</p>
-              <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                {GROUP_TYPE_LABELS[group.groupType] ?? group.groupType}
-              </p>
-            </div>
-            {active && (
-              <span className="d text-xs" style={{ color: "var(--point-deep)" }}>
-                선택됨
-              </span>
-            )}
-          </button>
-        );
-      })}
-
+      {/* 운영 중인 그룹은 여기서 나열하지 않는다 -- 이 화면은 "어떤 프로필로
+          볼지" 고르는 곳이고, 숲지기 프로필은 계정에 하나뿐이라 그룹을 줄줄이
+          늘어놓으면 "선택됨"이 여러 개 뜨는 이상한 목록이 된다(사용자 지적).
+          그룹 전환은 고정 상단 그룹 바, 그룹 설정·추가는 대시보드의 "운영 중인
+          그룹"이 맡는다. 여기엔 몇 개인지와 가는 길만 남긴다. */}
       <Link
-        href="/recommend/create"
-        className="d rounded-[var(--r)] border border-dashed px-4 py-3 text-sm"
-        style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
+        href="/teacher"
+        className="flex items-center justify-between gap-3 rounded-[14px] border px-4 py-2.5"
+        style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
-        + 새 그룹 만들기
+        <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+          운영 중인 그룹 {groups.length}개
+        </span>
+        <span className="d flex-none text-xs" style={{ color: "var(--point-deep)" }}>
+          대시보드에서 관리 ›
+        </span>
       </Link>
     </div>
   );

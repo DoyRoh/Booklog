@@ -122,7 +122,6 @@ export default async function MorePage() {
             <OperatorProfileSwitcher
               userId={userId}
               groups={operatorGroups}
-              isActive={activeProfile.type === "operator"}
               avatar={(profile?.operator_avatar as "bear" | "egret" | null) ?? null}
               operatorName={(profile?.operator_name as string | null) ?? null}
             />
