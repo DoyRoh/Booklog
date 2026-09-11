@@ -9,6 +9,7 @@ import Illustration, {
   type IllustrationName,
 } from "@/components/illustration";
 import type { Badge } from "@/lib/badges";
+import type { MilestoneMemo } from "@/lib/badge-data";
 import { ORNAMENT_BY_BADGE, ORNAMENT_LABEL, type OrnamentKind } from "@/lib/forest-scene";
 
 // 우리 숲 = 딴 배지를 한 장면으로 그린 것. "숲이 자라요"(권수) 배지 하나가
@@ -60,12 +61,15 @@ export default function ForestView({
   avatar,
   badges,
   groups = [],
+  milestoneMemos = {},
 }: {
   childName: string;
   avatar: Avatar | null | undefined;
   badges: Badge[];
   /** 속한 그룹(숲지기)들 -- 숲길 끝의 곰과 하늘의 백로가 이 수만큼. */
   groups?: { id: string; name: string }[];
+  /** 나무(권수 마일스톤)를 심을 때 남긴 책 제목·메모 한 줄. */
+  milestoneMemos?: Record<number, MilestoneMemo>;
 }) {
   // 숲지기 곰: 그룹마다 한 마리(그룹이 없어도 길잡이 곰 한 마리는 있다).
   const keepers = groups.length ? groups.slice(0, 4) : [{ id: "guide", name: "길잡이" }];
@@ -176,6 +180,14 @@ export default function ForestView({
               <p className="text-xs" style={{ color: "var(--ink-2)" }}>
                 {picked.badge.description} 배지로 심은 {picked.kind === "tree" ? "나무" : ORNAMENT_LABEL[picked.ornament]}
               </p>
+              {picked.kind === "tree" && milestoneMemos[picked.badge.count ?? -1] && (
+                <p className="truncate text-xs" style={{ color: "var(--ink-2)" }}>
+                  「{milestoneMemos[picked.badge.count ?? -1].title}」
+                  {milestoneMemos[picked.badge.count ?? -1].memo
+                    ? ` · "${milestoneMemos[picked.badge.count ?? -1].memo}"`
+                    : ""}
+                </p>
+              )}
             </div>
           </>
         ) : (

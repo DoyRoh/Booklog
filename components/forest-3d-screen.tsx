@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Avatar } from "@/components/illustration";
 import type { Badge } from "@/lib/badges";
+import type { MilestoneMemo } from "@/lib/badge-data";
 import { layoutForest, ORNAMENT_LABEL_3D } from "@/lib/forest-scene";
 import type { Mood } from "@/components/forest-3d";
 
@@ -22,12 +23,15 @@ export default function Forest3DScreen({
   avatar,
   badges,
   groups = [],
+  milestoneMemos = {},
 }: {
   childName: string;
   avatar: Avatar | null | undefined;
   badges: Badge[];
   /** 속한 그룹(숲지기)들 -- 곰과 백로가 이 수만큼. */
   groups?: { id: string; name: string }[];
+  /** 나무(권수 마일스톤)를 심을 때 남긴 책 제목·메모 한 줄. */
+  milestoneMemos?: Record<number, MilestoneMemo>;
 }) {
   const [mood, setMood] = useState<Mood>("day");
   const [picked, setPicked] = useState<string | null>(null);
@@ -105,6 +109,14 @@ export default function Forest3DScreen({
             <p className="text-xs" style={{ color: "var(--ink-2)" }}>
               {pickedItem.badge.description} 배지로 {pickedItem.kind === "tree" ? "심은 나무" : `얻은 ${ORNAMENT_LABEL_3D[pickedItem.ornament]}`}
             </p>
+            {pickedItem.kind === "tree" && milestoneMemos[pickedItem.badge.count ?? -1] && (
+              <p className="truncate text-xs" style={{ color: "var(--ink-2)" }}>
+                「{milestoneMemos[pickedItem.badge.count ?? -1].title}」
+                {milestoneMemos[pickedItem.badge.count ?? -1].memo
+                  ? ` · "${milestoneMemos[pickedItem.badge.count ?? -1].memo}"`
+                  : ""}
+              </p>
+            )}
           </div>
         ) : (
           <p className="text-xs" style={{ color: "var(--ink-2)" }}>

@@ -35,11 +35,17 @@ export default async function ForestPage() {
     );
   }
 
-  const { badges, groups } = await loadForestData(supabase, activeChild.id);
+  const { badges, groups, milestoneMemos } = await loadForestData(supabase, activeChild.id);
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <ForestView childName={activeChild.name} avatar={activeChild.avatar} badges={badges} groups={groups} />
+      <ForestView
+        childName={activeChild.name}
+        avatar={activeChild.avatar}
+        badges={badges}
+        groups={groups}
+        milestoneMemos={milestoneMemos}
+      />
       <div className="mx-1 mt-8" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
       <BadgeGrid badges={badges} avatar={activeChild.avatar} />
     </div>

@@ -33,7 +33,7 @@ export default async function Forest3DPage() {
     );
   }
 
-  const { badges, groups } = await loadForestData(supabase, activeChild.id);
+  const { badges, groups, milestoneMemos } = await loadForestData(supabase, activeChild.id);
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -41,7 +41,13 @@ export default async function Forest3DPage() {
         ← 우리 숲
       </Link>
       <div className="mt-3">
-        <Forest3DScreen childName={activeChild.name} avatar={activeChild.avatar} badges={badges} groups={groups} />
+        <Forest3DScreen
+          childName={activeChild.name}
+          avatar={activeChild.avatar}
+          badges={badges}
+          groups={groups}
+          milestoneMemos={milestoneMemos}
+        />
       </div>
     </div>
   );

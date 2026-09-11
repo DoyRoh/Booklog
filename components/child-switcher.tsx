@@ -37,6 +37,36 @@ export default function ChildSwitcher({
   const [avatar, setAvatar] = useState<Avatar | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const activeChild = initialChildren.find((c) => c.id === activeChildId) ?? null;
+
+  function startEditName(child: Child) {
+    setEditingId(child.id);
+    setNameDraft(child.name);
+    setNameError(null);
+  }
+
+  // 숲지기 이름 고치기와 같은 패턴 -- 이름을 바꾸면 상단 "OO의 책숲"
+  // 제목도 즉시 바뀌어야 하므로 프로필 변경 이벤트를 같이 쏜다.
+  async function saveChildName(childId: string) {
+    const next = nameDraft.trim();
+    if (!next) return;
+    setNameSaving(true);
+    setNameError(null);
+    const supabase = createClient();
+    const { error: updateError } = await supabase.from("children").update({ name: next }).eq("id", childId);
+    setNameSaving(false);
+    if (updateError) {
+      setNameError(updateError.message);
+      return;
+    }
+    setEditingId(null);
+    window.dispatchEvent(new Event("chaeksup:profile-changed"));
+    router.refresh();
+  }
 
   async function selectChild(childId: string) {
     // 이미 고른 아이를 또 누르면 "아무 일도 없음" 대신 그 아이의 오늘 탭으로.
@@ -121,33 +151,102 @@ export default function ChildSwitcher({
 
   return (
     <div className="mt-3 flex flex-col gap-3">
+      {/* 숲지기 프로필의 "숲지기 이름" 표시와 짝을 맞춘 것 -- 지금 보고 있는
+          아이 이름을 목록 위에 파란 형광펜 밑줄로 한 번 더 짚어 준다. */}
+      {activeChild && (
+        <p className="text-sm">
+          선택된 아이 ·{" "}
+          <mark
+            className="d"
+            style={{
+              background: "linear-gradient(180deg, transparent 55%, rgba(58,134,255,0.38) 55%)",
+              color: "var(--ink)",
+              padding: "0 2px",
+            }}
+          >
+            {activeChild.name}
+          </mark>
+        </p>
+      )}
       {initialChildren.map((child) => {
         const active = child.id === activeChildId;
+        const editing = editingId === child.id;
         return (
-          <button
+          <div
             key={child.id}
-            type="button"
-            onClick={() => selectChild(child.id)}
-            disabled={switching === child.id}
-            className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3 text-left disabled:opacity-60"
+            className="rounded-[var(--r)] border"
             style={{
               borderColor: active ? "var(--point)" : "var(--rule)",
               background: active ? "rgba(47,168,79,0.08)" : "var(--card)",
             }}
           >
-            <AvatarIllustration avatar={child.avatar} height={44} style={{ opacity: active ? 1 : 0.6 }} />
-            <div className="flex-1">
-              <p className="d text-sm">{child.name}</p>
-              {child.birth_date && (
-                <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                  {child.birth_date}
-                </p>
-              )}
-            </div>
-            <span className="d text-xs" style={{ color: active ? "var(--point-deep)" : "var(--ink-2)" }}>
-              {switching === child.id ? "전환 중…" : active ? "보는 중 ›" : "이 아이로 보기"}
-            </span>
-          </button>
+            {editing ? (
+              <div className="flex flex-col gap-2 p-4">
+                <input
+                  type="text"
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  placeholder="아이 이름"
+                  className="rounded-[14px] border px-4 py-2.5 text-sm outline-none"
+                  style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+                />
+                {nameError && (
+                  <p className="text-xs" style={{ color: "var(--berry)" }}>
+                    {nameError}
+                  </p>
+                )}
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(null)}
+                    className="d rounded-[14px] border px-4 py-2 text-xs"
+                    style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!nameDraft.trim() || nameSaving}
+                    onClick={() => saveChildName(child.id)}
+                    className="d rounded-[14px] px-4 py-2 text-xs text-white disabled:opacity-40"
+                    style={{ background: "var(--point)" }}
+                  >
+                    {nameSaving ? "저장 중..." : "저장"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => selectChild(child.id)}
+                  disabled={switching === child.id}
+                  className="flex flex-1 items-center gap-3 text-left disabled:opacity-60"
+                >
+                  <AvatarIllustration avatar={child.avatar} height={44} style={{ opacity: active ? 1 : 0.6 }} />
+                  <div className="flex-1">
+                    <p className="d text-sm">{child.name}</p>
+                    {child.birth_date && (
+                      <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                        {child.birth_date}
+                      </p>
+                    )}
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startEditName(child)}
+                  className="d flex-none rounded-[14px] border px-3 py-1.5 text-xs"
+                  style={{ borderColor: "var(--rule)", color: "var(--point-deep)", background: "var(--card)" }}
+                >
+                  고치기
+                </button>
+                <span className="d flex-none text-xs" style={{ color: active ? "var(--point-deep)" : "var(--ink-2)" }}>
+                  {switching === child.id ? "전환 중…" : active ? "보는 중 ›" : "이 아이로 보기"}
+                </span>
+              </div>
+            )}
+          </div>
         );
       })}
 

@@ -114,7 +114,7 @@ export default async function MorePage() {
           </div>
         </div>
 
-        <div className="mt-5">
+        <div className="mt-5 pt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}>
           <p className="text-xs" style={{ color: "var(--ink-2)" }}>
             숲지기 프로필 <span style={{ opacity: 0.7 }}>· 그룹을 만들어 운영하는 사람 — 선생님도, 가족도, 도서관도</span>
           </p>
