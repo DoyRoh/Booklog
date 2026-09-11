@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { AvatarIllustration } from "@/components/illustration";
-import GroupTopSelect from "@/components/group-top-select";
+import OperatorGroupTiles from "@/components/operator-group-tiles";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
 import { pickActiveGroupId } from "@/lib/active-operator-group";
 
@@ -117,19 +117,19 @@ export default async function TeacherChildrenPage({
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="d text-xl">아이들</h1>
-        {sections.length > 1 && selected && (
-          <GroupTopSelect
+      <h1 className="d text-xl">아이들</h1>
+      <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+        아이마다 추천도서를 몇 권 읽었는지, 숙제를 몇 개 끝냈는지 볼 수 있어요. 누르면 책별·숙제별로 자세히 보여요.
+      </p>
+      {sections.length > 1 && selected && (
+        <div className="mt-3">
+          <OperatorGroupTiles
             groups={sections.map((s) => ({ id: s.id, name: s.name }))}
             selectedId={selected.id}
             basePath="/teacher/children"
           />
-        )}
-      </div>
-      <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-        아이마다 추천도서를 몇 권 읽었는지, 숙제를 몇 개 끝냈는지 볼 수 있어요. 누르면 책별·숙제별로 자세히 보여요.
-      </p>
+        </div>
+      )}
 
       {!selected ? (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>

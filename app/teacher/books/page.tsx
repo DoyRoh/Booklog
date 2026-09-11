@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import ManagedLogList from "@/components/managed-log-list";
-import GroupTopSelect from "@/components/group-top-select";
+import OperatorGroupTiles from "@/components/operator-group-tiles";
 import { loadOperatorBookSections, operatorBookRows } from "@/lib/operator-books";
 import { pickActiveGroupId } from "@/lib/active-operator-group";
 
@@ -40,19 +40,19 @@ export default async function TeacherBooksPage({
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="d text-xl">추천도서</h1>
-        {sections.length > 1 && selected && (
-          <GroupTopSelect
+      <h1 className="d text-xl">추천도서</h1>
+      <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
+        그룹마다 책 서랍이 하나씩 있어요. 오른쪽 ‘선택’으로 여러 권을 한 번에 뺄 수 있어요.
+      </p>
+      {sections.length > 1 && selected && (
+        <div className="mt-3">
+          <OperatorGroupTiles
             groups={sections.map((s) => ({ id: s.id, name: s.name }))}
             selectedId={selected.id}
             basePath="/teacher/books"
           />
-        )}
-      </div>
-      <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-        그룹마다 책 서랍이 하나씩 있어요. 오른쪽 ‘선택’으로 여러 권을 한 번에 뺄 수 있어요.
-      </p>
+        </div>
+      )}
 
       {!selected ? (
         <div className="mt-6">

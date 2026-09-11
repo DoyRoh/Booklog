@@ -1433,6 +1433,15 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **`app/recommend/[groupId]/page.tsx`(그룹 상세) 축소**: 숲지기가 보는 이 화면을 "그룹 자체를 만지는 설정 화면"으로 좁혔습니다. 예전엔 "추천도서" 섹션에 `AddBookToList`(검색·바코드·ISBN 폼)와 `RecommendBookList`(전체 목록, 선택·삭제까지) 전체가 그대로 embed돼 있어서, 이미 있는 전용 화면(`/teacher/books/add`, `/teacher/books/manage`)과 완전히 같은 기능이 그룹 상세에도 또 있는 셈이었습니다. 이제 "추천도서" 섹션은 **"+ 책 추가"**(`/teacher/books/add?group=`)와 **"관리 ›"**(`/teacher/books/manage?group=`) 링크 두 개만 남았고(이미 그렇게 축소돼 있던 "숙제" 섹션의 "+ 새 숙제 만들기"와 같은 패턴), 임베드용으로만 쓰던 `AddBookToList`/`RecommendBookList` import를 지웠습니다. 승인 대기·소개 편집·그룹 삭제/운영 그만두기는 원래도 이 화면의 역할이라 그대로 남았습니다.
 - 정적 HTML로 새 대시보드 레이아웃(스탯 4칸·막대그래프·그룹 설정 목록)을 Playwright로 렌더해 확인했고, DB 변경은 없어 build+lint만으로 검증했습니다.
 
+## 숲지기 그룹 전환 — 드롭다운 → 부모 쪽과 같은 박스 타일 (사용자 요청: "고정상단 박스형으로 이런식으로 그룹 전환이 되게")
+
+`users.active_operator_group_id`로 세 탭(아이들·추천도서·숙제)이 그룹 선택을 공유하도록 만든 직후, "화면은 변한게 없어"라는 피드백을 받았습니다. 확인해보니 공유 자체는 이미 잘 동작하고 있었고, 실제 요청은 **모양** 쪽이었습니다 — 작은 `<select>` 드롭다운이 아니라 부모 쪽 숲길/숙제 탭의 `GroupTiles`(둥근 네모 타일 가로 스크롤)처럼 보이길 원한 것이었습니다.
+
+- **`components/operator-group-tiles.tsx`(신규)**: `GroupTiles`와 같은 시각 언어(둥근 네모 타일, 그룹 이름 첫 글자 + 라벨)를 쓰되, 타일 크기는 부모 쪽(56px)보다 작게 40px로 줄였습니다("저렇게 클 필요는 없지만"). 숲지기 탭은 이미 그룹 하나만 보여주는 화면으로 확정돼 있어 "전체" 타일은 없고, 대신 점선 "+" 타일(`/recommend/create`, "새 그룹")이 끝에 붙습니다. 타일을 누르면 즉시 `router.push`로 화면을 바꾸면서(체감 반응성), 동시에 `users.active_operator_group_id`에 비동기로 저장해 다른 탭도 이어받습니다 — 이전 라운드의 공유 로직은 그대로 재사용.
+- **`components/group-top-select.tsx` 삭제**: `OperatorGroupTiles`로 완전히 대체돼 더 이상 쓰이지 않습니다.
+- **적용**: `app/teacher/children/page.tsx`, `app/teacher/books/page.tsx`, `app/teacher/assignments/page.tsx` 세 화면 모두 헤더를 "제목 → 설명 → (그룹이 둘 이상일 때만) 타일 줄"로 바꿨습니다.
+- 360px 뷰포트 정적 HTML로 타일 두 개 + "새 그룹" 타일의 실제 크기·가독성을 Playwright로 확인했습니다. DB 변경 없음(기존 컬럼 재사용). build+lint 통과.
+
 ## 아이들·추천도서·숙제 탭 — 그룹을 우측 상단 드롭다운으로 (사용자 지적: "다 그룹까지 껴있어서 정신 사나운거같아")
 
 대시보드를 알림·시각화 화면으로 좁힌 다음, 사용자가 나머지 세 탭(아이들·추천도서·숙제)도 그룹이 화면 곳곳에 끼어들어 복잡하다고 지적했습니다. 사용자가 직접 제안한 해결책 — "대시보드는 전체를 훑어보는 화면으로 남기고, 나머지는 우측 상단 그룹 선택 드롭다운으로 그룹 하나만 관리하게" — 을 그대로 구현했습니다.
