@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Gowun_Dodum, Gamja_Flower, Gowun_Batang } from "next/font/google";
 import BottomNav from "@/components/bottom-nav";
 import TopBar from "@/components/top-bar";
+import OperatorGroupBar from "@/components/operator-group-bar";
 import ProfileProvider from "@/components/profile-context";
 import SplashScreen from "@/components/splash-screen";
 import "./globals.css";
@@ -63,6 +65,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SplashScreen />
         <ProfileProvider>
           <TopBar />
+          {/* 숲지기 아이들/추천도서/숙제 세 탭의 그룹 전환 바 -- TopBar처럼
+              루트에 한 번만 마운트해서 탭을 오가도 사라졌다 다시 나타나지
+              않는다(사용자 지적: "제목처럼 그 자리에 계속 있어야지"). */}
+          <Suspense fallback={null}>
+            <OperatorGroupBar />
+          </Suspense>
           <main className="flex-1 pt-[52px] pb-[96px]">{children}</main>
           <BottomNav />
         </ProfileProvider>

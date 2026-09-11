@@ -1482,3 +1482,13 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **`components/operator-group-tiles.tsx`**: 타일 줄을 페이지 본문 흐름 안에 있던 `-mx-5` 가로 스크롤 줄에서, `TopBar`와 똑같은 `fixed inset-x-0` 패턴으로 바꿨습니다 — `top: "52px"`(상단바 바로 아래)에 흰 배경(`var(--card)`) + 옅은 그림자(`0 2px 6px rgba(38,54,43,0.06)`)를 준 전체 폭 바입니다. 스크롤을 아무리 내려도 상단바 밑에 계속 붙어 있습니다. 안 켜진 타일 배경은 흰 바 위에서도 구분되도록 `var(--card)`(흰색)에서 `var(--paper)`(세이지그린)로 바꿨습니다(바 자체가 이제 흰색이라 흰 타일이 묻혀 보이는 걸 피함).
 - **`OPERATOR_GROUP_TILES_HEIGHT`(74px) 상수를 export**: 고정 바가 됐으니 페이지 본문이 그만큼 위쪽 여백을 미리 비워둬야 겹치지 않습니다. `app/teacher/children`, `app/teacher/books`, `app/teacher/assignments` 세 페이지 모두 컨테이너의 `pt-8`(32px 고정 클래스)을 `paddingTop: showGroupTiles ? 32 + 74 : 32`(px 인라인 스타일)로 바꿔서, 그룹이 둘 이상이라 바가 뜰 때만 그만큼 본문을 아래로 밀어냅니다. 그룹이 하나뿐이면(바가 안 뜸) 예전과 똑같이 32px만 비웁니다.
 - Playwright로 정적 HTML을 만들어 실제 픽셀 위치를 재서(`groupbar bottom: 125px`, `h1 top: 158px` — 33px 여백) 겹침이 없는 걸 확인했고, 스크롤한 상태의 스크린샷으로 바가 실제로 고정돼 있는지도 확인했습니다. DB 변경 없음. build+lint 통과.
+
+## 그룹 전환 바가 탭 옮길 때마다 깜빡이던 것 → 루트 레이아웃으로 이동 (사용자 지적: "메뉴 누를때마다 왜 이 상단도 사라졌다가 다시 생기는거야? 제목처럼 그자리에 계속 있어야지")
+
+고정 상단 바로 만들긴 했지만, 그 바를 그리는 코드가 여전히 각 페이지(`app/teacher/children/page.tsx` 등) 안에 있었던 게 원인이었습니다 — 아이들→추천도서→숙제처럼 다른 라우트로 옮기면 리액트가 이전 페이지를 통째로 언마운트하고 새 페이지를 마운트하는데, 그 바도 각 페이지의 일부라 같이 사라졌다 다시 생긴 것입니다. 반면 상단바("OO의 책숲" 제목)는 처음부터 `app/layout.tsx`(모든 라우트가 공유하는 루트 레이아웃)에 한 번만 마운트돼 있어서 라우트를 옮겨도 리액트가 그 인스턴스를 계속 살려 둡니다.
+
+- **`components/operator-group-bar.tsx`(신규, `operator-group-tiles.tsx` 대체)**: 그룹 목록·선택 상태를 컴포넌트 자신이 직접 들고 있는 자기완결형 컴포넌트로 다시 짰습니다 — 더 이상 페이지가 `groups`/`selectedId`/`basePath`를 props로 내려주지 않고, `usePathname()`으로 지금 화면이 세 탭(`/teacher/children`·`/teacher/books`·`/teacher/assignments`) 중 하나인지 보고, 맞으면 Supabase 브라우저 클라이언트로 운영 그룹 목록(`operatorGroupsQuery`, embeds 없이 최소 조회)과 `active_operator_group_id`를 직접 불러옵니다. `useSearchParams()`로 `?group=` 쿼리도 읽어서(URL 우선 > DB 저장값 > 첫 그룹) `pickActiveGroupId()`와 같은 우선순위를 클라이언트에서도 그대로 지킵니다.
+- **`app/layout.tsx`에 `<TopBar/>` 바로 아래 배치**: `<Suspense fallback={null}>`로 감싸 `useSearchParams()`가 요구하는 경계를 만족시켰습니다(이 프로젝트가 이미 `library/add` 등에서 쓰던 패턴). 이제 세 탭을 오가도 이 컴포넌트 자체는 마운트된 채로 남아 있고, 라우트가 바뀌면 `pathname` 변화에 반응해 필요하면 그룹 목록을 다시 읽을 뿐 화면에서 사라지지 않습니다.
+- **`lib/operator-groups.ts`의 `operatorGroupsQuery()`**: `embeds` 인자를 선택적으로 바꿔서(안 넘기면 트레일링 콤마 없는 최소 select), 이 클라이언트 바가 그룹 id·이름만 가볍게 조회할 때도 기존 서버용 헬퍼를 그대로 재사용합니다.
+- **세 페이지(`app/teacher/children`·`books`·`assignments`)에서 바 렌더링 코드를 제거**: 이제 `OPERATOR_GROUP_BAR_HEIGHT`(74px) 상수만 가져와 "그룹이 둘 이상이면 그만큼 본문 위쪽 여백을 미리 비워 둔다"는 계산만 남았습니다 — 실제 바를 그리는 건 루트 레이아웃의 몫이라, 각 페이지는 자신이 서버에서 계산한 "그룹이 둘 이상인지" 여부로 여백만 맞추면 됩니다(두 계산이 같은 DB 상태를 보므로 항상 일치).
+- DB 변경 없음. build+lint 통과 확인(Suspense 경계 관련 빌드 경고도 없음).

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { AvatarIllustration } from "@/components/illustration";
-import OperatorGroupTiles, { OPERATOR_GROUP_TILES_HEIGHT } from "@/components/operator-group-tiles";
+import { OPERATOR_GROUP_BAR_HEIGHT } from "@/components/operator-group-bar";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
 import { pickActiveGroupId } from "@/lib/active-operator-group";
 
@@ -114,23 +114,18 @@ export default async function TeacherChildrenPage({
 
   const activeGroupId = pickActiveGroupId(sections, groupParam, userRow?.active_operator_group_id);
   const selected = sections.find((s) => s.id === activeGroupId) ?? null;
-  // 그룹이 둘 이상일 때만 상단바 아래 고정 그룹 전환 바가 뜬다(사용자
-  // 요청: "그룹 전환은 고정상단이길 바라는거야") -- 그만큼 본문 위쪽에
-  // 빈 공간을 미리 마련해 겹치지 않게 한다.
+  // 그룹이 둘 이상이면 상단바 아래 고정 그룹 전환 바(`OperatorGroupBar`,
+  // 루트 레이아웃에서 렌더)가 뜬다 -- 그만큼 본문 위쪽에 빈 공간을 미리
+  // 마련해 겹치지 않게 한다. 바 자체는 이 페이지가 그리지 않는다(사용자
+  // 지적: "탭을 옮길 때마다 사라졌다 다시 생긴다, 제목처럼 계속 있어야지"
+  // -- 페이지마다 그리면 라우트 전환 때 언마운트돼 깜빡였다).
   const showGroupTiles = sections.length > 1 && !!selected;
 
   return (
     <div
       className="mx-auto max-w-[520px] px-5 pb-10"
-      style={{ paddingTop: showGroupTiles ? `${32 + OPERATOR_GROUP_TILES_HEIGHT}px` : "32px" }}
+      style={{ paddingTop: showGroupTiles ? `${32 + OPERATOR_GROUP_BAR_HEIGHT}px` : "32px" }}
     >
-      {showGroupTiles && selected && (
-        <OperatorGroupTiles
-          groups={sections.map((s) => ({ id: s.id, name: s.name }))}
-          selectedId={selected.id}
-          basePath="/teacher/children"
-        />
-      )}
       <h1 className="d text-xl">아이들</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         아이마다 추천도서를 몇 권 읽었는지, 숙제를 몇 개 끝냈는지 볼 수 있어요. 누르면 책별·숙제별로 자세히 보여요.
