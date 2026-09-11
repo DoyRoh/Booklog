@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const READING_MEDIA_BUCKET = "reading-media";
+export const BOOK_COVERS_BUCKET = "book-covers";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = SupabaseClient<any>;
@@ -60,6 +61,24 @@ export async function uploadMissionVoice(
     .upload(path, blob, { contentType, upsert: true });
   if (error) throw error;
   return path;
+}
+
+// 카카오 검색에 없는 책(대개 전권 세트) 표지를 부모·숲지기가 직접 찍어
+// 올린다. book-covers는 공개 버킷이라 서명 없이 공개 URL을 바로 돌려주면
+// 다른 화면들이 이미 books.cover_url에 쓰던 <img src> 그대로 보여준다.
+// 경로를 업로더 자신의 auth.uid()로 시작해야 한다(storage.objects RLS).
+export async function uploadBookCover(
+  supabase: AnyClient,
+  userId: string,
+  file: File
+): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage
+    .from(BOOK_COVERS_BUCKET)
+    .upload(path, file, { contentType: file.type || "image/jpeg" });
+  if (error) throw error;
+  return supabase.storage.from(BOOK_COVERS_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
 export async function getSignedMediaUrl(

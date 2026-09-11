@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import BarcodeScanner from "@/components/barcode-scanner";
+import PhotoPicker from "@/components/photo-picker";
+import { uploadBookCover } from "@/lib/storage";
 import type { BookCandidate } from "@/lib/book-catalog";
 
 type Mode = "search" | "scan" | "isbn";
@@ -26,12 +28,15 @@ export default function BookFinder({
   const [manualMode, setManualMode] = useState(false);
   const [manualTitle, setManualTitle] = useState("");
   const [manualAuthor, setManualAuthor] = useState("");
+  const [manualCover, setManualCover] = useState<File | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   function switchMode(next: Mode) {
     setMode(next);
     setError(null);
     setResults(null);
     setManualMode(false);
+    setManualCover(null);
   }
 
   function pick(candidate: BookCandidate) {
@@ -117,17 +122,38 @@ export default function BookFinder({
     setSearching(false);
   }
 
-  function addManual() {
+  // 카카오 검색에 낱권 ISBN이 없는 전권 세트 등은 표지도 못 찾아오므로,
+  // 직접 입력할 때 사진으로 찍어 올릴 수 있게 한다(선택 사항).
+  async function addManual() {
     if (!manualTitle.trim()) return;
+    let coverUrl: string | null = null;
+    if (manualCover) {
+      setUploadingCover(true);
+      setError(null);
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("로그인이 필요해요.");
+        coverUrl = await uploadBookCover(supabase, user.id, manualCover);
+      } catch {
+        setError("표지 사진을 올리지 못했어요. 표지 없이 저장하거나 다시 시도해 주세요.");
+        setUploadingCover(false);
+        return;
+      }
+      setUploadingCover(false);
+    }
     pick({
       title: manualTitle.trim(),
       author: manualAuthor.trim(),
-      coverUrl: null,
+      coverUrl,
       isbn: "",
     });
     setManualMode(false);
     setManualTitle("");
     setManualAuthor("");
+    setManualCover(null);
   }
 
   return (
@@ -278,10 +304,25 @@ export default function BookFinder({
             className="rounded-[14px] border px-4 py-2.5 text-sm outline-none"
             style={{ borderColor: "var(--rule)" }}
           />
+          <div>
+            <p className="mb-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
+              표지 사진 (선택) · 전권 세트처럼 검색에 안 나오는 책도 찍어서 올려 두면 알아보기 쉬워요
+            </p>
+            <PhotoPicker onSelect={setManualCover} label="표지 찍어 올리기" />
+          </div>
+          {error && (
+            <p className="text-sm" style={{ color: "var(--berry)" }}>
+              {error}
+            </p>
+          )}
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setManualMode(false)}
+              onClick={() => {
+                setManualMode(false);
+                setManualCover(null);
+                setError(null);
+              }}
               className="d flex-1 rounded-[14px] border py-2.5 text-sm"
               style={{ borderColor: "var(--rule)" }}
             >
@@ -289,12 +330,12 @@ export default function BookFinder({
             </button>
             <button
               type="button"
-              disabled={!manualTitle.trim()}
+              disabled={!manualTitle.trim() || uploadingCover}
               onClick={addManual}
               className="d flex-1 rounded-[14px] py-2.5 text-sm text-white disabled:opacity-40"
               style={{ background: "var(--point)" }}
             >
-              다음
+              {uploadingCover ? "표지 올리는 중..." : "다음"}
             </button>
           </div>
         </div>

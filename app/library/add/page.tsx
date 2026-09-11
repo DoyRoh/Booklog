@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getActiveChild } from "@/lib/active-child";
 import { AvatarIllustration, PawStamp, type Avatar } from "@/components/illustration";
 import { hasVoiceConsent } from "@/lib/consent";
-import { uploadChildPhoto, uploadChildVoice } from "@/lib/storage";
+import { uploadBookCover, uploadChildPhoto, uploadChildVoice } from "@/lib/storage";
 import BarcodeScanner from "@/components/barcode-scanner";
 import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
@@ -107,6 +107,7 @@ function AddBookForm() {
   const [shelfCount, setShelfCount] = useState<number | null>(null);
   const [childAvatar, setChildAvatar] = useState<Avatar | null>(null);
   const [shelfTagId, setShelfTagId] = useState<string | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -275,6 +276,31 @@ function AddBookForm() {
     }
     setIsbnLookingUp(false);
     setFindMode("none");
+  }
+
+  // 전권 세트처럼 카카오 검색에 표지가 없는 책(ISBN 검색 자체가 안 되는
+  // 경우가 많음)을 직접 찍어 올린다. 새로 등록하는 책(!bookId)일 때만
+  // 의미가 있다 -- 이미 카탈로그에 있는 책의 표지는 여기서 바꿔도 그
+  // 책 자체(books.cover_url)에는 반영되지 않는다.
+  async function pickCoverPhoto(file: File | null) {
+    if (!file) {
+      setCoverUrl(null);
+      return;
+    }
+    setCoverUploading(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요해요.");
+      const url = await uploadBookCover(supabase, user.id, file);
+      setCoverUrl(url);
+    } catch {
+      setError("표지 사진을 올리지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
+    setCoverUploading(false);
   }
 
   async function save() {
@@ -528,6 +554,19 @@ function AddBookForm() {
                       ? `이미 내 책장에 있는 책이에요 · 기록이 하나 더 남아요`
                       : "책 정보를 찾았어요"}
                 </p>
+              </div>
+            )}
+
+            {/* 전권 세트처럼 ISBN 검색으로 표지를 못 찾은, 새로 등록하는
+                책만 사진으로 표지를 직접 올릴 수 있게 한다. */}
+            {!bookId && title.trim() && (
+              <div className="mt-2">
+                <PhotoPicker
+                  onSelect={pickCoverPhoto}
+                  existingUrl={coverUrl}
+                  onRemoveExisting={() => setCoverUrl(null)}
+                  label={coverUploading ? "표지 올리는 중..." : "표지 사진 찍어 올리기 (선택)"}
+                />
               </div>
             )}
           </div>
