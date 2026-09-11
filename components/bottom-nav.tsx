@@ -24,10 +24,12 @@ import {
 // '추가'는 책장 바로 다음에 둔 빠른 진입점 -- 기록 남기기(/library/add)로
 // 바로 가서 책을 찾아 넣으면 그 즉시 책장에 꽂힌다(사용자 요청: "책장에
 // 책 꽂는 메뉴도 하나 추가하자").
+// "추가"만 초록 포인트 대신 연두(--sprout)로 눈에 띄게 한다(사용자 요청:
+// "다른 색상으로 지정해줘 연두색이나 여튼 어울리는 색으로").
 const PARENT_TABS = [
   { href: "/today", label: "오늘", Icon: TodayIcon },
   { href: "/library", label: "책장", Icon: LibraryIcon },
-  { href: "/library/add", label: "추가", Icon: AddIcon },
+  { href: "/library/add", label: "추가", Icon: AddIcon, accent: "sprout" },
   { href: "/trail", label: "숲길", Icon: RecommendIcon },
   { href: "/assignments", label: "숙제", Icon: AssignmentIcon },
 ] as const;
@@ -118,8 +120,10 @@ export default function BottomNav() {
         transform: hidden ? "translateY(calc(100% + var(--sb) + 20px))" : "translateY(0)",
       }}
     >
-      {tabs.map(({ href, label, Icon }) => {
+      {tabs.map((tab) => {
+        const { href, label, Icon } = tab;
         const active = href === activeHref;
+        const isSprout = "accent" in tab && tab.accent === "sprout";
         return (
           <Link
             key={href}
@@ -128,8 +132,12 @@ export default function BottomNav() {
             aria-current={active ? "page" : undefined}
             className="flex h-[48px] items-center gap-[6px] rounded-full px-[13px] transition-colors"
             style={{
-              color: active ? "var(--point-deep)" : "var(--ink-2)",
-              background: active ? "rgba(47,168,79,0.14)" : "transparent",
+              color: isSprout ? "var(--sprout-deep)" : active ? "var(--point-deep)" : "var(--ink-2)",
+              background: active
+                ? isSprout
+                  ? "rgba(139,195,74,0.22)"
+                  : "rgba(47,168,79,0.14)"
+                : "transparent",
             }}
           >
             <span className="flex h-[24px] w-[24px] items-center justify-center">
