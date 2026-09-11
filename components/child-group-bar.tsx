@@ -83,6 +83,16 @@ export default function ChildGroupBar() {
   if (!onTab || role !== "parent" || !groups || groups.length === 0) return null;
 
   const queryGroup = searchParams.get("group");
+  // 기본 소제목 탭은 숙제(app/group/page.tsx와 같은 규칙).
+  const tab = searchParams.get("tab") === "books" ? "books" : "assignments";
+  const tabHref = (t: "assignments" | "books") => {
+    const params = new URLSearchParams();
+    if (t === "books") params.set("tab", "books");
+    if (queryGroup) params.set("group", queryGroup);
+    else if (activeGroupId) params.set("group", activeGroupId);
+    const qs = params.toString();
+    return qs ? `${GROUP_PATH}?${qs}` : GROUP_PATH;
+  };
   const selectedId =
     (queryGroup && groups.some((g) => g.id === queryGroup) && queryGroup) ||
     (activeGroupId && groups.some((g) => g.id === activeGroupId) && activeGroupId) ||
@@ -98,15 +108,15 @@ export default function ChildGroupBar() {
         boxShadow: "0 2px 6px rgba(38,54,43,0.06)",
       }}
     >
-      <div className="mx-auto flex max-w-[520px] gap-4 overflow-x-auto px-5 py-2" style={{ scrollbarWidth: "none" }}>
+      <div className="mx-auto flex max-w-[520px] gap-3 overflow-x-auto px-5 pt-2" style={{ scrollbarWidth: "none" }}>
         <button
           type="button"
           onClick={() => pick(null)}
           aria-current={selectedId === "all" ? "true" : undefined}
-          className="flex w-16 flex-none flex-col items-center gap-1.5"
+          className="flex w-[52px] flex-none flex-col items-center gap-1"
         >
           <span
-            className="d flex h-14 w-14 items-center justify-center rounded-[18px] text-sm"
+            className="d flex h-11 w-11 items-center justify-center rounded-[14px] text-[13px]"
             style={{
               background: selectedId === "all" ? "var(--point-deep)" : "var(--paper)",
               color: selectedId === "all" ? "#fff" : "var(--ink)",
@@ -117,7 +127,7 @@ export default function ChildGroupBar() {
             전체
           </span>
           <span
-            className="w-full truncate text-center text-[11px] leading-tight"
+            className="w-full truncate text-center text-[10px] leading-tight"
             style={{ color: selectedId === "all" ? "var(--point-deep)" : "var(--ink-2)", fontWeight: selectedId === "all" ? 600 : 400 }}
           >
             전체
@@ -132,10 +142,10 @@ export default function ChildGroupBar() {
               type="button"
               onClick={() => pick(group.id)}
               aria-current={active ? "true" : undefined}
-              className="flex w-16 flex-none flex-col items-center gap-1.5"
+              className="flex w-[52px] flex-none flex-col items-center gap-1"
             >
               <span
-                className="d flex h-14 w-14 items-center justify-center rounded-[18px] text-lg"
+                className="d flex h-11 w-11 items-center justify-center rounded-[14px] text-base"
                 style={{
                   background: active ? "var(--point-deep)" : "var(--paper)",
                   color: active ? "#fff" : "var(--ink)",
@@ -146,7 +156,7 @@ export default function ChildGroupBar() {
                 {group.name.trim().charAt(0)}
               </span>
               <span
-                className="w-full truncate text-center text-[11px] leading-tight"
+                className="w-full truncate text-center text-[10px] leading-tight"
                 style={{ color: active ? "var(--point-deep)" : "var(--ink-2)", fontWeight: active ? 600 : 400 }}
               >
                 {group.name}
@@ -155,17 +165,47 @@ export default function ChildGroupBar() {
           );
         })}
 
-        <Link href="/recommend" className="flex w-16 flex-none flex-col items-center gap-1.5" aria-label="다른 그룹 찾기">
+        <Link href="/recommend" className="flex w-[52px] flex-none flex-col items-center gap-1" aria-label="다른 그룹 찾기">
           <span
-            className="flex h-14 w-14 items-center justify-center rounded-[18px] border border-dashed"
+            className="flex h-11 w-11 items-center justify-center rounded-[14px] border border-dashed"
             style={{ borderColor: "rgba(38,54,43,0.28)", color: "var(--ink-2)" }}
           >
-            <PlusIcon width={22} height={22} />
+            <PlusIcon width={18} height={18} />
           </span>
-          <span className="w-full truncate text-center text-[11px] leading-tight" style={{ color: "var(--ink-2)" }}>
+          <span className="w-full truncate text-center text-[10px] leading-tight" style={{ color: "var(--ink-2)" }}>
             그룹 찾기
           </span>
         </Link>
+      </div>
+
+      {/* 숙제 / 추천도서 소제목 탭도 이 고정 바 안에 둔다 -- 예전엔 본문
+          맨 위에 알약으로 떠 있어서 "그룹 바 → 알약 → 검색창"까지 메뉴가
+          세 겹으로 쌓여 어디부터가 내용인지 경계가 없었다. 이제 고정 바
+          안이 전부 메뉴, 그 아래는 전부 내용이다. */}
+      <div className="mx-auto flex max-w-[520px] gap-2 px-5 pb-2 pt-2">
+        {(
+          [
+            { key: "assignments", label: "숙제" },
+            { key: "books", label: "추천도서" },
+          ] as const
+        ).map((t) => {
+          const on = t.key === tab;
+          return (
+            <Link
+              key={t.key}
+              href={tabHref(t.key)}
+              aria-current={on ? "page" : undefined}
+              className="d rounded-full px-3.5 py-1.5 text-[13px]"
+              style={{
+                background: on ? "var(--point-deep)" : "var(--paper)",
+                color: on ? "#fff" : "var(--ink-2)",
+                border: on ? "1px solid var(--point-deep)" : "1px solid var(--rule)",
+              }}
+            >
+              {t.label}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

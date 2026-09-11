@@ -157,7 +157,9 @@ export default function BottomNav() {
       className="no-print fixed inset-x-0 z-50 mx-auto flex w-fit max-w-[calc(100%-32px)] items-center gap-[2px] rounded-full p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
       style={{
         bottom: "calc(var(--sb) + 14px)",
-        background: "rgba(255,255,255,0.96)",
+        // 96% 반투명이면 스크롤 중에 알약 뒤의 글자가 비쳐 보여 "내용이랑
+        // 메뉴가 겹쳐 나온다"는 지적을 받았다 -- 완전 불투명으로.
+        background: "var(--card)",
         willChange: "transform",
         boxShadow: "0 8px 28px -10px rgba(38,54,43,0.35), 0 0 0 1px rgba(38,54,43,0.06)",
         transform: hidden ? "translateY(calc(100% + var(--sb) + 20px))" : "translateY(0)",

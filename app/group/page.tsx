@@ -95,9 +95,6 @@ export default async function GroupPage({
   const selectedId = pickActiveChildGroupId(myGroups, groupParam, activeChild.activeGroupId);
   const selectedGroup = selectedId !== "all" ? (myGroups.find((g) => g.id === selectedId) ?? null) : null;
 
-  const groupQuery = selectedId !== "all" ? `&group=${selectedId}` : "";
-  const tabHref = (t: SubTab) => `/group?tab=${t}${groupQuery}`;
-
   let content: React.ReactNode;
   if (tab === "books") {
     const groupsToLoad = selectedGroup ? [selectedGroup] : myGroups;
@@ -130,33 +127,10 @@ export default async function GroupPage({
   }
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pb-10" style={{ paddingTop: `${32 + CHILD_GROUP_BAR_HEIGHT}px` }}>
-      <div className="flex gap-2">
-        {(
-          [
-            { key: "assignments", label: "숙제" },
-            { key: "books", label: "추천도서" },
-          ] as const
-        ).map((t) => {
-          const active = t.key === tab;
-          return (
-            <Link
-              key={t.key}
-              href={tabHref(t.key)}
-              className="d rounded-full px-4 py-2 text-sm"
-              style={{
-                background: active ? "var(--point-deep)" : "var(--card)",
-                color: active ? "#fff" : "var(--ink-2)",
-                border: active ? "1px solid var(--point-deep)" : "1px solid var(--rule)",
-              }}
-            >
-              {t.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="mt-5">{content}</div>
+    // 숙제/추천도서 소제목 탭은 고정 그룹 바(ChildGroupBar) 안으로 옮겼다 --
+    // 여기부터는 전부 내용.
+    <div className="mx-auto max-w-[520px] px-5 pb-10" style={{ paddingTop: `${20 + CHILD_GROUP_BAR_HEIGHT}px` }}>
+      {content}
     </div>
   );
 }
