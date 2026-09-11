@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { AvatarIllustration } from "@/components/illustration";
-import OperatorGroupTiles from "@/components/operator-group-tiles";
+import OperatorGroupTiles, { OPERATOR_GROUP_TILES_HEIGHT } from "@/components/operator-group-tiles";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
 import { pickActiveGroupId } from "@/lib/active-operator-group";
 
@@ -114,22 +114,27 @@ export default async function TeacherChildrenPage({
 
   const activeGroupId = pickActiveGroupId(sections, groupParam, userRow?.active_operator_group_id);
   const selected = sections.find((s) => s.id === activeGroupId) ?? null;
+  // 그룹이 둘 이상일 때만 상단바 아래 고정 그룹 전환 바가 뜬다(사용자
+  // 요청: "그룹 전환은 고정상단이길 바라는거야") -- 그만큼 본문 위쪽에
+  // 빈 공간을 미리 마련해 겹치지 않게 한다.
+  const showGroupTiles = sections.length > 1 && !!selected;
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div
+      className="mx-auto max-w-[520px] px-5 pb-10"
+      style={{ paddingTop: showGroupTiles ? `${32 + OPERATOR_GROUP_TILES_HEIGHT}px` : "32px" }}
+    >
+      {showGroupTiles && selected && (
+        <OperatorGroupTiles
+          groups={sections.map((s) => ({ id: s.id, name: s.name }))}
+          selectedId={selected.id}
+          basePath="/teacher/children"
+        />
+      )}
       <h1 className="d text-xl">아이들</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         아이마다 추천도서를 몇 권 읽었는지, 숙제를 몇 개 끝냈는지 볼 수 있어요. 누르면 책별·숙제별로 자세히 보여요.
       </p>
-      {sections.length > 1 && selected && (
-        <div className="mt-3">
-          <OperatorGroupTiles
-            groups={sections.map((s) => ({ id: s.id, name: s.name }))}
-            selectedId={selected.id}
-            basePath="/teacher/children"
-          />
-        </div>
-      )}
 
       {!selected ? (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>

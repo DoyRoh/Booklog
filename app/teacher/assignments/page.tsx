@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { shortMd } from "@/components/log-row";
 import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
-import OperatorGroupTiles from "@/components/operator-group-tiles";
+import OperatorGroupTiles, { OPERATOR_GROUP_TILES_HEIGHT } from "@/components/operator-group-tiles";
 import { effectiveRange } from "@/lib/assignment-period";
 import { missionChip } from "@/lib/assignment-chip";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
@@ -129,23 +129,25 @@ export default async function TeacherAssignmentsPage({
     else dueSections.push({ due, cards: [card] });
   }
   dueSections.sort((a, b) => a.due.localeCompare(b.due));
+  const showGroupTiles = sections.length > 1 && !!selected;
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div
+      className="mx-auto max-w-[520px] px-5 pb-10"
+      style={{ paddingTop: showGroupTiles ? `${32 + OPERATOR_GROUP_TILES_HEIGHT}px` : "32px" }}
+    >
+      {showGroupTiles && selected && (
+        <OperatorGroupTiles
+          groups={sections.map((s) => ({ id: s.id, name: s.name }))}
+          selectedId={selected.id}
+          basePath="/teacher/assignments"
+        />
+      )}
       <h1 className="d text-xl">숙제</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         추천도서 서랍에서 골라 기간을 정해 낸 숙제예요. 오른쪽은 몇 명이 끝냈는지, 누르면 아이별로 자세히
         보여요.
       </p>
-      {sections.length > 1 && selected && (
-        <div className="mt-3">
-          <OperatorGroupTiles
-            groups={sections.map((s) => ({ id: s.id, name: s.name }))}
-            selectedId={selected.id}
-            basePath="/teacher/assignments"
-          />
-        </div>
-      )}
 
       {!selected ? (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>

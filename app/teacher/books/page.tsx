@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import ManagedLogList from "@/components/managed-log-list";
-import OperatorGroupTiles from "@/components/operator-group-tiles";
+import OperatorGroupTiles, { OPERATOR_GROUP_TILES_HEIGHT } from "@/components/operator-group-tiles";
 import { loadOperatorBookSections, operatorBookRows } from "@/lib/operator-books";
 import { pickActiveGroupId } from "@/lib/active-operator-group";
 
@@ -37,22 +37,24 @@ export default async function TeacherBooksPage({
   ]);
   const activeGroupId = pickActiveGroupId(sections, groupParam, userRow?.active_operator_group_id);
   const selected = sections.find((s) => s.id === activeGroupId) ?? null;
+  const showGroupTiles = sections.length > 1 && !!selected;
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
+    <div
+      className="mx-auto max-w-[520px] px-5 pb-10"
+      style={{ paddingTop: showGroupTiles ? `${32 + OPERATOR_GROUP_TILES_HEIGHT}px` : "32px" }}
+    >
+      {showGroupTiles && selected && (
+        <OperatorGroupTiles
+          groups={sections.map((s) => ({ id: s.id, name: s.name }))}
+          selectedId={selected.id}
+          basePath="/teacher/books"
+        />
+      )}
       <h1 className="d text-xl">추천도서</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         그룹마다 책 서랍이 하나씩 있어요. 오른쪽 ‘선택’으로 여러 권을 한 번에 뺄 수 있어요.
       </p>
-      {sections.length > 1 && selected && (
-        <div className="mt-3">
-          <OperatorGroupTiles
-            groups={sections.map((s) => ({ id: s.id, name: s.name }))}
-            selectedId={selected.id}
-            basePath="/teacher/books"
-          />
-        </div>
-      )}
 
       {!selected ? (
         <div className="mt-6">
