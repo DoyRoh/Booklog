@@ -130,21 +130,26 @@ export default function BottomNav() {
             href={href}
             aria-label={label}
             aria-current={active ? "page" : undefined}
-            className="flex h-[48px] items-center gap-[6px] rounded-full px-[13px] transition-colors"
+            className="flex h-[48px] items-center gap-[6px] rounded-full px-[12px] transition-colors"
             style={{
               color: isSprout ? "var(--sprout-deep)" : active ? "var(--point-deep)" : "var(--ink-2)",
-              background: active
-                ? isSprout
-                  ? "rgba(139,195,74,0.22)"
-                  : "rgba(47,168,79,0.14)"
-                : "transparent",
+              // "추가"는 다른 탭과 달리 항상 연두 알약으로 눈에 띄어야 한다
+              // (사용자 요청) -- 눌러서 그 화면에 있을 때만 더 진해진다.
+              background: isSprout
+                ? active
+                  ? "rgba(139,195,74,0.42)"
+                  : "rgba(139,195,74,0.22)"
+                : active
+                  ? "rgba(47,168,79,0.14)"
+                  : "transparent",
             }}
           >
             <span className="flex h-[24px] w-[24px] items-center justify-center">
               <Icon strokeWidth={active ? 2.4 : 1.9} />
             </span>
-            {/* 켜진 탭만 이름을 옆에 펼친다 -- 아이콘만으로도 어디인지 읽히게. */}
-            {active && (
+            {/* 켜진 탭만 이름을 옆에 펼친다 -- 아이콘만으로도 어디인지 읽히게.
+                "추가"는 항상 CTA로 보여야 하니 이름도 항상 펼쳐 둔다. */}
+            {(active || isSprout) && (
               <span className="d whitespace-nowrap text-[13px] leading-none" style={{ fontFamily: "var(--disp)" }}>
                 {label}
               </span>
