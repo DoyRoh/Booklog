@@ -31,9 +31,9 @@ type UrgentAssignment = {
   overdue: boolean;
 };
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1">
+function Stat({ label, value, accent, href }: { label: string; value: string; accent?: string; href?: string }) {
+  const body = (
+    <div className="flex flex-col items-center gap-1 text-center">
       <p className="d text-[20px] font-semibold" style={{ color: accent ?? "var(--ink)" }}>
         {value}
       </p>
@@ -41,6 +41,12 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
         {label}
       </p>
     </div>
+  );
+  if (!href) return body;
+  return (
+    <Link href={href} className="block">
+      {body}
+    </Link>
   );
 }
 
@@ -137,6 +143,10 @@ export default async function TeacherDashboardPage() {
   urgent.sort((a, b) => a.due.localeCompare(b.due));
   const topUrgent = urgent.slice(0, URGENT_LIMIT);
   const pendingGroups = summaries.filter((g) => g.pendingCount > 0);
+  // "오늘 숙제" -- 마감이 오늘이거나 이미 지났는데 아직 다 안 끝난 것(당장
+  // 신경 써야 하는 것). "진행 중" 전체(topUrgent 이전의 urgent.length)보다
+  // 좁혀서, 여유 있는 숙제까지 뭉뚱그려 다급해 보이지 않게 했다.
+  const dueTodayCount = urgent.filter((a) => a.due <= today).length;
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -162,23 +172,34 @@ export default async function TeacherDashboardPage() {
       ) : (
         <>
           {/* 한눈에 보는 숫자 -- 그룹·아이들·숙제·추천도서 탭 각각을 안
-              열어봐도 전체 규모가 바로 보이게. */}
-          <div
-            className="mt-6 flex items-center justify-between rounded-[var(--r)] border p-5"
-            style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-          >
-            <Stat label="그룹" value={`${summaries.length}개`} />
-            <Stat label="아이" value={`${allChildIds.size}명`} />
-            <Stat label="진행 중 숙제" value={`${urgent.length}개`} />
-            <Stat
-              label="승인 대기"
-              value={`${totalPending}건`}
-              accent={totalPending > 0 ? "var(--lantern)" : undefined}
-            />
+              열어봐도 전체 규모가 바로 보이게. 네 칸을 grid로 균등하게
+              나눠 칸 사이 간격이 내용 길이와 무관하게 항상 같다. 숫자를
+              누르면 그 숫자가 뜻하는 화면/섹션으로 바로 이동한다. */}
+          <div className="mt-6 rounded-[var(--r)] border p-5" style={{ borderColor: "var(--rule)", background: "var(--card)" }}>
+            <div className="grid grid-cols-4 gap-2">
+              <Stat label="그룹" value={`${summaries.length}개`} href="#operating-groups" />
+              <Stat label="아이*" value={`${allChildIds.size}명`} href="/teacher/children" />
+              <Stat label="오늘 숙제" value={`${dueTodayCount}개`} href="/teacher/assignments" />
+              <Stat
+                label="승인 대기"
+                value={`${totalPending}건`}
+                accent={totalPending > 0 ? "var(--lantern)" : undefined}
+                href={totalPending > 0 ? "#pending-approvals" : undefined}
+              />
+            </div>
+            <p className="mt-3 text-[10px]" style={{ color: "var(--ink-2)", opacity: 0.75 }}>
+              * 여러 그룹에 속해도 아이는 한 명으로 세어요
+            </p>
           </div>
 
           {pendingGroups.length > 0 && (
-            <Section className="mt-5" title="승인 대기" description={`${totalPending}명이 기다리고 있어요`} flush>
+            <Section
+              id="pending-approvals"
+              className="mt-5"
+              title="승인 대기"
+              description={`${totalPending}명이 기다리고 있어요`}
+              flush
+            >
               {pendingGroups.map((g, i) => (
                 <Link
                   key={g.id}
@@ -258,7 +279,7 @@ export default async function TeacherDashboardPage() {
 
           {/* 그룹 자체(이름·소개·유형·삭제)를 만지는 자리는 여기 "설정"
               하나뿐 -- 책·숙제를 올리고 고치는 건 각 탭에서 한다. */}
-          <Section className="mt-5" title="운영 중인 그룹" description={`${summaries.length}개`} flush>
+          <Section id="operating-groups" className="mt-5" title="운영 중인 그룹" description={`${summaries.length}개`} flush>
             {summaries.map((g, i) => (
               <Link
                 key={g.id}

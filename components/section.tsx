@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
  * 목록(구분선)을 그리면 flush로 안쪽 여백을 없앤다.
  */
 export default function Section({
+  id,
   title,
   description,
   action,
@@ -14,6 +15,7 @@ export default function Section({
   className = "",
   children,
 }: {
+  id?: string;
   title: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
@@ -23,6 +25,7 @@ export default function Section({
 }) {
   return (
     <section
+      id={id}
       className={`overflow-hidden rounded-[var(--r)] border ${className}`}
       style={{ borderColor: "var(--rule)", background: "var(--card)" }}
     >
