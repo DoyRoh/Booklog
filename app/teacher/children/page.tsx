@@ -4,6 +4,7 @@ import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { AvatarIllustration } from "@/components/illustration";
 import GroupTopSelect from "@/components/group-top-select";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
+import { pickActiveGroupId } from "@/lib/active-operator-group";
 
 type ChildCard = {
   id: string;
@@ -57,7 +58,7 @@ export default async function TeacherChildrenPage({
     book_lists: { book_list_items: { book_id: string }[] | null }[] | null;
     reading_records: { child_id: string; book_id: string }[] | null;
   };
-  const [{ data: groupRows }, { data: completionRows }] = await Promise.all([
+  const [{ data: groupRows }, { data: completionRows }, { data: userRow }] = await Promise.all([
     operatorGroupsQuery(
       supabase,
       userId,
@@ -69,6 +70,7 @@ export default async function TeacherChildrenPage({
       .overrideTypes<GroupRow[], { merge: false }>(),
     // security_invoker 뷰라 RLS상 내가 볼 수 있는 숙제 행만 온다.
     supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
+    supabase.from("users").select("active_operator_group_id").eq("id", userId).single(),
   ]);
   const groups = groupRows ?? [];
 
@@ -110,7 +112,8 @@ export default async function TeacherChildrenPage({
     };
   });
 
-  const selected = sections.find((s) => s.id === groupParam) ?? sections[0] ?? null;
+  const activeGroupId = pickActiveGroupId(sections, groupParam, userRow?.active_operator_group_id);
+  const selected = sections.find((s) => s.id === activeGroupId) ?? null;
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">

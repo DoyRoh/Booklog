@@ -7,6 +7,7 @@ import GroupTopSelect from "@/components/group-top-select";
 import { effectiveRange } from "@/lib/assignment-period";
 import { missionChip } from "@/lib/assignment-chip";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
+import { pickActiveGroupId } from "@/lib/active-operator-group";
 
 type AssignmentCard = {
   id: string;
@@ -59,7 +60,7 @@ export default async function TeacherAssignmentsPage({
     assignment_missions: { type: string }[] | null;
   };
   type GroupRow = { id: string; name: string; assignments: AssignmentRow[] | null };
-  const [{ data: groupRows }, { data: completionRows }] = await Promise.all([
+  const [{ data: groupRows }, { data: completionRows }, { data: userRow }] = await Promise.all([
     operatorGroupsQuery(
       supabase,
       userId,
@@ -67,6 +68,7 @@ export default async function TeacherAssignmentsPage({
     ).overrideTypes<GroupRow[], { merge: false }>(),
     // security_invoker 뷰라 RLS상 내가 볼 수 있는 숙제 행만 온다.
     supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
+    supabase.from("users").select("active_operator_group_id").eq("id", userId).single(),
   ]);
   const groups = groupRows ?? [];
 
@@ -113,7 +115,8 @@ export default async function TeacherAssignmentsPage({
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
   }));
 
-  const selected = sections.find((s) => s.id === groupParam) ?? sections[0] ?? null;
+  const activeGroupId = pickActiveGroupId(sections, groupParam, userRow?.active_operator_group_id);
+  const selected = sections.find((s) => s.id === activeGroupId) ?? null;
 
   // "몇 개인지, 언제까지인지"가 한눈에 보여야 한다는 요청 -- 그룹을 먼저
   // 골랐으니 이제 마감일로만 묶으면 된다(아이 쪽 숙제 탭과 같은 기준).

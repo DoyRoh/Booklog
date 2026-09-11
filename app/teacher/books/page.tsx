@@ -4,6 +4,7 @@ import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import ManagedLogList from "@/components/managed-log-list";
 import GroupTopSelect from "@/components/group-top-select";
 import { loadOperatorBookSections, operatorBookRows } from "@/lib/operator-books";
+import { pickActiveGroupId } from "@/lib/active-operator-group";
 
 // 숲지기의 "추천도서" 탭 -- 그룹 하나를 골라(둘 이상일 때만 우측 상단
 // 드롭다운으로) 그 그룹의 추천도서 전체를 바로 관리한다(추가·선택·삭제).
@@ -30,8 +31,12 @@ export default async function TeacherBooksPage({
     );
   }
 
-  const sections = await loadOperatorBookSections(supabase, userId);
-  const selected = sections.find((s) => s.id === groupParam) ?? sections[0] ?? null;
+  const [sections, { data: userRow }] = await Promise.all([
+    loadOperatorBookSections(supabase, userId),
+    supabase.from("users").select("active_operator_group_id").eq("id", userId).single(),
+  ]);
+  const activeGroupId = pickActiveGroupId(sections, groupParam, userRow?.active_operator_group_id);
+  const selected = sections.find((s) => s.id === activeGroupId) ?? null;
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
