@@ -9,6 +9,7 @@ export type ChildAvatar = "rabbit" | "dog" | "cat";
 
 type Profile = {
   role: string | null;
+  childId: string | null;
   childName: string | null;
   childAvatar: ChildAvatar | null;
   operatorAvatar: OperatorAvatar | null;
@@ -16,7 +17,15 @@ type Profile = {
   loading: boolean;
 };
 
-const ProfileContext = createContext<Profile>({ role: null, childName: null, childAvatar: null, operatorAvatar: null, operatorName: null, loading: true });
+const ProfileContext = createContext<Profile>({
+  role: null,
+  childId: null,
+  childName: null,
+  childAvatar: null,
+  operatorAvatar: null,
+  operatorName: null,
+  loading: true,
+});
 
 export function useProfile() {
   return useContext(ProfileContext);
@@ -30,7 +39,15 @@ export function useProfile() {
 // 서버 컴포넌트만 새로 그리고 이 클라이언트 컴포넌트는 다시 실행하지
 // 않아서, 이벤트 없이는 상단 제목이 아이를 바꿔도 안 바뀌는 문제가 있었다).
 export default function ProfileProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Profile>({ role: null, childName: null, childAvatar: null, operatorAvatar: null, operatorName: null, loading: true });
+  const [state, setState] = useState<Profile>({
+    role: null,
+    childId: null,
+    childName: null,
+    childAvatar: null,
+    operatorAvatar: null,
+    operatorName: null,
+    loading: true,
+  });
 
   useEffect(() => {
     // 이벤트·auth 변화로 load()가 겹쳐 불리면 먼저 시작한 조회의 결과가
@@ -50,7 +67,15 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
       } = await supabase.auth.getSession();
       const user = session?.user ?? null;
       if (!user) {
-        apply({ role: null, childName: null, childAvatar: null, operatorAvatar: null, operatorName: null, loading: false });
+        apply({
+          role: null,
+          childId: null,
+          childName: null,
+          childAvatar: null,
+          operatorAvatar: null,
+          operatorName: null,
+          loading: false,
+        });
         return;
       }
       // users.role은 온보딩 때 고른 최초 기본값일 뿐이고, 실제로 지금
@@ -60,11 +85,12 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
       // 하나로는 표현이 안 된다). "parent" | "operator" 두 값만 쓴다.
       const { activeProfile, activeChild: child } = await getProfileSnapshot(supabase, user.id);
       const role = activeProfile.type === "operator" ? "operator" : "parent";
+      const childId: string | null = activeProfile.type === "child" ? (child?.id ?? null) : null;
       const childName: string | null = activeProfile.type === "child" ? (child?.name ?? null) : null;
       const childAvatar: ChildAvatar | null = activeProfile.type === "child" ? (child?.avatar ?? null) : null;
       const operatorAvatar = activeProfile.type === "operator" ? activeProfile.operatorAvatar : null;
       const operatorName = activeProfile.type === "operator" ? activeProfile.operatorName : null;
-      apply({ role, childName, childAvatar, operatorAvatar, operatorName, loading: false });
+      apply({ role, childId, childName, childAvatar, operatorAvatar, operatorName, loading: false });
     }
 
     load();

@@ -126,6 +126,7 @@ export default function RecordEditModal({
     setSaving(false);
     onClose();
     router.refresh();
+    window.dispatchEvent(new Event("chaeksup:assignment-changed"));
   }
 
   async function deleteRecord() {
@@ -141,6 +142,7 @@ export default function RecordEditModal({
     }
     onClose();
     router.refresh();
+    window.dispatchEvent(new Event("chaeksup:assignment-changed"));
   }
 
   return (

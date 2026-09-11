@@ -1368,3 +1368,11 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **`components/book-finder.tsx`(숲지기의 추천도서 올리기·숙제 만들기가 공유)**: "검색에 안 나오는 책이에요" 직접 입력 폼에 `PhotoPicker`로 "표지 찍어 올리기(선택)"를 추가했습니다. "다음"을 누를 때 사진이 있으면 먼저 업로드해 그 공개 URL을 `BookCandidate.coverUrl`에 담아 넘깁니다(업로드 실패 시 에러를 보여주고 저장은 막음, 표지 없이 저장하거나 재시도 가능).
 - **`app/library/add/page.tsx`(부모의 기록 남기기 화면)**: 이 화면은 BookFinder가 아니라 제목 입력창 자체가 검색창인 자체 구조라 별도로 붙였습니다. **새로 등록하는 책일 때만**(`!bookId` — 카탈로그에서 못 찾아 이번에 처음 만드는 책) 미리보기 카드 아래에 같은 `PhotoPicker`를 보여줍니다. 이미 카탈로그에 있는 책(`bookId` 있음)은 여기서 표지를 바꿔도 그 책 행 자체(`books.cover_url`)에는 반영되지 않는 구조라(기존 코드가 신규 insert 시에만 cover_url을 쓰고 있음), 혼란을 피하려고 새 책일 때만 보여줍니다. 파일을 고르면 즉시 업로드해 `coverUrl` state를 채우고, 저장 시 그 값이 그대로 `books.cover_url`로 들어갑니다.
 - DB 스키마는 버킷 추가 하나뿐이라 로컬 Postgres 검증은 필요 없었고 build+lint로 확인했습니다.
+
+## 하단 탭 "숙제" 아이콘에 알림 점 (사용자 요청: "숙제가 있으면 빨간 점, 했으면 초록색으로")
+
+- **`lib/homework-badge.ts`(신규) `getHomeworkBadge()`**: 오늘(한국 날짜) 진행 중인 숙제가 하나도 없으면 `"none"`, 있는데 그 숙제들의 책을 아직 다 안 읽었으면 `"pending"`, 전부 읽었으면 `"done"`을 돌려줍니다. `lib/assignments.ts`의 `fetchAssignments()`(표지·낭독 녹음 서명 URL까지 계산)는 하단 탭이 화면을 옮길 때마다 돌기엔 무거워서 재사용하지 않고, `assignment_books`/`assignment_completion`만 최소로 조회합니다. 기간 판정은 기존 `lib/assignment-period.ts`의 `isCurrent()`를 그대로 씁니다.
+- **`components/profile-context.tsx`**: `Profile`에 `childId`를 추가했습니다(`getProfileSnapshot()`이 이미 아이 `id`를 갖고 있어서 추가 조회 없음) — 하단 탭이 배지를 조회하려면 아이 이름·아바타뿐 아니라 id가 필요했습니다.
+- **`components/bottom-nav.tsx`**: `useHomeworkBadge(role, childId, pathname)`가 부모 프로필일 때만 배지를 조회하고, "숙제" 탭(`/assignments`) 아이콘 오른쪽 위에 8px 점을 얹습니다 — 빨강(`--berry`)은 진행 중, 초록(`--point`)은 완료, 진행 중인 숙제가 없으면 점 자체가 없습니다. 화면을 옮길 때마다(pathname 변화) 다시 확인하고, `aria-label`에도 "숙제 · 오늘 숙제 있음/완료"를 붙였습니다.
+- **즉시 갱신**: 체크 토글(`components/read-toggles.tsx`의 `ReadCheck`)과 기록 고치기 저장/삭제(`components/record-edit-modal.tsx`), 새 기록 저장(`app/library/add/page.tsx`)은 전부 화면 이동 없이 끝나는 동작이라, 성공하면 `window.dispatchEvent(new Event("chaeksup:assignment-changed"))`를 쏘게 했습니다. `bottom-nav.tsx`가 이 이벤트를 들어서 숙제 탭으로 돌아가지 않아도 다음 화면 전환을 기다리지 않고 바로 점 색이 바뀝니다.
+- DB 스키마 변경 없음(기존 `assignment_completion` 뷰만 다시 읽음). build+lint로 확인했습니다.

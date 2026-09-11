@@ -38,6 +38,9 @@ export function ReadCheck({
     await setRead(createClient(), childId, bookId, groupId, next);
     busy.current = false;
     router.refresh();
+    // 화면 이동 없이 바로 끝나는 토글이라, 하단 탭의 숙제 알림 점이
+    // 다음 화면 전환까지 기다리지 않고 바로 갱신되도록 알린다.
+    window.dispatchEvent(new Event("chaeksup:assignment-changed"));
   }
 
   return (

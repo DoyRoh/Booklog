@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useProfile } from "@/components/profile-context";
 import { isChromeHidden } from "@/lib/nav";
+import { createClient } from "@/lib/supabase/client";
+import { getHomeworkBadge, type HomeworkBadge } from "@/lib/homework-badge";
 import {
   TodayIcon,
   LibraryIcon,
@@ -87,10 +89,41 @@ function useHideOnScroll() {
   return hidden;
 }
 
+// "숙제" 탭 아이콘 위 알림 점 -- 오늘 진행 중인 숙제가 있으면 빨간 점,
+// 그 책을 전부 읽었으면 초록 점(사용자 요청: "숙제가 있으면 빨간 점,
+// 숙제 했으면 초록색으로"). 화면을 옮길 때마다(pathname 변화) 다시
+// 확인해서, 숙제 탭에서 체크하고 다른 탭으로 돌아오면 바로 반영된다.
+// 체크 토글은 화면 이동 없이 바로 상태가 바뀌므로 read-toggles.tsx가
+// 쏘는 "chaeksup:assignment-changed" 이벤트도 같이 듣는다.
+function useHomeworkBadge(role: string | null, childId: string | null, pathname: string): HomeworkBadge {
+  const [badge, setBadge] = useState<HomeworkBadge>("none");
+
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      if (role !== "parent" || !childId) {
+        if (alive) setBadge("none");
+        return;
+      }
+      const result = await getHomeworkBadge(createClient(), childId);
+      if (alive) setBadge(result);
+    }
+    load();
+    window.addEventListener("chaeksup:assignment-changed", load);
+    return () => {
+      alive = false;
+      window.removeEventListener("chaeksup:assignment-changed", load);
+    };
+  }, [role, childId, pathname]);
+
+  return badge;
+}
+
 export default function BottomNav() {
   const pathname = usePathname();
-  const { role, loading } = useProfile();
+  const { role, loading, childId } = useProfile();
   const hidden = useHideOnScroll();
+  const homeworkBadge = useHomeworkBadge(role, childId, pathname);
 
   if (isChromeHidden(pathname) || (!loading && role === null)) {
     return null;
@@ -124,11 +157,12 @@ export default function BottomNav() {
         const { href, label, Icon } = tab;
         const active = href === activeHref;
         const isSprout = "accent" in tab && tab.accent === "sprout";
+        const showHomeworkDot = href === "/assignments" && homeworkBadge !== "none";
         return (
           <Link
             key={href}
             href={href}
-            aria-label={label}
+            aria-label={showHomeworkDot ? `${label} · ${homeworkBadge === "done" ? "오늘 숙제 완료" : "오늘 숙제 있음"}` : label}
             aria-current={active ? "page" : undefined}
             className="flex h-[48px] items-center gap-[6px] rounded-full px-[12px] transition-colors"
             style={{
@@ -144,8 +178,18 @@ export default function BottomNav() {
                   : "transparent",
             }}
           >
-            <span className="flex h-[24px] w-[24px] items-center justify-center">
+            <span className="relative flex h-[24px] w-[24px] items-center justify-center">
               <Icon strokeWidth={active ? 2.4 : 1.9} />
+              {showHomeworkDot && (
+                <span
+                  aria-hidden
+                  className="absolute right-[1px] top-[1px] h-[8px] w-[8px] rounded-full"
+                  style={{
+                    background: homeworkBadge === "done" ? "var(--point)" : "var(--berry)",
+                    boxShadow: "0 0 0 1.5px rgba(255,255,255,0.96)",
+                  }}
+                />
+              )}
             </span>
             {/* 켜진 탭만 이름을 옆에 펼친다 -- 아이콘만으로도 어디인지 읽히게.
                 "추가"는 항상 CTA로 보여야 하니 이름도 항상 펼쳐 둔다. */}

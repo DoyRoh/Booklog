@@ -385,6 +385,9 @@ function AddBookForm() {
       }
 
       setStep("saved");
+      // 숙제 책을 이 화면에서 처음 기록했을 수도 있으니, 하단 탭의 숙제
+      // 알림 점이 다음 화면 전환까지 기다리지 않고 바로 갱신되게 한다.
+      window.dispatchEvent(new Event("chaeksup:assignment-changed"));
     } finally {
       savingRef.current = false;
       setSaving(false);
