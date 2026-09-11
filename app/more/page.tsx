@@ -5,9 +5,7 @@ import { getActiveProfile } from "@/lib/active-profile";
 import SignOutButton from "@/components/sign-out-button";
 import ChildSwitcher from "@/components/child-switcher";
 import OperatorProfileSwitcher, { type OperatorGroup } from "@/components/operator-profile-switcher";
-import ChildShare from "@/components/child-share";
 import ShelfTagManager from "@/components/shelf-tag-manager";
-import Illustration from "@/components/illustration";
 import Section from "@/components/section";
 import ProfileModeSwitch from "@/components/profile-mode-switch";
 
@@ -35,7 +33,7 @@ export default async function MorePage() {
     supabase.from("users").select("email, active_child_id, operator_avatar, operator_name").eq("id", userId).single(),
     supabase
       .from("child_guardians")
-      .select("children(id, name, avatar, birth_date, invite_code)")
+      .select("children(id, name, avatar, birth_date)")
       .eq("user_id", userId),
     supabase
       .from("group_members")
@@ -51,7 +49,6 @@ export default async function MorePage() {
     name: string;
     avatar: "rabbit" | "dog" | "cat" | null;
     birth_date: string | null;
-    invite_code: string | null;
   };
   const children = (guardianRows ?? [])
     .map((row) => row.children as unknown as ChildRow | null)
@@ -127,18 +124,6 @@ export default async function MorePage() {
             />
           </div>
         </div>
-      </Section>
-
-      {/* 하얀 새가 편지를 물어다 주는 장면 -- 공유 코드가 곧 편지. */}
-      <Section
-        className="mt-5"
-        title="책장 공유"
-        description="배우자·조부모 같은 다른 보호자를 초대해서 같은 아이의 책장을 함께 보고 기록할 수 있어요."
-        action={<Illustration name="bird-letter" height={44} />}
-      >
-        <ChildShare
-          childList={children.map((child) => ({ id: child.id, name: child.name, inviteCode: child.invite_code }))}
-        />
       </Section>
 
       {(profile?.active_child_id ?? children[0]?.id) && (

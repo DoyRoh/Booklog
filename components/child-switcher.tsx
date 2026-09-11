@@ -223,11 +223,17 @@ export default function ChildSwitcher({
                   disabled={switching === child.id}
                   className="flex flex-1 items-center gap-3 text-left disabled:opacity-60"
                 >
-                  <AvatarIllustration avatar={child.avatar} height={44} style={{ opacity: active ? 1 : 0.6 }} />
-                  <div className="flex-1">
-                    <p className="d text-sm">{child.name}</p>
+                  {/* 아바타 그림마다 가로폭이 달라(높이 44px 기준 토끼 17px,
+                      고양이 28px) 이름 시작점이 줄마다 어긋났다 -- 고정 폭
+                      상자에 가운데 정렬해서 글 칸이 항상 같은 자리에서 시작하게 한다. */}
+                  <span className="flex h-11 w-11 flex-none items-center justify-center">
+                    <AvatarIllustration avatar={child.avatar} height={44} style={{ opacity: active ? 1 : 0.6 }} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="d truncate text-sm">{child.name}</p>
                     {child.birth_date && (
-                      <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                      // 생년월일이 "2019-08-" / "10"으로 꺾이던 걸 막는다(줄 폭이 좁을 땐 잘림).
+                      <p className="truncate text-xs" style={{ color: "var(--ink-2)" }}>
                         {child.birth_date}
                       </p>
                     )}
@@ -241,8 +247,11 @@ export default function ChildSwitcher({
                 >
                   고치기
                 </button>
+                {/* "이 아이로 보기"(7글자)는 아바타·날짜·고치기까지 있는 줄에서
+                    360px 폰이면 카드 밖으로 잘렸다 -- 줄 왼쪽 전체가 이미 그 아이를
+                    고르는 버튼이라, 여기는 상태만 짧게 남긴다. */}
                 <span className="d flex-none text-xs" style={{ color: active ? "var(--point-deep)" : "var(--ink-2)" }}>
-                  {switching === child.id ? "전환 중…" : active ? "보는 중 ›" : "이 아이로 보기"}
+                  {switching === child.id ? "전환 중…" : active ? "보는 중" : "›"}
                 </span>
               </div>
             )}
