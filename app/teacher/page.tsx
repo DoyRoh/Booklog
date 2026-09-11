@@ -215,7 +215,11 @@ export default async function TeacherDashboardPage() {
                 {topUrgent.map((a) => {
                   const pct = a.total > 0 ? Math.round((a.completed / a.total) * 100) : 0;
                   return (
-                    <div key={a.id}>
+                    // 숙제 탭은 이제 그룹 하나만 보여주는 화면이라(사용자
+                    // 요청: 그룹까지 껴서 정신 사납다) 여기 "전체 보기"로는
+                    // 이 숙제가 있는 그룹을 못 찾을 수 있다 -- 줄 자체를 그
+                    // 숙제 상세로 바로 연결해 그룹을 거치지 않고 보여준다.
+                    <Link key={a.id} href={`/teacher/assignments/${a.id}`} className="block">
                       <div className="flex items-center justify-between gap-2 text-xs">
                         <span className="min-w-0 truncate">
                           <span style={{ color: "var(--ink-2)" }}>{a.groupName} · </span>
@@ -245,7 +249,7 @@ export default async function TeacherDashboardPage() {
                       >
                         {a.overdue ? "마감이 지났어요" : `${shortMd(a.due)}까지`}
                       </p>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>

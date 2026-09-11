@@ -33,7 +33,7 @@ export default async function TeacherChildDetailPage({
   if (!userId || !groupId) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
-        <Link href="/teacher/children" className="text-sm" style={{ color: "var(--point)" }}>
+        <Link href={groupId ? `/teacher/children?group=${groupId}` : "/teacher/children"} className="text-sm" style={{ color: "var(--point)" }}>
           ← 아이들
         </Link>
       </div>
@@ -58,7 +58,7 @@ export default async function TeacherChildDetailPage({
   if (!membership || !group || !child) {
     return (
       <div className="mx-auto max-w-[520px] px-5 pt-8">
-        <Link href="/teacher/children" className="text-sm" style={{ color: "var(--ink-2)" }}>
+        <Link href={`/teacher/children?group=${groupId}`} className="text-sm" style={{ color: "var(--ink-2)" }}>
           ← 아이들
         </Link>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
@@ -112,7 +112,7 @@ export default async function TeacherChildDetailPage({
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <Link href="/teacher/children" className="text-sm" style={{ color: "var(--ink-2)" }}>
+      <Link href={`/teacher/children?group=${groupId}`} className="text-sm" style={{ color: "var(--ink-2)" }}>
         ← 아이들
       </Link>
 

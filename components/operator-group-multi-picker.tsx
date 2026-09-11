@@ -8,8 +8,7 @@ import { useRouter } from "next/navigation";
  * 낼 수 있도록 체크박스로 여러 그룹을 고르는 목록(사용자 요청: "그룹 모두에
  * 추천도서와 숙제 동시에 넣을 수도 있단다. 그룹 선택버튼 넣어서 여러그룹에
  * 동시에 올릴 수 있도록"). 고른 그룹 id들을 콤마로 이어 `?groups=` 쿼리로
- * 넘긴다 -- 하나만 고르면 기존 `OperatorGroupPicker`(한 번에 한 그룹, 관리
- * 화면 이동용)와 동일하게 동작한다.
+ * 넘긴다 -- 하나만 고르면 `?group=` 하나만 쓰는 기존 흐름과 동일하게 동작한다.
  */
 export default function OperatorGroupMultiPicker({
   groups,

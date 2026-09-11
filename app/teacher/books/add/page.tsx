@@ -56,7 +56,11 @@ export default async function AddRecommendBookPage({
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <Link href="/teacher/books" className="text-sm" style={{ color: "var(--ink-2)" }}>
+      <Link
+        href={selected.length === 1 ? `/teacher/books?group=${selected[0].id}` : "/teacher/books"}
+        className="text-sm"
+        style={{ color: "var(--ink-2)" }}
+      >
         ← 추천도서
       </Link>
       <h1 className="d mt-2 text-xl">추천도서에 책 올리기</h1>

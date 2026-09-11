@@ -2,16 +2,20 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import ManagedLogList from "@/components/managed-log-list";
+import GroupTopSelect from "@/components/group-top-select";
 import { loadOperatorBookSections, operatorBookRows } from "@/lib/operator-books";
 
-// 그룹마다 최근 올린 책 몇 권만 미리 보여주고, 전체 목록·선택·삭제는
-// 그룹별 관리 화면(/teacher/books/manage?group=)에서 한다.
-const PREVIEW_LIMIT = 10;
-
-// 숲지기의 "추천도서" 탭 -- 그룹별 미리보기. 추천도서 한 권당 한 줄:
-// 우리 아이들 중 몇 명이 읽었는지 + 지금 숙제에 들어 있는지. 누르면 그
-// 책을 누가 어디까지 읽었는지(/teacher/books/[bookId]?group=...).
-export default async function TeacherBooksPage() {
+// 숲지기의 "추천도서" 탭 -- 그룹 하나를 골라(둘 이상일 때만 우측 상단
+// 드롭다운으로) 그 그룹의 추천도서 전체를 바로 관리한다(추가·선택·삭제).
+// 예전엔 그룹마다 미리보기 10권 + "관리" 화면으로 한 단계 더 들어가야
+// 했는데, 그룹이 하나뿐인 대다수 숲지기에게는 그 중간 화면이 그냥
+// 불필요한 클릭이었다("관리를 들어가도 추가 기능이 또 있다"는 지적).
+export default async function TeacherBooksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ group?: string }>;
+}) {
+  const { group: groupParam } = await searchParams;
   const supabase = await createClient();
   const userId = await getVerifiedUserId();
 
@@ -27,32 +31,25 @@ export default async function TeacherBooksPage() {
   }
 
   const sections = await loadOperatorBookSections(supabase, userId);
+  const selected = sections.find((s) => s.id === groupParam) ?? sections[0] ?? null;
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      {/* 제목·버튼을 한 줄에, 설명글은 그 아래 전체 너비로 -- 버튼과 같은
-          줄에 두면 버튼 라벨이 길어질수록 설명글 칸이 좁아져 줄바꿈이
-          늘어난다("설명글 배치 좀 가로 맞춰서" 피드백). */}
       <div className="flex items-center justify-between gap-3">
         <h1 className="d text-xl">추천도서</h1>
-        {/* 숙제 탭의 "+ 숙제 만들기"와 짝을 맞춘다 -- 이 버튼은 책을 올리는
-            동작이고, 새 그룹을 만드는 건 대시보드의 점선 버튼으로 옮겼다
-            (같은 버튼이 "새 그룹"과 "책 올리기" 둘 다를 뜻해 헷갈린다는 지적). */}
-        {sections.length > 0 && (
-          <Link
-            href="/teacher/books/add"
-            className="d flex-none rounded-[14px] px-3 py-2 text-sm text-white"
-            style={{ background: "var(--point)" }}
-          >
-            + 추천도서 만들기
-          </Link>
+        {sections.length > 1 && selected && (
+          <GroupTopSelect
+            groups={sections.map((s) => ({ id: s.id, name: s.name }))}
+            selectedId={selected.id}
+            basePath="/teacher/books"
+          />
         )}
       </div>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-        그룹마다 책 서랍이 하나씩 있어요. 최근 {PREVIEW_LIMIT}권만 보이고, ‘관리’에서 전부 보고 고쳐요.
+        그룹마다 책 서랍이 하나씩 있어요. 오른쪽 ‘선택’으로 여러 권을 한 번에 뺄 수 있어요.
       </p>
 
-      {sections.length === 0 ? (
+      {!selected ? (
         <div className="mt-6">
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 운영하는 그룹이 없어요.
@@ -62,22 +59,29 @@ export default async function TeacherBooksPage() {
           </Link>
         </div>
       ) : (
-        <div className="mt-6 flex flex-col gap-4">
-          {sections.map((section) => (
+        <>
+          <div className="mt-6">
             <ManagedLogList
-              key={section.id}
-              heading={section.name}
-              headingSub={`${section.books.length}권`}
-              addHref={`/teacher/books/add?group=${section.id}`}
+              heading="추천도서"
+              headingSub={`${selected.books.length}권`}
+              addHref={`/teacher/books/add?group=${selected.id}`}
               addLabel="+ 책 추가"
-              rows={operatorBookRows(section, section.books.slice(0, PREVIEW_LIMIT))}
-              emptyText="아직 추천도서가 없어요. ‘관리’에서 책을 올려 주세요."
+              rows={operatorBookRows(selected)}
+              emptyText="아직 추천도서가 없어요. ‘+ 책 추가’로 올려 주세요."
               table="book_list_items"
               deleteNoun="추천도서에서 뺄까요? (아이들의 기록은 남아요)"
-              preview={{ href: `/teacher/books/manage?group=${section.id}`, total: section.books.length }}
             />
-          ))}
-        </div>
+          </div>
+          {sections.length > 1 && (
+            <Link
+              href="/teacher/books/add"
+              className="d mt-3 inline-block text-xs"
+              style={{ color: "var(--ink-2)" }}
+            >
+              여러 그룹에 함께 올리려면 ›
+            </Link>
+          )}
+        </>
       )}
     </div>
   );

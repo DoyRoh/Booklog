@@ -55,7 +55,11 @@ export default async function NewAssignmentPage({
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <Link href="/teacher/assignments" className="text-sm" style={{ color: "var(--ink-2)" }}>
+      <Link
+        href={selected.length === 1 ? `/teacher/assignments?group=${selected[0].id}` : "/teacher/assignments"}
+        className="text-sm"
+        style={{ color: "var(--ink-2)" }}
+      >
         ← 숙제
       </Link>
       <h1 className="d mt-2 text-xl">숙제 만들기</h1>
@@ -113,8 +117,8 @@ async function NewAssignmentForm({ groups, multi }: { groups: { id: string; name
         groupIds={groups.map((g) => g.id)}
         books={books}
         defaultOpen
-        afterSaveHref="/teacher/assignments"
-        cancelHref="/teacher/assignments"
+        afterSaveHref={groups.length === 1 ? `/teacher/assignments?group=${groups[0].id}` : "/teacher/assignments"}
+        cancelHref={groups.length === 1 ? `/teacher/assignments?group=${groups[0].id}` : "/teacher/assignments"}
       />
     </Section>
   );

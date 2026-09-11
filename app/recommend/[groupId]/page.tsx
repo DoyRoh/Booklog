@@ -185,7 +185,7 @@ export default async function GroupDetailPage({
           title="추천도서"
           description={`올린 책 ${recommendBooks.length}권`}
           action={
-            <Link href={`/teacher/books/manage?group=${groupId}`} className="text-xs" style={{ color: "var(--point)" }}>
+            <Link href={`/teacher/books?group=${groupId}`} className="text-xs" style={{ color: "var(--point)" }}>
               관리 ›
             </Link>
           }

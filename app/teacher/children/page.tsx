@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { AvatarIllustration } from "@/components/illustration";
+import GroupTopSelect from "@/components/group-top-select";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
 
 type ChildCard = {
@@ -20,10 +21,17 @@ type GroupSection = {
   children: ChildCard[];
 };
 
-// 숲지기의 "아이들" 탭 -- 그룹별로 아이 한 명당 한 줄: 추천도서 몇 권을
-// 읽었는지 + 숙제 몇 개를 끝냈는지. 줄을 누르면 그 아이의 책별·숙제별
-// 상세(/teacher/children/[childId]?group=...)로 간다.
-export default async function TeacherChildrenPage() {
+// 숲지기의 "아이들" 탭 -- 그룹 하나를 골라(그룹이 둘 이상일 때만 우측
+// 상단 드롭다운으로) 그 그룹의 아이들만 본다. 예전엔 모든 그룹을 세로로
+// 쌓아 보여줬는데, 그룹이 하나뿐인 대다수 숲지기에게도 "그룹"이라는
+// 개념이 항상 끼어들어 화면이 복잡해 보인다는 지적을 반영했다. 그룹별
+// 요약(전체를 훑어보는 용도)은 대시보드가 담당한다.
+export default async function TeacherChildrenPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ group?: string }>;
+}) {
+  const { group: groupParam } = await searchParams;
   const supabase = await createClient();
   const userId = await getVerifiedUserId();
 
@@ -59,15 +67,11 @@ export default async function TeacherChildrenPage() {
       // "우리 그룹의 추천도서를 우리 그룹에서 읽은 것" 기준으로 센다.
       .eq("reading_records.status", "done")
       .overrideTypes<GroupRow[], { merge: false }>(),
-    // security_invoker 뷰라 RLS상 내가 볼 수 있는 숙제 행만 온다. 이 그룹
-    // 숙제가 아닌 행(같은 계정의 아이가 다른 그룹에서 받은 숙제)은 아래
-    // 숙제 id 집합에서 걸러진다.
+    // security_invoker 뷰라 RLS상 내가 볼 수 있는 숙제 행만 온다.
     supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
   ]);
   const groups = groupRows ?? [];
 
-  // 숙제 하나에 책이 여러 권이면 completion 행도 책 수만큼이라, 숙제 단위로
-  // "전부 완료했는지"를 다시 묶는다.
   const sections: GroupSection[] = groups.map((group) => {
     const children = (group.members ?? [])
       .filter((row) => row.status === "approved" && row.child_id)
@@ -106,65 +110,61 @@ export default async function TeacherChildrenPage() {
     };
   });
 
+  const selected = sections.find((s) => s.id === groupParam) ?? sections[0] ?? null;
+
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      <h1 className="d text-xl">아이들</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="d text-xl">아이들</h1>
+        {sections.length > 1 && selected && (
+          <GroupTopSelect
+            groups={sections.map((s) => ({ id: s.id, name: s.name }))}
+            selectedId={selected.id}
+            basePath="/teacher/children"
+          />
+        )}
+      </div>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         아이마다 추천도서를 몇 권 읽었는지, 숙제를 몇 개 끝냈는지 볼 수 있어요. 누르면 책별·숙제별로 자세히 보여요.
       </p>
 
-      {sections.length === 0 ? (
+      {!selected ? (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
           아직 운영하는 그룹이 없어요.
         </p>
+      ) : selected.children.length === 0 ? (
+        <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
+          아직 승인된 아이가 없어요.
+        </p>
       ) : (
-        <div className="mt-6 flex flex-col gap-6">
-          {sections.map((section) => (
-            <div key={section.id}>
-              <div className="flex items-center justify-between">
-                <p className="d text-sm">{section.name}</p>
-                <Link href={`/recommend/${section.id}`} className="text-xs" style={{ color: "var(--point)" }}>
-                  그룹 관리
-                </Link>
+        <div
+          className="mt-6 overflow-hidden rounded-[var(--r)] border"
+          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+        >
+          {selected.children.map((child, index) => (
+            <Link
+              key={child.id}
+              href={`/teacher/children/${child.id}?group=${selected.id}`}
+              className="flex items-center gap-3 px-4 py-3"
+              style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
+            >
+              <div
+                className="flex h-9 w-9 flex-none items-center justify-center rounded-full"
+                style={{ background: "var(--paper)" }}
+              >
+                <AvatarIllustration avatar={child.avatar} height={28} />
               </div>
-
-              {section.children.length === 0 ? (
-                <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>
-                  아직 승인된 아이가 없어요.
+              <div className="min-w-0 flex-1">
+                <p className="text-sm">{child.name}</p>
+                <p className="mt-0.5 text-xs" style={{ color: "var(--ink-2)" }}>
+                  추천도서 {child.readCount}/{child.listCount}권 읽음 ·{" "}
+                  {child.total > 0 ? `숙제 ${child.completed}/${child.total} 완료` : "숙제 없음"}
                 </p>
-              ) : (
-                <div
-                  className="mt-2 overflow-hidden rounded-[var(--r)] border"
-                  style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-                >
-                  {section.children.map((child, index) => (
-                    <Link
-                      key={child.id}
-                      href={`/teacher/children/${child.id}?group=${section.id}`}
-                      className="flex items-center gap-3 px-3 py-3"
-                      style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
-                    >
-                      <div
-                        className="flex h-9 w-9 flex-none items-center justify-center rounded-full"
-                        style={{ background: "var(--paper)" }}
-                      >
-                        <AvatarIllustration avatar={child.avatar} height={28} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm">{child.name}</p>
-                        <p className="mt-0.5 text-xs" style={{ color: "var(--ink-2)" }}>
-                          추천도서 {child.readCount}/{child.listCount}권 읽음 ·{" "}
-                          {child.total > 0 ? `숙제 ${child.completed}/${child.total} 완료` : "숙제 없음"}
-                        </p>
-                      </div>
-                      <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-                        ›
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+              </div>
+              <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+                ›
+              </span>
+            </Link>
           ))}
         </div>
       )}

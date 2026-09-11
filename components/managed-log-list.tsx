@@ -39,7 +39,6 @@ export default function ManagedLogList({
   emptyText,
   table,
   deleteNoun,
-  preview,
 }: {
   heading: string;
   headingSub?: string;
@@ -50,11 +49,6 @@ export default function ManagedLogList({
   table: "book_list_items" | "assignments";
   /** 확인 문구용: "추천도서에서 뺄까요" / "숙제를 지울까요" */
   deleteNoun: string;
-  /**
-   * 미리보기 모드: 머리글 오른쪽은 "관리 ›" 링크 하나뿐이고(추가·선택 없음),
-   * 전체가 rows보다 많으면 맨 아래에 "나머지 N권 전체 보기 ›"가 붙는다.
-   */
-  preview?: { href: string; total: number };
 }) {
   const router = useRouter();
   const [selecting, setSelecting] = useState(false);
@@ -100,18 +94,6 @@ export default function ManagedLogList({
       heading={heading}
       headingSub={headingSub}
       headingRight={
-        preview ? (
-          // 미리보기 모드도 "관리"만 있으면 책을 어디서 추가하는지 안 보인다는
-          // 피드백 -- "+ 책 추가"를 바로 옆에 같이 보여준다.
-          <span className="flex items-center gap-3">
-            <Link href={addHref} className="d" style={{ color: "var(--point)" }}>
-              {addLabel}
-            </Link>
-            <Link href={preview.href} className="d" style={{ color: "var(--ink-2)" }}>
-              관리 ›
-            </Link>
-          </span>
-        ) : (
         <span className="flex items-center gap-3">
           {!selecting && (
             <Link href={addHref} className="d" style={{ color: "var(--point)" }}>
@@ -124,7 +106,6 @@ export default function ManagedLogList({
             </button>
           )}
         </span>
-        )
       }
     >
       {rows.length === 0 ? (
@@ -189,16 +170,6 @@ export default function ManagedLogList({
             />
           );
         })
-      )}
-
-      {preview && preview.total > rows.length && (
-        <Link
-          href={preview.href}
-          className="d block px-4 py-3 text-center text-xs"
-          style={{ borderTop: "1px solid rgba(38,54,43,0.08)", color: "var(--point-deep)" }}
-        >
-          나머지 {preview.total - rows.length}권 · 전체 보기 ›
-        </Link>
       )}
 
       {selecting && (

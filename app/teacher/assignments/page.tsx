@@ -3,14 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { shortMd } from "@/components/log-row";
 import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
+import GroupTopSelect from "@/components/group-top-select";
 import { effectiveRange } from "@/lib/assignment-period";
 import { missionChip } from "@/lib/assignment-chip";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
 
 type AssignmentCard = {
   id: string;
-  groupId: string;
-  groupName: string;
   title: string;
   description: string | null;
   bookTitles: string[];
@@ -22,7 +21,18 @@ type AssignmentCard = {
   total: number;
 };
 
-export default async function TeacherAssignmentsPage() {
+type GroupSection = { id: string; name: string; cards: AssignmentCard[] };
+
+// 숲지기의 "숙제" 탭 -- 그룹 하나를 골라(둘 이상일 때만 우측 상단
+// 드롭다운으로) 그 그룹의 숙제만 마감일순으로 본다. 예전엔 모든 그룹의
+// 숙제를 마감일로 한데 묶어 보여줘서 헤딩마다 그룹 이름을 나열해야 했는데,
+// 그룹을 먼저 고르는 구조로 바뀌면서 그 나열이 필요 없어졌다.
+export default async function TeacherAssignmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ group?: string }>;
+}) {
+  const { group: groupParam } = await searchParams;
   const supabase = await createClient();
   const userId = await getVerifiedUserId();
 
@@ -37,10 +47,6 @@ export default async function TeacherAssignmentsPage() {
     );
   }
 
-  // "교사 계정"이라는 고정된 역할 대신, 실제로 운영진으로 승인된 그룹이
-  // 있는지로 판단한다(계정 하나가 아이 프로필과 선생님 프로필을 동시에
-  // 가질 수 있음). 그룹이 하나도 없으면 아래 "아직 만든 숙제가 없어요"
-  // 안내가 그대로 자연스럽게 뜬다.
   // 운영 그룹 + 숙제(책 제목·미션)를 임베드 한 번으로, 완료 현황은 나란히.
   type AssignmentRow = {
     id: string;
@@ -82,62 +88,55 @@ export default async function TeacherAssignmentsPage() {
     }
   }
 
-  const cards: AssignmentCard[] = groups
-    .flatMap((group) => (group.assignments ?? []).map((assignment) => ({ group, assignment })))
-    // 최근에 낸 숙제가 위.
-    .sort((a, b) => b.assignment.created_at.localeCompare(a.assignment.created_at))
-    .map(({ group, assignment }) => {
-    const stat = completionByAssignment.get(assignment.id) ?? { completed: 0, total: 0 };
-    return {
-      id: assignment.id,
-      groupId: group.id,
-      groupName: group.name,
-      title: assignment.title,
-      description: assignment.description,
-      bookTitles: (assignment.assignment_books ?? [])
-        .map((ab) => ab.books?.title)
-        .filter((t): t is string => Boolean(t)),
-      missions: assignment.assignment_missions ?? [],
-      startDate: assignment.start_date,
-      endDate: assignment.end_date,
-      createdAt: assignment.created_at,
-      completed: stat.completed,
-      total: stat.total,
-    };
-  });
+  const sections: GroupSection[] = groups.map((group) => ({
+    id: group.id,
+    name: group.name,
+    cards: (group.assignments ?? [])
+      .map((assignment) => {
+        const stat = completionByAssignment.get(assignment.id) ?? { completed: 0, total: 0 };
+        return {
+          id: assignment.id,
+          title: assignment.title,
+          description: assignment.description,
+          bookTitles: (assignment.assignment_books ?? [])
+            .map((ab) => ab.books?.title)
+            .filter((t): t is string => Boolean(t)),
+          missions: assignment.assignment_missions ?? [],
+          startDate: assignment.start_date,
+          endDate: assignment.end_date,
+          createdAt: assignment.created_at,
+          completed: stat.completed,
+          total: stat.total,
+        };
+      })
+      // 최근에 낸 숙제가 위.
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  }));
 
-  // "몇 개인지, 언제까지인지"가 한눈에 보여야 한다는 요청 -- 그룹별이
-  // 아니라 아이 쪽 숙제 탭(assignment-today.tsx)과 같은 기준인 마감일로
-  // 묶는다. 한 마감일에 여러 그룹의 숙제가 걸릴 수 있어 headingSub에
-  // 그 그룹 이름들을 적어 어디 숙제인지는 계속 보이게 한다.
-  type DueSection = { due: string; groupNames: string[]; cards: AssignmentCard[] };
-  const sections: DueSection[] = [];
-  for (const card of cards) {
+  const selected = sections.find((s) => s.id === groupParam) ?? sections[0] ?? null;
+
+  // "몇 개인지, 언제까지인지"가 한눈에 보여야 한다는 요청 -- 그룹을 먼저
+  // 골랐으니 이제 마감일로만 묶으면 된다(아이 쪽 숙제 탭과 같은 기준).
+  type DueSection = { due: string; cards: AssignmentCard[] };
+  const dueSections: DueSection[] = [];
+  for (const card of selected?.cards ?? []) {
     const due = effectiveRange(card).end;
-    const section = sections.find((s) => s.due === due);
-    if (section) {
-      section.cards.push(card);
-      if (!section.groupNames.includes(card.groupName)) section.groupNames.push(card.groupName);
-    } else {
-      sections.push({ due, groupNames: [card.groupName], cards: [card] });
-    }
+    const section = dueSections.find((s) => s.due === due);
+    if (section) section.cards.push(card);
+    else dueSections.push({ due, cards: [card] });
   }
-  sections.sort((a, b) => a.due.localeCompare(b.due));
+  dueSections.sort((a, b) => a.due.localeCompare(b.due));
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
-      {/* 제목·버튼을 한 줄에, 설명글은 그 아래 전체 너비로 -- 추천도서 탭과
-          같은 이유("설명글 배치 좀 가로 맞춰서" 피드백)로 통일한다. */}
       <div className="flex items-center justify-between gap-3">
         <h1 className="d text-xl">숙제</h1>
-        {groups.length > 0 && (
-          <Link
-            href="/teacher/assignments/new"
-            className="d flex-none rounded-[14px] px-3 py-2 text-sm text-white"
-            style={{ background: "var(--point)" }}
-          >
-            + 숙제 만들기
-          </Link>
+        {sections.length > 1 && selected && (
+          <GroupTopSelect
+            groups={sections.map((s) => ({ id: s.id, name: s.name }))}
+            selectedId={selected.id}
+            basePath="/teacher/assignments"
+          />
         )}
       </div>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
@@ -145,46 +144,66 @@ export default async function TeacherAssignmentsPage() {
         보여요.
       </p>
 
-      {groups.length === 0 ? (
+      {!selected ? (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
           아직 운영하는 그룹이 없어요.
         </p>
-      ) : sections.length === 0 ? (
-        <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
-          아직 낸 숙제가 없어요.
-        </p>
-      ) : (
-        <div className="mt-6 flex flex-col gap-4">
-          {sections.map((section) => {
-            const rows: ManagedRow[] = section.cards.map((card) => {
-              const allDone = card.total > 0 && card.completed === card.total;
-              return {
-                id: card.id,
-                href: `/teacher/assignments/${card.id}`,
-                dateTop: shortMd(effectiveRange(card).start),
-                chip: missionChip(card.missions),
-                title: card.title,
-                titleBold: true,
-                subtitle: card.bookTitles.length ? card.bookTitles.join(" · ") : card.description ?? undefined,
-                right: `${card.completed}/${card.total}명 완료`,
-                rightTone: allDone ? "good" : "muted",
-              };
-            });
-            return (
-              <ManagedLogList
-                key={section.due}
-                heading={`${shortMd(section.due)}까지`}
-                headingSub={`${section.groupNames.join(" · ")} · 숙제 ${section.cards.length}개`}
-                addHref="/teacher/assignments/new"
-                addLabel="+ 숙제"
-                rows={rows}
-                emptyText="아직 낸 숙제가 없어요."
-                table="assignments"
-                deleteNoun="지울까요? (아이들의 독서기록은 남아요)"
-              />
-            );
-          })}
+      ) : dueSections.length === 0 ? (
+        <div className="mt-6">
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+            아직 낸 숙제가 없어요.
+          </p>
+          <Link
+            href={`/teacher/assignments/new?group=${selected.id}`}
+            className="d mt-2 inline-block text-sm"
+            style={{ color: "var(--point)" }}
+          >
+            + 숙제 만들기
+          </Link>
         </div>
+      ) : (
+        <>
+          <div className="mt-6 flex flex-col gap-4">
+            {dueSections.map((section) => {
+              const rows: ManagedRow[] = section.cards.map((card) => {
+                const allDone = card.total > 0 && card.completed === card.total;
+                return {
+                  id: card.id,
+                  href: `/teacher/assignments/${card.id}`,
+                  dateTop: shortMd(effectiveRange(card).start),
+                  chip: missionChip(card.missions),
+                  title: card.title,
+                  titleBold: true,
+                  subtitle: card.bookTitles.length ? card.bookTitles.join(" · ") : card.description ?? undefined,
+                  right: `${card.completed}/${card.total}명 완료`,
+                  rightTone: allDone ? "good" : "muted",
+                };
+              });
+              return (
+                <ManagedLogList
+                  key={section.due}
+                  heading={`${shortMd(section.due)}까지`}
+                  headingSub={`숙제 ${section.cards.length}개`}
+                  addHref={`/teacher/assignments/new?group=${selected.id}`}
+                  addLabel="+ 숙제"
+                  rows={rows}
+                  emptyText="아직 낸 숙제가 없어요."
+                  table="assignments"
+                  deleteNoun="지울까요? (아이들의 독서기록은 남아요)"
+                />
+              );
+            })}
+          </div>
+          {sections.length > 1 && (
+            <Link
+              href="/teacher/assignments/new"
+              className="d mt-3 inline-block text-xs"
+              style={{ color: "var(--ink-2)" }}
+            >
+              여러 그룹에 함께 내려면 ›
+            </Link>
+          )}
+        </>
       )}
     </div>
   );
