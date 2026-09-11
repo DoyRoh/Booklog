@@ -16,9 +16,10 @@ import { PlusIcon } from "@/components/icons/misc-icons";
  * 계속 있어야지"). `TopBar`/`BottomNav`처럼 루트 레이아웃에 한 번만
  * 마운트해서, 그 세 화면 사이를 오가도 이 컴포넌트 자체는 계속 살아
  * 있게 했다 -- 그룹 목록·선택 상태를 여기서 직접 들고 있는다.
+ *
+ * 바 높이 상수는 lib/group-bar-height.ts에 있다 -- "use client" 파일에서
+ * export하면 서버 컴포넌트엔 숫자가 아니라 클라이언트 참조가 넘어간다.
  */
-export const OPERATOR_GROUP_BAR_HEIGHT = 74;
-
 const TAB_PATHS = ["/teacher/children", "/teacher/books", "/teacher/assignments"];
 
 type GroupOption = { id: string; name: string };

@@ -7,7 +7,7 @@ import { getAllAssignments } from "@/lib/assignments";
 import { hasVoiceConsent } from "@/lib/consent";
 import RecommendShelf from "@/components/recommend-shelf";
 import AssignmentsBrowser from "@/components/assignments-browser";
-import { CHILD_GROUP_BAR_HEIGHT } from "@/components/child-group-bar";
+import { CHILD_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
 import { pickActiveChildGroupId } from "@/lib/active-child-group";
 import Illustration from "@/components/illustration";
 

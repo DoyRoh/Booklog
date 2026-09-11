@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import ManagedLogList from "@/components/managed-log-list";
-import { OPERATOR_GROUP_BAR_HEIGHT } from "@/components/operator-group-bar";
+import { OPERATOR_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
 import { loadOperatorBookSections, operatorBookRows } from "@/lib/operator-books";
 import { pickActiveGroupId } from "@/lib/active-operator-group";
 

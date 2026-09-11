@@ -21,9 +21,10 @@ import { PlusIcon } from "@/components/icons/misc-icons";
  * 배지는 추천도서/숙제 소제목 탭에서 의미가 서로 달라 하나의 공용 바가
  * 어느 쪽 숫자를 보여줘야 할지 애매해지므로 없앴다(숲지기 쪽 그룹 바도
  * 처음부터 배지가 없다 -- 통일).
+ *
+ * 바 높이 상수는 lib/group-bar-height.ts에 있다 -- "use client" 파일에서
+ * export하면 서버 컴포넌트엔 숫자가 아니라 클라이언트 참조가 넘어간다.
  */
-export const CHILD_GROUP_BAR_HEIGHT = 93;
-
 const GROUP_PATH = "/group";
 
 type GroupOption = { id: string; name: string };

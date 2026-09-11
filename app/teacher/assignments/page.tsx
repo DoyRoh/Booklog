@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { shortMd } from "@/components/log-row";
 import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
-import { OPERATOR_GROUP_BAR_HEIGHT } from "@/components/operator-group-bar";
+import { OPERATOR_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
 import { effectiveRange } from "@/lib/assignment-period";
 import { missionChip } from "@/lib/assignment-chip";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
