@@ -145,7 +145,10 @@ export function LogGroup({
 }) {
   return (
     <div className="overflow-hidden rounded-[var(--r)] border" style={{ borderColor: "var(--rule)", background: "var(--card)" }}>
-      <div className="flex items-end justify-between gap-2 px-5 pt-5 pb-2">
+      {/* LogRow의 좌우 여백(px-4)과 맞춰야 머리글과 그 아래 날짜·칩이
+          왼쪽으로 나란히 정렬된다(px-5였을 때 머리글이 살짝 더 들어가
+          보인다는 지적). */}
+      <div className="flex items-end justify-between gap-2 px-4 pt-5 pb-2">
         <p className="d text-lg leading-none">
           {heading}
           {headingSub && (

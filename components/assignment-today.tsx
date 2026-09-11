@@ -247,7 +247,6 @@ export default function AssignmentToday({
                 <LogRow
                   first={index === 0}
                   dateTop={shortMd(effectiveRange(assignment).start)}
-                  dateBottom={`~${shortMd(effectiveRange(assignment).end)}`}
                   chip={missionChip(assignment.missions)}
                   title={<span className="d">{assignment.title}</span>}
                   subtitle={assignment.description ?? undefined}
