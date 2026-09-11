@@ -20,14 +20,16 @@ const MISSION_LABELS: Record<MissionType, string> = {
 };
 
 export default function CreateAssignment({
-  groupId,
+  groupIds,
   books,
   defaultOpen = false,
   afterSaveHref,
   cancelHref,
 }: {
-  groupId: string;
-  /** 이 그룹의 추천도서 -- "추천도서에서 고르기"로 바로 넣을 수 있는 후보. */
+  /** 이 숙제를 낼 그룹(들) -- 여러 그룹을 한 번에 고르면 같은 숙제가 그룹마다 하나씩 생긴다. */
+  groupIds: string[];
+  /** 그룹 하나를 골랐을 때만 채워지는 그 그룹의 추천도서 -- "추천도서에서 고르기" 후보.
+      여러 그룹을 동시에 고르면(그룹마다 서랍이 달라 후보를 하나로 못 합치므로) 비워 둔다. */
   books: BookOption[];
   /** 전용 화면(/teacher/assignments/new)에서는 처음부터 폼이 펼쳐진다. */
   defaultOpen?: boolean;
@@ -129,17 +131,21 @@ export default function CreateAssignment({
       return;
     }
 
-    const assignmentId = crypto.randomUUID();
-    const { error: assignmentError } = await supabase.from("assignments").insert({
-      id: assignmentId,
-      group_id: groupId,
-      title: title.trim(),
-      description: description.trim() || null,
-      // 등록일 = 시작일. 화면에서 "언제 냈는지"는 이 값으로 보여준다.
-      start_date: kstDate(),
-      end_date: endDate || null,
-      created_by: user.id,
-    });
+    // 그룹마다 자기 id의 숙제 행을 하나씩 -- 여러 그룹을 골랐으면 같은
+    // 내용의 숙제가 그룹 수만큼 생긴다(사용자 요청: 여러 그룹에 동시에).
+    const assignmentIds = groupIds.map(() => crypto.randomUUID());
+    const { error: assignmentError } = await supabase.from("assignments").insert(
+      groupIds.map((gid, i) => ({
+        id: assignmentIds[i],
+        group_id: gid,
+        title: title.trim(),
+        description: description.trim() || null,
+        // 등록일 = 시작일. 화면에서 "언제 냈는지"는 이 값으로 보여준다.
+        start_date: kstDate(),
+        end_date: endDate || null,
+        created_by: user.id,
+      }))
+    );
     if (assignmentError) {
       setError(assignmentError.message);
       setSaving(false);
@@ -147,12 +153,14 @@ export default function CreateAssignment({
     }
 
     const { error: booksError } = await supabase.from("assignment_books").insert(
-      draftBooks.map((book) => ({
-        assignment_id: assignmentId,
-        book_id: book.id,
-        required: true,
-        target_page: targetPages[book.id] ? Number(targetPages[book.id]) : null,
-      }))
+      assignmentIds.flatMap((assignmentId) =>
+        draftBooks.map((book) => ({
+          assignment_id: assignmentId,
+          book_id: book.id,
+          required: true,
+          target_page: targetPages[book.id] ? Number(targetPages[book.id]) : null,
+        }))
+      )
     );
     if (booksError) {
       setError(booksError.message);
@@ -163,12 +171,14 @@ export default function CreateAssignment({
     const validMissions = missions.filter((m) => m.type !== "question" || m.question.trim());
     if (validMissions.length > 0) {
       const { error: missionsError } = await supabase.from("assignment_missions").insert(
-        validMissions.map((m) => ({
-          assignment_id: assignmentId,
-          type: m.type,
-          question: m.type === "question" ? m.question.trim() : null,
-          required: true,
-        }))
+        assignmentIds.flatMap((assignmentId) =>
+          validMissions.map((m) => ({
+            assignment_id: assignmentId,
+            type: m.type,
+            question: m.type === "question" ? m.question.trim() : null,
+            required: true,
+          }))
+        )
       );
       if (missionsError) {
         setError(missionsError.message);
@@ -468,7 +478,7 @@ export default function CreateAssignment({
           className="d flex-1 rounded-[14px] py-2.5 text-sm text-white disabled:opacity-40"
           style={{ background: "var(--point)" }}
         >
-          {saving ? "만드는 중..." : "숙제 만들기"}
+          {saving ? "만드는 중..." : groupIds.length > 1 ? `${groupIds.length}개 그룹에 숙제 내기` : "숙제 만들기"}
         </button>
       </div>
     </div>

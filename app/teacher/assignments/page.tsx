@@ -176,7 +176,7 @@ export default async function TeacherAssignmentsPage() {
                 heading={`${shortMd(section.due)}까지`}
                 headingSub={`${section.groupNames.join(" · ")} · 숙제 ${section.cards.length}개`}
                 addHref="/teacher/assignments/new"
-                addLabel="+ 숙제 만들기"
+                addLabel="+ 숙제"
                 rows={rows}
                 emptyText="아직 낸 숙제가 없어요."
                 table="assignments"

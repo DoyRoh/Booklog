@@ -186,7 +186,7 @@ export default async function GroupDetailPage({
           title="추천도서에 책 올리기"
           description="제목을 검색하거나 바코드를 찍어 바로 올려요. 책장에 먼저 꽂을 필요 없어요."
         >
-          <AddBookToList bookListId={bookListId} />
+          <AddBookToList bookListIds={[bookListId]} />
         </Section>
       )}
 

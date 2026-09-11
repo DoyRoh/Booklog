@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getRecommendBooks } from "@/lib/recommend-books";
 import CreateAssignment from "@/components/create-assignment";
-import OperatorGroupPicker from "@/components/operator-group-picker";
+import OperatorGroupMultiPicker from "@/components/operator-group-multi-picker";
 import Section from "@/components/section";
 
 // "+ 숙제 만들기"를 눌렀을 때 곧장 숙제 폼만 보이는 화면. 예전엔 그룹
@@ -12,9 +12,9 @@ import Section from "@/components/section";
 export default async function NewAssignmentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ group?: string }>;
+  searchParams: Promise<{ group?: string; groups?: string }>;
 }) {
-  const { group: groupParam } = await searchParams;
+  const { group: groupParam, groups: groupsParam } = await searchParams;
   const supabase = await createClient();
   const userId = await getVerifiedUserId();
 
@@ -39,7 +39,19 @@ export default async function NewAssignmentPage({
     .map((row) => row.groups as unknown as GroupRow | null)
     .filter((g): g is GroupRow => Boolean(g));
 
-  const group = groups.find((g) => g.id === groupParam) ?? (groups.length === 1 ? groups[0] : null);
+  // 여러 그룹을 한 번에 고를 수 있다(사용자 요청: "그룹 모두에 추천도서와
+  // 숙제 동시에 넣을 수도 있단다") -- `?groups=id1,id2`가 있으면 그걸,
+  // 아니면 예전처럼 `?group=` 하나 또는(그룹이 하나뿐이면) 자동 선택.
+  const requestedIds = groupsParam
+    ? groupsParam.split(",").filter(Boolean)
+    : groupParam
+      ? [groupParam]
+      : [];
+  const selected = requestedIds.length > 0
+    ? groups.filter((g) => requestedIds.includes(g.id))
+    : groups.length === 1
+      ? groups
+      : [];
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-8 pb-10">
@@ -55,25 +67,40 @@ export default async function NewAssignmentPage({
             그룹 만들기
           </Link>
         </p>
-      ) : !group ? (
-        <Section className="mt-5" title="어느 그룹에 낼까요?" flush>
-          <OperatorGroupPicker groups={groups} basePath="/teacher/assignments/new" verb="이 그룹에 숙제 내기" />
+      ) : selected.length === 0 ? (
+        <Section className="mt-5" title="어느 그룹에 낼까요?" description="여러 그룹을 함께 고르면 같은 숙제를 한 번에 낼 수 있어요." flush>
+          <OperatorGroupMultiPicker groups={groups} basePath="/teacher/assignments/new" verb="숙제 내기" />
         </Section>
       ) : (
-        <NewAssignmentForm groupId={group.id} groupName={group.name} multi={groups.length > 1} />
+        <NewAssignmentForm groups={selected} multi={groups.length > 1} />
       )}
     </div>
   );
 }
 
-async function NewAssignmentForm({ groupId, groupName, multi }: { groupId: string; groupName: string; multi: boolean }) {
+async function NewAssignmentForm({ groups, multi }: { groups: { id: string; name: string }[]; multi: boolean }) {
   const supabase = await createClient();
-  const { books } = await getRecommendBooks(supabase, groupId, null);
+  // 그룹을 딱 하나 골랐을 때만 "추천도서에서 고르기"를 보여준다 -- 여러
+  // 그룹을 동시에 낼 땐 그룹마다 추천도서 서랍이 달라 후보를 하나로 합칠
+  // 수 없다(책 찾아 넣기는 그룹과 무관해서 그대로 쓸 수 있다).
+  const books =
+    groups.length === 1
+      ? (await getRecommendBooks(supabase, groups[0].id, null)).books.map((book) => ({
+          id: book.bookId,
+          title: book.title,
+          author: book.author,
+          coverUrl: book.coverUrl,
+        }))
+      : [];
   return (
     <Section
       className="mt-5"
-      title={groupName}
-      description="읽을 책을 찾아 넣고 언제까지인지 정해요. 추천도서에서 골라 넣을 수도 있어요."
+      title={groups.map((g) => g.name).join(" · ")}
+      description={
+        groups.length > 1
+          ? "읽을 책을 찾아 넣고 언제까지인지 정하면, 같은 숙제가 고른 그룹마다 하나씩 생겨요."
+          : "읽을 책을 찾아 넣고 언제까지인지 정해요. 추천도서에서 골라 넣을 수도 있어요."
+      }
       action={
         multi ? (
           <Link href="/teacher/assignments/new" className="text-xs" style={{ color: "var(--ink-2)" }}>
@@ -83,8 +110,8 @@ async function NewAssignmentForm({ groupId, groupName, multi }: { groupId: strin
       }
     >
       <CreateAssignment
-        groupId={groupId}
-        books={books.map((book) => ({ id: book.bookId, title: book.title, author: book.author, coverUrl: book.coverUrl }))}
+        groupIds={groups.map((g) => g.id)}
+        books={books}
         defaultOpen
         afterSaveHref="/teacher/assignments"
         cancelHref="/teacher/assignments"

@@ -7,7 +7,7 @@ import BookFinder from "@/components/book-finder";
 import { ensureBook, type BookCandidate } from "@/lib/book-catalog";
 import { BOOK_CATEGORIES } from "@/lib/categories";
 
-export default function AddBookToList({ bookListId }: { bookListId: string }) {
+export default function AddBookToList({ bookListIds }: { bookListIds: string[] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -52,22 +52,19 @@ export default function AddBookToList({ bookListId }: { bookListId: string }) {
         .insert(Array.from(pendingCategories).map((category) => ({ book_id: bookId, category })));
     }
 
-    const { data: already } = await supabase
+    // 여러 그룹을 동시에 골랐으면 그룹마다(=목록마다) 한 줄씩. 이미 있는
+    // 목록엔 조용히 건너뛴다(마이그레이션 0014의 book_list_id+book_id 유니크
+    // 제약을 그대로 이용 -- upsert 한 번으로 중복 걱정 없이 처리).
+    const { error: itemError } = await supabase
       .from("book_list_items")
-      .select("id")
-      .eq("book_list_id", bookListId)
-      .eq("book_id", bookId)
-      .maybeSingle();
-
-    if (!already) {
-      const { error: itemError } = await supabase
-        .from("book_list_items")
-        .insert({ book_list_id: bookListId, book_id: bookId, required: false });
-      if (itemError) {
-        setError(itemError.message);
-        setAdding(false);
-        return;
-      }
+      .upsert(
+        bookListIds.map((bookListId) => ({ book_list_id: bookListId, book_id: bookId, required: false })),
+        { onConflict: "book_list_id,book_id", ignoreDuplicates: true }
+      );
+    if (itemError) {
+      setError(itemError.message);
+      setAdding(false);
+      return;
     }
 
     setAdding(false);
