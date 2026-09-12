@@ -379,7 +379,14 @@ export default function LibraryShelf({
         </div>
       </div>
 
-      <div className="mt-[12px] flex items-center gap-1.5">
+      {/* 검색·+책 줄 아래는 전부 흰 카드 하나 안으로(사용자 지적: "기본 책장도
+          흰 카드 안으로 넣어줘") -- 권수·필터 줄부터 표지/책등/목록 그리드까지
+          배경에 떠 있지 않고 그룹 탭 추천도서와 같은 카드 안에 담긴다. */}
+      <div
+        className="mt-[12px] rounded-[var(--r)] border p-4"
+        style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+      >
+      <div className="flex items-center gap-1.5">
         <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
           {mode === "list" ? `${listRows.length}권` : `${filtered.length}권`}
         </span>
@@ -700,6 +707,7 @@ export default function LibraryShelf({
           ))}
         </div>
       )}
+      </div>
 
       {editing && (
         <RecordEditModal record={toEditable(editing, childId, childName)} onClose={() => setEditing(null)} />
