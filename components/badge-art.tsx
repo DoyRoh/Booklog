@@ -1,5 +1,6 @@
 import type React from "react";
 import Illustration, { PawStamp, type Avatar, type IllustrationName } from "@/components/illustration";
+import { ButterflyIcon, LadybugIcon, SnailIcon } from "@/components/icons/badge-critters";
 
 // 배지마다 다른 그림 -- 패턴 그림에서 잘라낸 숲 조각(나무·별·등불·새·곰)과
 // 아이 아바타의 발자국 도장을 조합한다. 아직 못 딴 배지는 흑백·반투명.
@@ -38,12 +39,18 @@ const ART: Record<string, Piece[]> = {
   hw1: [T("lantern-on", 30)],
   hw5: [T("lantern-on", 28), T("star", 10)],
   hw20: [T("star", 9), T("lantern-on", 30), T("star", 9)],
-  photo10: [T("bird-letter", 30)],
-  photo30: [T("bird-letter", 30), T("star", 10)],
-  voice5: [T("bird-perched", 36)],
-  voice20: [T("bird-perched", 36), T("star", 10)],
-  author10: [T("bird-perched", 28), T("bird-letter", 24)],
-  author30: [T("bird-perched", 28), T("bird-letter", 24), T("star", 10)],
+};
+
+// 사진·목소리·이야기꾼 배지는 곰·새 대신 이 셋(나비·무당벌레·달팽이)을
+// 쓴다 -- 곰·새는 이제 "그룹 숲지기 수"를 보여주는 자리에만 남긴다
+// (사용자 요청). ART 표와 같은 자리에서 "몇 번째 개수" 조합만 다르게.
+const CRITTER_ART: Record<string, { Icon: typeof ButterflyIcon; heights: number[] }> = {
+  photo10: { Icon: ButterflyIcon, heights: [30] },
+  photo30: { Icon: ButterflyIcon, heights: [24, 24] },
+  voice5: { Icon: LadybugIcon, heights: [28] },
+  voice20: { Icon: LadybugIcon, heights: [22, 22] },
+  author10: { Icon: SnailIcon, heights: [28] },
+  author30: { Icon: SnailIcon, heights: [22, 22] },
 };
 
 export default function BadgeArt({
@@ -88,6 +95,10 @@ export default function BadgeArt({
         {id === "same5" && <PawStamp avatar={avatar} height={px(14)} />}
       </>
     );
+  }
+  const critter = CRITTER_ART[id];
+  if (critter) {
+    return disc(critter.heights.map((h, i) => <critter.Icon key={i} height={px(h)} />));
   }
   const pieces = count !== undefined ? milestoneArt(count) : (ART[id] ?? [T("star", 20)]);
   return disc(pieces.map((piece, i) => <Illustration key={i} name={piece.name} height={px(piece.height)} className="flex-none" />));

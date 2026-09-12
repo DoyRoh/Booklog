@@ -6,6 +6,7 @@ import { OrbitControls, Stars } from "@react-three/drei";
 import type { Group, Mesh, MeshStandardMaterial } from "three";
 import type { Avatar } from "@/components/illustration";
 import { spiralSlot, type SceneItem, type TreeKind } from "@/lib/forest-scene";
+import type { OperatorAvatar } from "@/lib/active-profile";
 
 // 우리 숲 3D -- 배지 하나가 나무·별·등불·새·버섯 하나로 서 있는 작은 숲.
 // 그림 파일이 아니라 공·원뿔·원기둥 같은 기본 도형만으로 "찰흙(클레이)"
@@ -204,6 +205,83 @@ function Mushroom() {
   );
 }
 
+/** 무당벌레 -- 목소리 배지(2D의 LadybugIcon과 같은 색). */
+function Ladybug3D() {
+  return (
+    <group position-y={0.14} scale={0.9}>
+      <mesh castShadow>
+        <sphereGeometry args={[0.24, 16, 10, 0, Math.PI * 2, 0, Math.PI / 1.9]} />
+        <Clay color="#D9583E" />
+      </mesh>
+      <mesh position={[0.19, 0.02, 0]}>
+        <sphereGeometry args={[0.13, 12, 8]} />
+        <Clay color="#26201A" />
+      </mesh>
+      {[
+        [0.06, 0.13, 0.13],
+        [0.06, 0.13, -0.13],
+        [-0.1, 0.13, 0.1],
+        [-0.1, 0.13, -0.1],
+      ].map((p, i) => (
+        <mesh key={i} position={p as [number, number, number]}>
+          <sphereGeometry args={[0.035, 6, 6]} />
+          <Clay color="#26201A" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** 달팽이 -- 이야기꾼 배지. */
+function Snail3D() {
+  return (
+    <group position-y={0.16} scale={0.9}>
+      <mesh position={[-0.06, 0.16, 0]} castShadow>
+        <torusGeometry args={[0.16, 0.09, 12, 20]} />
+        <Clay color={C.trunk} />
+      </mesh>
+      <mesh position={[0.1, 0, 0]} rotation-y={Math.PI / 2}>
+        <capsuleGeometry args={[0.09, 0.24, 4, 10]} />
+        <Clay color={C.cream} />
+      </mesh>
+      {[0.12, -0.12].map((z, i) => (
+        <mesh key={i} position={[0.32, 0.1, z * 0.4]}>
+          <sphereGeometry args={[0.03, 6, 6]} />
+          <Clay color={C.trunk} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** 나비 -- 사진 배지. 두 색 날개 + 얇은 몸통. */
+function Butterfly3D({ phase, animate }: { phase: number; animate: boolean }) {
+  const left = useRef<Mesh>(null);
+  const right = useRef<Mesh>(null);
+  useFrame(({ clock }) => {
+    if (!animate || !left.current || !right.current) return;
+    const flap = 0.5 + Math.sin(clock.getElapsedTime() * 6 + phase) * 0.35;
+    left.current.rotation.z = flap;
+    right.current.rotation.z = -flap;
+  });
+  return (
+    <group position-y={0.35}>
+      <mesh>
+        <capsuleGeometry args={[0.03, 0.22, 4, 8]} />
+        <Clay color="#4C412F" />
+      </mesh>
+      <mesh ref={left} position={[-0.03, 0.05, 0]}>
+        <boxGeometry args={[0.3, 0.02, 0.22]} />
+        <Clay color="#E8A6C1" />
+      </mesh>
+      <mesh ref={right} position={[0.03, 0.05, 0]}>
+        <boxGeometry args={[0.3, 0.02, 0.22]} />
+        <Clay color="#8FB8D8" />
+      </mesh>
+    </group>
+  );
+}
+
 function BirdBody({ letter }: { letter?: boolean }) {
   return (
     <group>
@@ -274,6 +352,21 @@ function SkyBird({ index, animate }: { index: number; animate: boolean }) {
   });
   return (
     <group ref={ref} position={[Math.cos(phase) * radius, height, Math.sin(phase) * radius]} rotation-y={-phase + Math.PI / 2} scale={1.15}>
+      <BirdBody letter />
+    </group>
+  );
+}
+
+/** 백로 숲지기 -- 곰(BearWithLantern)과 나란히 서는 자리. 이미 있던
+ *  BirdBody를 키워서 재사용한다(전용 서 있는 모델은 아직 없음). */
+function EgretKeeper({ animate, phase }: { animate: boolean; phase: number }) {
+  const ref = useRef<Group>(null);
+  useFrame(({ clock }) => {
+    if (!animate || !ref.current) return;
+    ref.current.position.y = 0.85 + Math.sin(clock.getElapsedTime() * 1.3 + phase) * 0.04;
+  });
+  return (
+    <group ref={ref} position-y={0.85} scale={1.7}>
       <BirdBody letter />
     </group>
   );
@@ -449,14 +542,17 @@ export default function Forest3D({
 }: {
   items: SceneItem[];
   avatar: Avatar | null | undefined;
-  /** 속한 그룹(숲지기)들 -- 곰과 백로가 이 수만큼(곰은 최소 1). */
-  groups?: { id: string; name: string }[];
+  /** 속한 그룹(숲지기)들 -- 그룹마다 한 명, 그 그룹이 고른 얼굴(곰/백로)로. */
+  groups?: { id: string; name: string; avatar: OperatorAvatar | null }[];
   mood: Mood;
   animate: boolean;
   picked: string | null;
   onPick: (key: string | null) => void;
 }) {
-  const keepers = groups.length ? groups.slice(0, 5) : [{ id: "guide", name: "길잡이" }];
+  const KEEPER_MAX = 4;
+  const keepers = groups.length
+    ? groups.slice(0, KEEPER_MAX)
+    : [{ id: "guide", name: "길잡이", avatar: null as OperatorAvatar | null }];
   const bg = mood === "day" ? C.paper : C.night;
   // 진짜 광원은 비싸서 밤에 등불 세 개까지만 켠다(나머지는 발광 재질만).
   const litKeys = useMemo(
@@ -523,7 +619,8 @@ export default function Forest3D({
       <group position={[-0.9, 0, 0.9]} rotation-y={0.5}>
         <Animal kind={avatar ?? "rabbit"} />
       </group>
-      {/* 숲지기 곰: 그룹마다 한 마리, 아이 옆에서 바깥쪽으로 부채꼴. */}
+      {/* 숲지기: 그룹마다 한 명, 아이 옆에서 바깥쪽으로 부채꼴 -- 그
+          그룹이 고른 얼굴(곰/백로)로 선다. */}
       {keepers.map((g, i) => (
         <group
           key={g.id}
@@ -531,13 +628,21 @@ export default function Forest3D({
           rotation-y={-0.4 - i * 0.25}
           scale={i === 0 ? 1 : 0.92}
         >
-          <BearWithLantern mood={mood} animate={animate} />
+          {g.avatar === "egret" ? (
+            <EgretKeeper animate={animate} phase={i * 1.6} />
+          ) : (
+            <BearWithLantern mood={mood} animate={animate} />
+          )}
         </group>
       ))}
-      {/* 숲지기마다 편지 물고 하늘을 크게 도는 백로 한 마리. */}
-      {groups.slice(0, 5).map((g, i) => (
-        <SkyBird key={g.id} index={i} animate={animate} />
-      ))}
+      {/* 백로를 고른 숲지기만 하늘을 크게 도는 새를 하나 더 얹는다(곰
+          숲지기는 땅에 서 있는 것으로 충분해서 하늘 새는 안 그린다). */}
+      {groups
+        .filter((g) => g.avatar === "egret")
+        .slice(0, 5)
+        .map((g, i) => (
+          <SkyBird key={g.id} index={i} animate={animate} />
+        ))}
 
       {items.map((item, i) => {
         const selected = picked === item.key;
@@ -565,6 +670,12 @@ export default function Forest3D({
               <group scale={0.45}>
                 <BearWithLantern mood={mood} animate={animate} />
               </group>
+            ) : item.ornament === "butterfly" ? (
+              <Butterfly3D phase={phase} animate={animate} />
+            ) : item.ornament === "ladybug" ? (
+              <Ladybug3D />
+            ) : item.ornament === "snail" ? (
+              <Snail3D />
             ) : (
               <Mushroom />
             )}

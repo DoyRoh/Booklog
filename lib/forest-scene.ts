@@ -2,7 +2,16 @@ import type { Badge } from "@/lib/badges";
 
 // 우리 숲의 "배지 → 장식" 규칙. 평면 숲(forest-view)과 3D 숲(forest-3d)이
 // 같은 표를 쓴다. 권수 배지는 나무, 나머지는 아래 표대로.
-export type OrnamentKind = "star" | "lantern" | "bird-letter" | "bird-perched" | "paw" | "bear";
+export type OrnamentKind =
+  | "star"
+  | "lantern"
+  | "bird-letter"
+  | "bird-perched"
+  | "paw"
+  | "bear"
+  | "butterfly"
+  | "ladybug"
+  | "snail";
 
 export const ORNAMENT_BY_BADGE: Record<string, OrnamentKind> = {
   d2: "star",
@@ -26,12 +35,15 @@ export const ORNAMENT_BY_BADGE: Record<string, OrnamentKind> = {
   hw1: "lantern",
   hw5: "lantern",
   hw20: "lantern",
-  photo10: "bird-letter",
-  photo30: "bird-letter",
-  voice5: "bird-perched",
-  voice20: "bird-perched",
-  author10: "star",
-  author30: "star",
+  // 사진·목소리·이야기꾼은 곰·새 대신 나비·무당벌레·달팽이로(badge-art.tsx의
+  // CRITTER_ART와 같은 배정 -- 우리 숲 장식과 배지 목록 그림이 항상 같아야
+  // 한다, "첫 숲지기" 곰/새 불일치 사고를 다시 겪지 않기 위해).
+  photo10: "butterfly",
+  photo30: "butterfly",
+  voice5: "ladybug",
+  voice20: "ladybug",
+  author10: "snail",
+  author30: "snail",
 };
 
 export const ORNAMENT_LABEL: Record<OrnamentKind, string> = {
@@ -41,10 +53,26 @@ export const ORNAMENT_LABEL: Record<OrnamentKind, string> = {
   "bird-perched": "새",
   paw: "발자국",
   bear: "곰",
+  butterfly: "나비",
+  ladybug: "무당벌레",
+  snail: "달팽이",
 };
 
 /** 3D 숲에서는 발자국 배지가 버섯으로 자란다(땅에 남는 자국 → 숲속 열매·버섯). */
 export const ORNAMENT_LABEL_3D: Record<OrnamentKind, string> = { ...ORNAMENT_LABEL, paw: "버섯" };
+
+/** 요약 문구("나비 3마리")에 쓰는 단위 -- 살아있는 것은 마리, 사물은 개. */
+export const ORNAMENT_COUNTER: Record<OrnamentKind, string> = {
+  star: "개",
+  lantern: "개",
+  "bird-letter": "마리",
+  "bird-perched": "마리",
+  paw: "개",
+  bear: "마리",
+  butterfly: "마리",
+  ladybug: "마리",
+  snail: "마리",
+};
 
 export type TreeKind = "light" | "bushy" | "round" | "pine";
 

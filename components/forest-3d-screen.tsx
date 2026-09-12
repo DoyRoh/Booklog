@@ -5,8 +5,9 @@ import dynamic from "next/dynamic";
 import type { Avatar } from "@/components/illustration";
 import type { Badge } from "@/lib/badges";
 import type { MilestoneMemo } from "@/lib/badge-data";
-import { layoutForest, ORNAMENT_LABEL_3D } from "@/lib/forest-scene";
+import { layoutForest, ORNAMENT_LABEL_3D, ORNAMENT_COUNTER, type OrnamentKind } from "@/lib/forest-scene";
 import type { Mood } from "@/components/forest-3d";
+import type { OperatorAvatar } from "@/lib/active-profile";
 
 // three.js는 무거워서 이 화면에서만, 브라우저에서만 불러온다.
 const Forest3D = dynamic(() => import("@/components/forest-3d"), {
@@ -28,8 +29,8 @@ export default function Forest3DScreen({
   childName: string;
   avatar: Avatar | null | undefined;
   badges: Badge[];
-  /** 속한 그룹(숲지기)들 -- 곰과 백로가 이 수만큼. */
-  groups?: { id: string; name: string }[];
+  /** 속한 그룹(숲지기)들 -- 그룹마다 한 명, 그 그룹이 고른 얼굴로 선다. */
+  groups?: { id: string; name: string; avatar: OperatorAvatar | null }[];
   /** 나무(권수 마일스톤)를 심을 때 남긴 책 제목·메모 한 줄. */
   milestoneMemos?: Record<number, MilestoneMemo>;
 }) {
@@ -49,24 +50,22 @@ export default function Forest3DScreen({
   const pickedItem = items.find((i) => i.key === picked) ?? null;
 
   const counts = useMemo(() => {
-    const c = { tree: 0, star: 0, lantern: 0, bird: 0, paw: 0 };
+    const c: Partial<Record<OrnamentKind, number>> & { tree: number } = { tree: 0 };
     for (const it of items) {
       if (it.kind === "tree") c.tree += 1;
-      else if (it.ornament === "star") c.star += 1;
-      else if (it.ornament === "lantern") c.lantern += 1;
-      else if (it.ornament === "paw") c.paw += 1;
-      else c.bird += 1;
+      else c[it.ornament] = (c[it.ornament] ?? 0) + 1;
     }
     return c;
   }, [items]);
 
+  // 나비·무당벌레·달팽이·곰(첫 숲지기 배지) 등 새로 생긴 종류도 그때그때
+  // 이름을 붙여 세도록, 배지 장식 표(ORNAMENT_LABEL_3D)를 그대로 훑는다.
   const summary = [
     counts.tree ? `나무 ${counts.tree}그루` : null,
-    counts.star ? `별 ${counts.star}개` : null,
-    counts.lantern ? `등불 ${counts.lantern}개` : null,
-    counts.bird ? `새 ${counts.bird}마리` : null,
-    counts.paw ? `버섯 ${counts.paw}개` : null,
-    groups.length > 1 ? `숲지기 곰 ${groups.length}마리` : null,
+    ...(Object.keys(ORNAMENT_LABEL_3D) as OrnamentKind[])
+      .filter((kind) => counts[kind])
+      .map((kind) => `${ORNAMENT_LABEL_3D[kind]} ${counts[kind]}${ORNAMENT_COUNTER[kind]}`),
+    groups.length > 1 ? `숲지기 ${groups.length}명` : null,
   ]
     .filter(Boolean)
     .join(" · ");

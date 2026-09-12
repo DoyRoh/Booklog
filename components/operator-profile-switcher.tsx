@@ -71,7 +71,9 @@ export default function OperatorProfileSwitcher({
       setError(updateError.message);
       return;
     }
-    await supabase.from("groups").update({ operator_name: next }).eq("owner_id", userId);
+    // 얼굴(곰/백로)도 이름과 같이 내 그룹 전부에 복사해 둔다 -- 우리 숲의
+    // 숲지기 캐릭터가 실제로 고른 얼굴로 보이려면 그룹 쪽에도 필요하다.
+    await supabase.from("groups").update({ operator_name: next, operator_avatar: avatarDraft }).eq("owner_id", userId);
     setSaving(false);
     setSavedName(next);
     setSavedAvatar(avatarDraft);

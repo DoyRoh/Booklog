@@ -3,11 +3,12 @@ import Illustration, { AvatarIllustration, type Avatar } from "@/components/illu
 import ForestOrnament from "@/components/forest-ornament";
 import type { Badge } from "@/lib/badges";
 import { buildForestItems, milestoneTreeArt } from "@/lib/forest-items";
-import { keeperBearCount } from "@/lib/keeper-scene";
+import { KEEPER_MAX, keeperIllustration } from "@/lib/keeper-scene";
+import type { OperatorAvatar } from "@/lib/active-profile";
 
 // 오늘 탭 요약 카드 맨 위의 우리 숲 미리보기. 우리 숲(forest-view.tsx)과
 // 완전히 같은 배지 데이터로 완전히 같은 배치 규칙(buildForestItems)·나무
-// 그림(milestoneTreeArt)·장식(ForestOrnament)·곰 규칙(keeperBearCount)을
+// 그림(milestoneTreeArt)·장식(ForestOrnament)·숲지기 얼굴(keeperIllustration)을
 // 써서, 두 화면이 실제로 같은 그림을 보여준다(사용자 요청: "그림 통일").
 // 카드 폭이 좁아 전부는 못 보여주므로 앞에서부터 일부만 자르고 "+N"으로.
 const MAX_ITEMS = 10;
@@ -21,8 +22,8 @@ export default function ForestStrip({
 }: {
   badges: Badge[];
   avatar: Avatar | null | undefined;
-  /** 속한 그룹(숲지기)들 -- 우리 숲과 같은 규칙(keeperBearCount)으로 곰 수를 정한다. */
-  groups?: { id: string; name: string }[];
+  /** 속한 그룹(숲지기)들 -- 우리 숲과 같이 그룹마다 한 명, 그 그룹이 고른 얼굴로. */
+  groups?: { id: string; name: string; avatar: OperatorAvatar | null }[];
   className?: string;
   /** 있으면 장면 전체가 이 주소(우리 숲 전체 보기)로 가는 링크가 된다. */
   href?: string;
@@ -33,9 +34,10 @@ export default function ForestStrip({
   const hiddenCount = items.length - shownItems.length;
   // 오른쪽 "우리 숲 보기 ›"와 한 줄에 들어가야 하니 짧게(두 줄로 꺾이면 산만).
   const caption = treeCount === 0 ? "첫 책을 읽으면 나무가 심겨요" : `나무 ${treeCount}그루가 자랐어요`;
-  // 곰은 우리 숲과 같이 최소 1마리(길잡이 곰)는 항상 서 있는다.
-  const bearCount = Math.max(1, keeperBearCount(groups.length));
-  const keepers = groups.length ? groups.slice(0, bearCount) : [{ id: "guide", name: "길잡이" }];
+  // 길잡이(그룹 없을 때)는 최소 1명은 항상 서 있는다.
+  const keepers = groups.length
+    ? groups.slice(0, KEEPER_MAX)
+    : [{ id: "guide", name: "길잡이", avatar: null as OperatorAvatar | null }];
   const skyStars = Math.min(6, 2 + Math.floor(treeCount / 5));
 
   const body = (
@@ -75,12 +77,12 @@ export default function ForestStrip({
             )}
           </div>
           <AvatarIllustration avatar={avatar} height={56} className="flex-none" />
-          {/* 곰 = 숲지기 배지 문턱(1곳/3곳)만큼 -- 우리 숲과 같은 규칙. */}
+          {/* 숲지기 = 그룹마다 한 명, 그 그룹이 고른 얼굴로 -- 우리 숲과 같은 규칙. */}
           <span className="flex flex-none items-end">
             {keepers.map((g, i) => (
               <span key={g.id} style={{ marginLeft: i > 0 ? -10 : 0 }}>
                 <Illustration
-                  name="bear-lantern"
+                  name={keeperIllustration(g.avatar)}
                   height={i === 0 ? 72 : 60}
                   className="flex-none"
                   priority={i === 0}
