@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Illustration, { AvatarIllustration, type Avatar, type IllustrationName } from "@/components/illustration";
+import { keeperBearCount, keeperBirdCount } from "@/lib/keeper-scene";
 
 // 오늘 탭 요약 카드 맨 위의 우리 숲 미리보기 -- "숲이 자라요"(권수) 배지를
 // 딸 때마다 나무가 한 그루씩 심기고, 그 숲길 끝에 아이(아바타)와 등불 든
@@ -21,11 +22,15 @@ const STARS = [
 export default function ForestStrip({
   treeCount,
   avatar,
+  groupCount = 0,
   className,
   href,
 }: {
   treeCount: number;
   avatar: Avatar | null | undefined;
+  /** 속한 그룹(숲지기) 수 -- 우리 숲(forest-view.tsx)과 같은 문턱(1곳/3곳)으로
+   *  곰·새 수를 정해 두 화면의 그림을 통일한다. */
+  groupCount?: number;
   className?: string;
   /** 있으면 장면 전체가 이 주소(우리 숲 전체 보기)로 가는 링크가 된다. */
   href?: string;
@@ -35,6 +40,9 @@ export default function ForestStrip({
   const scale = shown <= 5 ? 1 : shown <= 8 ? 0.8 : 0.66;
   // 오른쪽 "우리 숲 보기 ›"와 한 줄에 들어가야 하니 짧게(두 줄로 꺾이면 산만).
   const caption = treeCount === 0 ? "첫 책을 읽으면 나무가 심겨요" : `나무 ${treeCount}그루가 자랐어요`;
+  // 곰은 우리 숲과 같이 최소 1마리(길잡이 곰)는 항상 서 있는다.
+  const bearCount = Math.max(1, keeperBearCount(groupCount));
+  const birdCount = keeperBirdCount(groupCount);
 
   const body = (
     <>
@@ -51,6 +59,17 @@ export default function ForestStrip({
             height={star.height}
             className="absolute"
             style={{ left: star.left, top: star.top }}
+          />
+        ))}
+        {/* 숲지기(그룹) 배지로 얻는 편지 새 -- 우리 숲(forest-view.tsx)과 같은
+            문턱(1곳/3곳)이라 그림이 통일된다. */}
+        {Array.from({ length: birdCount }, (_, i) => (
+          <Illustration
+            key={`bird-${i}`}
+            name="bird-letter"
+            height={14}
+            className="absolute"
+            style={{ left: `${22 + i * 26}%`, top: `${5 + i * 5}px`, opacity: 0.9 }}
           />
         ))}
         <div className="flex items-end gap-1">
@@ -73,7 +92,19 @@ export default function ForestStrip({
             )}
           </div>
           <AvatarIllustration avatar={avatar} height={56} className="flex-none" />
-          <Illustration name="bear-lantern" height={72} className="flex-none" priority />
+          {/* 곰 = 숲지기 배지 문턱(1곳/3곳)만큼 -- 우리 숲과 같은 규칙. */}
+          <span className="flex flex-none items-end">
+            {Array.from({ length: bearCount }, (_, i) => (
+              <span key={i} style={{ marginLeft: i > 0 ? -10 : 0 }}>
+                <Illustration
+                  name="bear-lantern"
+                  height={i === 0 ? 72 : 60}
+                  className="flex-none"
+                  priority={i === 0}
+                />
+              </span>
+            ))}
+          </span>
         </div>
       </div>
       <div className="mt-[12px] flex items-center justify-between gap-2">

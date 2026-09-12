@@ -62,7 +62,10 @@ export default async function TodayPage() {
   // 통계/최근 기록에 쓰는 reading_records 조회와 오늘의 숙제 조회는 서로
   // 무관하므로(전부 activeChild.id에만 의존) 동시에 왕복한다 -- 오늘 탭이
   // 유독 느렸던 가장 큰 원인이 이런 조회들을 순서대로 기다리던 것이었다.
-  const [{ data: allRecords, error: recordsError }, assignments] = await Promise.all([
+  // 그룹 수는 화면에 숫자로 보여주진 않지만(그건 지난 라운드에서 뺐다),
+  // 우리 숲 미리보기의 곰·새 개수를 정하는 데 필요해서 head-only COUNT
+  // 하나만 같이 왕복한다(행 데이터 없이 개수만 -- 매우 가벼움).
+  const [{ data: allRecords, error: recordsError }, assignments, { count: groupCount }] = await Promise.all([
     supabase
       .from("reading_records")
       .select(
@@ -71,6 +74,11 @@ export default async function TodayPage() {
       .eq("child_id", activeChild.id)
       .order("read_date", { ascending: false }),
     getTodayAssignments(supabase, activeChild.id),
+    supabase
+      .from("group_members")
+      .select("group_id", { count: "exact", head: true })
+      .eq("child_id", activeChild.id)
+      .eq("status", "approved"),
   ]);
 
   // 마감일(end_date)을 안 정한 숙제는 날짜만으로는 절대 안 없어지므로,
@@ -144,6 +152,7 @@ export default async function TodayPage() {
         <ForestStrip
           treeCount={MILESTONE_COUNTS.filter((c) => totalDone >= c).length}
           avatar={activeChild.avatar}
+          groupCount={groupCount ?? 0}
           className="mb-[16px]"
           href="/forest"
         />

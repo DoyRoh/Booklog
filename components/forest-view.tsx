@@ -11,6 +11,7 @@ import Illustration, {
 import type { Badge } from "@/lib/badges";
 import type { MilestoneMemo } from "@/lib/badge-data";
 import { ORNAMENT_BY_BADGE, ORNAMENT_LABEL, type OrnamentKind } from "@/lib/forest-scene";
+import { keeperBearCount } from "@/lib/keeper-scene";
 
 // 우리 숲 = 딴 배지를 한 장면으로 그린 것. "숲이 자라요"(권수) 배지 하나가
 // 나무 한 그루, 나머지 배지는 별·등불·새·발자국 장식. 책 한 권마다 나무를
@@ -71,8 +72,11 @@ export default function ForestView({
   /** 나무(권수 마일스톤)를 심을 때 남긴 책 제목·메모 한 줄. */
   milestoneMemos?: Record<number, MilestoneMemo>;
 }) {
-  // 숲지기 곰: 그룹마다 한 마리(그룹이 없어도 길잡이 곰 한 마리는 있다).
-  const keepers = groups.length ? groups.slice(0, 4) : [{ id: "guide", name: "길잡이" }];
+  // 숲지기 곰: 그룹 수가 아니라 "숲지기 배지" 문턱(1곳/3곳)만큼만 -- 그룹을
+  // 하나 더 들어가도 다음 문턱을 넘기 전까진 곰 수가 그대로다(오늘 탭
+  // 미리보기(forest-strip.tsx)와 같은 함수를 공유해 그림을 통일한다).
+  const bearCount = keeperBearCount(groups.length);
+  const keepers = bearCount > 0 ? groups.slice(0, bearCount) : [{ id: "guide", name: "길잡이" }];
   const [picked, setPicked] = useState<Item | null>(null);
 
   const trees = useMemo(() => badges.filter((b) => b.achieved && b.count !== undefined), [badges]);
@@ -210,17 +214,10 @@ export default function ForestView({
             style={{ left: `${(i * 37 + 7) % 92}%`, top: `${6 + ((i * 13) % 14)}px`, opacity: 0.8 }}
           />
         ))}
-        {/* 숲지기(그룹)마다 편지 물고 나는 백로 한 마리 -- 하늘 위쪽에 줄지어. */}
-        {groups.slice(0, 5).map((g, i) => (
-          <span
-            key={g.id}
-            title={`${g.name}의 백로`}
-            className="absolute"
-            style={{ left: `${12 + ((i * 29) % 70)}%`, top: `${4 + ((i * 11) % 18)}px`, opacity: 0.95 }}
-          >
-            <Illustration name="bird-letter" height={22} />
-          </span>
-        ))}
+        {/* 숲지기(그룹) 배지로 얻는 편지 새는 아래 나무 사이 장식(items)의
+            group1/group3 -> bird-letter 매핑 하나로만 그린다 -- 예전엔 여기
+            하늘에 그룹 수만큼 백로를 따로 또 그려서(최대 5마리), 그룹이
+            늘 때마다 배지와 무관하게 새가 계속 늘어 헷갈렸다(중복 메커니즘). */}
 
         <div className="flex flex-wrap items-end gap-x-1.5 gap-y-4">
           {items.map((item) => {

@@ -1784,3 +1784,15 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **`app/more/page.tsx`**: `child_guardians` 조회에 `role`을 추가해 각 아이가 "owner"인지 "guardian"(초대로 합류한 보호자)인지 `ChildSwitcher`에 넘깁니다.
 - **`components/child-switcher.tsx`**: "고치기"로 펼친 편집 상자 왼쪽에 **"이 아이 삭제하기"**(owner일 때만, `--berry` 텍스트)를 추가했습니다. `window.confirm()` 한 번에 "독서기록, 사진, 음성, 배지 등 이 아이의 모든 기록이 영구히 삭제되고 되돌릴 수 없어요"를 포함시켜(요청대로 확인창은 한 번만) 확인 후 `children` 테이블에서 DELETE합니다. `.select("id")`로 실제 삭제된 행을 받아서, owner가 아닌데 어떻게든 시도한 경우(RLS가 0행으로 막음)는 "이 아이를 등록한 보호자만 삭제할 수 있어요"로 구분해 안내합니다. 삭제된 아이가 활성 아이였다면 `users.active_child_id`가 이미 `on delete set null`이라 자동으로 비워지고, `getActiveChild()`가 다음 방문 때 남은 아이 중 하나로 대체합니다. 사진·음성 스토리지 파일은 (그룹 삭제 때와 같은 이유로) 앱에서 지우지 못해 그대로 남습니다 — 기존에 문서화된 동일한 한계입니다.
 - DB 변경 없음(기존 RLS·cascade 재사용). `npm run lint`/`rm -rf .next && npm run build` 통과.
+
+## 오늘 탭 미리보기 숲 vs 우리 숲 그림 불일치 + 곰·새를 숲지기 배지 문턱에 연동 (사용자 지적: "메인 화면이랑 우리숲 보기했을 때 다르네")
+
+오늘 탭의 숲 미리보기(`ForestStrip`)는 곰 1마리만 고정으로 그리고 새가 아예 없었는데, `/forest`(`ForestView`)는 그룹 수만큼 곰(최대 4마리)과 백로(최대 5마리)를 하늘에 따로 그리고 있어서 두 화면의 그림이 서로 달랐습니다. 게다가 `ForestView` 쪽은 그룹을 하나 더 들어가기만 해도 곰·새가 바로 늘어나서 "숲지기 추가된다고 늘리니까 헷갈리네"라는 지적까지 있었습니다.
+
+- **`lib/keeper-scene.ts`(신규)**: `keeperBearCount(groupCount)`/`keeperBirdCount(groupCount)` — 그룹 수를 **"첫 숲지기"(1곳)·"숲지기 셋"(3곳) 배지와 같은 문턱값**으로만 곰·새 개수로 바꿉니다(0곳→곰 0(표시는 최소 1로 보정)·새 0, 1~2곳→곰 1·새 1, 3곳 이상→곰 3·새 2). 그룹이 1→2로 늘어도 다음 문턱(3)을 안 넘으면 그림이 그대로라, 그룹을 하나 추가할 때마다 곰·새가 계속 늘어 헷갈리던 문제가 사라집니다. 이 함수 하나를 두 화면이 공유해서 그림이 항상 일치합니다.
+- **`components/forest-view.tsx`**: 숲길 끝의 곰 수를 `groups.slice(0, 4)`(raw)에서 `keeperBearCount(groups.length)` 기반으로 바꿨습니다. 하늘에 그룹 수만큼(`groups.slice(0,5)`) 따로 그리던 편지 백로 루프는 **완전히 삭제**했습니다 — 이미 있던 배지→장식 시스템(`lib/forest-scene.ts`의 `ORNAMENT_BY_BADGE`)이 `group1`/`group3` 배지를 딸 때마다 `bird-letter` 장식을 나무 사이에 자동으로 끼워 넣고 있어서, 그룹 하늘 새 루프는 같은 걸 두 번(중복 메커니즘) 그리고 있었을 뿐이었습니다. 이제 새는 이 배지 시스템 하나로만 나옵니다.
+- **`components/forest-strip.tsx`**: 하드코딩된 곰 1마리를 `groupCount` prop 기반의 `keeperBearCount`/`keeperBirdCount`로 그리도록 바꿨습니다(곰은 겹쳐 서는 모양까지 `forest-view.tsx`와 동일하게, 새는 별 있는 하늘 자리에 작게). `groupCount`가 없으면(prop 생략) 곰 1마리·새 0마리로 예전과 동일하게 동작합니다.
+- **`app/today/page.tsx`**: 우리 숲 미리보기에 넘길 그룹 수를 위해 `group_members`에 **head-only COUNT 쿼리**(행 데이터 없이 개수만) 하나를 기존 `Promise.all`에 추가했습니다 — 지난 라운드에서 뺐던 "그룹" 숫자 통계와는 별개로, 화면에 숫자를 보여주는 게 아니라 곰·새 그림 개수를 정하는 데만 쓰여서 크기가 아주 작습니다(인덱스된 COUNT 하나).
+- 정적 미리보기(임시 라우트, 확인 후 삭제)로 `groupCount` 0/1/2/3 네 경우를 렌더링해, 1→2에서 그림이 그대로이고 2→3에서 곰·새가 함께 늘어나는 걸 스크린샷으로 확인했습니다.
+- **3D 숲(`/forest/3d`, `components/forest-3d.tsx`)은 이번에 손대지 않았습니다** — 거기도 아직 raw 그룹 수로 곰·백로를 그리는 별도 로직이 남아 있어(이전 라운드 "숲의 곰·백로가 속한 그룹 수만큼" 참고), 2D와 같은 문턱 방식으로 맞추려면 후속 라운드가 필요합니다. 사용자 스크린샷이 2D 화면 두 개(오늘 탭, `/forest`)만 지적한 범위라 이번엔 2D만 맞췄습니다.
+- DB 변경 없음. `npm run lint`/`rm -rf .next && npm run build` 통과.
