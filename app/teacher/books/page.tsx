@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
-import ManagedLogList from "@/components/managed-log-list";
+import OperatorBookBrowser from "@/components/operator-book-browser";
 import { OPERATOR_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
-import { loadOperatorBookSections, operatorBookRows } from "@/lib/operator-books";
+import { loadOperatorBookSections } from "@/lib/operator-books";
 import { pickActiveGroupId } from "@/lib/active-operator-group";
 
 // 숲지기의 "추천도서" 탭 -- 그룹 하나를 골라(둘 이상일 때만 우측 상단
@@ -49,7 +49,8 @@ export default async function TeacherBooksPage({
     >
       <h1 className="d text-xl">추천도서</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-        그룹마다 책 서랍이 하나씩 있어요. 오른쪽 ‘선택’으로 여러 권을 한 번에 뺄 수 있어요.
+        그룹마다 책 서랍이 하나씩 있어요. 보기 방식을 바꾸거나 분야로 좁혀 볼 수 있고, 목록 보기의 ‘선택’으로
+        여러 권을 한 번에 뺄 수 있어요.
       </p>
 
       {!selected ? (
@@ -63,18 +64,7 @@ export default async function TeacherBooksPage({
         </div>
       ) : (
         <>
-          <div className="mt-6">
-            <ManagedLogList
-              heading="추천도서"
-              headingSub={`${selected.books.length}권`}
-              addHref={`/teacher/books/add?group=${selected.id}`}
-              addLabel="+ 책 추가"
-              rows={operatorBookRows(selected)}
-              emptyText="아직 추천도서가 없어요. ‘+ 책 추가’로 올려 주세요."
-              table="book_list_items"
-              deleteNoun="추천도서에서 뺄까요? (아이들의 기록은 남아요)"
-            />
-          </div>
+          <OperatorBookBrowser groupId={selected.id} memberCount={selected.memberCount} books={selected.books} />
           {sections.length > 1 && (
             <Link
               href="/teacher/books/add"

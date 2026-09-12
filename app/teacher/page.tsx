@@ -188,7 +188,7 @@ export default async function TeacherDashboardPage() {
               />
             </div>
             <p className="mt-3 text-[10px]" style={{ color: "var(--ink-2)", opacity: 0.75 }}>
-              * 여러 그룹에 속해도 아이는 한 명으로 세어요
+              * 여러 그룹에 속하는 한 아이는 한 명으로 세어요
             </p>
           </div>
 

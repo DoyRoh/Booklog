@@ -6,23 +6,11 @@ import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
 import { OPERATOR_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
 import { effectiveRange } from "@/lib/assignment-period";
 import { missionChip } from "@/lib/assignment-chip";
-import { operatorGroupsQuery } from "@/lib/operator-groups";
 import { pickActiveGroupId } from "@/lib/active-operator-group";
-
-type AssignmentCard = {
-  id: string;
-  title: string;
-  description: string | null;
-  bookTitles: string[];
-  missions: { type: string }[];
-  startDate: string | null;
-  endDate: string | null;
-  createdAt: string;
-  completed: number;
-  total: number;
-};
-
-type GroupSection = { id: string; name: string; cards: AssignmentCard[] };
+import {
+  loadOperatorAssignmentSections,
+  type OperatorAssignmentCard as AssignmentCard,
+} from "@/lib/operator-assignments";
 
 // 숲지기의 "숙제" 탭 -- 그룹 하나를 골라(둘 이상일 때만 우측 상단
 // 드롭다운으로) 그 그룹의 숙제만 마감일순으로 본다. 예전엔 모든 그룹의
@@ -48,72 +36,10 @@ export default async function TeacherAssignmentsPage({
     );
   }
 
-  // 운영 그룹 + 숙제(책 제목·미션)를 임베드 한 번으로, 완료 현황은 나란히.
-  type AssignmentRow = {
-    id: string;
-    title: string;
-    description: string | null;
-    start_date: string | null;
-    end_date: string | null;
-    created_at: string;
-    assignment_books: { books: { title: string } | null }[] | null;
-    assignment_missions: { type: string }[] | null;
-  };
-  type GroupRow = { id: string; name: string; assignments: AssignmentRow[] | null };
-  const [{ data: groupRows }, { data: completionRows }, { data: userRow }] = await Promise.all([
-    operatorGroupsQuery(
-      supabase,
-      userId,
-      "assignments(id, title, description, start_date, end_date, created_at, assignment_books(books(title)), assignment_missions(type))"
-    ).overrideTypes<GroupRow[], { merge: false }>(),
-    // security_invoker 뷰라 RLS상 내가 볼 수 있는 숙제 행만 온다.
-    supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
+  const [sections, { data: userRow }] = await Promise.all([
+    loadOperatorAssignmentSections(supabase, userId),
     supabase.from("users").select("active_operator_group_id").eq("id", userId).single(),
   ]);
-  const groups = groupRows ?? [];
-
-  // completion 뷰는 (숙제, 책, 아이) 단위라, "아이가 그 숙제의 책을 전부
-  // 읽었는지"로 다시 묶어서 "N/M명 완료"로 보여준다.
-  const completionByAssignment = new Map<string, { completed: number; total: number }>();
-  {
-    const perChild = new Map<string, Map<string, boolean>>();
-    for (const row of completionRows ?? []) {
-      const m = perChild.get(row.assignment_id) ?? new Map<string, boolean>();
-      m.set(row.child_id, (m.get(row.child_id) ?? true) && row.completed);
-      perChild.set(row.assignment_id, m);
-    }
-    for (const [assignmentId, m] of perChild) {
-      completionByAssignment.set(assignmentId, {
-        completed: Array.from(m.values()).filter(Boolean).length,
-        total: m.size,
-      });
-    }
-  }
-
-  const sections: GroupSection[] = groups.map((group) => ({
-    id: group.id,
-    name: group.name,
-    cards: (group.assignments ?? [])
-      .map((assignment) => {
-        const stat = completionByAssignment.get(assignment.id) ?? { completed: 0, total: 0 };
-        return {
-          id: assignment.id,
-          title: assignment.title,
-          description: assignment.description,
-          bookTitles: (assignment.assignment_books ?? [])
-            .map((ab) => ab.books?.title)
-            .filter((t): t is string => Boolean(t)),
-          missions: assignment.assignment_missions ?? [],
-          startDate: assignment.start_date,
-          endDate: assignment.end_date,
-          createdAt: assignment.created_at,
-          completed: stat.completed,
-          total: stat.total,
-        };
-      })
-      // 최근에 낸 숙제가 위.
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-  }));
 
   const activeGroupId = pickActiveGroupId(sections, groupParam, userRow?.active_operator_group_id);
   const selected = sections.find((s) => s.id === activeGroupId) ?? null;
@@ -143,6 +69,22 @@ export default async function TeacherAssignmentsPage({
         추천도서 서랍에서 골라 기간을 정해 낸 숙제예요. 오른쪽은 몇 명이 끝냈는지, 누르면 아이별로 자세히
         보여요.
       </p>
+
+      {selected && selected.cards.length > 0 && (
+        <div className="mt-[12px] flex items-center gap-2">
+          <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
+            숙제 {selected.cards.length}개
+          </span>
+          <div className="h-px min-w-[4px] flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
+          <Link
+            href={`/teacher/export?group=${selected.id}&type=assignments`}
+            className="d flex-none rounded-full border px-3 py-1 text-[12px]"
+            style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
+          >
+            내보내기
+          </Link>
+        </div>
+      )}
 
       {!selected ? (
         <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>

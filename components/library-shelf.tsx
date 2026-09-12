@@ -9,6 +9,7 @@ import RecordEditModal, { type EditableRecord } from "@/components/record-edit-m
 import ShelfTagPicker from "@/components/shelf-tag-picker";
 import ShelfTagManager from "@/components/shelf-tag-manager";
 import { createClient } from "@/lib/supabase/client";
+import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
 import { useRouter } from "next/navigation";
 
 // 같은 책이 여러 그룹의 숙제로 겹쳐서 나올 수 있으므로(child_id+book_id
@@ -67,45 +68,6 @@ const SORT_LABELS: Record<SortMode, string> = {
 };
 
 const STATUS_RANK: Record<ReadingStatus, number> = { done: 2, reading: 1, want: 0 };
-
-// 책등 색상 — 세이지그린 숲 컨셉과 어울리는 팔레트(이끼/나무껍질/등불/흙빛)에서
-// 책 제목 해시로 고정 배정해, 같은 책은 항상 같은 색으로 보이게 한다.
-const SPINE_COLORS = ["#6B8F71", "#A6763F", "#D9A441", "#7C9C82", "#B5654A", "#5E7A6B", "#C9A66B"];
-
-// 나무 선반 -- 숲길 배경 그림의 나무 기둥 색(밝은 결 → 몸통 → 아래 그늘)을
-// 그대로 뽑아 왔다. 나뭇결 무늬는 일부러 넣지 않는다(표지 이미지와 싸워서
-// 산만해짐). 그림의 기둥도 결이 거의 없는 평면이라 톤만 맞추면 충분하다.
-// 선반은 얇은 판 하나 -- 두꺼운 통나무 느낌이 아니라 벽에 붙인 가는 선반.
-// 위쪽 밝은 결 한 줄 + 앞면 몸통, 아래로 옅은 그림자만(사용자 피드백:
-// "두꺼움이 맘에 안 든다, 더 얇고 세련되게").
-const PLANK_STYLE = {
-  height: 5,
-  background: "linear-gradient(#9C8A6B, #7A6247)",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.28), 0 2px 3px rgba(38,54,43,0.22), 0 6px 10px -6px rgba(38,54,43,0.25)",
-  borderRadius: 2,
-} as const;
-
-// 책등 보기에서 책마다 높이를 조금씩 다르게 -- 전부 같은 높이면 막대그래프처럼
-// 보인다. 제목 해시로 고정해서 같은 책은 항상 같은 높이.
-function spineHeight(title: string) {
-  let hash = 0;
-  for (const ch of title) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
-  return 124 + (hash % 5) * 9; // 124 ~ 160px
-}
-
-function chunk<T>(items: T[], size: number): T[][] {
-  const rows: T[][] = [];
-  for (let i = 0; i < items.length; i += size) rows.push(items.slice(i, i + size));
-  return rows;
-}
-
-function spineColor(title: string) {
-  let hash = 0;
-  for (let i = 0; i < title.length; i++) {
-    hash = (hash * 31 + title.charCodeAt(i)) >>> 0;
-  }
-  return SPINE_COLORS[hash % SPINE_COLORS.length];
-}
 
 // 필터로 좁혀진 기록들 중 카드에 대표로 보여줄 하나를 고른다 --
 // 다 읽음 > 읽는 중 > 읽고 싶어요 순, 그 안에서는 최신 기록 우선.

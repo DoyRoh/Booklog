@@ -9,6 +9,7 @@ import Link from "next/link";
 export type LogChip = { label: string; color: string; sub?: string };
 
 export function LogRow({
+  index,
   dateTop,
   dateBottom,
   chip,
@@ -22,6 +23,8 @@ export function LogRow({
   rightInteractive,
   children,
 }: {
+  /** 맨 왼쪽 순번(1부터) -- 숲지기 목록처럼 "몇 개인지"가 중요한 곳에만. */
+  index?: number;
   dateTop: string;
   dateBottom?: string;
   chip: LogChip;
@@ -39,7 +42,17 @@ export function LogRow({
   children?: ReactNode;
 }) {
   const dateCol = (
-    <div className="flex w-11 flex-none flex-col pt-3.5" aria-hidden={hideDate || undefined}>
+    <div
+      className="flex w-11 flex-none flex-col pt-3.5"
+      aria-hidden={hideDate && index === undefined ? true : undefined}
+    >
+      {/* 순번은 날짜 칸 위에 작게 -- 칸을 따로 만들면 그만큼 제목 칸이
+          좁아져 책 제목이 두 줄로 꺾인다. */}
+      {index !== undefined && (
+        <span className="text-[10px] leading-none tabular-nums" style={{ color: "var(--ink-2)", opacity: 0.6 }}>
+          {index}
+        </span>
+      )}
       {!hideDate && (
         <>
           <span className="d text-sm leading-tight" style={{ color: "var(--ink-2)" }}>

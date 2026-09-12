@@ -10,6 +10,8 @@ import { LogGroup, LogRow, type LogChip } from "@/components/log-row";
 export type ManagedRow = {
   /** 삭제할 때 쓰는 행 id(book_list_items.id / assignments.id). */
   id: string;
+  /** 맨 왼쪽 순번(1부터). 안 주면 번호 칸이 없다. */
+  index?: number;
   href: string;
   dateTop: string;
   dateBottom?: string;
@@ -118,6 +120,7 @@ export default function ManagedLogList({
           return (
             <LogRow
               key={row.id}
+              index={row.index}
               first={index === 0}
               hideDate={row.hideDate}
               href={selecting ? undefined : row.href}

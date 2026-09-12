@@ -156,8 +156,10 @@ export default function BottomNav() {
   return (
     <nav
       aria-label="주 메뉴"
-      className="no-print fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-32px)] max-w-[420px] items-stretch rounded-[26px] p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
+      className="no-print fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-32px)] max-w-[420px] items-stretch gap-[4px] rounded-[26px] p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
       style={{
+        // 칸 사이 4px -- 켜진 탭 알약과 상시 연두색 "추가" 알약이 딱 붙어
+        // 한 덩어리처럼 보인다는 지적(붙어 있으면 어디까지가 한 탭인지 모름).
         bottom: "calc(var(--sb) + 14px)",
         // 96% 반투명이면 스크롤 중에 알약 뒤의 글자가 비쳐 보여 "내용이랑
         // 메뉴가 겹쳐 나온다"는 지적을 받았다 -- 완전 불투명으로.
