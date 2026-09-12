@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/components/profile-context";
-import { PlusIcon } from "@/components/icons/misc-icons";
+import { PlusIcon, SearchIcon } from "@/components/icons/misc-icons";
 
 /**
  * '그룹' 탭(추천도서·숙제 소제목 탭을 한 화면에 합친 `/group`) 상단의
@@ -17,15 +17,23 @@ import { PlusIcon } from "@/components/icons/misc-icons";
  * 그 안의 그룹 선택도 하나로 통일했다).
  *
  * 부모 쪽은 그룹이 하나뿐이어도 "전체" 개념이 있어(숲지기 쪽엔 없음)
- * 타일 목록이 항상 뜬다. 그룹별 "새로 올라온 책 수"/"안 끝난 숙제 수"
- * 배지는 추천도서/숙제 소제목 탭에서 의미가 서로 달라 하나의 공용 바가
- * 어느 쪽 숫자를 보여줘야 할지 애매해지므로 없앴다(숲지기 쪽 그룹 바도
- * 처음부터 배지가 없다 -- 통일).
+ * 타일 목록이 항상 뜬다. 타일은 큼직한 이미지(색 상자 + 이니셜)와 큰
+ * 숫자(지금 보고 있는 소제목 탭 기준 개수 -- 숙제 탭이면 숙제 수, 추천도서
+ * 탭이면 책 수), 이름은 그 아래 작게(사용자 요청: "이미지와 숫자를 크게,
+ * 이름은 아래에 작게"). 숙제/추천도서 소제목 탭은 배민 스타일 밑줄형
+ * 두 칸 탭으로, 오른쪽엔 전체 검색(핵심 기능)으로 가는 돋보기.
  *
  * 바 높이 상수는 lib/group-bar-height.ts에 있다 -- "use client" 파일에서
  * export하면 서버 컴포넌트엔 숫자가 아니라 클라이언트 참조가 넘어간다.
  */
 const GROUP_PATH = "/group";
+const TILE_COLORS = ["#6B8F71", "#A6763F", "#D9A441", "#7C9C82", "#B5654A", "#5E7A6B", "#C9A66B"];
+
+function tileColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return TILE_COLORS[hash % TILE_COLORS.length];
+}
 
 type GroupOption = { id: string; name: string };
 
@@ -36,8 +44,13 @@ export default function ChildGroupBar() {
   const router = useRouter();
   const [groups, setGroups] = useState<GroupOption[] | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  // 소제목 탭(숙제/추천도서)에 맞는 "큰 숫자" -- 그룹별 개수.
+  const [assignmentCounts, setAssignmentCounts] = useState<Record<string, number>>({});
+  const [bookCounts, setBookCounts] = useState<Record<string, number>>({});
 
   const onTab = pathname === GROUP_PATH;
+  // 기본 소제목 탭은 숙제(app/group/page.tsx와 같은 규칙).
+  const tab = searchParams.get("tab") === "books" ? "books" : "assignments";
 
   useEffect(() => {
     if (role !== "parent" || !onTab || !childId) return;
@@ -55,6 +68,22 @@ export default function ChildGroupBar() {
         .filter((g, i, arr) => arr.findIndex((o) => o.id === g.id) === i);
       setGroups(list);
       setActiveGroupId(childRow?.active_group_id ?? null);
+
+      const groupIds = list.map((g) => g.id);
+      if (groupIds.length === 0) return;
+      const [{ data: assignmentRows }, { data: bookRows }] = await Promise.all([
+        supabase.from("assignments").select("group_id").in("group_id", groupIds),
+        supabase.from("book_lists").select("group_id, book_list_items(id)").in("group_id", groupIds),
+      ]);
+      if (cancelled) return;
+      const aCounts: Record<string, number> = {};
+      for (const row of assignmentRows ?? []) aCounts[row.group_id] = (aCounts[row.group_id] ?? 0) + 1;
+      setAssignmentCounts(aCounts);
+      const bCounts: Record<string, number> = {};
+      for (const row of (bookRows ?? []) as unknown as { group_id: string; book_list_items: unknown[] }[]) {
+        bCounts[row.group_id] = (row.book_list_items ?? []).length;
+      }
+      setBookCounts(bCounts);
     })();
     return () => {
       cancelled = true;
@@ -66,9 +95,9 @@ export default function ChildGroupBar() {
       setActiveGroupId(id);
       // 추천도서/숙제 중 어느 소제목 탭을 보고 있었는지(tab=)는 그대로
       // 유지한 채 그룹만 바꾼다.
-      const tab = searchParams.get("tab");
+      const currentTab = searchParams.get("tab");
       const params = new URLSearchParams();
-      if (tab) params.set("tab", tab);
+      if (currentTab) params.set("tab", currentTab);
       if (id) params.set("group", id);
       const qs = params.toString();
       router.push(qs ? `${pathname}?${qs}` : pathname);
@@ -83,8 +112,6 @@ export default function ChildGroupBar() {
   if (!onTab || role !== "parent" || !groups || groups.length === 0) return null;
 
   const queryGroup = searchParams.get("group");
-  // 기본 소제목 탭은 숙제(app/group/page.tsx와 같은 규칙).
-  const tab = searchParams.get("tab") === "books" ? "books" : "assignments";
   const tabHref = (t: "assignments" | "books") => {
     const params = new URLSearchParams();
     if (t === "books") params.set("tab", "books");
@@ -97,6 +124,8 @@ export default function ChildGroupBar() {
     (queryGroup && groups.some((g) => g.id === queryGroup) && queryGroup) ||
     (activeGroupId && groups.some((g) => g.id === activeGroupId) && activeGroupId) ||
     "all";
+  const countFor = (groupId: string) => (tab === "books" ? bookCounts[groupId] : assignmentCounts[groupId]) ?? 0;
+  const totalCount = tab === "books" ? Object.values(bookCounts).reduce((s, n) => s + n, 0) : Object.values(assignmentCounts).reduce((s, n) => s + n, 0);
 
   return (
     <div
@@ -108,23 +137,24 @@ export default function ChildGroupBar() {
         boxShadow: "0 2px 6px rgba(38,54,43,0.06)",
       }}
     >
-      <div className="mx-auto flex max-w-[520px] gap-3 overflow-x-auto px-5 pt-2" style={{ scrollbarWidth: "none" }}>
+      <div className="mx-auto flex max-w-[520px] gap-3 overflow-x-auto px-5 pt-2.5" style={{ scrollbarWidth: "none" }}>
         <button
           type="button"
           onClick={() => pick(null)}
           aria-current={selectedId === "all" ? "true" : undefined}
-          className="flex w-[52px] flex-none flex-col items-center gap-1"
+          className="flex w-[64px] flex-none flex-col items-center gap-1"
         >
           <span
-            className="d flex h-11 w-11 items-center justify-center rounded-[14px] text-[13px]"
+            className="d flex h-[56px] w-[56px] flex-col items-center justify-center rounded-[16px]"
             style={{
               background: selectedId === "all" ? "var(--point-deep)" : "var(--paper)",
               color: selectedId === "all" ? "#fff" : "var(--ink)",
-              border: selectedId === "all" ? "1px solid var(--point-deep)" : "1px solid var(--rule)",
+              border: selectedId === "all" ? "2px solid var(--point-deep)" : "1px solid var(--rule)",
               boxShadow: selectedId === "all" ? "0 4px 10px rgba(27,94,58,0.28)" : "none",
             }}
           >
-            전체
+            <span className="text-[13px] leading-none">전체</span>
+            <span className="mt-1 text-[17px] font-bold leading-none">{totalCount}</span>
           </span>
           <span
             className="w-full truncate text-center text-[10px] leading-tight"
@@ -136,24 +166,35 @@ export default function ChildGroupBar() {
 
         {groups.map((group) => {
           const active = group.id === selectedId;
+          const count = countFor(group.id);
           return (
             <button
               key={group.id}
               type="button"
               onClick={() => pick(group.id)}
               aria-current={active ? "true" : undefined}
-              className="flex w-[52px] flex-none flex-col items-center gap-1"
+              className="flex w-[64px] flex-none flex-col items-center gap-1"
             >
+              {/* 이미지(색 상자 + 이니셜)와 큰 숫자를 한 타일에 -- 선택
+                  상태는 초록 테두리 + 배경 톤 변화로 명확히 구분. */}
               <span
-                className="d flex h-11 w-11 items-center justify-center rounded-[14px] text-base"
+                className="d relative flex h-[56px] w-[56px] items-center justify-center rounded-[16px] text-xl text-white"
                 style={{
-                  background: active ? "var(--point-deep)" : "var(--paper)",
-                  color: active ? "#fff" : "var(--ink)",
-                  border: active ? "1px solid var(--point-deep)" : "1px solid var(--rule)",
-                  boxShadow: active ? "0 4px 10px rgba(27,94,58,0.28)" : "none",
+                  background: tileColor(group.name),
+                  border: active ? "2px solid var(--point-deep)" : "2px solid transparent",
+                  boxShadow: active ? "0 4px 10px rgba(27,94,58,0.28)" : "0 1px 2px rgba(38,54,43,0.15)",
+                  opacity: active ? 1 : 0.72,
                 }}
               >
                 {group.name.trim().charAt(0)}
+                {count > 0 && (
+                  <span
+                    className="d absolute -bottom-1.5 -right-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1 text-[12px] font-bold"
+                    style={{ background: "#fff", color: "var(--point-deep)", border: "1.5px solid var(--point-deep)" }}
+                  >
+                    {count > 99 ? "99+" : count}
+                  </span>
+                )}
               </span>
               <span
                 className="w-full truncate text-center text-[10px] leading-tight"
@@ -165,12 +206,12 @@ export default function ChildGroupBar() {
           );
         })}
 
-        <Link href="/recommend" className="flex w-[52px] flex-none flex-col items-center gap-1" aria-label="다른 그룹 찾기">
+        <Link href="/recommend" className="flex w-[64px] flex-none flex-col items-center gap-1" aria-label="다른 그룹 찾기">
           <span
-            className="flex h-11 w-11 items-center justify-center rounded-[14px] border border-dashed"
+            className="flex h-[56px] w-[56px] items-center justify-center rounded-[16px] border border-dashed"
             style={{ borderColor: "rgba(38,54,43,0.28)", color: "var(--ink-2)" }}
           >
-            <PlusIcon width={18} height={18} />
+            <PlusIcon width={20} height={20} />
           </span>
           <span className="w-full truncate text-center text-[10px] leading-tight" style={{ color: "var(--ink-2)" }}>
             그룹 찾기
@@ -178,34 +219,44 @@ export default function ChildGroupBar() {
         </Link>
       </div>
 
-      {/* 숙제 / 추천도서 소제목 탭도 이 고정 바 안에 둔다 -- 예전엔 본문
-          맨 위에 알약으로 떠 있어서 "그룹 바 → 알약 → 검색창"까지 메뉴가
-          세 겹으로 쌓여 어디부터가 내용인지 경계가 없었다. 이제 고정 바
-          안이 전부 메뉴, 그 아래는 전부 내용이다. */}
-      <div className="mx-auto flex max-w-[520px] gap-2 px-5 pb-2 pt-2">
-        {(
-          [
-            { key: "assignments", label: "숙제" },
-            { key: "books", label: "추천도서" },
-          ] as const
-        ).map((t) => {
-          const on = t.key === tab;
-          return (
-            <Link
-              key={t.key}
-              href={tabHref(t.key)}
-              aria-current={on ? "page" : undefined}
-              className="d rounded-full px-3.5 py-1.5 text-[13px]"
-              style={{
-                background: on ? "var(--point-deep)" : "var(--paper)",
-                color: on ? "#fff" : "var(--ink-2)",
-                border: on ? "1px solid var(--point-deep)" : "1px solid var(--rule)",
-              }}
-            >
-              {t.label}
-            </Link>
-          );
-        })}
+      {/* 숙제 / 추천도서 소제목 탭 -- 배민 스타일 밑줄형 두 칸. 예전 알약
+          버튼 대신 화면 폭을 반씩 나눠 갖는 밑줄 탭으로 바꿨다. 오른쪽
+          끝의 돋보기는 전체 검색(/search, 핵심 기능)으로. */}
+      <div className="mx-auto flex max-w-[520px] items-stretch gap-2 px-5">
+        <div className="flex flex-1" style={{ borderBottom: "1px solid var(--rule)" }}>
+          {(
+            [
+              { key: "assignments", label: "숙제" },
+              { key: "books", label: "추천도서" },
+            ] as const
+          ).map((t) => {
+            const on = t.key === tab;
+            return (
+              <Link
+                key={t.key}
+                href={tabHref(t.key)}
+                aria-current={on ? "page" : undefined}
+                className="d flex-1 pb-2.5 pt-2.5 text-center text-[14px]"
+                style={{
+                  color: on ? "var(--point-deep)" : "var(--ink-2)",
+                  fontWeight: on ? 700 : 400,
+                  borderBottom: on ? "2.5px solid var(--point-deep)" : "2.5px solid transparent",
+                  marginBottom: "-1px",
+                }}
+              >
+                {t.label}
+              </Link>
+            );
+          })}
+        </div>
+        <Link
+          href="/search"
+          aria-label="숙제·추천도서 검색"
+          className="flex flex-none items-center justify-center"
+          style={{ color: "var(--ink-2)" }}
+        >
+          <SearchIcon width={19} height={19} />
+        </Link>
       </div>
     </div>
   );

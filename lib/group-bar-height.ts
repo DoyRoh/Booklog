@@ -8,7 +8,9 @@
 // 구분이 안 보인다").
 //
 // 값은 실제 아이폰(글자 크기 112.5%)에서 잰 높이보다 조금 넉넉하게 잡는다.
-// 그룹 타일 줄(44px 타일 + 이름) + 숙제/추천도서 소제목 탭 줄. 360px
-// 폰에서 실측 124.5px보다 조금 넉넉하게.
-export const CHILD_GROUP_BAR_HEIGHT = 128;
+// 그룹 타일 줄(56px 타일 + 숫자 배지 + 이름) + 밑줄형 숙제/추천도서
+// 소제목 탭 줄(+검색 아이콘). 정적 HTML 복제본을 360/390/430px에서
+// Playwright로 실측(125px)한 값에 실제 폰트(Gowun Dodum) 렌더링 오차를
+// 감안한 여유를 더했다.
+export const CHILD_GROUP_BAR_HEIGHT = 140;
 export const OPERATOR_GROUP_BAR_HEIGHT = 82;

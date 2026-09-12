@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ReadCheck, ShelfBookmark } from "@/components/read-toggles";
+import { ShelfBookmark } from "@/components/read-toggles";
 import { BOOK_CATEGORIES } from "@/lib/categories";
 import type { RecommendBook } from "@/lib/recommend-books";
 
@@ -11,6 +11,10 @@ import type { RecommendBook } from "@/lib/recommend-books";
 // 책을 책갈피로 내 책장에 꽂고 빼는 자리다. 진행률 카드·등불·숙제 표시는
 // 없다(사용자 피드백: "숙제랑 구분도 안 되고 정신 사납다"). 숲지기의 관리
 // 목록은 recommend-book-list.tsx(manage) 그대로.
+//
+// 추천도서는 숙제가 아니라서 "완료"를 요구하지 않는다(사용자 요청) --
+// 표지 = "읽어보기"(기록 화면으로 이동), 책갈피 = 담아두기(탐색 중
+// 흥미로운 책을 표시)만 남기고, 완료 체크(ReadCheck)는 뺐다.
 const PLANK_STYLE = {
   height: 5,
   background: "linear-gradient(#9C8A6B, #7A6247)",
@@ -109,10 +113,10 @@ export default function RecommendShelf({
                 const bookGroupId = book.groupId ?? groupId;
                 const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(bookGroupId)}`;
                 return (
-                  <div key={book.itemId} className="relative">
+                  <div key={book.itemId} id={`book-${book.itemId}`} className="relative" style={{ scrollMarginTop: "190px" }}>
                     <Link
                       href={href}
-                      aria-label={`${book.title} 기록하기`}
+                      aria-label={`${book.title} 읽어보기`}
                       className="block aspect-[3/4] overflow-hidden rounded-[8px]"
                       style={{
                         background: book.coverUrl ? "var(--card)" : coverColor(book.title),
@@ -125,21 +129,25 @@ export default function RecommendShelf({
                         <img src={book.coverUrl} alt="" className="h-full w-full object-cover" />
                       ) : (
                         <span className="flex h-full items-center justify-center p-2 text-center">
-                          <span className="d text-xs text-white" style={{ overflowWrap: "anywhere" }}>
+                          <span
+                            className="d text-xs text-white"
+                            style={{
+                              overflowWrap: "anywhere",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 5,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
                             {book.title}
                           </span>
                         </span>
                       )}
                     </Link>
                     {activeChildId && (
-                      <>
-                        <span className="absolute -top-1 -right-1">
-                          <ShelfBookmark childId={activeChildId} bookId={book.bookId} groupId={bookGroupId} status={book.readStatus} size={16} className={OVERLAY_BTN} />
-                        </span>
-                        <span className="absolute -bottom-1 -right-1">
-                          <ReadCheck childId={activeChildId} bookId={book.bookId} groupId={bookGroupId} done={book.readStatus === "done"} size={18} className={OVERLAY_BTN} />
-                        </span>
-                      </>
+                      <span className="absolute -top-1 -right-1">
+                        <ShelfBookmark childId={activeChildId} bookId={book.bookId} groupId={bookGroupId} status={book.readStatus} size={16} className={OVERLAY_BTN} />
+                      </span>
                     )}
                   </div>
                 );

@@ -188,7 +188,10 @@ export default async function TodayPage() {
       <Link
         href="/library/add"
         className="d mt-[12px] flex h-[52px] items-center justify-center rounded-[14px] text-center text-[16px] font-semibold text-white"
-        style={{ background: "var(--berry)" }}
+        // 주요 버튼(가장 자주 쓰는 행동 CTA)은 짙은 숲 초록으로 통일한다는
+        // 최신 지시에 따라, 예전에 이 버튼만 콕 집어 요청받았던 레드
+        // (--berry)에서 되돌렸다.
+        style={{ background: "var(--point-deep)" }}
       >
         + 책 기록하기
       </Link>

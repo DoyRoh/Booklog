@@ -1,17 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { uploadMissionVoice } from "@/lib/storage";
+import { setRead } from "@/lib/quick-read";
 import VoiceRecorder from "@/components/voice-recorder";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 import type { ReadingStatus } from "@/lib/reading-status";
-import { ReadCheck } from "@/components/read-toggles";
-import { LogGroup, LogRow, shortMd } from "@/components/log-row";
-import { effectiveRange } from "@/lib/assignment-period";
-import { missionChip } from "@/lib/assignment-chip";
+import { dueBadge, formatDueLong, formatShortMd } from "@/lib/assignment-period";
 import { kstDate } from "@/lib/kst";
 
 export type TodayMission = {
@@ -78,9 +76,153 @@ export type TodayAssignment = {
   missions: TodayMission[];
 };
 
+/** 완료 조건은 기존 그대로: 책이 하나 이상이고, 전부 완료(assignment_completion 뷰
+ * 기준 -- 완독 또는 부분 읽기 목표 달성)일 때만 숙제 전체 완료. 이 함수 하나로
+ * 카드·목록·검증 스크린샷이 전부 같은 기준을 쓴다(수정·삭제 금지 요청 반영). */
+export function isAssignmentDone(a: Pick<TodayAssignment, "books">): boolean {
+  return a.books.length > 0 && a.books.every((b) => b.completed);
+}
+
+/** 책 하나의 기록 화면 링크(제목·저자·표지·그룹 미리 채움) -- 기존 동작 그대로. */
+function recordHref(book: TodayBook, groupId: string): string {
+  return `/library/add?bookId=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(groupId)}`;
+}
+
+/** 숙제 책 한 줄 -- 큰 표지 + 제목/작가 + 상태에 맞는 버튼(체크 아이콘 대신
+ * "읽기 시작"/"다 읽었어요"/"완료 취소"). 완료 취소는 기존 setRead(false)를
+ * 그대로 재사용해 done → want로 되돌린다(기존 데이터 구조·권한 그대로). */
+function HomeworkBookRow({
+  book,
+  childId,
+  groupId,
+  onEdit,
+}: {
+  book: TodayBook;
+  childId: string;
+  groupId: string;
+  onEdit: (book: TodayBook) => void;
+}) {
+  const router = useRouter();
+  const [optimistic, setOptimistic] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  const guard = useRef(false);
+  const done = optimistic ?? book.completed;
+
+  async function setDone(next: boolean) {
+    if (guard.current) return;
+    guard.current = true;
+    setBusy(true);
+    setOptimistic(next);
+    await setRead(createClient(), childId, book.id, groupId, next);
+    guard.current = false;
+    setBusy(false);
+    router.refresh();
+    // 화면 이동 없이 바로 끝나는 토글이라, 하단 탭의 숙제 알림 점이 다음
+    // 화면 전환을 기다리지 않고 바로 갱신되도록 알린다.
+    window.dispatchEvent(new Event("chaeksup:assignment-changed"));
+  }
+
+  const cover = book.coverUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={book.coverUrl}
+      alt=""
+      className="h-20 w-14 flex-none rounded-[6px] object-cover"
+      style={{ border: "1px solid var(--rule)" }}
+    />
+  ) : (
+    <span
+      className="flex h-20 w-14 flex-none items-center justify-center rounded-[6px] text-center text-[10px] leading-tight"
+      style={{ background: "var(--paper)", color: "var(--ink-2)" }}
+    >
+      표지 없음
+    </span>
+  );
+
+  const titleBlock = (
+    <span className="min-w-0 flex-1">
+      <span
+        className="block text-[15px] leading-snug"
+        style={{ overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+      >
+        {book.title}
+      </span>
+      {book.author && (
+        <span className="mt-0.5 block truncate text-xs leading-snug" style={{ color: "var(--ink-2)" }}>
+          {book.author}
+        </span>
+      )}
+      {book.targetPage && !done && (
+        <span className="mt-1 block text-xs" style={{ color: "var(--ink-2)" }}>
+          {book.targetPage}쪽까지 읽어요
+        </span>
+      )}
+    </span>
+  );
+
+  if (done) {
+    return (
+      <div className="flex w-full items-center gap-3 py-3">
+        {cover}
+        <button type="button" onClick={() => onEdit(book)} className="min-w-0 flex-1 text-left">
+          {titleBlock}
+        </button>
+        <span className="flex flex-none flex-col items-end gap-1.5">
+          <span
+            className="d rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+            style={{ background: "var(--point)" }}
+          >
+            다 읽었어요
+          </span>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setDone(false)}
+            className="text-[11px] underline disabled:opacity-40"
+            style={{ color: "var(--ink-2)" }}
+          >
+            완료 취소
+          </button>
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex w-full items-center gap-3 py-3">
+      {cover}
+      <Link href={recordHref(book, groupId)} className="min-w-0 flex-1">
+        {titleBlock}
+      </Link>
+      <span className="flex flex-none flex-col items-end gap-1.5">
+        <Link
+          href={recordHref(book, groupId)}
+          className="d whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+          style={{ background: "var(--point-deep)" }}
+        >
+          읽기 시작
+        </Link>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => setDone(true)}
+          className="d whitespace-nowrap rounded-full border px-3 py-1 text-xs disabled:opacity-40"
+          style={{ borderColor: "var(--point-deep)", color: "var(--point-deep)" }}
+        >
+          다 읽었어요
+        </button>
+      </span>
+    </div>
+  );
+}
+
+/** 질문 미션 -- 기본은 접혀 있고 "답 적기"/"내 답 보기"/"답 수정" 버튼으로
+ * 편다(체크 아이콘·상시 입력창 대신 실제 상태에 맞는 버튼). */
 function QuestionMission({ childId, mission }: { childId: string; mission: TodayMission }) {
   const router = useRouter();
-  const [editingAnswer, setEditingAnswer] = useState(!mission.answerText);
+  const hasAnswer = Boolean(mission.answerText?.trim());
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [answer, setAnswer] = useState(mission.answerText ?? "");
   const [saving, setSaving] = useState(false);
 
@@ -95,15 +237,21 @@ function QuestionMission({ childId, mission }: { childId: string; mission: Today
         { onConflict: "mission_id,child_id" }
       );
     setSaving(false);
-    setEditingAnswer(false);
+    setEditing(false);
+    setOpen(true);
     router.refresh();
   }
 
   return (
-    <div className="mt-2 rounded-[10px] p-3" style={{ background: "var(--paper)" }}>
+    <div
+      id={`mission-${mission.id}`}
+      className="mt-2 rounded-[12px] p-3"
+      style={{ background: "var(--paper)", scrollMarginTop: "190px" }}
+    >
       <p className="text-sm">{mission.question}</p>
-      {editingAnswer ? (
-        <div className="mt-2 flex gap-2">
+
+      {editing ? (
+        <div className="mt-2 flex min-w-0 gap-2">
           <input
             type="text"
             value={answer}
@@ -117,25 +265,37 @@ function QuestionMission({ childId, mission }: { childId: string; mission: Today
             disabled={!answer.trim() || saving}
             onClick={save}
             className="d flex-none whitespace-nowrap rounded-[10px] px-3 py-2 text-xs text-white disabled:opacity-40"
-            style={{ background: "var(--point)" }}
+            style={{ background: "var(--point-deep)" }}
           >
             저장
           </button>
         </div>
-      ) : (
-        <div className="mt-2 flex items-center justify-between gap-2">
+      ) : hasAnswer && open ? (
+        <div className="mt-2">
           <p className="text-sm" style={{ color: "var(--point-deep)" }}>
             {mission.answerText}
           </p>
           <button
             type="button"
-            onClick={() => setEditingAnswer(true)}
-            className="d text-xs"
+            onClick={() => {
+              setAnswer(mission.answerText ?? "");
+              setEditing(true);
+            }}
+            className="d mt-1.5 text-xs"
             style={{ color: "var(--ink-2)" }}
           >
-            수정
+            답 수정
           </button>
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => (hasAnswer ? setOpen(true) : setEditing(true))}
+          className="d mt-2 rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+          style={{ background: hasAnswer ? "var(--point)" : "var(--point-deep)" }}
+        >
+          {hasAnswer ? "내 답 보기" : "답 적기"}
+        </button>
       )}
     </div>
   );
@@ -174,7 +334,7 @@ function VoiceMission({
   }
 
   return (
-    <div className="mt-2 rounded-[10px] p-3" style={{ background: "var(--paper)" }}>
+    <div className="mt-2 rounded-[12px] p-3" style={{ background: "var(--paper)" }}>
       <p className="text-sm">{mission.question ?? "소리 내어 읽어보아요"}</p>
       {!voiceAllowed ? (
         <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
@@ -201,6 +361,123 @@ function VoiceMission({
   );
 }
 
+const TONE_COLOR: Record<"today" | "tomorrow" | "overdue", string> = {
+  today: "var(--lantern)",
+  tomorrow: "var(--point)",
+  overdue: "var(--berry)",
+};
+
+/** 숙제 카드 하나 -- 마감일(크게) → 등록일·그룹명(작게) → 제목·설명(연한
+ * 배경) → 책 목록(흰 배경, 1단계) → 질문·낭독(2단계). 순서·음영 구분은
+ * 사용자가 지정한 그대로다. */
+function AssignmentCard({
+  assignment,
+  childId,
+  voiceAllowed,
+  onEdit,
+}: {
+  assignment: TodayAssignment;
+  childId: string;
+  voiceAllowed: boolean;
+  onEdit: (book: TodayBook) => void;
+}) {
+  const due = assignment.endDate ?? assignment.startDate ?? assignment.createdAt.slice(0, 10);
+  const done = isAssignmentDone(assignment);
+  // 완료된 숙제는 "오늘까지"/"기한 지남" 같은 급함 배지가 필요 없다 --
+  // 완료 배지 하나로 충분하고, 급함 배지와 같이 있으면 오히려 헷갈린다.
+  const badge = done ? null : dueBadge(due);
+  const completedCount = assignment.books.filter((b) => b.completed).length;
+  const totalBooks = assignment.books.length;
+  const hasQuestionStep = assignment.missions.some((m) => m.type === "question" || m.type === "voice");
+  const twoSteps = totalBooks > 0 && hasQuestionStep;
+
+  return (
+    <div
+      id={assignment.id}
+      className="overflow-hidden rounded-[var(--r)] border"
+      style={{ borderColor: done ? "var(--point)" : "var(--rule)", background: "var(--card)", scrollMarginTop: "190px" }}
+    >
+      {/* 마감일 구역 -- 사용자가 지정한 정보 순서의 맨 앞. */}
+      <div className="px-[20px] pt-[16px] pb-[10px]">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="d text-[19px] leading-[26px]">{formatDueLong(due)}까지</p>
+          {badge && (
+            <span
+              className="d rounded-full px-2 py-0.5 text-[11px] font-semibold text-white"
+              style={{ background: TONE_COLOR[badge.tone] }}
+            >
+              {badge.label}
+            </span>
+          )}
+          {done && (
+            <span
+              className="d rounded-full px-2 py-0.5 text-[11px] font-semibold text-white"
+              style={{ background: "var(--point)" }}
+            >
+              숙제 완료
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
+          {formatShortMd(assignment.createdAt.slice(0, 10))} 등록 · {assignment.groupName}
+        </p>
+      </div>
+
+      {/* 제목·설명 -- 연한 배경(선생님 원문 그대로, 수정·삭제 없음). */}
+      <div className="px-[20px] pb-[14px]" style={{ background: "var(--paper)" }}>
+        <p className="d text-[16px] leading-snug">{assignment.title}</p>
+        {assignment.description && (
+          <p className="mt-1 text-sm leading-snug" style={{ color: "var(--ink)", overflowWrap: "anywhere" }}>
+            {assignment.description}
+          </p>
+        )}
+        {totalBooks > 0 && (
+          <p className="mt-2 text-xs" style={{ color: done ? "var(--point-deep)" : "var(--ink-2)" }}>
+            {totalBooks}권 중 {completedCount}권 읽었어요
+          </p>
+        )}
+      </div>
+
+      {/* 책 목록 -- 흰 배경. */}
+      {totalBooks > 0 && (
+        <div className="px-[20px]">
+          {twoSteps && (
+            <p className="d pt-3 text-xs" style={{ color: "var(--ink-2)" }}>
+              1단계 · 책 읽기
+            </p>
+          )}
+          <div className="divide-y" style={{ borderColor: "rgba(38,54,43,0.08)" }}>
+            {assignment.books.map((book) => (
+              <HomeworkBookRow key={book.id} book={book} childId={childId} groupId={assignment.groupId} onEdit={onEdit} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 질문·낭독 -- 2단계(둘 다 있을 때만 단계 표시). */}
+      {assignment.missions.length > 0 && (
+        <div className="px-[20px] pb-[16px]">
+          {twoSteps && (
+            <p className="d pt-1 text-xs" style={{ color: "var(--ink-2)" }}>
+              2단계 · 질문 확인 및 답변 작성
+            </p>
+          )}
+          {assignment.missions.map((mission) =>
+            mission.type === "question" ? (
+              <QuestionMission key={mission.id} childId={childId} mission={mission} />
+            ) : mission.type === "voice" ? (
+              <VoiceMission key={mission.id} childId={childId} mission={mission} voiceAllowed={voiceAllowed} />
+            ) : null
+          )}
+        </div>
+      )}
+
+      {/* 책도 미션도 없는 예외적인 숙제라도 아래쪽 여백은 있어야 한다. */}
+      {totalBooks === 0 && assignment.missions.length === 0 && <div className="pb-[16px]" />}
+    </div>
+  );
+}
+
 export default function AssignmentToday({
   childId,
   childName,
@@ -214,141 +491,16 @@ export default function AssignmentToday({
 }) {
   const [editing, setEditing] = useState<TodayBook | null>(null);
 
-  // "언제까지 해야 하는지"가 가장 중요한 정보라, 그룹명 대신 마감일로
-  // 섹션을 묶는다(사용자 피드백 -- 날짜 중심으로 보고 싶다는 요청). 마감이
-  // 같은 숙제가 여러 그룹에 걸쳐 있을 수 있어, 그 밑에 작게 어느 그룹
-  // 숙제인지를 적는다. 마감이 이른 순으로 보여준다.
-  const sections: { due: string; groupNames: string[]; assignments: TodayAssignment[] }[] = [];
-  for (const assignment of assignments) {
-    const due = effectiveRange(assignment).end;
-    const section = sections.find((s) => s.due === due);
-    if (section) {
-      section.assignments.push(assignment);
-      if (!section.groupNames.includes(assignment.groupName)) section.groupNames.push(assignment.groupName);
-    } else {
-      sections.push({ due, groupNames: [assignment.groupName], assignments: [assignment] });
-    }
-  }
-  sections.sort((a, b) => a.due.localeCompare(b.due));
-
   return (
-    <div className="mt-4 flex flex-col gap-4">
-      {sections.map((section) => (
-        <LogGroup
-          key={section.due}
-          heading={`${shortMd(section.due)}까지`}
-          headingSub={`${section.groupNames.join(" · ")} · 숙제 ${section.assignments.length}개`}
-        >
-          {section.assignments.map((assignment, index) => {
-            const completedCount = assignment.books.filter((book) => book.completed).length;
-            const allDone = completedCount === assignment.books.length && assignment.books.length > 0;
-            return (
-              <div key={assignment.id} id={assignment.id} className="scroll-mt-4">
-                {/* 숙제 제목·안내 줄만 옅은 음영 띠로 -- 그 아래 흰 바탕의 책 줄과
-                    한 덩어리로 읽혀 "어디까지가 숙제 이름인지" 헷갈린다는 지적. */}
-                <div style={{ background: "var(--paper)" }}>
-                  <LogRow
-                    first={index === 0}
-                    dateTop={shortMd(effectiveRange(assignment).start)}
-                    chip={missionChip(assignment.missions)}
-                    title={<span className="d">{assignment.title}</span>}
-                    subtitle={assignment.description ?? undefined}
-                    right={
-                      <span
-                        className="d rounded-full px-2 py-0.5 text-[11px]"
-                        style={{
-                          background: allDone ? "rgba(47,168,79,0.12)" : "var(--card)",
-                          color: allDone ? "var(--point-deep)" : "var(--ink-2)",
-                        }}
-                      >
-                        {completedCount}/{assignment.books.length}
-                      </span>
-                    }
-                  />
-                </div>
-                {/* 책 줄과 미션은 LogRow 안에 넣지 않고(글 칸이 좁아 제목이 잘림) 그 아래에
-                    따로 둔다. 왼쪽은 날짜 칸(w-11 + 간격) 만큼 비워 칩 칸부터 시작하고
-                    오른쪽은 박스 끝까지 -- 숲길 목록의 책 줄과 같은 폭·같은 형식
-                    (제목 두 줄까지 + 작은 작가명, 오른쪽 체크). */}
-                {(assignment.books.length > 0 || assignment.missions.length > 0) && (
-                  <div className="pr-4 pl-[4.25rem] pb-2">
-                    {assignment.books.map((book, bookIndex) => {
-                      // 표지를 작게 곁들인다 -- 영유아는 글자보다 그림으로
-                      // 책을 먼저 알아본다는 피드백. 표지 옆에 제목, 그 아래
-                      // 작가를 작게(library-shelf.tsx 목록 줄과 같은 44×32).
-                      const label = (
-                        <span className="flex min-w-0 items-center gap-2">
-                          {book.coverUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={book.coverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
-                          ) : (
-                            <span className="block h-11 w-8 flex-none rounded" style={{ background: "var(--paper)" }} />
-                          )}
-                          <span className="min-w-0 flex-1">
-                            <span
-                              className="block text-sm leading-snug"
-                              style={{ overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-                            >
-                              {book.title}
-                              {book.targetPage && !book.completed && (
-                                <span className="ml-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
-                                  {book.targetPage}쪽까지
-                                </span>
-                              )}
-                            </span>
-                            {book.author && (
-                              <span className="mt-0.5 block truncate text-xs leading-snug" style={{ color: "var(--ink-2)" }}>
-                                {book.author}
-                              </span>
-                            )}
-                          </span>
-                        </span>
-                      );
-                      return (
-                        <div
-                          key={book.id}
-                          className="flex items-center gap-2"
-                          style={bookIndex > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
-                        >
-                          {/* 제목을 누르면 기록 화면(안 읽음) / 기록 고치기(읽음). 오른쪽 체크는
-                              기록 화면 없이 바로 "읽었어요"만 켜고 끈다. */}
-                          {book.completed ? (
-                            <button
-                              type="button"
-                              disabled={!book.recordId}
-                              onClick={() => setEditing(book)}
-                              className="min-w-0 flex-1 py-2.5 text-left"
-                            >
-                              {label}
-                            </button>
-                          ) : (
-                            <Link
-                              href={`/library/add?bookId=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(assignment.groupId)}`}
-                              className="min-w-0 flex-1 py-2.5"
-                            >
-                              {label}
-                            </Link>
-                          )}
-                          <span className="-mr-2 flex flex-none items-center">
-                            <ReadCheck childId={childId} bookId={book.id} groupId={assignment.groupId} done={book.completed} size={24} />
-                          </span>
-                        </div>
-                      );
-                    })}
-
-                    {assignment.missions.map((mission) =>
-                      mission.type === "question" ? (
-                        <QuestionMission key={mission.id} childId={childId} mission={mission} />
-                      ) : mission.type === "voice" ? (
-                        <VoiceMission key={mission.id} childId={childId} mission={mission} voiceAllowed={voiceAllowed} />
-                      ) : null
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </LogGroup>
+    <div className="flex flex-col gap-4">
+      {assignments.map((assignment) => (
+        <AssignmentCard
+          key={assignment.id}
+          assignment={assignment}
+          childId={childId}
+          voiceAllowed={voiceAllowed}
+          onEdit={setEditing}
+        />
       ))}
 
       {editing && (

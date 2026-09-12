@@ -140,7 +140,12 @@ export default function BottomNav() {
   // 알약 바는 화면 폭을 가로로 꽉 채우고(스레드처럼) 탭이 균등하게 나눠
   // 갖는다 -- 내용 폭에 맞춰 가운데 몰려 있으면 5칸이 빡빡하고, 넓히면
   // 아이콘 아래에 이름을 붙일 자리가 생긴다. 맨 오른쪽은 프로필·설정.
-  const tabs = [...(role === "operator" ? OPERATOR_TABS : PARENT_TABS), PROFILE_TAB];
+  // "추가"는 탭 선택 상태가 아니라 독립된 행동 버튼이라(사용자 요청:
+  // "'추가'는 하단 메뉴 탭과 분리된 별도 행동 버튼으로 구분해줘") 이 목록
+  // 에서 빼고 별도의 떠 있는 원형 버튼(addTab)으로 그린다.
+  const allTabs = role === "operator" ? OPERATOR_TABS : PARENT_TABS;
+  const addTab = allTabs.find((t) => "accent" in t && t.accent === "sprout") ?? null;
+  const tabs = [...allTabs.filter((t) => !("accent" in t && t.accent === "sprout")), PROFILE_TAB];
   // 프로필 탭에 그릴 얼굴 -- 상단바와 같은 규칙(아이는 고른 아바타,
   // 숲지기는 곰 기본, 로딩 중엔 토끼).
   const face = role === "operator" ? `face-${operatorAvatar ?? "bear"}` : `face-${childAvatar ?? "rabbit"}`;
@@ -152,83 +157,108 @@ export default function BottomNav() {
     .map((t) => t.href)
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
     .sort((a, b) => b.length - a.length)[0];
+  const addActive = Boolean(addTab && (pathname === addTab.href || pathname.startsWith(`${addTab.href}/`)));
 
   return (
-    <nav
-      aria-label="주 메뉴"
-      className="no-print fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-32px)] max-w-[420px] items-stretch gap-[4px] rounded-[26px] p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
-      style={{
-        // 칸 사이 4px -- 켜진 탭 알약과 상시 연두색 "추가" 알약이 딱 붙어
-        // 한 덩어리처럼 보인다는 지적(붙어 있으면 어디까지가 한 탭인지 모름).
-        bottom: "calc(var(--sb) + 14px)",
-        // 96% 반투명이면 스크롤 중에 알약 뒤의 글자가 비쳐 보여 "내용이랑
-        // 메뉴가 겹쳐 나온다"는 지적을 받았다 -- 완전 불투명으로.
-        background: "var(--card)",
-        willChange: "transform",
-        boxShadow: "0 8px 28px -10px rgba(38,54,43,0.35), 0 0 0 1px rgba(38,54,43,0.06)",
-        transform: hidden ? "translateY(calc(100% + var(--sb) + 20px))" : "translateY(0)",
-      }}
-    >
-      {tabs.map((tab) => {
-        const { href, label } = tab;
-        const Icon = "Icon" in tab ? tab.Icon : null;
-        const active = href === activeHref;
-        const isSprout = "accent" in tab && tab.accent === "sprout";
-        const showHomeworkDot = href === "/group" && homeworkBadge !== "none";
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-label={showHomeworkDot ? `${label} · ${homeworkBadge === "done" ? "오늘 숙제 완료" : "오늘 숙제 있음"}` : label}
-            aria-current={active ? "page" : undefined}
-            className="flex flex-1 flex-col items-center justify-center gap-[3px] rounded-[20px] py-[6px] transition-colors"
+    <>
+      <nav
+        aria-label="주 메뉴"
+        className="no-print fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-32px)] max-w-[420px] items-stretch gap-[4px] rounded-[26px] p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
+        style={{
+          bottom: "calc(var(--sb) + 14px)",
+          // 96% 반투명이면 스크롤 중에 알약 뒤의 글자가 비쳐 보여 "내용이랑
+          // 메뉴가 겹쳐 나온다"는 지적을 받았다 -- 완전 불투명으로.
+          background: "var(--card)",
+          willChange: "transform",
+          boxShadow: "0 8px 28px -10px rgba(38,54,43,0.35), 0 0 0 1px rgba(38,54,43,0.06)",
+          transform: hidden ? "translateY(calc(100% + var(--sb) + 20px))" : "translateY(0)",
+        }}
+      >
+        {tabs.map((tab) => {
+          const { href, label } = tab;
+          const Icon = "Icon" in tab ? tab.Icon : null;
+          const active = href === activeHref;
+          const showHomeworkDot = href === "/group" && homeworkBadge !== "none";
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-label={showHomeworkDot ? `${label} · ${homeworkBadge === "done" ? "오늘 숙제 완료" : "오늘 숙제 있음"}` : label}
+              aria-current={active ? "page" : undefined}
+              className="flex flex-1 flex-col items-center justify-center gap-[3px] rounded-[20px] py-[6px] transition-colors"
+              style={{
+                color: active ? "var(--point-deep)" : "var(--ink-2)",
+                background: active ? "rgba(47,168,79,0.14)" : "transparent",
+              }}
+            >
+              <span className="relative flex h-[24px] w-[24px] items-center justify-center">
+                {Icon ? (
+                  <Icon strokeWidth={active ? 2.4 : 1.9} />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`/illustrations/${face}.png`}
+                    alt=""
+                    aria-hidden="true"
+                    width={24}
+                    height={24}
+                    className="h-[24px] w-[24px] rounded-full"
+                    style={{ boxShadow: active ? "0 0 0 2px var(--point)" : "0 0 0 1.5px var(--rule)" }}
+                  />
+                )}
+                {showHomeworkDot && (
+                  <span
+                    aria-hidden
+                    className="absolute right-[1px] top-[1px] h-[8px] w-[8px] rounded-full"
+                    style={{
+                      background: homeworkBadge === "done" ? "var(--point)" : "var(--berry)",
+                      boxShadow: "0 0 0 1.5px rgba(255,255,255,0.96)",
+                    }}
+                  />
+                )}
+              </span>
+              {/* 탭 이름은 항상 아이콘 아래에 붙여 둔다 -- 아이콘만으로는
+                  어디인지 헷갈린다는 지적(숲지기 4탭 -> 부모 탭도 같게). */}
+              <span className="d whitespace-nowrap text-[11px] leading-[14px]" style={{ fontFamily: "var(--disp)" }}>
+                {label}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* "추가"는 탭 강조 배경 언어를 공유하지 않는 독립된 원형 행동
+          버튼이다 -- 하단 알약 바 위로 살짝 떠 있어(raised) 탭이 아니라
+          별도 버튼임이 한눈에 보인다. 항상 연두색(사용자 요청). */}
+      {addTab && (
+        <Link
+          href={addTab.href}
+          aria-label={addTab.label}
+          className="no-print fixed z-50 flex flex-col items-center gap-[2px] transition-transform duration-300 ease-out motion-reduce:transition-none"
+          style={{
+            left: "50%",
+            transform: hidden
+              ? "translate(-50%, calc(100% + var(--sb) + 20px))"
+              : "translate(-50%, 0)",
+            bottom: "calc(var(--sb) + 58px)",
+          }}
+        >
+          <span
+            className="flex h-[52px] w-[52px] items-center justify-center rounded-full"
             style={{
-              color: isSprout ? "var(--sprout-deep)" : active ? "var(--point-deep)" : "var(--ink-2)",
-              // "추가"는 다른 탭과 달리 항상 연두 알약으로 눈에 띄어야 한다
-              // (사용자 요청) -- 눌러서 그 화면에 있을 때만 더 진해진다.
-              background: isSprout
-                ? active
-                  ? "rgba(139,195,74,0.42)"
-                  : "rgba(139,195,74,0.22)"
-                : active
-                  ? "rgba(47,168,79,0.14)"
-                  : "transparent",
+              background: "var(--sprout)",
+              boxShadow: addActive
+                ? "0 6px 16px rgba(85,139,47,0.45), 0 0 0 3px rgba(139,195,74,0.35)"
+                : "0 6px 14px rgba(85,139,47,0.35)",
             }}
           >
-            <span className="relative flex h-[24px] w-[24px] items-center justify-center">
-              {Icon ? (
-                <Icon strokeWidth={active ? 2.4 : 1.9} />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={`/illustrations/${face}.png`}
-                  alt=""
-                  aria-hidden="true"
-                  width={24}
-                  height={24}
-                  className="h-[24px] w-[24px] rounded-full"
-                  style={{ boxShadow: active ? "0 0 0 2px var(--point)" : "0 0 0 1.5px var(--rule)" }}
-                />
-              )}
-              {showHomeworkDot && (
-                <span
-                  aria-hidden
-                  className="absolute right-[1px] top-[1px] h-[8px] w-[8px] rounded-full"
-                  style={{
-                    background: homeworkBadge === "done" ? "var(--point)" : "var(--berry)",
-                    boxShadow: "0 0 0 1.5px rgba(255,255,255,0.96)",
-                  }}
-                />
-              )}
-            </span>
-            {/* 탭 이름은 항상 아이콘 아래에 붙여 둔다 -- 아이콘만으로는
-                어디인지 헷갈린다는 지적(숲지기 4탭 -> 부모 탭도 같게). */}
-            <span className="d whitespace-nowrap text-[11px] leading-[14px]" style={{ fontFamily: "var(--disp)" }}>
-              {label}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
+            {"Icon" in addTab && addTab.Icon ? <addTab.Icon strokeWidth={2.2} width={26} height={26} style={{ color: "var(--sprout-deep)" }} /> : null}
+          </span>
+          <span className="d rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "var(--card)", color: "var(--sprout-deep)", boxShadow: "0 1px 3px rgba(38,54,43,0.2)" }}>
+            {addTab.label}
+          </span>
+        </Link>
+      )}
+    </>
   );
 }

@@ -7,10 +7,35 @@ import { kstDate, kstWeekStart } from "@/lib/kst";
 //    숙제(마감 지남)는 "지난 숙제"에만 보이던 문제의 원인이었다.
 export type PeriodLike = { startDate: string | null; endDate: string | null; createdAt: string };
 
-function addDays(iso: string, days: number): string {
+export function addDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
+}
+
+const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"];
+
+/** "9월 13일(일)" -- 숙제 카드 맨 위 마감일 표시(사용자 요청: 크고 명확하게). */
+export function formatDueLong(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const weekday = WEEKDAY_KO[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  return `${m}월 ${d}일(${weekday})`;
+}
+
+/** "9/13" -- 등록일 같은 보조 표시용 짧은 날짜. */
+export function formatShortMd(iso: string): string {
+  const [, m, d] = iso.split("-").map(Number);
+  return `${m}/${d}`;
+}
+
+export type DueBadge = { label: string; tone: "today" | "tomorrow" | "overdue" };
+
+/** 마감일 옆에 붙는 보조 배지 -- "오늘까지"/"내일까지"/"기한 지남". */
+export function dueBadge(due: string, today = kstDate()): DueBadge | null {
+  if (due === today) return { label: "오늘까지", tone: "today" };
+  if (due === addDays(today, 1)) return { label: "내일까지", tone: "tomorrow" };
+  if (due < today) return { label: "기한 지남", tone: "overdue" };
+  return null;
 }
 
 export function effectiveRange(a: PeriodLike): { start: string; end: string } {
