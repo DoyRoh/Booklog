@@ -59,11 +59,10 @@ export default async function TodayPage() {
     );
   }
 
-  // 통계/최근 기록에 쓰는 reading_records 조회, 오늘의 숙제 조회, 속한
-  // 그룹 수 조회는 서로 무관하므로(전부 activeChild.id에만 의존) 동시에
-  // 왕복한다 -- 오늘 탭이 유독 느렸던 가장 큰 원인이 이런 조회들을
-  // 순서대로 기다리던 것이었다.
-  const [{ data: allRecords, error: recordsError }, assignments, { data: groupRows }] = await Promise.all([
+  // 통계/최근 기록에 쓰는 reading_records 조회와 오늘의 숙제 조회는 서로
+  // 무관하므로(전부 activeChild.id에만 의존) 동시에 왕복한다 -- 오늘 탭이
+  // 유독 느렸던 가장 큰 원인이 이런 조회들을 순서대로 기다리던 것이었다.
+  const [{ data: allRecords, error: recordsError }, assignments] = await Promise.all([
     supabase
       .from("reading_records")
       .select(
@@ -72,7 +71,6 @@ export default async function TodayPage() {
       .eq("child_id", activeChild.id)
       .order("read_date", { ascending: false }),
     getTodayAssignments(supabase, activeChild.id),
-    supabase.from("group_members").select("groups(id)").eq("child_id", activeChild.id).eq("status", "approved"),
   ]);
 
   // 마감일(end_date)을 안 정한 숙제는 날짜만으로는 절대 안 없어지므로,
@@ -96,15 +94,6 @@ export default async function TodayPage() {
 
   const thisMonthKey = kstMonth();
   const monthCount = doneRecords.filter((r) => r.read_date.startsWith(thisMonthKey)).length;
-
-  // "그룹" 칸 = 아이가 속한(승인된) 그룹 수. 숲길 탭 드롭다운과 같은 기준으로,
-  // 실제로 보이는 그룹만 중복 없이 센다(같은 그룹에 행이 둘이거나 그룹이
-  // 안 보이는 행은 제외).
-  const groupCount = new Set(
-    (groupRows ?? [])
-      .map((row) => (row.groups as unknown as { id: string } | null)?.id)
-      .filter((id): id is string => Boolean(id))
-  ).size;
 
   const recentRecords: RecentRecord[] = (allRecords ?? []).slice(0, 5).map((r) => {
     const book = r.books as unknown as {
@@ -171,36 +160,28 @@ export default async function TodayPage() {
           </span>
         </p>
 
+        {/* 통계는 오늘·이번 주·이번 달 세 가지만 -- "그룹"은 그룹 탭으로
+            들어가는 입구일 뿐 이 카드가 답할 통계가 아니라는 지적으로 뺐다
+            (카드 높이도 그만큼 줄어든다). 그룹 목록은 우리 숲 미리보기 옆
+            아이콘이나 하단 "그룹" 탭에서 이미 바로 들어갈 수 있다. */}
         <div
           className="mt-[16px] grid pt-[12px]"
-          style={{ borderTop: "1px solid rgba(38,54,43,0.08)", gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}
+          style={{ borderTop: "1px solid rgba(38,54,43,0.08)", gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}
         >
           {(
             [
-              { value: todayCount, label: "오늘", href: null },
-              { value: weekCount, label: "이번 주", href: null },
-              { value: monthCount, label: "이번 달", href: null },
-              { value: groupCount, label: "그룹", href: "/group" },
+              { value: todayCount, label: "오늘" },
+              { value: weekCount, label: "이번 주" },
+              { value: monthCount, label: "이번 달" },
             ] as const
-          ).map((stat) => {
-            const inner = (
-              <>
-                <span className="d text-[20px] font-semibold leading-[24px]">{stat.value}</span>
-                <span className="text-[13px] leading-[18px]" style={{ color: "var(--ink-2)" }}>
-                  {stat.label}
-                </span>
-              </>
-            );
-            return stat.href ? (
-              <Link key={stat.label} href={stat.href} className="flex flex-col items-center gap-[4px] text-center">
-                {inner}
-              </Link>
-            ) : (
-              <div key={stat.label} className="flex flex-col items-center gap-[4px] text-center">
-                {inner}
-              </div>
-            );
-          })}
+          ).map((stat) => (
+            <div key={stat.label} className="flex flex-col items-center gap-[4px] text-center">
+              <span className="d text-[20px] font-semibold leading-[24px]">{stat.value}</span>
+              <span className="text-[13px] leading-[18px]" style={{ color: "var(--ink-2)" }}>
+                {stat.label}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
