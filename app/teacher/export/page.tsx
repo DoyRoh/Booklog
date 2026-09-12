@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import ExportButtons from "@/components/export-buttons";
 import { loadOperatorBookSections } from "@/lib/operator-books";
-import { loadOperatorAssignmentSections } from "@/lib/operator-assignments";
+import { loadOperatorAssignmentSections, type OperatorAssignmentCard } from "@/lib/operator-assignments";
 import { effectiveRange } from "@/lib/assignment-period";
 import { shortDate } from "@/components/log-row";
 
@@ -40,6 +40,9 @@ export default async function TeacherExportPage({
   let header: string[] = [];
   let rows: string[][] = [];
   let summary = "";
+  // 화면 표에서만 "아이별 완료 여부" 열을 이름 칩(완료=초록/미완료=회색)으로
+  // 색까지 보여주기 위해 원본 데이터를 따로 들고 있는다(CSV는 문자열 그대로).
+  let assignmentCards: OperatorAssignmentCard[] = [];
 
   if (type === "books") {
     const sections = await loadOperatorBookSections(supabase, userId, groupParam);
@@ -60,8 +63,11 @@ export default async function TeacherExportPage({
     const sections = await loadOperatorAssignmentSections(supabase, userId);
     const section = sections.find((s) => s.id === groupParam) ?? sections[0] ?? null;
     groupName = section?.name ?? "";
-    header = ["번호", "낸 날", "마감", "제목", "책", "미션", "완료"];
-    rows = (section?.cards ?? []).map((card, index) => {
+    assignmentCards = section?.cards ?? [];
+    // "완료" 숫자만으론 누가 안 했는지 알 수 없다는 지적으로, 아이 이름마다
+    // 완료 여부를 적은 열을 하나 더 붙였다(숙제 관리에 바로 쓰라는 요청).
+    header = ["번호", "낸 날", "마감", "제목", "책", "미션", "완료", "아이별 완료 여부"];
+    rows = assignmentCards.map((card, index) => {
       const range = effectiveRange(card);
       return [
         String(index + 1),
@@ -71,6 +77,7 @@ export default async function TeacherExportPage({
         card.bookTitles.join(" · "),
         card.missions.map((m) => MISSION_LABELS[m.type] ?? m.type).join(" · "),
         `${card.completed}/${card.total}명`,
+        card.children.map((c) => `${c.name}(${c.done ? "완료" : "미완료"})`).join(", "),
       ];
     });
     summary = `숙제 ${rows.length}개`;
@@ -112,19 +119,49 @@ export default async function TeacherExportPage({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row[0]} style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}>
-                  {row.map((cell, cellIndex) => (
-                    <td
-                      key={cellIndex}
-                      className={cellIndex === 0 ? "px-3 py-2 tabular-nums" : "px-3 py-2"}
-                      style={cellIndex === 0 ? { color: "var(--ink-2)" } : undefined}
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
+              {rows.map((row, rowIndex) => {
+                const childStatuses = type === "assignments" ? assignmentCards[rowIndex]?.children : undefined;
+                const childrenColIndex = header.length - 1;
+                return (
+                  <tr key={row[0]} style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}>
+                    {row.map((cell, cellIndex) => {
+                      if (childStatuses && cellIndex === childrenColIndex) {
+                        return (
+                          <td key={cellIndex} className="px-3 py-2">
+                            <span className="flex flex-wrap gap-1">
+                              {childStatuses.length === 0 ? (
+                                <span style={{ color: "var(--ink-2)" }}>-</span>
+                              ) : (
+                                childStatuses.map((c) => (
+                                  <span
+                                    key={c.childId}
+                                    className="d whitespace-nowrap rounded-full px-2 py-0.5 text-xs"
+                                    style={{
+                                      background: c.done ? "rgba(47,168,79,0.12)" : "var(--paper)",
+                                      color: c.done ? "var(--point-deep)" : "var(--ink-2)",
+                                    }}
+                                  >
+                                    {c.name}
+                                  </span>
+                                ))
+                              )}
+                            </span>
+                          </td>
+                        );
+                      }
+                      return (
+                        <td
+                          key={cellIndex}
+                          className={cellIndex === 0 ? "px-3 py-2 tabular-nums" : "px-3 py-2"}
+                          style={cellIndex === 0 ? { color: "var(--ink-2)" } : undefined}
+                        >
+                          {cell}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

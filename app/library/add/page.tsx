@@ -15,6 +15,7 @@ import QuestionPrompt from "@/components/question-prompt";
 import RatingPicker from "@/components/rating-picker";
 import ReadDatePicker from "@/components/read-date-picker";
 import ShelfTagPicker from "@/components/shelf-tag-picker";
+import { BOOK_CATEGORIES, categoryColor } from "@/lib/categories";
 import { kstDate } from "@/lib/kst";
 
 type Step = "form" | "no-child" | "saved";
@@ -108,6 +109,12 @@ function AddBookForm() {
   const [childAvatar, setChildAvatar] = useState<Avatar | null>(null);
   const [shelfTagId, setShelfTagId] = useState<string | null>(null);
   const [coverUploading, setCoverUploading] = useState(false);
+  // 분야 태그 -- 숲지기가 추천도서 올릴 때만 되던 걸 부모도 원하면 달 수
+  // 있게 했다(누락됐다는 지적). 이미 있는 책이면 기존 분야를 먼저
+  // 보여주고(existingCategories), 저장 시엔 새로 고른 것만 추가한다 --
+  // 다른 사람이 이미 붙여 둔 분야를 이 부모가 지워버리지 않도록.
+  const [categories, setCategories] = useState<Set<string>>(new Set());
+  const [existingCategories, setExistingCategories] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const supabase = createClient();
@@ -187,6 +194,38 @@ function AddBookForm() {
       cancelled = true;
     };
   }, [bookId, childId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!bookId) {
+        if (!cancelled) {
+          setExistingCategories(new Set());
+          setCategories(new Set());
+        }
+        return;
+      }
+      const supabase = createClient();
+      const { data } = await supabase.from("book_categories").select("category").eq("book_id", bookId);
+      if (!cancelled) {
+        const set = new Set((data ?? []).map((r) => r.category as string));
+        setExistingCategories(set);
+        setCategories(set);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bookId]);
+
+  function toggleCategory(category: string) {
+    setCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }
 
   async function findExistingByIsbn(supabase: ReturnType<typeof createClient>, value: string) {
     const { data: existingIsbn } = await supabase
@@ -363,6 +402,17 @@ function AddBookForm() {
       } catch (uploadError) {
         setError(uploadError instanceof Error ? uploadError.message : "사진/음성 업로드에 실패했어요.");
         return;
+      }
+
+      // 이미 있던 분야는 건드리지 않고, 이번에 새로 고른 것만 추가한다.
+      const newCategories = Array.from(categories).filter((c) => !existingCategories.has(c));
+      if (newCategories.length > 0) {
+        await supabase
+          .from("book_categories")
+          .upsert(
+            newCategories.map((category) => ({ book_id: finalBookId, category })),
+            { onConflict: "book_id,category", ignoreDuplicates: true }
+          );
       }
 
       const { error: recordError } = await supabase.from("reading_records").insert({
@@ -647,12 +697,37 @@ function AddBookForm() {
             style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
           >
             <span>{more ? "간단히" : "더 남기기"}</span>
-            <span className="text-xs font-normal">책장 · 메모 · 사진 · 목소리</span>
+            <span className="text-xs font-normal">책장 · 분야 · 메모 · 사진 · 목소리</span>
           </button>
 
           {more && (
             <>
               {childId && <ShelfTagPicker childId={childId} value={shelfTagId} onChange={setShelfTagId} />}
+
+              <div>
+                <p className="d text-sm">어느 분야인가요? (선택, 여러 개 가능)</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {BOOK_CATEGORIES.map((category) => {
+                    const on = categories.has(category);
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => toggleCategory(category)}
+                        className="d rounded-full border px-3 py-1 text-xs"
+                        style={{
+                          borderColor: on ? categoryColor(category) : "var(--rule)",
+                          background: on ? categoryColor(category) : "var(--card)",
+                          color: on ? "#fff" : "var(--ink-2)",
+                        }}
+                        aria-pressed={on}
+                      >
+                        {category}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               <label
                 className="flex items-center gap-3 rounded-[var(--r)] border px-4 py-3"

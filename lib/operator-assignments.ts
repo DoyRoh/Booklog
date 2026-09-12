@@ -2,6 +2,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
 
+export type OperatorAssignmentChildStatus = { childId: string; name: string; done: boolean };
+
 export type OperatorAssignmentCard = {
   id: string;
   title: string;
@@ -13,6 +15,8 @@ export type OperatorAssignmentCard = {
   createdAt: string;
   completed: number;
   total: number;
+  /** 아이별 완료 여부(이름순) -- 내보내기 표에서 "누가 아직 안 했는지" 바로 보이게. */
+  children: OperatorAssignmentChildStatus[];
 };
 
 export type OperatorAssignmentSection = { id: string; name: string; cards: OperatorAssignmentCard[] };
@@ -47,9 +51,28 @@ export async function loadOperatorAssignmentSections(
     supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
   ]);
 
+  // 아이 이름 -- 내보내기 표에서 "누가 아직 안 했는지" 이름으로 바로
+  // 보여 달라는 요청으로, completion 뷰의 child_id를 이름으로 바꾼다.
+  const groupIds = (groupRows ?? []).map((g) => g.id);
+  const { data: memberRows } = groupIds.length
+    ? await supabase
+        .from("group_members")
+        .select("child_id, children(name)")
+        .in("group_id", groupIds)
+        .eq("status", "approved")
+        .not("child_id", "is", null)
+    : { data: [] as { child_id: string | null; children: { name: string } | null }[] };
+  const childName = new Map<string, string>();
+  for (const row of (memberRows ?? []) as unknown as { child_id: string | null; children: { name: string } | null }[]) {
+    if (row.child_id && row.children?.name) childName.set(row.child_id, row.children.name);
+  }
+
   // completion 뷰는 (숙제, 책, 아이) 단위라, "아이가 그 숙제의 책을 전부
-  // 읽었는지"로 다시 묶어서 "N/M명 완료"로 보여준다.
-  const completionByAssignment = new Map<string, { completed: number; total: number }>();
+  // 읽었는지"로 다시 묶어서 "N/M명 완료" + 아이별 완료 여부로 보여준다.
+  const completionByAssignment = new Map<
+    string,
+    { completed: number; total: number; children: OperatorAssignmentChildStatus[] }
+  >();
   {
     const perChild = new Map<string, Map<string, boolean>>();
     for (const row of completionRows ?? []) {
@@ -58,9 +81,13 @@ export async function loadOperatorAssignmentSections(
       perChild.set(row.assignment_id, m);
     }
     for (const [assignmentId, m] of perChild) {
+      const children = Array.from(m.entries())
+        .map(([childId, done]) => ({ childId, name: childName.get(childId) ?? "이름 없음", done }))
+        .sort((a, b) => a.name.localeCompare(b.name, "ko"));
       completionByAssignment.set(assignmentId, {
-        completed: Array.from(m.values()).filter(Boolean).length,
-        total: m.size,
+        completed: children.filter((c) => c.done).length,
+        total: children.length,
+        children,
       });
     }
   }
@@ -70,7 +97,7 @@ export async function loadOperatorAssignmentSections(
     name: group.name,
     cards: (group.assignments ?? [])
       .map((assignment) => {
-        const stat = completionByAssignment.get(assignment.id) ?? { completed: 0, total: 0 };
+        const stat = completionByAssignment.get(assignment.id) ?? { completed: 0, total: 0, children: [] };
         return {
           id: assignment.id,
           title: assignment.title,
@@ -84,6 +111,7 @@ export async function loadOperatorAssignmentSections(
           createdAt: assignment.created_at,
           completed: stat.completed,
           total: stat.total,
+          children: stat.children,
         };
       })
       // 최근에 낸 숙제가 위.

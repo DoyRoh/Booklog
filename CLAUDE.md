@@ -1767,3 +1767,11 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **`components/child-group-bar.tsx`**: `HomeworkStatusDot` 컴포넌트를 새로 빼서, "완료" 상태일 때만 원 안에 작은 흰색 체크 SVG(`stroke` 기반, 이모지·아이콘 폰트 아님)를 그립니다. "전체" 타일과 그룹별 타일 둘 다 이 컴포넌트 하나를 공유합니다.
 - **`components/bottom-nav.tsx`**: "그룹" 탭 아이콘 위 점도 같은 규칙 — 완료 상태일 때 8px→10px로 살짝 키우고 체크 SVG를 넣었습니다(너무 작으면 체크가 뭉개져서 아주 조금 키움).
 - 정적 HTML로 세 상태(호박색 점/초록 체크/표시 없음)를 나란히 스크린샷으로 확인했습니다. `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음.
+
+## 숙제 내보내기 아이별 완료 여부 + 추천도서 기본 보기 전면 + 부모도 분야 태그 가능 + "기타" 분야 (사용자 요청 3건)
+
+- **숙제 내보내기에 아이별 완료 여부**: `/teacher/export?type=assignments`가 "완료" 열에 "N/M명"만 보여줘서 누가 안 했는지 알 수 없었습니다("선생님들 숙제 관리에 좋을 듯"). `lib/operator-assignments.ts`의 `loadOperatorAssignmentSections()`가 그룹 멤버(`children(name)`)를 한 번 더 조회해 숙제마다 `children: {name, done}[]`를 같이 돌려주도록 확장했습니다(completion 뷰는 이미 그룹의 승인된 아이 전원에 대해 행을 갖고 있어 새 조회는 이름만). 화면 표에는 "아이별 완료 여부" 열을 새로 추가해 이름 칩(완료=초록/미완료=회색)으로, CSV/인쇄에는 "이름(완료)/이름(미완료)" 텍스트로 나갑니다.
+- **숲지기 추천도서 탭 기본 보기 = 전면**: `components/operator-book-browser.tsx`의 기본 `mode`를 `"list"`에서 `"cover"`로 바꿨습니다. 목록 보기에만 있던 "+ 책 추가"가 전면·책등 보기에서도 안 사라지게, 컨트롤 줄(권수 · 보기 ▾ · 내보내기)에 "+ 책 추가" 링크를 추가했습니다.
+- **부모의 기록 남기기에도 분야 태그**: 숲지기만 추천도서에 책을 올릴 때 분야(한글/수학/…)를 고를 수 있었고, 부모의 `app/library/add`에는 이 기능 자체가 없었습니다("이거 누락됨"). "더 남기기" 안에 `add-book-to-list.tsx`와 같은 분야 칩 토글을 추가했습니다. 이미 카탈로그에 있는 책을 골랐으면 기존에 붙은 분야를 먼저 보여주고(조회만, 지우지 않음), 저장 시엔 이번에 새로 고른 분야만 `book_categories`에 추가합니다 — 다른 사람이 이미 붙여 둔 분야를 부모가 지워버리는 일은 없습니다.
+- **"기타" 분야 추가**: `lib/categories.ts`의 표준 목록에 "기타"를 추가했습니다(회색, 분류 안 되는 책 외 항목의 기본 회색과 같은 색).
+- `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음(기존 `book_categories` 테이블·정책 재사용).

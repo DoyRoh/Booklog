@@ -34,7 +34,10 @@ export default function OperatorBookBrowser({
   memberCount: number;
   books: OperatorBook[];
 }) {
-  const [mode, setMode] = useState<ViewMode>("list");
+  // 표지를 훑어보는 "전면 보기"가 기본(사용자 요청) -- 관리(추가·선택·삭제)가
+  // 필요하면 드롭다운에서 "목록 보기"로 바꾸면 된다. "+ 책 추가"는 아래
+  // 컨트롤 줄에도 항상 있어서 목록 보기로 안 바꿔도 바로 올릴 수 있다.
+  const [mode, setMode] = useState<ViewMode>("cover");
   const [category, setCategory] = useState<string>("all");
 
   useEffect(() => {
@@ -111,12 +114,22 @@ export default function OperatorBookBrowser({
         </div>
       )}
 
-      {/* N권 ─── 보기 ▾ · 내보내기 (책장 탭의 컨트롤 줄과 같은 모양) */}
+      {/* N권 ─── + 책 추가 · 보기 ▾ · 내보내기 (책장 탭의 컨트롤 줄과 같은
+          모양). "+ 책 추가"는 목록 보기의 ManagedLogList 안에도 있지만,
+          기본 보기가 전면·책등으로 바뀌면서 그 화면에서도 바로 올릴 수
+          있게 여기 한 번 더 뒀다. */}
       <div className="mt-[12px] flex items-center gap-2">
         <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
           {filtered.length}권
         </span>
         <div className="h-px min-w-[4px] flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
+        <Link
+          href={`/teacher/books/add?group=${groupId}`}
+          className="d flex-none rounded-full border px-3 py-1 text-[12px]"
+          style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
+        >
+          + 책 추가
+        </Link>
         <select
           value={mode}
           onChange={(e) => switchMode(e.target.value as ViewMode)}
