@@ -24,36 +24,9 @@ function IconBase({ children, ...props }: IconProps & { children: React.ReactNod
 // 탐험 수첩 모티프 — 발자국 도장. 지금은 종·아바타 구분 없이 하나의 형태만
 // 사용하고, 아바타별 발자국 3종(토끼/강아지/고양이)은 실제 일러스트 제작 시
 // 교체한다.
-export function SpineViewIcon(props: IconProps) {
-  return (
-    <IconBase {...props}>
-      <rect x="3.5" y="4" width="3" height="16" rx="0.8" />
-      <rect x="8" y="4" width="3" height="16" rx="0.8" />
-      <rect x="12.5" y="4" width="3" height="16" rx="0.8" />
-      <rect x="17" y="4" width="3" height="16" rx="0.8" />
-    </IconBase>
-  );
-}
-
-export function CoverViewIcon(props: IconProps) {
-  return (
-    <IconBase {...props}>
-      <rect x="3.5" y="4" width="7.5" height="16" rx="1" />
-      <rect x="13" y="4" width="7.5" height="16" rx="1" />
-    </IconBase>
-  );
-}
-
-export function ListViewIcon(props: IconProps) {
-  return (
-    <IconBase {...props}>
-      <path d="M4 6.5h16M4 12h16M4 17.5h16" />
-    </IconBase>
-  );
-}
-
-/** 보기 전환용 채움 아이콘 두 개(시안 그대로) -- 격자 = 전면 보기, 줄 = 목록 보기.
- * 스트로크 아이콘보다 작은 크기에서 또렷해서 권수 줄 오른쪽에 작게 놓아도 읽힌다. */
+/** 보기 전환용 채움 아이콘 세 개(시안 그대로) -- 격자 = 전면, 책등, 줄 = 목록.
+ * 스트로크 아이콘보다 작은 크기에서 또렷해서 권수 줄 오른쪽에 작게 놓아도 읽힌다.
+ * (예전 스트로크 버전 CoverViewIcon/SpineViewIcon/ListViewIcon은 이걸로 대체돼 삭제했다.) */
 export function GridViewIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" {...props}>
@@ -61,6 +34,18 @@ export function GridViewIcon(props: IconProps) {
       <rect x="13" y="3" width="8" height="8" rx="2" />
       <rect x="3" y="13" width="8" height="8" rx="2" />
       <rect x="13" y="13" width="8" height="8" rx="2" />
+    </svg>
+  );
+}
+
+/** 책등 보기 -- 선반 위에 세워 둔 책들. 격자·목록 아이콘과 같은 채움 스타일. */
+export function SpineBarsIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" {...props}>
+      <rect x="3.4" y="6" width="4.4" height="12.4" rx="1.3" />
+      <rect x="9.8" y="3.6" width="4.4" height="14.8" rx="1.3" />
+      <rect x="16.2" y="7.4" width="4.4" height="11" rx="1.3" />
+      <rect x="2.6" y="19.6" width="18.8" height="1.9" rx="0.95" />
     </svg>
   );
 }

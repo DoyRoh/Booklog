@@ -125,7 +125,8 @@ export default function RecommendShelf({
           {filtered.length}권{activeChildId ? ` · 읽은 책 ${doneCount}권` : ""}
         </span>
         <span className="flex-1" />
-        <ViewToggle mode={mode} onChange={switchMode} />
+        {/* 추천도서엔 책등 보기가 없어서 전면·목록 둘만 넘긴다. */}
+        <ViewToggle mode={mode} onChange={(next) => switchMode(next === "list" ? "list" : "cover")} />
       </div>
 
       {mode === "list" ? (

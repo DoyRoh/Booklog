@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { SearchIcon, SpineViewIcon } from "@/components/icons/misc-icons";
+import { SearchIcon } from "@/components/icons/misc-icons";
 import { MoreIcon } from "@/components/icons/tab-icons";
 import ViewToggle from "@/components/view-toggle";
 import type { ReadingStatus } from "@/lib/reading-status";
@@ -317,7 +317,7 @@ export default function LibraryShelf({
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            aria-label="보기 방식과 내보내기"
+            aria-label="책장 정리와 내보내기"
             aria-expanded={menuOpen}
             className="flex h-[42px] w-[42px] items-center justify-center rounded-[14px] border"
             style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
@@ -331,26 +331,8 @@ export default function LibraryShelf({
                 className="absolute right-0 z-40 mt-2 w-[180px] overflow-hidden rounded-[16px] border py-1"
                 style={{ borderColor: "var(--rule)", background: "var(--card)", boxShadow: "0 8px 24px -8px rgba(38,54,43,0.3)" }}
               >
-                {/* 전면·목록 두 가지는 아래 필터 줄의 아이콘 두 개로 바로 전환한다
-                    (사용자 요청: "전면 보기/목록형보기는 심플하고 간단하게").
-                    책등은 덜 쓰는 보기라 이 메뉴에만 남겨둔다. */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    switchMode("spine");
-                    setMenuOpen(false);
-                  }}
-                  aria-pressed={mode === "spine"}
-                  className="flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm"
-                  style={{
-                    color: mode === "spine" ? "var(--point-deep)" : "var(--ink)",
-                    background: mode === "spine" ? "rgba(47,168,79,0.08)" : "transparent",
-                  }}
-                >
-                  <SpineViewIcon />
-                  책등 책장으로 보기
-                </button>
-                <div className="my-1" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
+                {/* 보기 방식(전면·책등·목록)은 전부 아래 권수 줄의 아이콘 세 개로
+                    바로 전환한다(사용자 요청) -- 이 메뉴엔 정리·내보내기만 남는다. */}
                 <button
                   type="button"
                   onClick={() => {
@@ -386,7 +368,7 @@ export default function LibraryShelf({
           {mode === "list" ? `${listRows.length}권` : `${filtered.length}권`}
         </span>
         <div className="h-px min-w-[4px] flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
-        <ViewToggle mode={mode} onChange={switchMode} size={19} />
+        <ViewToggle mode={mode} onChange={switchMode} modes={["cover", "spine", "list"]} size={19} />
       </div>
 
       <div className="mt-2 flex items-center justify-end gap-1.5">
