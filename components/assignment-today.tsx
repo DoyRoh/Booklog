@@ -48,6 +48,7 @@ function toEditable(book: TodayBook, childId: string, childName: string | null):
     id: book.recordId as string,
     childId,
     childName,
+    bookId: book.id,
     title: book.title,
     author: book.author,
     coverUrl: book.coverUrl,

@@ -86,6 +86,7 @@ function toEditable(book: DedupedBook, childId: string, childName: string | null
     id: book.recordId,
     childId,
     childName,
+    bookId: book.bookId,
     title: book.title,
     author: book.author,
     coverUrl: book.coverUrl,

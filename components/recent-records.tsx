@@ -6,6 +6,7 @@ import type { ReadingStatus } from "@/lib/reading-status";
 
 export type RecentRecord = {
   id: string;
+  bookId: string;
   title: string;
   author: string | null;
   coverUrl: string | null;
@@ -69,6 +70,7 @@ export default function RecentRecords({
             id: editing.id,
             childId,
             childName,
+            bookId: editing.bookId,
             title: editing.title,
             author: editing.author,
             coverUrl: editing.coverUrl,

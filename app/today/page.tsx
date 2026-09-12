@@ -70,7 +70,7 @@ export default async function TodayPage() {
     supabase
       .from("reading_records")
       .select(
-        "id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, photo_url, voice_url, shelf_tag_id, books(title, author, cover_url)"
+        "id, book_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, photo_url, voice_url, shelf_tag_id, books(title, author, cover_url)"
       )
       .eq("child_id", activeChild.id)
       .order("read_date", { ascending: false }),
@@ -108,6 +108,7 @@ export default async function TodayPage() {
     } | null;
     return {
       id: r.id,
+      bookId: r.book_id,
       title: book?.title ?? "",
       author: book?.author ?? null,
       coverUrl: book?.cover_url ?? null,
