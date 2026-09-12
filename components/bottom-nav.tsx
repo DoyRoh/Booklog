@@ -191,13 +191,16 @@ export default function BottomNav() {
             className="flex flex-1 flex-col items-center justify-center gap-[3px] rounded-[20px] py-[6px] transition-colors"
             style={{
               // "추가"는 다른 탭과 자리는 같지만 항상 초록 알약 배경으로
-              // 구분한다(다른 탭은 활성일 때만 배경이 켜짐). 색 자체는
-              // "+ 책"/"+ 책 기록하기"와 같은 --point 계열로 통일했다.
-              color: isHighlighted ? "var(--point-deep)" : active ? "var(--point-deep)" : "var(--ink-2)",
+              // 구분한다(다른 탭은 활성일 때만 배경이 켜짐). 옅은 반투명
+              // 초록이었더니 "버튼 자체가 연한 녹색으로 보인다"는 지적을
+              // 받아, 지금은 쉬고 있을 때도 "+ 책"/"+ 책 기록하기"와 같은
+              // --point-deep을 그대로 꽉 채운다 -- 눌려 있을 때(그 화면에
+              // 있을 때)는 한 단계 더 짙은 --point-deepest로 구분한다.
+              color: isHighlighted ? "#fff" : active ? "var(--point-deep)" : "var(--ink-2)",
               background: isHighlighted
                 ? active
-                  ? "rgba(47,168,79,0.32)"
-                  : "rgba(47,168,79,0.16)"
+                  ? "var(--point-deepest)"
+                  : "var(--point-deep)"
                 : active
                   ? "rgba(47,168,79,0.14)"
                   : "transparent",
@@ -205,19 +208,11 @@ export default function BottomNav() {
           >
             <span className="relative flex h-[24px] w-[24px] items-center justify-center">
               {isHighlighted ? (
-                // "추가"는 옅은 초록 배경 위 얇은 스트로크 아이콘이라 다른
-                // "책 추가" 버튼들(짙은 초록 채움 + 흰 아이콘)과 색 계열은
-                // 같아도 무게감이 달라 보인다는 지적을 받아, 여기서만
-                // --point-deep으로 꽉 채운 동그라미 + 흰 십자가로 바꿔
-                // 확실히 같은 버튼처럼 보이게 했다.
-                <span
-                  className="flex h-[26px] w-[26px] items-center justify-center rounded-full"
-                  style={{ background: "var(--point-deep)" }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round">
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                </span>
+                // 탭 배경 자체가 이미 짙은 초록으로 꽉 차 있으므로, 안에
+                // 또 동그라미를 그리지 않고 흰 십자가만 그대로 얹는다.
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
               ) : Icon ? (
                 <Icon strokeWidth={active ? 2.4 : 1.9} />
               ) : (
