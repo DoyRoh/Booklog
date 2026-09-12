@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ShelfBookmark } from "@/components/read-toggles";
+import { CoverViewIcon, ListViewIcon } from "@/components/icons/misc-icons";
 import { BOOK_CATEGORIES } from "@/lib/categories";
 import type { RecommendBook } from "@/lib/recommend-books";
 
@@ -122,16 +123,36 @@ export default function RecommendShelf({
           {filtered.length}권{activeChildId ? ` · 읽은 책 ${doneCount}권` : ""}
         </span>
         <span className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
-        <select
-          value={mode}
-          onChange={(e) => switchMode(e.target.value as ShelfMode)}
-          aria-label="보기 방식"
-          className="d flex-none rounded-full border px-2.5 py-1 text-xs outline-none"
-          style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
-        >
-          <option value="cover">전면 보기</option>
-          <option value="list">목록 보기</option>
-        </select>
+        {/* 드롭다운 대신 그림/줄 아이콘 두 개로 바로 전환(사용자 요청: "이런식으로
+            심플하고 간단하게 표시해줘"). */}
+        <div className="flex flex-none items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => switchMode("cover")}
+            aria-label="전면 보기"
+            aria-pressed={mode === "cover"}
+            className="flex h-7 w-7 flex-none items-center justify-center rounded-full"
+            style={{
+              background: mode === "cover" ? "rgba(47,168,79,0.12)" : "transparent",
+              color: mode === "cover" ? "var(--point-deep)" : "var(--ink-2)",
+            }}
+          >
+            <CoverViewIcon width={16} height={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode("list")}
+            aria-label="목록 보기"
+            aria-pressed={mode === "list"}
+            className="flex h-7 w-7 flex-none items-center justify-center rounded-full"
+            style={{
+              background: mode === "list" ? "rgba(47,168,79,0.12)" : "transparent",
+              color: mode === "list" ? "var(--point-deep)" : "var(--ink-2)",
+            }}
+          >
+            <ListViewIcon width={16} height={16} />
+          </button>
+        </div>
       </div>
 
       {mode === "list" ? (

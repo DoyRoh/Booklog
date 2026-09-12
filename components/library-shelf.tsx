@@ -290,7 +290,7 @@ export default function LibraryShelf({
 
   return (
     <div>
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         <div className="relative flex-1">
           <SearchIcon
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
@@ -312,6 +312,38 @@ export default function LibraryShelf({
         >
           + 책
         </Link>
+        {/* 전면·목록 빠른 전환 -- 드롭다운 대신 아이콘 두 개로(사용자 요청:
+            "전면 보기/목록형보기는 심플하고 간단하게 표시해줘"). 필터 줄은
+            이미 드롭다운 셋으로 붐벼서 여기 검색줄에 뒀다. 책등은 아래
+            ⋯ 메뉴에서 고른다. */}
+        <div className="flex flex-none items-center gap-0.5 rounded-[14px] border" style={{ borderColor: "var(--rule)" }}>
+          <button
+            type="button"
+            onClick={() => switchMode("cover")}
+            aria-label="전면 보기"
+            aria-pressed={mode === "cover"}
+            className="flex h-[42px] w-[36px] flex-none items-center justify-center rounded-l-[13px]"
+            style={{
+              background: mode === "cover" ? "rgba(47,168,79,0.12)" : "var(--card)",
+              color: mode === "cover" ? "var(--point-deep)" : "var(--ink-2)",
+            }}
+          >
+            <CoverViewIcon width={17} height={17} />
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode("list")}
+            aria-label="목록 보기"
+            aria-pressed={mode === "list"}
+            className="flex h-[42px] w-[36px] flex-none items-center justify-center rounded-r-[13px]"
+            style={{
+              background: mode === "list" ? "rgba(47,168,79,0.12)" : "var(--card)",
+              color: mode === "list" ? "var(--point-deep)" : "var(--ink-2)",
+            }}
+          >
+            <ListViewIcon width={17} height={17} />
+          </button>
+        </div>
         <div className="relative flex-none">
           <button
             type="button"
@@ -330,34 +362,25 @@ export default function LibraryShelf({
                 className="absolute right-0 z-40 mt-2 w-[180px] overflow-hidden rounded-[16px] border py-1"
                 style={{ borderColor: "var(--rule)", background: "var(--card)", boxShadow: "0 8px 24px -8px rgba(38,54,43,0.3)" }}
               >
-                <p className="px-4 pt-2 pb-1 text-[11px]" style={{ color: "var(--ink-2)" }}>
-                  보기 방식
-                </p>
-                {(
-                  [
-                    { value: "cover", label: "전면 책장", Icon: CoverViewIcon },
-                    { value: "spine", label: "책등 책장", Icon: SpineViewIcon },
-                    { value: "list", label: "읽은 순서 목록", Icon: ListViewIcon },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      switchMode(opt.value);
-                      setMenuOpen(false);
-                    }}
-                    aria-pressed={mode === opt.value}
-                    className="flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm"
-                    style={{
-                      color: mode === opt.value ? "var(--point-deep)" : "var(--ink)",
-                      background: mode === opt.value ? "rgba(47,168,79,0.08)" : "transparent",
-                    }}
-                  >
-                    <opt.Icon />
-                    {opt.label}
-                  </button>
-                ))}
+                {/* 전면·목록 두 가지는 아래 필터 줄의 아이콘 두 개로 바로 전환한다
+                    (사용자 요청: "전면 보기/목록형보기는 심플하고 간단하게").
+                    책등은 덜 쓰는 보기라 이 메뉴에만 남겨둔다. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    switchMode("spine");
+                    setMenuOpen(false);
+                  }}
+                  aria-pressed={mode === "spine"}
+                  className="flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm"
+                  style={{
+                    color: mode === "spine" ? "var(--point-deep)" : "var(--ink)",
+                    background: mode === "spine" ? "rgba(47,168,79,0.08)" : "transparent",
+                  }}
+                >
+                  <SpineViewIcon />
+                  책등 책장으로 보기
+                </button>
                 <div className="my-1" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
                 <button
                   type="button"
@@ -386,7 +409,7 @@ export default function LibraryShelf({
         className="mt-[12px] rounded-[var(--r)] border p-4"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
         <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
           {mode === "list" ? `${listRows.length}권` : `${filtered.length}권`}
         </span>
