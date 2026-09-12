@@ -40,6 +40,9 @@ export default function ProfileModeSwitch({
       router.push(home);
       return;
     }
+    // 전환은 화면 전체가 바뀌는 큰 동작이라 한 번 묻는다(아이·숲지기 공통).
+    const label = next === "child" ? childName ?? "아이" : operatorName ?? "숲지기";
+    if (!window.confirm(`${label} 프로필로 전환하시겠어요?`)) return;
     busyRef.current = true;
     setBusy(next);
     setError(null);

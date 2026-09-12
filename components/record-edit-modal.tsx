@@ -203,7 +203,12 @@ export default function RecordEditModal({
         </div>
 
         <div className="mt-4">
-          <ReadDatePicker value={readDate} onChange={setReadDate} />
+          <ReadDatePicker
+            value={readDate}
+            onChange={setReadDate}
+            disabled={status === "want"}
+            disabledHint="다 읽고 나서 골라요"
+          />
         </div>
 
         {status === "reading" && (

@@ -120,6 +120,7 @@ export default async function MorePage() {
               groups={operatorGroups}
               avatar={(profile?.operator_avatar as "bear" | "egret" | null) ?? null}
               operatorName={(profile?.operator_name as string | null) ?? null}
+              isActive={activeProfile.type === "operator"}
             />
           </div>
         </div>

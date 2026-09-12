@@ -244,24 +244,28 @@ export default function AssignmentToday({
             const allDone = completedCount === assignment.books.length && assignment.books.length > 0;
             return (
               <div key={assignment.id} id={assignment.id} className="scroll-mt-4">
-                <LogRow
-                  first={index === 0}
-                  dateTop={shortMd(effectiveRange(assignment).start)}
-                  chip={missionChip(assignment.missions)}
-                  title={<span className="d">{assignment.title}</span>}
-                  subtitle={assignment.description ?? undefined}
-                  right={
-                    <span
-                      className="d rounded-full px-2 py-0.5 text-[11px]"
-                      style={{
-                        background: allDone ? "rgba(47,168,79,0.12)" : "var(--paper)",
-                        color: allDone ? "var(--point-deep)" : "var(--ink-2)",
-                      }}
-                    >
-                      {completedCount}/{assignment.books.length}
-                    </span>
-                  }
-                />
+                {/* 숙제 제목·안내 줄만 옅은 음영 띠로 -- 그 아래 흰 바탕의 책 줄과
+                    한 덩어리로 읽혀 "어디까지가 숙제 이름인지" 헷갈린다는 지적. */}
+                <div style={{ background: "var(--paper)" }}>
+                  <LogRow
+                    first={index === 0}
+                    dateTop={shortMd(effectiveRange(assignment).start)}
+                    chip={missionChip(assignment.missions)}
+                    title={<span className="d">{assignment.title}</span>}
+                    subtitle={assignment.description ?? undefined}
+                    right={
+                      <span
+                        className="d rounded-full px-2 py-0.5 text-[11px]"
+                        style={{
+                          background: allDone ? "rgba(47,168,79,0.12)" : "var(--card)",
+                          color: allDone ? "var(--point-deep)" : "var(--ink-2)",
+                        }}
+                      >
+                        {completedCount}/{assignment.books.length}
+                      </span>
+                    }
+                  />
+                </div>
                 {/* 책 줄과 미션은 LogRow 안에 넣지 않고(글 칸이 좁아 제목이 잘림) 그 아래에
                     따로 둔다. 왼쪽은 날짜 칸(w-11 + 간격) 만큼 비워 칩 칸부터 시작하고
                     오른쪽은 박스 끝까지 -- 숲길 목록의 책 줄과 같은 폭·같은 형식

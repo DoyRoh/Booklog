@@ -385,6 +385,9 @@ function AddBookForm() {
       }
 
       setStep("saved");
+      // 폼을 한참 내려 놓은 채 저장하면 발자국 도장 화면이 스크롤 위로
+      // 올라가 안 보인다(사용자 지적) -- 맨 위로 올려 준다.
+      window.scrollTo({ top: 0, behavior: "auto" });
       // 숙제 책을 이 화면에서 처음 기록했을 수도 있으니, 하단 탭의 숙제
       // 알림 점이 다음 화면 전환까지 기다리지 않고 바로 갱신되게 한다.
       window.dispatchEvent(new Event("chaeksup:assignment-changed"));
@@ -599,7 +602,12 @@ function AddBookForm() {
             </div>
           </div>
 
-          <ReadDatePicker value={readDate} onChange={setReadDate} />
+          <ReadDatePicker
+            value={readDate}
+            onChange={setReadDate}
+            disabled={status === "want"}
+            disabledHint="다 읽고 나서 골라요"
+          />
 
           {status === "reading" && (
             <div>

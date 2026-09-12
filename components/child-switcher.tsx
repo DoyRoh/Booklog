@@ -68,12 +68,15 @@ export default function ChildSwitcher({
     router.refresh();
   }
 
-  async function selectChild(childId: string) {
+  async function selectChild(child: Child) {
+    const childId = child.id;
     // 이미 고른 아이를 또 누르면 "아무 일도 없음" 대신 그 아이의 오늘 탭으로.
     if (childId === activeChildId) {
       router.push("/today");
       return;
     }
+    // 전환은 화면 전체(하단 탭·기록 대상)가 바뀌는 큰 동작이라 한 번 묻는다.
+    if (!window.confirm(`${child.name} 프로필로 전환하시겠어요?`)) return;
     setSwitching(childId);
     setError(null);
 
@@ -219,7 +222,7 @@ export default function ChildSwitcher({
               <div className="flex items-center gap-3 px-4 py-3">
                 <button
                   type="button"
-                  onClick={() => selectChild(child.id)}
+                  onClick={() => selectChild(child)}
                   disabled={switching === child.id}
                   className="flex flex-1 items-center gap-3 text-left disabled:opacity-60"
                 >
