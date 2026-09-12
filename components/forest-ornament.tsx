@@ -26,5 +26,7 @@ export default function ForestOrnament({
       return <Illustration name="bird-perched" height={Math.round(38 * s)} />;
     case "paw":
       return <PawStamp avatar={avatar} height={Math.round(20 * s)} style={{ marginBottom: 2, opacity: 0.85 }} />;
+    case "bear":
+      return <Illustration name="bear-lantern" height={Math.round(36 * s)} />;
   }
 }

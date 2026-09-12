@@ -2,7 +2,7 @@ import type { Badge } from "@/lib/badges";
 
 // 우리 숲의 "배지 → 장식" 규칙. 평면 숲(forest-view)과 3D 숲(forest-3d)이
 // 같은 표를 쓴다. 권수 배지는 나무, 나머지는 아래 표대로.
-export type OrnamentKind = "star" | "lantern" | "bird-letter" | "bird-perched" | "paw";
+export type OrnamentKind = "star" | "lantern" | "bird-letter" | "bird-perched" | "paw" | "bear";
 
 export const ORNAMENT_BY_BADGE: Record<string, OrnamentKind> = {
   d2: "star",
@@ -18,8 +18,8 @@ export const ORNAMENT_BY_BADGE: Record<string, OrnamentKind> = {
   same5: "paw",
   fav1: "star",
   fav5: "star",
-  group1: "bird-letter",
-  group3: "bird-letter",
+  group1: "bear",
+  group3: "bear",
   rec10: "lantern",
   rec30: "lantern",
   rec100: "lantern",
@@ -40,6 +40,7 @@ export const ORNAMENT_LABEL: Record<OrnamentKind, string> = {
   "bird-letter": "편지 새",
   "bird-perched": "새",
   paw: "발자국",
+  bear: "곰",
 };
 
 /** 3D 숲에서는 발자국 배지가 버섯으로 자란다(땅에 남는 자국 → 숲속 열매·버섯). */

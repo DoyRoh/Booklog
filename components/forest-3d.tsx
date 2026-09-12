@@ -561,6 +561,10 @@ export default function Forest3D({
               <FlyingBird phase={phase} animate={animate} />
             ) : item.ornament === "bird-perched" ? (
               <PerchedBird />
+            ) : item.ornament === "bear" ? (
+              <group scale={0.45}>
+                <BearWithLantern mood={mood} animate={animate} />
+              </group>
             ) : (
               <Mushroom />
             )}

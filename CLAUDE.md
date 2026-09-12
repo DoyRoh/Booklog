@@ -1814,3 +1814,11 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **삭제 버튼 원인**: DB 레벨(RLS "guardians manage own child's records", FOR ALL)은 원래도 DELETE를 허용하고 있었고 코드도 겉보기엔 정상이었지만, 확인창을 `window.confirm()`으로 띄우고 있었습니다. iOS에서 홈 화면에 추가해 실행하는 PWA(standalone 모드)는 WebKit이 `window.confirm()`/`alert()`/`prompt()`를 지원하지 않아 호출해도 대화상자 자체가 뜨지 않거나 즉시 취소된 것처럼 동작하는 경우가 있습니다 — "버튼을 눌러도 아무 일도 안 일어난다"는 신고와 정확히 일치하는 증상입니다. `components/record-edit-modal.tsx`의 `deleteRecord()`를 네이티브 확인창 대신 **화면 안 두 단계 버튼**(처음 누르면 "취소/정말 삭제할까요?" 두 버튼 + 경고 문구로 바뀌고, 두 번째로 다시 눌러야 실제 삭제)으로 바꿨습니다. 겸사겸사 `delete().eq("id", record.id)`에 `.select("id")`를 붙여 실제로 삭제된 행이 있는지 확인하도록 했습니다 — RLS가 막아 0행이 지워졌는데도 에러 없이 "성공"으로 끝나는 경우(child-switcher.tsx의 아이 삭제 때 이미 썼던 패턴)를 구분해 "삭제할 권한이 없어요"로 알려줍니다.
 - **분야 태그 누락**: `app/library/add/page.tsx`(기록 남기기)에는 있던 "어느 분야인가요?" 칩이 `RecordEditModal`(기록 고치기)에는 처음부터 없었습니다. 같은 패턴(이미 있는 분야는 먼저 보여주고, 저장 시엔 새로 고른 것만 `book_categories`에 upsert — 다른 사람이 붙인 분야는 지우지 않음)을 "더 남기기" 섹션 안에 추가했습니다. 이를 위해 `EditableRecord`에 `bookId`를 새로 추가하고, 이 모달을 부르는 세 곳(`library-shelf.tsx`, `assignment-today.tsx`, `recent-records.tsx`+`app/today/page.tsx`)에서 책 id를 함께 넘기도록 고쳤습니다.
 - 임시 미리보기 라우트(더미 Supabase 환경변수, 확인 후 삭제)로 분야 칩 토글과 삭제 확인 2단계 흐름을 스크린샷으로 확인했습니다. `npm run lint`/`rm -rf .next && npm run build` 통과. DB 스키마 변경 없음(기존 `book_categories` 테이블 재사용).
+
+## 우리 숲 배지 아이콘 불일치 — "첫 숲지기" 배지가 곰인데 숲에서는 새로 보였던 문제 (사용자 지적: 스크린샷 두 장 비교)
+
+배지 목록(`components/badge-art.tsx`)에서 `group1`/`group3`("첫 숲지기"/"숲지기 셋")는 처음부터 곰(`bear-lantern`) 아이콘으로 그리고 있었는데, 우리 숲 장면의 배지→장식 매핑(`lib/forest-scene.ts`의 `ORNAMENT_BY_BADGE`)은 같은 두 배지를 "편지 새"(`bird-letter`)로 심고 있었습니다 — 두 곳이 서로 다른 라운드에서 따로 정해져 어긋나 있었던 것으로, 숲에서 새 장식을 누르면 "첫 숲지기" 설명이 뜨는데 그림은 새라 사용자가 헷갈렸습니다.
+
+- **`lib/forest-scene.ts`**: `OrnamentKind`에 `"bear"`를 추가하고 `group1`/`group3`의 매핑을 `bird-letter`→`bear`로 바꿔 배지 목록과 그림을 통일했습니다(`ORNAMENT_LABEL`에도 `bear: "곰"` 추가). 사진 배지(`photo10`/`photo30`)는 원래도 배지 목록·숲 매핑 둘 다 편지 새라 그대로 뒀습니다.
+- **`components/forest-ornament.tsx`**(평면 숲·오늘 탭 미리보기 공용)와 **`components/forest-3d.tsx`**(3D 숲, 기존 `BearWithLantern`을 0.45배로 축소해 나무 사이 장식 크기로 재사용) 양쪽에 `"bear"` 케이스를 추가해 실제로 곰 그림이 그려지도록 했습니다.
+- 임시 미리보기 라우트(확인 후 삭제)에서 "첫 숲지기" 배지를 단 상태로 숲을 렌더링해, 장식을 눌렀을 때 곰 아이콘과 "첫 숲지기 배지로 심은 곰" 설명이 뜨는 걸 스크린샷으로 확인했습니다. `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음(배지 계산·데이터는 그대로, 그림 매핑만 수정).
