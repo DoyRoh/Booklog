@@ -125,8 +125,8 @@ export default function OperatorBookBrowser({
         <div className="h-px min-w-[4px] flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
         <Link
           href={`/teacher/books/add?group=${groupId}`}
-          className="d flex-none rounded-full border px-3 py-1 text-[12px]"
-          style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
+          className="d flex-none rounded-full px-3 py-1 text-[12px] text-white"
+          style={{ background: "var(--point-deep)" }}
         >
           + 책 추가
         </Link>

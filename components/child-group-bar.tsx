@@ -248,11 +248,14 @@ export default function ChildGroupBar() {
         </Link>
       </div>
 
-      {/* 숙제 / 추천도서 소제목 탭 -- 배민 스타일 밑줄형 두 칸. 예전 알약
-          버튼 대신 화면 폭을 반씩 나눠 갖는 밑줄 탭으로 바꿨다. 오른쪽
-          끝의 돋보기는 전체 검색(/search, 핵심 기능)으로. */}
-      <div className="mx-auto flex max-w-[520px] items-stretch gap-2 px-5">
-        <div className="flex flex-1" style={{ borderBottom: "1px solid var(--rule)" }}>
+      {/* 숙제 / 추천도서 소제목 탭 -- 채워진 알약 세그먼트 컨트롤. 예전
+          밑줄 탭은 선택 안 된 쪽 글자가 옅어서 "탭 자체가 잘 안 보인다"는
+          지적을 받아, 옅은 초록 트랙 위에 선택된 쪽만 짙은 초록 알약으로
+          채우고 선택 안 된 쪽도 진한 글자(--ink, 굵게)로 바꿔 두 라벨 다
+          한눈에 읽히게 했다. 오른쪽 끝의 돋보기는 전체 검색(/search,
+          핵심 기능)으로. */}
+      <div className="mx-auto flex max-w-[520px] items-center gap-2 px-5 pb-2.5">
+        <div className="flex flex-1 gap-1 rounded-full p-1" style={{ background: "var(--sprout-pale)" }}>
           {(
             [
               { key: "assignments", label: "숙제" },
@@ -265,12 +268,12 @@ export default function ChildGroupBar() {
                 key={t.key}
                 href={tabHref(t.key)}
                 aria-current={on ? "page" : undefined}
-                className="d flex-1 pb-2.5 pt-2.5 text-center text-[14px]"
+                className="d flex-1 rounded-full py-2 text-center text-[14px]"
                 style={{
-                  color: on ? "var(--point-deep)" : "var(--ink-2)",
-                  fontWeight: on ? 700 : 400,
-                  borderBottom: on ? "2.5px solid var(--point-deep)" : "2.5px solid transparent",
-                  marginBottom: "-1px",
+                  background: on ? "var(--point-deep)" : "transparent",
+                  color: on ? "#fff" : "var(--ink)",
+                  fontWeight: on ? 700 : 600,
+                  boxShadow: on ? "0 2px 6px rgba(27,94,58,0.28)" : "none",
                 }}
               >
                 {t.label}

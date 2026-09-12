@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ShelfBookmark } from "@/components/read-toggles";
 import { BOOK_CATEGORIES } from "@/lib/categories";
@@ -39,6 +39,10 @@ function chunk<T>(items: T[], size: number): T[][] {
 const OVERLAY_BTN =
   "flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow-[0_1px_3px_rgba(38,54,43,0.25)]";
 
+type ShelfMode = "cover" | "list";
+
+const MODE_STORAGE_KEY = "chaeksup:recommend-shelf-view";
+
 export default function RecommendShelf({
   groupId,
   books,
@@ -52,6 +56,23 @@ export default function RecommendShelf({
   footnote?: React.ReactNode;
 }) {
   const [filter, setFilter] = useState<"all" | string>("all");
+  // 표지 선반(전면) 보기가 기본 -- 책장 탭·숲지기 추천도서 탭과 같은
+  // 이유(둘러보기)로 표지가 우선이지만, "목록형으로도 볼 수 있게"라는
+  // 요청으로 목록 보기를 추가했다. 마지막 보기 모드는 localStorage에 저장.
+  const [mode, setMode] = useState<ShelfMode>("cover");
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(MODE_STORAGE_KEY);
+    if (saved === "cover" || saved === "list") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMode(saved);
+    }
+  }, []);
+
+  function switchMode(next: ShelfMode) {
+    setMode(next);
+    window.localStorage.setItem(MODE_STORAGE_KEY, next);
+  }
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -101,10 +122,63 @@ export default function RecommendShelf({
           {filtered.length}권{activeChildId ? ` · 읽은 책 ${doneCount}권` : ""}
         </span>
         <span className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
+        <select
+          value={mode}
+          onChange={(e) => switchMode(e.target.value as ShelfMode)}
+          aria-label="보기 방식"
+          className="d flex-none rounded-full border px-2 py-1 text-[11px] outline-none"
+          style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
+        >
+          <option value="cover">전면 보기</option>
+          <option value="list">목록 보기</option>
+        </select>
       </div>
 
-      {/* 3권씩 선반 한 칸. 표지를 누르면 기록 남기기(책 정보 미리 채움),
-          표지 오른쪽 위 책갈피 = 내 책장에 꽂기/빼기, 오른쪽 아래 체크 = 읽었어요. */}
+      {mode === "list" ? (
+        <div className="mt-4 overflow-hidden rounded-[var(--r)] border" style={{ borderColor: "var(--rule)", background: "var(--card)" }}>
+          {filtered.map((book, index) => {
+            const bookGroupId = book.groupId ?? groupId;
+            const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(bookGroupId)}`;
+            return (
+              <div
+                key={book.itemId}
+                id={`book-${book.itemId}`}
+                className="flex items-center gap-2.5 px-4 py-2.5"
+                style={{ scrollMarginTop: "190px", ...(index === 0 ? {} : { borderTop: "1px solid rgba(38,54,43,0.08)" }) }}
+              >
+                <Link href={href} aria-label={`${book.title} 읽어보기`} className="flex min-w-0 flex-1 items-center gap-2.5">
+                  {book.coverUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={book.coverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
+                  ) : (
+                    <div className="h-11 w-8 flex-none rounded" style={{ background: coverColor(book.title) }} />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm">{book.title}</p>
+                    {book.author && (
+                      <p className="truncate text-[11px]" style={{ color: "var(--ink-2)" }}>
+                        {book.author}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+                {activeChildId && (
+                  <ShelfBookmark
+                    childId={activeChildId}
+                    bookId={book.bookId}
+                    groupId={bookGroupId}
+                    status={book.readStatus}
+                    size={17}
+                    className="flex h-8 w-8 flex-none items-center justify-center rounded-full"
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+      /* 3권씩 선반 한 칸. 표지를 누르면 기록 남기기(책 정보 미리 채움),
+          표지 오른쪽 위 책갈피 = 내 책장에 꽂기/빼기, 오른쪽 아래 체크 = 읽었어요. */
       <div className="mt-4 flex flex-col gap-3">
         {chunk(filtered, 3).map((row, rowIndex) => (
           <div key={rowIndex}>
@@ -174,6 +248,7 @@ export default function RecommendShelf({
           </div>
         ))}
       </div>
+      )}
       {footnote && (
         <p className="mt-2 text-center text-xs" style={{ color: "var(--ink-2)" }}>
           {footnote}
