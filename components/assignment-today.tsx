@@ -142,7 +142,7 @@ function HomeworkBookRow({
 
   const titleBlock = (
     <span className="min-w-0 flex-1">
-      <span className="block truncate text-[17px] leading-snug">{book.title}</span>
+      <span className="d block truncate text-[17px] leading-snug">{book.title}</span>
       {book.author && (
         <span className="mt-0.5 block truncate text-xs leading-snug" style={{ color: "var(--ink-2)" }}>
           {book.author}

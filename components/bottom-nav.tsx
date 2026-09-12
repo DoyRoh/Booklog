@@ -94,9 +94,10 @@ function useHideOnScroll() {
   return hidden;
 }
 
-// "그룹" 탭 아이콘 위 알림 점 -- 오늘 진행 중인 숙제가 있으면 빨간 점,
-// 그 책을 전부 읽었으면 초록 점(사용자 요청: "숙제가 있으면 빨간 점,
-// 숙제 했으면 초록색으로"). 숲길·숙제가 '그룹' 탭 하나로 합쳐지면서
+// "그룹" 탭 아이콘 위 알림 점 -- 오늘 진행 중인 숙제가 있으면 호박색 점,
+// 그 책을 전부 읽었으면 초록 점(처음엔 빨간 점이었는데, 그룹 탭 바의 점
+// 배지와 색을 맞춰 달라는 요청으로 호박색으로 바꿨다). 숲길·숙제가
+// '그룹' 탭 하나로 합쳐지면서
 // 이 점도 그 탭 아이콘에 뜬다. 화면을 옮길 때마다(pathname 변화) 다시
 // 확인해서, 숙제를 체크하고 다른 탭으로 돌아오면 바로 반영된다.
 // 체크 토글은 화면 이동 없이 바로 상태가 바뀌므로 read-toggles.tsx가
@@ -217,7 +218,7 @@ export default function BottomNav() {
                   aria-hidden
                   className="absolute right-[1px] top-[1px] h-[8px] w-[8px] rounded-full"
                   style={{
-                    background: homeworkBadge === "done" ? "var(--point)" : "var(--berry)",
+                    background: homeworkBadge === "done" ? "var(--point)" : "var(--lantern)",
                     boxShadow: "0 0 0 1.5px rgba(255,255,255,0.96)",
                   }}
                 />

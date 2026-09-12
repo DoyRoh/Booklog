@@ -1745,3 +1745,11 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 
 ### 검증
 임시 미리보기 라우트(서버 컴포넌트, 확인 후 삭제)에서 `AssignmentToday`·`AssignmentSummary`·`AssignmentsBrowser`를 실제 데이터(긴 제목·긴 작가명·완료/미완료 책 혼합)로 360/430px 렌더링해 6개 지적사항과 크래시 수정을 스크린샷으로 확인했고, 하단 메뉴는 정적 HTML로 5탭 폭을 실측했습니다. `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음.
+
+## 숙제 책 제목 글꼴 통일 + 그룹 타일 숫자 배지 → 상태 점 (사용자 지적: "그룹에 2는 뭐야?", 스크린샷 2장)
+
+- **숙제 책 제목 글꼴**: `HomeworkBookRow`의 책 제목이 기본 시스템 폰트라 책장 카드(`.d` Gowun Dodum 굵게)와 달라 보인다는 지적으로, `d` 클래스를 붙였습니다(`components/assignment-today.tsx`).
+- **그룹 타일의 숫자 배지가 뭘 뜻하는지 알 수 없었던 문제**: `components/child-group-bar.tsx`의 그룹 타일이 숙제 탭에서 "그 그룹의 숙제 개수"를 그대로 숫자로 보여주고 있었는데(전체 타일도 마찬가지), 사용자가 그 숫자의 의미를 못 알아봤습니다("그룹에 2는 뭐야?"). 개수 대신 **상태 점**으로 바꿨습니다 — 진행 중인 숙제가 있으면 호박색(`--lantern`) 점, 전부 다 읽었으면 초록(`--point`) 점, 진행 중인 숙제가 아예 없으면 점 없음. "전체" 타일도 모든 그룹을 합친 같은 기준의 점으로. 추천도서 탭의 권수 숫자 배지는 그대로 뒀습니다(완료 개념이 없어 개수가 곧 의미라 헷갈릴 일이 없음).
+- **`lib/homework-badge.ts`의 `getGroupHomeworkBadges()`(신규)**: 기존 `getHomeworkBadge()`(하단 탭 전체 기준)와 같은 판정 규칙(`lib/assignment-period.ts`의 `isCurrent()` + `assignment_completion` 뷰)을 그룹별로 나눠 계산합니다. 한 번의 `assignments`/`assignment_completion` 조회로 모든 그룹의 상태와 "전체" 합산 상태를 같이 돌려줘서, 그룹 수만큼 왕복이 늘어나지 않습니다.
+- **하단 탭 "그룹" 아이콘의 점도 같은 색으로 통일**: 기존엔 진행 중일 때 빨강(`--berry`)이었는데, 그룹 타일 배지와 색이 다르면 또 헷갈릴 수 있어(사용자 요청: "아래 메뉴탭에도") 호박색으로 맞췄습니다. 완료 색(초록)은 그대로.
+- 임시 미리보기 라우트(서버 컴포넌트, 확인 후 삭제)로 책 제목 글꼴을, 정적 HTML로 타일 점 3가지 상태(진행 중/완료/없음)를 스크린샷으로 확인했습니다. `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음.

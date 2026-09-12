@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/components/profile-context";
 import { PlusIcon, SearchIcon } from "@/components/icons/misc-icons";
+import { getGroupHomeworkBadges, type HomeworkBadge } from "@/lib/homework-badge";
 
 /**
  * '그룹' 탭(추천도서·숙제 소제목 탭을 한 화면에 합친 `/group`) 상단의
@@ -44,9 +45,12 @@ export default function ChildGroupBar() {
   const router = useRouter();
   const [groups, setGroups] = useState<GroupOption[] | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
-  // 소제목 탭(숙제/추천도서)에 맞는 "큰 숫자" -- 그룹별 개수.
-  const [assignmentCounts, setAssignmentCounts] = useState<Record<string, number>>({});
+  // 추천도서 탭의 "큰 숫자" -- 그룹별 책 권수.
   const [bookCounts, setBookCounts] = useState<Record<string, number>>({});
+  // 숙제 탭은 숫자 대신 상태 점("그룹에 2는 뭐야?"라는 질문을 받아, 개수
+  // 대신 진행 중(호박색)·완료(초록) 점으로 바꿨다) -- 그룹별 + "전체" 합산.
+  const [assignmentBadges, setAssignmentBadges] = useState<Record<string, HomeworkBadge>>({});
+  const [overallBadge, setOverallBadge] = useState<HomeworkBadge>("none");
 
   const onTab = pathname === GROUP_PATH;
   // 기본 소제목 탭은 숙제(app/group/page.tsx와 같은 규칙).
@@ -71,19 +75,18 @@ export default function ChildGroupBar() {
 
       const groupIds = list.map((g) => g.id);
       if (groupIds.length === 0) return;
-      const [{ data: assignmentRows }, { data: bookRows }] = await Promise.all([
-        supabase.from("assignments").select("group_id").in("group_id", groupIds),
+      const [{ data: bookRows }, { byGroup, overall }] = await Promise.all([
         supabase.from("book_lists").select("group_id, book_list_items(id)").in("group_id", groupIds),
+        getGroupHomeworkBadges(supabase, childId, groupIds),
       ]);
       if (cancelled) return;
-      const aCounts: Record<string, number> = {};
-      for (const row of assignmentRows ?? []) aCounts[row.group_id] = (aCounts[row.group_id] ?? 0) + 1;
-      setAssignmentCounts(aCounts);
       const bCounts: Record<string, number> = {};
       for (const row of (bookRows ?? []) as unknown as { group_id: string; book_list_items: unknown[] }[]) {
         bCounts[row.group_id] = (row.book_list_items ?? []).length;
       }
       setBookCounts(bCounts);
+      setAssignmentBadges(byGroup);
+      setOverallBadge(overall);
     })();
     return () => {
       cancelled = true;
@@ -124,8 +127,13 @@ export default function ChildGroupBar() {
     (queryGroup && groups.some((g) => g.id === queryGroup) && queryGroup) ||
     (activeGroupId && groups.some((g) => g.id === activeGroupId) && activeGroupId) ||
     "all";
-  const countFor = (groupId: string) => (tab === "books" ? bookCounts[groupId] : assignmentCounts[groupId]) ?? 0;
-  const totalCount = tab === "books" ? Object.values(bookCounts).reduce((s, n) => s + n, 0) : Object.values(assignmentCounts).reduce((s, n) => s + n, 0);
+  const isAssignmentsTab = tab === "assignments";
+  const bookCountFor = (groupId: string) => bookCounts[groupId] ?? 0;
+  const totalBookCount = Object.values(bookCounts).reduce((s, n) => s + n, 0);
+  // 숫자 배지("N개") 대신 상태 점 -- 개수보다 "지금 할 게 있는지/다
+  // 했는지"가 더 궁금한 정보라는 지적으로 바꿨다. 호박색=진행 중인 숙제가
+  // 있음, 초록=전부 완료, 점 없음=진행 중인 숙제 자체가 없음.
+  const DOT_COLOR: Record<"pending" | "done", string> = { pending: "var(--lantern)", done: "var(--point)" };
 
   return (
     <div
@@ -145,7 +153,7 @@ export default function ChildGroupBar() {
           className="flex w-[64px] flex-none flex-col items-center gap-1"
         >
           <span
-            className="d flex h-[56px] w-[56px] flex-col items-center justify-center rounded-[16px]"
+            className="d relative flex h-[56px] w-[56px] flex-col items-center justify-center rounded-[16px]"
             style={{
               background: selectedId === "all" ? "var(--point-deep)" : "var(--paper)",
               color: selectedId === "all" ? "#fff" : "var(--ink)",
@@ -154,7 +162,14 @@ export default function ChildGroupBar() {
             }}
           >
             <span className="text-[13px] leading-none">전체</span>
-            <span className="mt-1 text-[17px] font-bold leading-none">{totalCount}</span>
+            {!isAssignmentsTab && <span className="mt-1 text-[17px] font-bold leading-none">{totalBookCount}</span>}
+            {isAssignmentsTab && overallBadge !== "none" && (
+              <span
+                aria-hidden
+                className="absolute -bottom-1 -right-1 h-[16px] w-[16px] rounded-full"
+                style={{ background: DOT_COLOR[overallBadge], boxShadow: "0 0 0 2px #fff" }}
+              />
+            )}
           </span>
           <span
             className="w-full truncate text-center text-[10px] leading-tight"
@@ -166,7 +181,8 @@ export default function ChildGroupBar() {
 
         {groups.map((group) => {
           const active = group.id === selectedId;
-          const count = countFor(group.id);
+          const bookCount = bookCountFor(group.id);
+          const badge = assignmentBadges[group.id] ?? "none";
           return (
             <button
               key={group.id}
@@ -175,8 +191,9 @@ export default function ChildGroupBar() {
               aria-current={active ? "true" : undefined}
               className="flex w-[64px] flex-none flex-col items-center gap-1"
             >
-              {/* 이미지(색 상자 + 이니셜)와 큰 숫자를 한 타일에 -- 선택
-                  상태는 초록 테두리 + 배경 톤 변화로 명확히 구분. */}
+              {/* 이미지(색 상자 + 이니셜)와 배지를 한 타일에 -- 선택
+                  상태는 초록 테두리 + 배경 톤 변화로 명확히 구분. 배지는
+                  추천도서 탭이면 권수 숫자, 숙제 탭이면 진행 상태 점. */}
               <span
                 className="d relative flex h-[56px] w-[56px] items-center justify-center rounded-[16px] text-xl text-white"
                 style={{
@@ -187,14 +204,22 @@ export default function ChildGroupBar() {
                 }}
               >
                 {group.name.trim().charAt(0)}
-                {count > 0 && (
-                  <span
-                    className="d absolute -bottom-1.5 -right-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1 text-[12px] font-bold"
-                    style={{ background: "#fff", color: "var(--point-deep)", border: "1.5px solid var(--point-deep)" }}
-                  >
-                    {count > 99 ? "99+" : count}
-                  </span>
-                )}
+                {isAssignmentsTab
+                  ? badge !== "none" && (
+                      <span
+                        aria-hidden
+                        className="absolute -bottom-1 -right-1 h-[16px] w-[16px] rounded-full"
+                        style={{ background: DOT_COLOR[badge], boxShadow: "0 0 0 2px #fff" }}
+                      />
+                    )
+                  : bookCount > 0 && (
+                      <span
+                        className="d absolute -bottom-1.5 -right-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1 text-[12px] font-bold"
+                        style={{ background: "#fff", color: "var(--point-deep)", border: "1.5px solid var(--point-deep)" }}
+                      >
+                        {bookCount > 99 ? "99+" : bookCount}
+                      </span>
+                    )}
               </span>
               <span
                 className="w-full truncate text-center text-[10px] leading-tight"
