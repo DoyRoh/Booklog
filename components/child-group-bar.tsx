@@ -38,6 +38,26 @@ function tileColor(name: string): string {
 
 type GroupOption = { id: string; name: string };
 
+// 숙제 상태 점 -- 남은 숙제가 있으면 호박색 점, 전부 끝나면 초록 원 안에
+// 흰색 체크(사용자 스펙: 그냥 색만 다른 점이 아니라 "다 됐다"는 게 모양
+// 으로도 바로 보이게), 배정된 숙제가 없으면 아예 표시하지 않는다.
+function HomeworkStatusDot({ status }: { status: HomeworkBadge }) {
+  if (status === "none") return null;
+  return (
+    <span
+      aria-hidden
+      className="absolute -bottom-1 -right-1 flex h-[16px] w-[16px] items-center justify-center rounded-full"
+      style={{ background: status === "done" ? "var(--point)" : "var(--lantern)", boxShadow: "0 0 0 2px #fff" }}
+    >
+      {status === "done" && (
+        <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8.5l3 3 7-7" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
 export default function ChildGroupBar() {
   const { role, childId } = useProfile();
   const pathname = usePathname();
@@ -130,10 +150,6 @@ export default function ChildGroupBar() {
   const isAssignmentsTab = tab === "assignments";
   const bookCountFor = (groupId: string) => bookCounts[groupId] ?? 0;
   const totalBookCount = Object.values(bookCounts).reduce((s, n) => s + n, 0);
-  // 숫자 배지("N개") 대신 상태 점 -- 개수보다 "지금 할 게 있는지/다
-  // 했는지"가 더 궁금한 정보라는 지적으로 바꿨다. 호박색=진행 중인 숙제가
-  // 있음, 초록=전부 완료, 점 없음=진행 중인 숙제 자체가 없음.
-  const DOT_COLOR: Record<"pending" | "done", string> = { pending: "var(--lantern)", done: "var(--point)" };
 
   return (
     <div
@@ -163,13 +179,7 @@ export default function ChildGroupBar() {
           >
             <span className="text-[13px] leading-none">전체</span>
             {!isAssignmentsTab && <span className="mt-1 text-[17px] font-bold leading-none">{totalBookCount}</span>}
-            {isAssignmentsTab && overallBadge !== "none" && (
-              <span
-                aria-hidden
-                className="absolute -bottom-1 -right-1 h-[16px] w-[16px] rounded-full"
-                style={{ background: DOT_COLOR[overallBadge], boxShadow: "0 0 0 2px #fff" }}
-              />
-            )}
+            {isAssignmentsTab && <HomeworkStatusDot status={overallBadge} />}
           </span>
           <span
             className="w-full truncate text-center text-[10px] leading-tight"
@@ -205,13 +215,7 @@ export default function ChildGroupBar() {
               >
                 {group.name.trim().charAt(0)}
                 {isAssignmentsTab
-                  ? badge !== "none" && (
-                      <span
-                        aria-hidden
-                        className="absolute -bottom-1 -right-1 h-[16px] w-[16px] rounded-full"
-                        style={{ background: DOT_COLOR[badge], boxShadow: "0 0 0 2px #fff" }}
-                      />
-                    )
+                  ? <HomeworkStatusDot status={badge} />
                   : bookCount > 0 && (
                       <span
                         className="d absolute -bottom-1.5 -right-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1 text-[12px] font-bold"
