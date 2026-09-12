@@ -7,6 +7,7 @@ import { getAllAssignments } from "@/lib/assignments";
 import { hasVoiceConsent } from "@/lib/consent";
 import RecommendShelf from "@/components/recommend-shelf";
 import AssignmentsBrowser from "@/components/assignments-browser";
+import Section from "@/components/section";
 import { CHILD_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
 import { pickActiveChildGroupId } from "@/lib/active-child-group";
 import Illustration from "@/components/illustration";
@@ -105,10 +106,14 @@ export default async function GroupPage({
       .filter((b) => (seen.has(b.bookId) ? false : (seen.add(b.bookId), true)));
     content = (
       <>
+        {/* 그룹명은 박스 밖(사용자 지적: "그룹명이 흰 박스가 아니라 밖에 따로
+            나와야할 것 같아") -- 그 아래 실제 내용(분야 칩·권수·책 선반)은
+            /recommend/[groupId]와 같은 패턴으로 흰 카드 안에 담는다(사용자
+            지적: "아이 내용은 흰 카드 안에 둬야지 너무 정신 사납다"). */}
         <h1 className="d text-xl">{selectedGroup ? `${selectedGroup.name}의 추천도서` : "모든 그룹의 추천도서"}</h1>
-        <div className="mt-4">
+        <Section className="mt-4" title="추천도서">
           <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
-        </div>
+        </Section>
       </>
     );
   } else {
