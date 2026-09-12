@@ -23,7 +23,7 @@ export async function loadBadges(supabase: SupabaseClient, childId: string): Pro
 }
 
 export async function loadForestData(supabase: SupabaseClient, childId: string): Promise<ForestData> {
-  const [{ data: rows }, { data: memberRows }, { data: completionRows }] = await Promise.all([
+  const [{ data: rows }, memberResult, { data: completionRows }] = await Promise.all([
     supabase
       .from("reading_records")
       .select("status, read_date, created_at, book_id, photo_url, voice_url, favorite, parent_memo, books(title, author)")
@@ -35,6 +35,26 @@ export async function loadForestData(supabase: SupabaseClient, childId: string):
       .eq("status", "approved"),
     supabase.from("assignment_completion").select("assignment_id, completed").eq("child_id", childId),
   ]);
+
+  // groups.operator_avatar는 마이그레이션 0028로 추가된 컬럼이라, 아직 그
+  // 마이그레이션을 실행하지 않은 프로젝트에서는 이 select 자체가 오류로
+  // 돌아온다. 오류를 그냥 무시하면(memberRows가 null) "그룹이 0곳"으로
+  // 조용히 잘못 계산돼 "첫 숲지기" 배지·추천도서 배지가 전부 안 딴 것처럼
+  // 보이는 사고가 난다(예전에 겪었던 "조회 실패가 빈 상태로 위장" 문제와
+  // 같은 유형) -- 이 컬럼 없이 다시 한번 조회해서 최소한 그룹 수·이름은
+  // 정확하게 세도록 방어한다(얼굴만 null로 남아 기본 곰으로 보임).
+  let memberRows: { group_id: string; groups: unknown }[] | null = memberResult.data;
+  if (memberResult.error) {
+    const fallback = await supabase
+      .from("group_members")
+      .select("group_id, groups(name)")
+      .eq("child_id", childId)
+      .eq("status", "approved");
+    memberRows = (fallback.data ?? []).map((m) => ({
+      group_id: m.group_id as string,
+      groups: { ...(m.groups as object), operator_avatar: null },
+    }));
+  }
 
   const groupIds = Array.from(new Set((memberRows ?? []).map((m) => m.group_id as string)));
   const groups = groupIds.map((id) => {

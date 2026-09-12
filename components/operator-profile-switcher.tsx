@@ -73,7 +73,17 @@ export default function OperatorProfileSwitcher({
     }
     // 얼굴(곰/백로)도 이름과 같이 내 그룹 전부에 복사해 둔다 -- 우리 숲의
     // 숲지기 캐릭터가 실제로 고른 얼굴로 보이려면 그룹 쪽에도 필요하다.
-    await supabase.from("groups").update({ operator_name: next, operator_avatar: avatarDraft }).eq("owner_id", userId);
+    // groups.operator_avatar 마이그레이션(0028)을 아직 안 돌렸으면 이 update가
+    // 컬럼 없음 오류로 통째로 실패해서 이름 복사까지 같이 멈춘다 -- 그 경우
+    // 이름만이라도 먼저 반영되도록 한 번 더 시도한다(둘 다 성공하는 게
+    // 정상이라 평소엔 이 재시도가 실행되지 않는다).
+    const groupUpdate = await supabase
+      .from("groups")
+      .update({ operator_name: next, operator_avatar: avatarDraft })
+      .eq("owner_id", userId);
+    if (groupUpdate.error) {
+      await supabase.from("groups").update({ operator_name: next }).eq("owner_id", userId);
+    }
     setSaving(false);
     setSavedName(next);
     setSavedAvatar(avatarDraft);
