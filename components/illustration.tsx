@@ -23,6 +23,17 @@ export const ILLUSTRATIONS = {
   "tree-pine": [145, 225],
   "tree-light": [109, 195],
   star: [59, 57],
+  // 사용자가 직접 그린 수채화 배지 그림(투명 배경으로 걷어냄) -- 나무·별·
+  // 등불 재활용을 줄이려고 "다시 찾은 나무"·"숲지기와 함께" 배지 일부에 씀.
+  "forget-me-not": [250, 296],
+  "pasque-flower": [275, 265],
+  "mushroom-cluster": [185, 129],
+  acorn: [333, 480],
+  fox: [400, 422],
+  tent: [440, 480],
+  camper: [480, 419],
+  "land-rover": [480, 334],
+  "tea-mug": [480, 368],
 } as const;
 
 export type IllustrationName = keyof typeof ILLUSTRATIONS;

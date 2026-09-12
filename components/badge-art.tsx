@@ -23,19 +23,24 @@ function milestoneArt(count: number): Piece[] {
 const ART: Record<string, Piece[]> = {
   d2: [T("star", 20)],
   d3: [T("star", 16), T("star", 22)],
-  week: [T("lantern-on", 36)],
+  // 매일 밤 읽고 따뜻한 차 한 잔 -- 사용자가 그려온 그림으로 나무 재활용을 줄였다.
+  week: [T("tea-mug", 34)],
   d14: [T("star", 10), T("lantern-on", 34), T("star", 10)],
   d30: [T("lantern-on", 26), T("lantern-on", 34), T("lantern-on", 26)],
-  week10: [T("star", 10), T("tree-pine", 34), T("star", 10)],
-  month20: [T("tree-bushy", 24), T("tree-round", 30), T("tree-bushy", 24)],
-  months3: [T("tree-light", 22), T("tree-round", 28), T("tree-pine", 34)],
-  fav1: [T("star", 12), T("tree-light", 30)],
-  fav5: [T("star", 10), T("tree-light", 28), T("star", 10)],
+  // 한 주에 10권 = 비 온 뒤 하룻밤 사이 버섯이 무더기로 자라는 것처럼.
+  week10: [T("mushroom-cluster", 30)],
+  // 한 달에 20권 = 가을 도토리처럼 풍성한 수확.
+  month20: [T("acorn", 34)],
+  // 3달 연속 = 계절을 건너는 여우.
+  months3: [T("fox", 34)],
+  fav1: [T("forget-me-not", 32)],
+  fav5: [T("pasque-flower", 32)],
   group1: [T("bear-lantern", 36)],
   group3: [T("bear-lantern", 36), T("star", 10)],
-  rec10: [T("lantern-on", 24), T("tree-round", 30)],
-  rec30: [T("lantern-on", 24), T("tree-round", 28), T("tree-pine", 32)],
-  rec100: [T("lantern-on", 24), T("tree-round", 24), T("tree-pine", 32), T("tree-bushy", 24)],
+  // 등불 따라 걷는 여정 -- 걸음이 늘수록 더 먼 곳까지 갈 수 있는 탈것으로.
+  rec10: [T("tent", 34)],
+  rec30: [T("camper", 30)],
+  rec100: [T("land-rover", 28)],
   hw1: [T("lantern-on", 30)],
   hw5: [T("lantern-on", 28), T("star", 10)],
   hw20: [T("star", 9), T("lantern-on", 30), T("star", 9)],
