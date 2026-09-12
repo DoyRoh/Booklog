@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getRecommendBooks } from "@/lib/recommend-books";
 import Section from "@/components/section";
-import Illustration, { AvatarIllustration, PawStamp } from "@/components/illustration";
+import { AvatarIllustration } from "@/components/illustration";
+import ChildBookTracker from "@/components/child-book-tracker";
 
 type AssignmentRow = {
   id: string;
@@ -109,7 +110,6 @@ export default async function TeacherChildDetailPage({
   const responseByMission = new Map((responseRows ?? []).map((r) => [r.mission_id, r]));
 
   const readCount = books.filter((b) => b.readStatus === "done").length;
-  const STATUS_LABEL = { done: "읽었어요", reading: "읽는 중", want: "읽고 싶어요" } as const;
 
   return (
     <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
@@ -132,64 +132,20 @@ export default async function TeacherChildDetailPage({
         </div>
       </div>
 
-      {/* 추천도서: 책마다 이 아이의 읽기 상태 */}
+      {/* 추천도서: 책이 그룹당 100권 가까이 될 수 있어 책마다 큰 배지로
+          늘어놓지 않는다(사용자 지적: "이걸 다 트래킹하는 건 소모적"). 기본은
+          "N/M권 읽음" 요약만 보이고, 원하면 펼쳐서 책별 표를 본다. */}
       <Section
         className="mt-5"
         title="추천도서"
-        flush={books.length > 0}
+        flush
         action={
           <span className="d text-sm" style={{ color: "var(--ink-2)" }}>
             {readCount} / {books.length}권 읽음
           </span>
         }
       >
-        {books.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-            아직 추천도서가 없어요.
-          </p>
-        ) : (
-          <div>
-            {books.map((book, index) => (
-              <div
-                key={book.itemId}
-                className="flex items-center gap-3 px-[24px] py-[10px]"
-                style={index > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
-              >
-                {book.coverUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={book.coverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
-                ) : (
-                  <div className="h-11 w-8 flex-none rounded" style={{ background: "var(--paper)" }} />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{book.title}</p>
-                  {book.inAssignment && (
-                    <span
-                      className="mt-0.5 inline-flex items-center gap-1 rounded-full py-0.5 pl-1 pr-2 text-[10px]"
-                      style={{ background: "rgba(232,163,61,0.16)", color: "var(--lantern)" }}
-                    >
-                      <Illustration name="lantern-on" height={14} />
-                      숙제 중
-                    </span>
-                  )}
-                </div>
-                {book.readStatus === "done" ? (
-                  <span className="d flex flex-none items-center gap-1 text-xs" style={{ color: "var(--point-deep)" }}>
-                    <PawStamp avatar={avatar} height={20} />
-                    읽었어요
-                  </span>
-                ) : (
-                  <span
-                    className="flex-none text-xs"
-                    style={{ color: book.readStatus ? "var(--lantern)" : "var(--ink-2)" }}
-                  >
-                    {book.readStatus ? STATUS_LABEL[book.readStatus] : "아직"}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <ChildBookTracker books={books} />
       </Section>
 
       {/* 숙제: 숙제마다 책별 완료 + 질문 답 */}

@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-// "날짜 · 카테고리 칩 · 내용" 한 줄 목록 -- 사용자가 보여준 육아 기록 앱의
-// 목록 형식을 추천도서·숙제 목록(숲지기 화면과 아이 화면 모두)에 그대로
-// 쓴다. 왼쪽 날짜(위 굵게, 아래 회색), 가운데 색 칩(+아래 작은 보조 라벨),
-// 오른쪽 제목(+회색 부제). 줄 사이는 옅은 구분선.
+// "칩 · 내용 · 날짜/상태" 한 줄 목록 -- 사용자가 보여준 육아 기록 앱의
+// 목록 형식을 숲지기의 추천도서·숙제 관리 목록에 쓴다. 왼쪽 색 칩(+아래
+// 작은 보조 라벨), 가운데 제목(+회색 부제), 오른쪽 위 작은 날짜 + 그
+// 아래 상태·개수 배지. 날짜를 처음엔 맨 왼쪽 전용 칸에 뒀는데 "위치가
+// 쌩뚱맞다"는 지적으로 오른쪽 위로 옮겼다. 줄 사이는 옅은 구분선.
 
 export type LogChip = { label: string; color: string; sub?: string };
 
@@ -41,36 +42,16 @@ export function LogRow({
   /** 제목 아래에 들어가는 확장 내용(숙제의 책 목록·미션 등). */
   children?: ReactNode;
 }) {
-  const dateCol = (
-    <div
-      className="flex w-11 flex-none flex-col pt-3.5"
-      aria-hidden={hideDate && index === undefined ? true : undefined}
-    >
-      {/* 순번은 날짜 칸 위에 작게 -- 칸을 따로 만들면 그만큼 제목 칸이
-          좁아져 책 제목이 두 줄로 꺾인다. */}
+  // 날짜는 왼쪽 전용 칸이 아니라 오른쪽 위 작은 글자로 -- "날짜 위치가
+  // 쌩뚱맞다"는 지적으로, 상태·개수 배지와 같은 열 위쪽에 둔다.
+  const chipCol = (
+    <div className="flex w-11 flex-none flex-col items-center gap-0.5">
+      {/* 순번은 칩 칸 위에 작게. */}
       {index !== undefined && (
         <span className="text-[10px] leading-none tabular-nums" style={{ color: "var(--ink-2)", opacity: 0.6 }}>
           {index}
         </span>
       )}
-      {!hideDate && (
-        <>
-          <span className="d text-sm leading-tight" style={{ color: "var(--ink-2)" }}>
-            {dateTop}
-          </span>
-          {dateBottom && (
-            <span className="text-[9px] leading-tight" style={{ color: "var(--ink-2)", opacity: 0.6 }}>
-              {dateBottom}
-            </span>
-          )}
-        </>
-      )}
-    </div>
-  );
-  // 구분선은 날짜 칸을 비우고 칩부터 시작한다 -- 끝까지 이어진 선이 표처럼
-  // 보여 촌스럽다는 피드백.
-  const chipCol = (
-    <div className="flex w-11 flex-none flex-col items-center gap-0.5">
       <span
         className="d inline-block rounded-full px-2 py-0.5 text-[11px] leading-tight text-white"
         style={{ background: chip.color }}
@@ -107,14 +88,28 @@ export function LogRow({
       {children}
     </div>
   );
+  // 날짜(등록일 등)는 상태·개수 배지 바로 위, 오른쪽 끝에 작게 둔다.
+  const dateNode =
+    !hideDate && dateTop ? (
+      <span className="whitespace-nowrap text-[10px] leading-tight" style={{ color: "var(--ink-2)" }}>
+        {dateTop}
+        {dateBottom && <span style={{ opacity: 0.7 }}> · {dateBottom}</span>}
+      </span>
+    ) : null;
   // 오른쪽에 토글 버튼이 있으면(rightInteractive) 링크 밖에 두고, 글자만
   // 있으면 링크 안에 넣어 줄 전체가 눌리게 한다(a 안에 button 중첩 금지).
-  const rightNode = right ? <span className="flex flex-none items-start">{right}</span> : null;
+  const rightCol =
+    dateNode || right ? (
+      <span className="flex flex-none flex-col items-end gap-1">
+        {dateNode}
+        {right}
+      </span>
+    ) : null;
   const main = (
     <>
       {chipCol}
       {text}
-      {!rightInteractive && rightNode}
+      {!rightInteractive && rightCol}
     </>
   );
   const mainCls = "flex min-w-0 flex-1 items-start gap-2 text-left";
@@ -131,15 +126,12 @@ export function LogRow({
   );
 
   return (
-    <div className="flex w-full items-stretch gap-2 px-4">
-      {dateCol}
-      <div
-        className="flex min-w-0 flex-1 items-start gap-1 py-3.5"
-        style={first ? undefined : { borderTop: "1px solid rgba(38,54,43,0.08)" }}
-      >
-        {mainEl}
-        {rightInteractive && rightNode}
-      </div>
+    <div
+      className="flex w-full items-stretch gap-2 px-4 py-3.5"
+      style={first ? undefined : { borderTop: "1px solid rgba(38,54,43,0.08)" }}
+    >
+      {mainEl}
+      {rightInteractive && rightCol}
     </div>
   );
 }
