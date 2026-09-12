@@ -281,7 +281,7 @@ export default function BookFinder({
           )}
 
           <button type="button" onClick={() => setManualMode(true)} className="d mt-3 text-sm" style={{ color: "var(--point)" }}>
-            검색에 안 나오는 책이에요
+            + 찾는 책이 없나요? 직접 입력하기
           </button>
         </>
       )}
