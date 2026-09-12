@@ -1,24 +1,13 @@
 import type React from "react";
 import Illustration, { PawStamp, type Avatar, type IllustrationName } from "@/components/illustration";
 import { ButterflyIcon, LadybugIcon, SnailIcon } from "@/components/icons/badge-critters";
+import { milestoneTreeArt } from "@/lib/forest-items";
 
-// 배지마다 다른 그림 -- 패턴 그림에서 잘라낸 숲 조각(나무·별·등불·새·곰)과
+// 배지마다 다른 그림 -- 패턴 그림에서 잘라낸 숲 조각(별·등불·새·곰)과
 // 아이 아바타의 발자국 도장을 조합한다. 아직 못 딴 배지는 흑백·반투명.
 type Piece = { name: IllustrationName; height: number };
 
 const T = (name: IllustrationName, height: number): Piece => ({ name, height });
-
-// 권수 마일스톤은 권수가 커질수록 숲이 빽빽해진다.
-function milestoneArt(count: number): Piece[] {
-  if (count < 5) return [T("tree-light", 30)];
-  if (count < 10) return [T("tree-bushy", 32)];
-  if (count < 50) return [T("tree-round", 26), T("tree-pine", 34)];
-  if (count < 100) return [T("tree-light", 22), T("tree-pine", 32), T("tree-bushy", 24)];
-  if (count < 200) return [T("tree-bushy", 22), T("tree-pine", 32), T("tree-round", 24), T("star", 8)];
-  if (count < 500) return [T("star", 8), T("tree-round", 22), T("tree-pine", 32), T("tree-bushy", 22), T("star", 8)];
-  if (count < 1000) return [T("tree-light", 18), T("tree-bushy", 22), T("tree-pine", 32), T("tree-round", 22), T("star", 9)];
-  return [T("star", 9), T("tree-pine", 26), T("lantern-on", 26), T("tree-pine", 30), T("star", 9)];
-}
 
 const ART: Record<string, Piece[]> = {
   d2: [T("star", 20)],
@@ -109,6 +98,6 @@ export default function BadgeArt({
   if (critter) {
     return disc(critter.heights.map((h, i) => <critter.Icon key={i} height={px(h)} />));
   }
-  const pieces = count !== undefined ? milestoneArt(count) : (ART[id] ?? [T("star", 20)]);
+  const pieces = count !== undefined ? [milestoneTreeArt(count)] : (ART[id] ?? [T("star", 20)]);
   return disc(pieces.map((piece, i) => <Illustration key={i} name={piece.name} height={px(piece.height)} className="flex-none" />));
 }
