@@ -35,8 +35,12 @@ const ART: Record<string, Piece[]> = {
   months3: [T("fox", 34)],
   fav1: [T("forget-me-not", 32)],
   fav5: [T("pasque-flower", 32)],
-  group1: [T("bear-lantern", 36)],
-  group3: [T("bear-lantern", 36), T("star", 10)],
+  // 곰·백로는 이제 실제 숲길 끝에 서는 "진짜 숲지기"(그룹마다 한 명, 고른
+  // 얼굴 그대로) 전용 -- 그룹 가입 배지에까지 곰을 또 그리면 같은 정보를
+  // 두 번 보여주는 셈이라(사용자 지적: "곰은 그룹 가입하면 어차피 생기는
+  // 거 아냐?"), 배지 자체는 별로 바꿨다.
+  group1: [T("star", 32)],
+  group3: [T("star", 18), T("star", 26), T("star", 18)],
   // 등불 따라 걷는 여정 -- 걸음이 늘수록 더 먼 곳까지 갈 수 있는 탈것으로.
   rec10: [T("tent", 34)],
   rec30: [T("camper", 30)],

@@ -27,8 +27,11 @@ export const ORNAMENT_BY_BADGE: Record<string, OrnamentKind> = {
   same5: "paw",
   fav1: "star",
   fav5: "star",
-  group1: "bear",
-  group3: "bear",
+  // 실제 숲지기(곰·백로)는 숲길 끝에 그룹 수만큼 따로 서 있으므로, 그룹
+  // 가입 배지 장식까지 곰으로 또 심으면 같은 정보의 중복이라 별로 바꿨다
+  // (badge-art.tsx의 group1/group3와 항상 짝을 맞춰야 하는 매핑).
+  group1: "star",
+  group3: "star",
   rec10: "lantern",
   rec30: "lantern",
   rec100: "lantern",
