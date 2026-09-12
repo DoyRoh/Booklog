@@ -111,7 +111,7 @@ export default async function GroupPage({
             /recommend/[groupId]와 같은 패턴으로 흰 카드 안에 담는다(사용자
             지적: "아이 내용은 흰 카드 안에 둬야지 너무 정신 사납다"). */}
         <h1 className="d text-xl">{selectedGroup ? `${selectedGroup.name}의 추천도서` : "모든 그룹의 추천도서"}</h1>
-        <Section className="mt-4" title="추천도서">
+        <Section className="mt-5" title="추천도서">
           <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
         </Section>
       </>

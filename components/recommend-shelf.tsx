@@ -105,20 +105,20 @@ export default function RecommendShelf({
   return (
     <div>
       {categories.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
-          <button type="button" onClick={() => setFilter("all")} className="d flex-none rounded-full border px-3 py-1 text-xs" style={chip(filter === "all")}>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <button type="button" onClick={() => setFilter("all")} className="d flex-none rounded-full border px-3.5 py-1.5 text-sm" style={chip(filter === "all")}>
             전체
           </button>
           {categories.map((category) => (
-            <button key={category} type="button" onClick={() => setFilter(category)} className="d flex-none rounded-full border px-3 py-1 text-xs" style={chip(filter === category)}>
+            <button key={category} type="button" onClick={() => setFilter(category)} className="d flex-none rounded-full border px-3.5 py-1.5 text-sm" style={chip(filter === category)}>
               {category}
             </button>
           ))}
         </div>
       )}
 
-      <div className="mt-2 flex items-center gap-2">
-        <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+      <div className="mt-3 flex items-center gap-2">
+        <span className="text-sm" style={{ color: "var(--ink-2)" }}>
           {filtered.length}권{activeChildId ? ` · 읽은 책 ${doneCount}권` : ""}
         </span>
         <span className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
@@ -126,7 +126,7 @@ export default function RecommendShelf({
           value={mode}
           onChange={(e) => switchMode(e.target.value as ShelfMode)}
           aria-label="보기 방식"
-          className="d flex-none rounded-full border px-2 py-1 text-[11px] outline-none"
+          className="d flex-none rounded-full border px-2.5 py-1 text-xs outline-none"
           style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
         >
           <option value="cover">전면 보기</option>
@@ -135,7 +135,7 @@ export default function RecommendShelf({
       </div>
 
       {mode === "list" ? (
-        <div className="mt-4 overflow-hidden rounded-[var(--r)] border" style={{ borderColor: "var(--rule)", background: "var(--card)" }}>
+        <div className="mt-5 overflow-hidden rounded-[var(--r)] border" style={{ borderColor: "var(--rule)", background: "var(--card)" }}>
           {filtered.map((book, index) => {
             const bookGroupId = book.groupId ?? groupId;
             const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(bookGroupId)}`;
@@ -143,7 +143,7 @@ export default function RecommendShelf({
               <div
                 key={book.itemId}
                 id={`book-${book.itemId}`}
-                className="flex items-center gap-2.5 px-4 py-2.5"
+                className="flex items-center gap-2.5 px-4 py-3"
                 style={{ scrollMarginTop: "190px", ...(index === 0 ? {} : { borderTop: "1px solid rgba(38,54,43,0.08)" }) }}
               >
                 <Link href={href} aria-label={`${book.title} 읽어보기`} className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -156,7 +156,7 @@ export default function RecommendShelf({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm">{book.title}</p>
                     {book.author && (
-                      <p className="truncate text-[11px]" style={{ color: "var(--ink-2)" }}>
+                      <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ink-2)" }}>
                         {book.author}
                       </p>
                     )}
@@ -179,7 +179,7 @@ export default function RecommendShelf({
       ) : (
       /* 3권씩 선반 한 칸. 표지를 누르면 기록 남기기(책 정보 미리 채움),
           표지 오른쪽 위 책갈피 = 내 책장에 꽂기/빼기, 오른쪽 아래 체크 = 읽었어요. */
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="mt-5 flex flex-col gap-5">
         {chunk(filtered, 3).map((row, rowIndex) => (
           <div key={rowIndex}>
             <div className="grid grid-cols-3 gap-4 px-3">
@@ -204,7 +204,7 @@ export default function RecommendShelf({
                       ) : (
                         <span className="flex h-full items-center justify-center p-2 text-center">
                           <span
-                            className="d text-xs text-white"
+                            className="d text-sm text-white"
                             style={{
                               overflowWrap: "anywhere",
                               display: "-webkit-box",
@@ -228,17 +228,17 @@ export default function RecommendShelf({
               })}
             </div>
             <div className="mt-2" style={PLANK_STYLE} />
-            <div className="mt-1.5 grid grid-cols-3 gap-4 px-3">
+            <div className="mt-2 grid grid-cols-3 gap-4 px-3">
               {row.map((book) => (
                 <div key={book.itemId} className="min-w-0">
                   <p
-                    className="text-xs leading-snug"
+                    className="text-sm leading-snug"
                     style={{ overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
                   >
                     {book.title}
                   </p>
                   {book.author && (
-                    <p className="truncate text-[10px]" style={{ color: "var(--ink-2)" }}>
+                    <p className="mt-0.5 truncate text-[11px]" style={{ color: "var(--ink-2)" }}>
                       {book.author}
                     </p>
                   )}

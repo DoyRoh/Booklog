@@ -254,7 +254,7 @@ export default function ChildGroupBar() {
           채우고 선택 안 된 쪽도 진한 글자(--ink, 굵게)로 바꿔 두 라벨 다
           한눈에 읽히게 했다. 오른쪽 끝의 돋보기는 전체 검색(/search,
           핵심 기능)으로. */}
-      <div className="mx-auto flex max-w-[520px] items-center gap-2 px-5 pb-2.5">
+      <div className="mx-auto flex max-w-[520px] items-center gap-2 px-5 pt-1.5 pb-2.5">
         <div className="flex flex-1 gap-1 rounded-full p-1" style={{ background: "var(--sprout-pale)" }}>
           {(
             [
