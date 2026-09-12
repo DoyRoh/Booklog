@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ShelfBookmark } from "@/components/read-toggles";
-import { CoverViewIcon, ListViewIcon } from "@/components/icons/misc-icons";
+import ViewToggle from "@/components/view-toggle";
 import { BOOK_CATEGORIES } from "@/lib/categories";
 import type { RecommendBook } from "@/lib/recommend-books";
 
@@ -118,45 +118,20 @@ export default function RecommendShelf({
         </div>
       )}
 
+      {/* 시안 그대로: "N권 · 읽은 책 M권" 왼쪽, 오른쪽엔 배경도 테두리도 없는
+          채움 아이콘 두 개(켜진 쪽만 초록). 구분선·드롭다운은 없앴다. */}
       <div className="mt-3 flex items-center gap-2">
         <span className="text-sm" style={{ color: "var(--ink-2)" }}>
           {filtered.length}권{activeChildId ? ` · 읽은 책 ${doneCount}권` : ""}
         </span>
-        <span className="h-px flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
-        {/* 드롭다운 대신 그림/줄 아이콘 두 개로 바로 전환(사용자 요청: "이런식으로
-            심플하고 간단하게 표시해줘"). */}
-        <div className="flex flex-none items-center gap-0.5">
-          <button
-            type="button"
-            onClick={() => switchMode("cover")}
-            aria-label="전면 보기"
-            aria-pressed={mode === "cover"}
-            className="flex h-7 w-7 flex-none items-center justify-center rounded-full"
-            style={{
-              background: mode === "cover" ? "rgba(47,168,79,0.12)" : "transparent",
-              color: mode === "cover" ? "var(--point-deep)" : "var(--ink-2)",
-            }}
-          >
-            <CoverViewIcon width={16} height={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode("list")}
-            aria-label="목록 보기"
-            aria-pressed={mode === "list"}
-            className="flex h-7 w-7 flex-none items-center justify-center rounded-full"
-            style={{
-              background: mode === "list" ? "rgba(47,168,79,0.12)" : "transparent",
-              color: mode === "list" ? "var(--point-deep)" : "var(--ink-2)",
-            }}
-          >
-            <ListViewIcon width={16} height={16} />
-          </button>
-        </div>
+        <span className="flex-1" />
+        <ViewToggle mode={mode} onChange={switchMode} />
       </div>
 
       {mode === "list" ? (
-        <div className="mt-5 overflow-hidden rounded-[var(--r)] border" style={{ borderColor: "var(--rule)", background: "var(--card)" }}>
+        // 이미 흰 카드 안이라 목록에 또 박스를 두르지 않는다(박스 안 박스는
+        // 복잡해 보인다는 지적) -- 줄 사이 옅은 구분선만.
+        <div className="mt-4">
           {filtered.map((book, index) => {
             const bookGroupId = book.groupId ?? groupId;
             const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(bookGroupId)}`;
@@ -164,7 +139,7 @@ export default function RecommendShelf({
               <div
                 key={book.itemId}
                 id={`book-${book.itemId}`}
-                className="flex items-center gap-2.5 px-4 py-3"
+                className="flex items-center gap-2.5 py-3"
                 style={{ scrollMarginTop: "190px", ...(index === 0 ? {} : { borderTop: "1px solid rgba(38,54,43,0.08)" }) }}
               >
                 <Link href={href} aria-label={`${book.title} 읽어보기`} className="flex min-w-0 flex-1 items-center gap-2.5">

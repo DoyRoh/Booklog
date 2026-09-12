@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { SearchIcon, SpineViewIcon, CoverViewIcon, ListViewIcon } from "@/components/icons/misc-icons";
+import { SearchIcon, SpineViewIcon } from "@/components/icons/misc-icons";
 import { MoreIcon } from "@/components/icons/tab-icons";
+import ViewToggle from "@/components/view-toggle";
 import type { ReadingStatus } from "@/lib/reading-status";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 import ShelfTagPicker from "@/components/shelf-tag-picker";
@@ -290,7 +291,7 @@ export default function LibraryShelf({
 
   return (
     <div>
-      <div className="flex gap-1.5">
+      <div className="flex gap-2">
         <div className="relative flex-1">
           <SearchIcon
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
@@ -312,38 +313,6 @@ export default function LibraryShelf({
         >
           + 책
         </Link>
-        {/* 전면·목록 빠른 전환 -- 드롭다운 대신 아이콘 두 개로(사용자 요청:
-            "전면 보기/목록형보기는 심플하고 간단하게 표시해줘"). 필터 줄은
-            이미 드롭다운 셋으로 붐벼서 여기 검색줄에 뒀다. 책등은 아래
-            ⋯ 메뉴에서 고른다. */}
-        <div className="flex flex-none items-center gap-0.5 rounded-[14px] border" style={{ borderColor: "var(--rule)" }}>
-          <button
-            type="button"
-            onClick={() => switchMode("cover")}
-            aria-label="전면 보기"
-            aria-pressed={mode === "cover"}
-            className="flex h-[42px] w-[36px] flex-none items-center justify-center rounded-l-[13px]"
-            style={{
-              background: mode === "cover" ? "rgba(47,168,79,0.12)" : "var(--card)",
-              color: mode === "cover" ? "var(--point-deep)" : "var(--ink-2)",
-            }}
-          >
-            <CoverViewIcon width={17} height={17} />
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode("list")}
-            aria-label="목록 보기"
-            aria-pressed={mode === "list"}
-            className="flex h-[42px] w-[36px] flex-none items-center justify-center rounded-r-[13px]"
-            style={{
-              background: mode === "list" ? "rgba(47,168,79,0.12)" : "var(--card)",
-              color: mode === "list" ? "var(--point-deep)" : "var(--ink-2)",
-            }}
-          >
-            <ListViewIcon width={17} height={17} />
-          </button>
-        </div>
         <div className="relative flex-none">
           <button
             type="button"
@@ -409,11 +378,18 @@ export default function LibraryShelf({
         className="mt-[12px] rounded-[var(--r)] border p-4"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
-      <div className="flex items-center gap-1.5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+      {/* 시안과 같은 줄: "N권 ──────── [전면][목록]". 필터 드롭다운까지 한 줄에
+          넣으면 셋 다 뜰 때 아이콘이 화면 밖으로 밀려나서(360px 실측 확인)
+          드롭다운은 아래 줄로 내렸다. */}
+      <div className="flex items-center gap-2">
         <span className="d flex-none text-sm" style={{ color: "var(--ink-2)" }}>
           {mode === "list" ? `${listRows.length}권` : `${filtered.length}권`}
         </span>
         <div className="h-px min-w-[4px] flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
+        <ViewToggle mode={mode} onChange={switchMode} size={19} />
+      </div>
+
+      <div className="mt-2 flex items-center justify-end gap-1.5">
         {/* 그룹·상태·정렬은 전부 작은 드롭다운 한 줄로 -- 칩 줄 두 개를 없앴다
             (사용자 피드백: 모바일에서 산만). 걸려 있으면 초록 테두리. */}
         {tagOptions.length + groupOptions.length > 0 && (

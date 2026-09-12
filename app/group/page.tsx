@@ -7,7 +7,6 @@ import { getAllAssignments } from "@/lib/assignments";
 import { hasVoiceConsent } from "@/lib/consent";
 import RecommendShelf from "@/components/recommend-shelf";
 import AssignmentsBrowser from "@/components/assignments-browser";
-import Section from "@/components/section";
 import { CHILD_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
 import { pickActiveChildGroupId } from "@/lib/active-child-group";
 import Illustration from "@/components/illustration";
@@ -106,14 +105,17 @@ export default async function GroupPage({
       .filter((b) => (seen.has(b.bookId) ? false : (seen.add(b.bookId), true)));
     content = (
       <>
-        {/* 그룹명은 박스 밖(사용자 지적: "그룹명이 흰 박스가 아니라 밖에 따로
-            나와야할 것 같아") -- 그 아래 실제 내용(분야 칩·권수·책 선반)은
-            /recommend/[groupId]와 같은 패턴으로 흰 카드 안에 담는다(사용자
-            지적: "아이 내용은 흰 카드 안에 둬야지 너무 정신 사납다"). */}
-        <h1 className="d text-xl">{selectedGroup ? `${selectedGroup.name}의 추천도서` : "모든 그룹의 추천도서"}</h1>
-        <Section className="mt-5" title="추천도서">
+        {/* 시안대로 그룹 이름만 제목으로(이미 "추천도서" 탭 안이라 제목에도
+            카드 머리에도 "추천도서"를 또 쓰지 않는다 -- 사용자 지적). 제목은
+            카드 왼쪽 끝과 같은 자리에서 시작하고, 위(20px)·아래(16px) 여백을
+            비슷하게 맞춘다. */}
+        <h1 className="d text-[19px] leading-[26px]">{selectedGroup ? selectedGroup.name : "모든 그룹"}</h1>
+        <div
+          className="mt-[16px] rounded-[var(--r)] border p-4"
+          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+        >
           <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
-        </Section>
+        </div>
       </>
     );
   } else {

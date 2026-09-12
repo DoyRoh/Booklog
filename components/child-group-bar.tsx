@@ -152,15 +152,10 @@ export default function ChildGroupBar() {
   const totalBookCount = Object.values(bookCounts).reduce((s, n) => s + n, 0);
 
   return (
-    <div
-      className="no-print fixed inset-x-0 z-40 border-b"
-      style={{
-        top: "52px",
-        background: "var(--card)",
-        borderColor: "var(--rule)",
-        boxShadow: "0 2px 6px rgba(38,54,43,0.06)",
-      }}
-    >
+    // 시안처럼 흰 패널 없이 배경(세이지)과 이어지게 둔다(사용자 지적:
+    // "숙제·추천도서 선택 메뉴 흰색 배경 없애라"). 고정 바라 배경색은
+    // 불투명해야 아래 내용이 비치지 않으므로 --paper를 그대로 쓴다.
+    <div className="no-print fixed inset-x-0 z-40" style={{ top: "52px", background: "var(--paper)" }}>
       <div className="mx-auto flex max-w-[520px] gap-3 overflow-x-auto px-5 pt-2.5 pb-3" style={{ scrollbarWidth: "none" }}>
         <button
           type="button"
@@ -171,9 +166,10 @@ export default function ChildGroupBar() {
           <span
             className="d relative flex h-[56px] w-[56px] flex-col items-center justify-center rounded-[16px]"
             style={{
-              background: selectedId === "all" ? "var(--point-deep)" : "var(--paper)",
+              // 바 자체가 세이지 배경이라, 안 켜진 타일은 --paper면 묻힌다 → 옅은 초록 판.
+              background: selectedId === "all" ? "var(--point-deep)" : "var(--sprout-pale)",
               color: selectedId === "all" ? "#fff" : "var(--ink)",
-              border: selectedId === "all" ? "2px solid var(--point-deep)" : "1px solid var(--rule)",
+              border: selectedId === "all" ? "2px solid var(--point-deep)" : "1px solid transparent",
               boxShadow: selectedId === "all" ? "0 4px 10px rgba(27,94,58,0.28)" : "none",
             }}
           >

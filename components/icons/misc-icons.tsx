@@ -52,6 +52,32 @@ export function ListViewIcon(props: IconProps) {
   );
 }
 
+/** 보기 전환용 채움 아이콘 두 개(시안 그대로) -- 격자 = 전면 보기, 줄 = 목록 보기.
+ * 스트로크 아이콘보다 작은 크기에서 또렷해서 권수 줄 오른쪽에 작게 놓아도 읽힌다. */
+export function GridViewIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" {...props}>
+      <rect x="3" y="3" width="8" height="8" rx="2" />
+      <rect x="13" y="3" width="8" height="8" rx="2" />
+      <rect x="3" y="13" width="8" height="8" rx="2" />
+      <rect x="13" y="13" width="8" height="8" rx="2" />
+    </svg>
+  );
+}
+
+export function ListRowsIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" {...props}>
+      <rect x="3" y="4.6" width="3.6" height="3.6" rx="1.1" />
+      <rect x="9.4" y="5.5" width="11.6" height="1.9" rx="0.95" />
+      <rect x="3" y="10.2" width="3.6" height="3.6" rx="1.1" />
+      <rect x="9.4" y="11.1" width="11.6" height="1.9" rx="0.95" />
+      <rect x="3" y="15.8" width="3.6" height="3.6" rx="1.1" />
+      <rect x="9.4" y="16.7" width="11.6" height="1.9" rx="0.95" />
+    </svg>
+  );
+}
+
 export function SearchIcon(props: IconProps) {
   return (
     <IconBase {...props}>
