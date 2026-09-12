@@ -204,7 +204,21 @@ export default function BottomNav() {
             }}
           >
             <span className="relative flex h-[24px] w-[24px] items-center justify-center">
-              {Icon ? (
+              {isHighlighted ? (
+                // "추가"는 옅은 초록 배경 위 얇은 스트로크 아이콘이라 다른
+                // "책 추가" 버튼들(짙은 초록 채움 + 흰 아이콘)과 색 계열은
+                // 같아도 무게감이 달라 보인다는 지적을 받아, 여기서만
+                // --point-deep으로 꽉 채운 동그라미 + 흰 십자가로 바꿔
+                // 확실히 같은 버튼처럼 보이게 했다.
+                <span
+                  className="flex h-[26px] w-[26px] items-center justify-center rounded-full"
+                  style={{ background: "var(--point-deep)" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </span>
+              ) : Icon ? (
                 <Icon strokeWidth={active ? 2.4 : 1.9} />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
