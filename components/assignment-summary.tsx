@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { isAssignmentDone, type TodayAssignment } from "@/components/assignment-today";
+import type { TodayAssignment } from "@/components/assignment-today";
+import { isAssignmentDone } from "@/lib/assignment-status";
 import { dueBadge, effectiveRange, formatShortMd } from "@/lib/assignment-period";
 
 const TONE_COLOR: Record<"today" | "tomorrow" | "overdue", string> = {

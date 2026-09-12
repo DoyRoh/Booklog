@@ -1720,3 +1720,28 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 
 ### 검증
 정적 미리보기(임시 라우트, 확인 후 삭제)로 `AssignmentsBrowser`(지금 해야 할 숙제/기한 지남/완료한 숙제 3단, 긴 제목·긴 설명·여러 권·질문 답변 전/후·낭독 미션 포함)와 `RecommendShelf`, `SearchResults`를 360/390/430px에서 렌더링해 줄바꿈·겹침·잘림이 없는지 확인했습니다. 그룹 바·하단 메뉴는 라이브 프로필 컨텍스트가 필요해 정적 HTML 복제본으로 같은 폭에서 측정·스크린샷했습니다. `npm run lint`/`rm -rf .next && npm run build` 통과. DB 마이그레이션 없음(순수 애플리케이션 코드).
+
+## 숙제 카드 개편 직후 실사용 피드백 6건 + 오늘 탭 전체가 먹통이 된 실제 원인 (사용자 지적, 스크린샷 3장)
+
+바로 위 대형 브리프를 배포한 직후 두 가지를 동시에 받았습니다 — 새 숙제 카드에 대한 6가지 구체적 지적과, "오늘 메뉴 먹통"(오늘 탭이 에러 화면만 뜬다)이라는 훨씬 급한 신고. 후자부터 처리했습니다.
+
+### 오늘 탭 전체 크래시 — 서버 컴포넌트가 "use client" 파일의 함수를 직접 호출
+`components/assignment-summary.tsx`("use client" 없는 서버 컴포넌트, `app/today/page.tsx`가 렌더링)가 `components/assignment-today.tsx`("use client" 파일)에서 export한 `isAssignmentDone()` 함수를 그대로 import해 `const done = isAssignmentDone(assignment);`처럼 직접 호출하고 있었습니다. 이 프로젝트가 `lib/group-bar-height.ts` 도입 때 이미 한 번 겪고 규칙으로 남겨둔 것과 정확히 같은 버그입니다 — "use client" 모듈의 **모든** export(타입 제외)는 서버 컴포넌트에서 import하면 실제 함수가 아니라 클라이언트 참조 프록시로 넘어와서, 직접 호출하는 순간(컴포넌트로 렌더링하는 게 아니라 값처럼 부르는 순간) 렌더링 중 예외가 됩니다. 오늘 탭에 진행 중인 숙제가 하나라도 있으면(대부분의 실사용 계정) `AssignmentSummary`가 이 함수를 부르다 항상 죽어서, `app/error.tsx`(전역 에러 바운더리)만 뜨는 "먹통" 상태가 됐습니다 — 바로 앞 라운드에서 `isAssignmentDone`을 "완료 조건 판정 기준 하나로 통일"하려고 새로 추출하면서 이 크로스-바운더리 import를 실수로 만든 것입니다.
+
+**수정**: `lib/assignment-status.ts`(신규, "use client" 아닌 평범한 모듈)에 `isAssignmentDone()` 실제 구현을 옮겼습니다(`TodayAssignment` 타입은 `import type`으로만 가져와 런타임 경계를 안 넘습니다). `assignment-today.tsx`는 이 함수를 import해 `export { isAssignmentDone };`로 재수출만 합니다(기존에 `@/components/assignment-today`에서 import하던 클라이언트 컴포넌트, 예: `assignments-browser.tsx`,가 안 깨지도록). 서버 컴포넌트인 `assignment-summary.tsx`는 이제 `@/lib/assignment-status`에서 직접 import합니다. `assignments-browser.tsx`(클라이언트 컴포넌트라 원래도 안전했음)도 일관성을 위해 같은 lib 경로로 바꿨습니다. **regression 테스트**: 이 버그를 재현하는 가장 확실한 방법이 바로 "서버 컴포넌트 안에서 `AssignmentSummary`를 렌더링해 보는 것"이라, 임시 미리보기 라우트(서버 컴포넌트, `"use client"` 없음)에서 `<AssignmentSummary assignments={...} />`를 직접 렌더링해 수정 전엔 500, 수정 후엔 200이 되는 것으로 확인했습니다.
+
+**규칙 재확인**: 서버 컴포넌트가 쓸 함수·상수(컴포넌트가 아닌 값)는 절대 "use client" 파일에서 export하지 않는다. 타입은 `import type`이라 안전하지만, 런타임 값은 항상 평범한(non-"use client") 모듈에 둬야 한다.
+
+### 하단 메뉴 "추가" 버튼 — 독립 원형 버튼을 다시 알약 바 안으로
+직전 브리프에서 "추가"를 알약 바 위로 살짝 떠 있는 독립 원형 버튼으로 분리했는데, 실제로 보니 "혼자 위에 떠 있으니까 이상하다"는 지적을 받았습니다. `components/bottom-nav.tsx`에서 그 분리 로직(`addTab` 추출 + 별도 `<Link>` 블록)을 없애고, "추가"를 다시 알약 바 안의 보통 탭 자리(책장 다음)로 되돌렸습니다 — 색만 연두(`--sprout`)로 구분되고, 자리·배경 언어는 다른 탭과 동일합니다(이전에 이미 확정했던 "추가 탭을 항상 연두 알약으로" 규칙 그대로 재사용). `app/layout.tsx`의 `<main>` 하단 여백도 독립 버튼용으로 늘렸던 112px에서 96px로 되돌렸고(`app/globals.css`의 인쇄용 규칙도 함께), 알약 바는 5탭(오늘·책장·추가·그룹·프로필) 균등 분할 레이아웃을 그대로 씁니다. 정적 HTML로 360px에서 328px 예산 안에 5탭이 60px씩 고르게 들어가는 걸 확인했습니다.
+
+### 숙제 카드 세부 지적 6건 (`components/assignment-today.tsx`, `components/assignments-browser.tsx`)
+1. **그룹명 중복 제거**: 그룹은 이미 위 그룹 탭에서 골랐으므로, 카드의 등록일 줄에서 "· {그룹명}"을 뺐습니다.
+2. **등록일을 오른쪽으로**: 마감일·배지가 있는 줄을 `justify-between`으로 바꿔 등록일("9/8 등록")을 오른쪽 끝에 배치했습니다.
+3. **"읽기 시작"/"다 읽었어요" 버튼 너비 통일**: 두 버튼(안 읽음 상태) 모두 `w-[88px] text-center`로 고정폭을 줬습니다.
+4. **책 제목 확대 + 한 줄 말줄임**: 2줄 클램프(`WebkitLineClamp:2`)를 없애고 `text-[17px]`(기존 15px) + `truncate`(한 줄, 넘치면 말줄임)로 바꿨습니다. 작가명은 그대로 작게.
+5. **전체 검색 링크 왼쪽 정렬**: `assignments-browser.tsx`의 "전체 숙제·추천도서 검색(완료·지난 자료 포함) ›" 링크를 `text-right`에서 `text-left`로 — 폰 화면에서 오른쪽 정렬이 뜬금없이 붕 떠 보인다는 지적.
+6. **숙제 카드 위쪽 여백 + 행 높이 축소**: 제목·설명 구역(연한 배경)에 `pt-[14px]`를 새로 줘서 마감일 구역과 붙어 보이지 않게 했고, "N권 중 M권 읽었어요"를 제목 아래 별도 줄이 아니라 **제목과 같은 줄 오른쪽**에 배치해 카드 높이를 줄였습니다. 제목이 길면 그 줄에서 `truncate`로 한 줄 유지(긴 제목이 카운터와 뒤엉켜 줄바꿈이 이상해지는 걸 정적 미리보기로 확인하고 추가한 보정).
+
+### 검증
+임시 미리보기 라우트(서버 컴포넌트, 확인 후 삭제)에서 `AssignmentToday`·`AssignmentSummary`·`AssignmentsBrowser`를 실제 데이터(긴 제목·긴 작가명·완료/미완료 책 혼합)로 360/430px 렌더링해 6개 지적사항과 크래시 수정을 스크린샷으로 확인했고, 하단 메뉴는 정적 HTML로 5탭 폭을 실측했습니다. `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음.

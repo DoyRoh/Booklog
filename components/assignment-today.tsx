@@ -10,6 +10,7 @@ import VoiceRecorder from "@/components/voice-recorder";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 import type { ReadingStatus } from "@/lib/reading-status";
 import { dueBadge, formatDueLong, formatShortMd } from "@/lib/assignment-period";
+import { isAssignmentDone } from "@/lib/assignment-status";
 import { kstDate } from "@/lib/kst";
 
 export type TodayMission = {
@@ -76,12 +77,12 @@ export type TodayAssignment = {
   missions: TodayMission[];
 };
 
-/** 완료 조건은 기존 그대로: 책이 하나 이상이고, 전부 완료(assignment_completion 뷰
- * 기준 -- 완독 또는 부분 읽기 목표 달성)일 때만 숙제 전체 완료. 이 함수 하나로
- * 카드·목록·검증 스크린샷이 전부 같은 기준을 쓴다(수정·삭제 금지 요청 반영). */
-export function isAssignmentDone(a: Pick<TodayAssignment, "books">): boolean {
-  return a.books.length > 0 && a.books.every((b) => b.completed);
-}
+// 완료 조건 판정 함수(isAssignmentDone)는 lib/assignment-status.ts로 옮겼다 --
+// 이 파일은 "use client"라, 여기서 export한 함수를 서버 컴포넌트가 직접 import해
+// 부르면 클라이언트 참조 프록시가 넘어와 렌더링이 죽는다(실제로 겪음). 기존
+// import 경로(@/components/assignment-today)를 쓰던 클라이언트 컴포넌트를 위해
+// 그대로 재수출한다 -- 클라이언트 번들 안에서는 실제 함수라 문제없다.
+export { isAssignmentDone };
 
 /** 책 하나의 기록 화면 링크(제목·저자·표지·그룹 미리 채움) -- 기존 동작 그대로. */
 function recordHref(book: TodayBook, groupId: string): string {
@@ -141,12 +142,7 @@ function HomeworkBookRow({
 
   const titleBlock = (
     <span className="min-w-0 flex-1">
-      <span
-        className="block text-[15px] leading-snug"
-        style={{ overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-      >
-        {book.title}
-      </span>
+      <span className="block truncate text-[17px] leading-snug">{book.title}</span>
       {book.author && (
         <span className="mt-0.5 block truncate text-xs leading-snug" style={{ color: "var(--ink-2)" }}>
           {book.author}
@@ -197,7 +193,7 @@ function HomeworkBookRow({
       <span className="flex flex-none flex-col items-end gap-1.5">
         <Link
           href={recordHref(book, groupId)}
-          className="d whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+          className="d w-[88px] whitespace-nowrap rounded-full py-1.5 text-center text-xs font-semibold text-white"
           style={{ background: "var(--point-deep)" }}
         >
           읽기 시작
@@ -206,7 +202,7 @@ function HomeworkBookRow({
           type="button"
           disabled={busy}
           onClick={() => setDone(true)}
-          className="d whitespace-nowrap rounded-full border px-3 py-1 text-xs disabled:opacity-40"
+          className="d w-[88px] whitespace-nowrap rounded-full border py-1 text-center text-xs disabled:opacity-40"
           style={{ borderColor: "var(--point-deep)", color: "var(--point-deep)" }}
         >
           다 읽었어요
@@ -397,43 +393,54 @@ function AssignmentCard({
       className="overflow-hidden rounded-[var(--r)] border"
       style={{ borderColor: done ? "var(--point)" : "var(--rule)", background: "var(--card)", scrollMarginTop: "190px" }}
     >
-      {/* 마감일 구역 -- 사용자가 지정한 정보 순서의 맨 앞. */}
+      {/* 마감일 구역 -- 사용자가 지정한 정보 순서의 맨 앞. 그룹은 위
+          그룹 탭에서 이미 골랐으므로 여기 또 보여줄 필요가 없고(사용자
+          지적), 등록일은 오른쪽으로 뺀다(사용자 지적). */}
       <div className="px-[20px] pt-[16px] pb-[10px]">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="d text-[19px] leading-[26px]">{formatDueLong(due)}까지</p>
-          {badge && (
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="d text-[19px] leading-[26px]">{formatDueLong(due)}까지</p>
+            {badge && (
+              <span
+                className="d rounded-full px-2 py-0.5 text-[11px] font-semibold text-white"
+                style={{ background: TONE_COLOR[badge.tone] }}
+              >
+                {badge.label}
+              </span>
+            )}
+            {done && (
+              <span
+                className="d rounded-full px-2 py-0.5 text-[11px] font-semibold text-white"
+                style={{ background: "var(--point)" }}
+              >
+                숙제 완료
+              </span>
+            )}
+          </div>
+          <span className="flex-none pt-1 text-xs" style={{ color: "var(--ink-2)" }}>
+            {formatShortMd(assignment.createdAt.slice(0, 10))} 등록
+          </span>
+        </div>
+      </div>
+
+      {/* 제목·설명 -- 연한 배경(선생님 원문 그대로, 수정·삭제 없음). 위쪽
+          여백을 넉넉히 두고, "N권 중 M권 읽었어요"는 제목과 같은 줄
+          오른쪽에 둬서 카드 높이를 줄인다(사용자 지적). */}
+      <div className="px-[20px] pt-[14px] pb-[14px]" style={{ background: "var(--paper)" }}>
+        <div className="flex items-start justify-between gap-2">
+          <p className="d min-w-0 flex-1 truncate text-[16px] leading-snug">{assignment.title}</p>
+          {totalBooks > 0 && (
             <span
-              className="d rounded-full px-2 py-0.5 text-[11px] font-semibold text-white"
-              style={{ background: TONE_COLOR[badge.tone] }}
+              className="flex-none pt-0.5 text-xs"
+              style={{ color: done ? "var(--point-deep)" : "var(--ink-2)" }}
             >
-              {badge.label}
-            </span>
-          )}
-          {done && (
-            <span
-              className="d rounded-full px-2 py-0.5 text-[11px] font-semibold text-white"
-              style={{ background: "var(--point)" }}
-            >
-              숙제 완료
+              {totalBooks}권 중 {completedCount}권 읽었어요
             </span>
           )}
         </div>
-        <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
-          {formatShortMd(assignment.createdAt.slice(0, 10))} 등록 · {assignment.groupName}
-        </p>
-      </div>
-
-      {/* 제목·설명 -- 연한 배경(선생님 원문 그대로, 수정·삭제 없음). */}
-      <div className="px-[20px] pb-[14px]" style={{ background: "var(--paper)" }}>
-        <p className="d text-[16px] leading-snug">{assignment.title}</p>
         {assignment.description && (
           <p className="mt-1 text-sm leading-snug" style={{ color: "var(--ink)", overflowWrap: "anywhere" }}>
             {assignment.description}
-          </p>
-        )}
-        {totalBooks > 0 && (
-          <p className="mt-2 text-xs" style={{ color: done ? "var(--point-deep)" : "var(--ink-2)" }}>
-            {totalBooks}권 중 {completedCount}권 읽었어요
           </p>
         )}
       </div>

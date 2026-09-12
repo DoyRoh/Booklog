@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import AssignmentToday, { isAssignmentDone, type TodayAssignment } from "@/components/assignment-today";
+import AssignmentToday, { type TodayAssignment } from "@/components/assignment-today";
 import { SearchIcon } from "@/components/icons/misc-icons";
+import { isAssignmentDone } from "@/lib/assignment-status";
 import { effectiveRange, isPast, matchesQuery } from "@/lib/assignment-period";
 
 // 숙제 탭. 이 화면 안의 빠른 필터(검색창)는 "지금 로드된 목록 안"에서만
@@ -65,7 +66,9 @@ export default function AssignmentsBrowser({
           className="min-w-0 flex-1 bg-transparent text-sm outline-none"
         />
       </label>
-      <Link href="/search" className="d mt-1.5 block text-right text-xs" style={{ color: "var(--point-deep)" }}>
+      {/* 폰 화면에서 오른쪽 정렬이면 뜬금없이 붕 떠 보인다는 지적으로
+          왼쪽 정렬로 바꿨다. */}
+      <Link href="/search" className="d mt-1.5 block text-left text-xs" style={{ color: "var(--point-deep)" }}>
         전체 숙제·추천도서 검색(완료·지난 자료 포함) ›
       </Link>
 

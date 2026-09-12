@@ -76,11 +76,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <OperatorGroupBar />
             <ChildGroupBar />
           </Suspense>
-          {/* pb-[112px]: 하단 알약 바(14px+52px 안팎) 위로 "추가" 원형
-              버튼이 떠 있어(사용자 요청: 탭과 분리된 별도 버튼) 예전
-              96px로는 스크롤 맨 아래에서 마지막 내용이 그 버튼에 살짝
-              가려질 수 있다. */}
-          <main className="flex-1 pt-[52px] pb-[112px]">{children}</main>
+          {/* pb-[96px]: 하단 알약 바(14px 안팎 + 바 높이) 위로 마지막
+              내용이 가려지지 않을 만큼의 여백. "추가"는 다시 알약 바 안의
+              보통 탭으로 돌아와 있어(독립 버튼으로 떠 있지 않음) 추가
+              여백이 필요 없다. */}
+          <main className="flex-1 pt-[52px] pb-[96px]">{children}</main>
           <BottomNav />
         </ProfileProvider>
       </body>
