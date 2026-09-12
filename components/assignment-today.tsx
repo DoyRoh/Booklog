@@ -364,9 +364,9 @@ const TONE_COLOR: Record<"today" | "tomorrow" | "overdue", string> = {
   overdue: "var(--berry)",
 };
 
-/** 숙제 카드 하나 -- 마감일(크게) → 등록일·그룹명(작게) → 제목·설명(연한
- * 배경) → 책 목록(흰 배경, 1단계) → 질문·낭독(2단계). 순서·음영 구분은
- * 사용자가 지정한 그대로다. */
+/** 숙제 카드 하나 -- 마감일(크게) → 등록일 → 제목·설명(왼쪽 세로선) →
+ * 읽을 책(가로 구분선 + 라벨 + 진행 숫자) → 질문·낭독. 카드 전체가 흰색이고
+ * 구역은 선과 정렬로만 나눈다(사용자 시안: "연두색 띠 없이"). */
 function AssignmentCard({
   assignment,
   childId,
@@ -385,8 +385,9 @@ function AssignmentCard({
   const badge = done ? null : dueBadge(due);
   const completedCount = assignment.books.filter((b) => b.completed).length;
   const totalBooks = assignment.books.length;
-  const hasQuestionStep = assignment.missions.some((m) => m.type === "question" || m.type === "voice");
-  const twoSteps = totalBooks > 0 && hasQuestionStep;
+  const hasQuestion = assignment.missions.some((m) => m.type === "question");
+  const hasVoice = assignment.missions.some((m) => m.type === "voice");
+  const missionLabel = hasQuestion && hasVoice ? "질문 · 낭독" : hasVoice ? "낭독" : "질문";
 
   return (
     <div
@@ -424,36 +425,31 @@ function AssignmentCard({
         </div>
       </div>
 
-      {/* 제목·설명 -- 연한 배경(선생님 원문 그대로, 수정·삭제 없음). 위쪽
-          여백을 넉넉히 두고, "N권 중 M권 읽었어요"는 제목과 같은 줄
-          오른쪽에 둬서 카드 높이를 줄인다(사용자 지적). */}
-      <div className="px-[20px] pt-[14px] pb-[14px]" style={{ background: "var(--paper)" }}>
-        <div className="flex items-start justify-between gap-2">
-          <p className="d min-w-0 flex-1 truncate text-[16px] leading-snug">{assignment.title}</p>
-          {totalBooks > 0 && (
-            <span
-              className="flex-none pt-0.5 text-xs"
-              style={{ color: done ? "var(--point-deep)" : "var(--ink-2)" }}
-            >
-              {totalBooks}권 중 {completedCount}권 읽었어요
-            </span>
-          )}
-        </div>
-        {assignment.description && (
-          <p className="mt-1 text-sm leading-snug" style={{ color: "var(--ink)", overflowWrap: "anywhere" }}>
-            {assignment.description}
-          </p>
-        )}
-      </div>
-
-      {/* 책 목록 -- 흰 배경. */}
-      {totalBooks > 0 && (
-        <div className="px-[20px]">
-          {twoSteps && (
-            <p className="d pt-3 text-xs" style={{ color: "var(--ink-2)" }}>
-              1단계 · 책 읽기
+      {/* 제목·설명(선생님 원문 그대로, 수정·삭제 없음) -- 연두색 띠 대신
+          왼쪽의 짧고 얇은 세로선으로 묶는다(사용자 시안). 카드 전체가 흰색이라
+          "선생님 설명"과 "실제로 읽을 책"은 이 세로선과 아래 가로 구분선으로
+          나뉜다. 진행 숫자는 여기가 아니라 책 목록 쪽으로 옮겼다. */}
+      <div className="px-[20px] pb-[14px]">
+        <div className="border-l-2 pl-3" style={{ borderColor: "rgba(27,94,58,0.35)" }}>
+          <p className="d text-[16px] leading-snug">{assignment.title}</p>
+          {assignment.description && (
+            <p className="mt-1 text-sm leading-snug" style={{ color: "var(--ink)", overflowWrap: "anywhere" }}>
+              {assignment.description}
             </p>
           )}
+        </div>
+      </div>
+
+      {/* 읽을 책 -- 가로 구분선 + 라벨로 설명과 분리하고, 진행 숫자는 그 라벨
+          오른쪽에 둔다. */}
+      {totalBooks > 0 && (
+        <div className="mx-[20px]" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}>
+          <div className="flex items-center justify-between gap-2 pt-[12px]">
+            <p className="d text-sm">읽을 책</p>
+            <span className="flex-none text-xs" style={{ color: done ? "var(--point-deep)" : "var(--ink-2)" }}>
+              {totalBooks}권 중 {completedCount}권 읽었어요
+            </span>
+          </div>
           <div className="divide-y" style={{ borderColor: "rgba(38,54,43,0.08)" }}>
             {assignment.books.map((book) => (
               <HomeworkBookRow key={book.id} book={book} childId={childId} groupId={assignment.groupId} onEdit={onEdit} />
@@ -462,14 +458,14 @@ function AssignmentCard({
         </div>
       )}
 
-      {/* 질문·낭독 -- 2단계(둘 다 있을 때만 단계 표시). */}
+      {/* 질문·낭독 -- 책 목록과 같은 방식(가로 구분선 + 라벨)으로 나눈다.
+          예전의 "1단계/2단계" 문구는 라벨과 순서로 이미 드러나서 뺐다. */}
       {assignment.missions.length > 0 && (
-        <div className="px-[20px] pb-[16px]">
-          {twoSteps && (
-            <p className="d pt-1 text-xs" style={{ color: "var(--ink-2)" }}>
-              2단계 · 질문 확인 및 답변 작성
-            </p>
-          )}
+        <div
+          className="mx-[20px] pb-[16px]"
+          style={totalBooks > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
+        >
+          <p className="d pt-[12px] text-sm">{missionLabel}</p>
           {assignment.missions.map((mission) =>
             mission.type === "question" ? (
               <QuestionMission key={mission.id} childId={childId} mission={mission} />
