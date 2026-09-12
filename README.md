@@ -36,7 +36,7 @@ npm install
    npx supabase db push
    ```
 
-   CLI를 쓰지 않는다면 Supabase 대시보드의 **SQL Editor**에서 `supabase/migrations` 안의 `0001_init_schema.sql`부터 `0005_phase4_groups.sql`까지 순서대로 실행해도 됩니다.
+   CLI를 쓰지 않는다면 Supabase 대시보드의 **SQL Editor**에서 `supabase/migrations` 폴더 안의 파일을 **`0001_init_schema.sql`부터 번호 순서대로 전부**(이 문서 아래에 개별 안내가 있는 파일들 포함, 현재 기준 `0028_group_operator_avatar.sql`까지) 실행하면 됩니다. 아래 각 기능 절에 "마이그레이션 NNNN이 필요합니다"라고 적힌 것들은 전부 이미 이 폴더 안에 있는 같은 파일들이라 — 한 번에 전부 실행했다면 개별로 다시 실행할 필요는 없습니다.
 
 4. **Authentication → Providers**에서 이메일 로그인이 켜져 있는지 확인합니다. (기본값으로 켜져 있습니다.) 로컬 개발 중에는 **Authentication → Email**에서 "Confirm email"을 꺼두면 가입 즉시 로그인 테스트를 할 수 있습니다.
 5. 비밀번호 재설정 메일의 링크가 배포된 도메인으로 돌아오려면, **Authentication → URL Configuration**의 **Redirect URLs**에 `https://<배포된-도메인>/auth/confirm`(로컬 테스트는 `http://localhost:3000/auth/confirm`)을 추가해야 합니다. 등록돼 있지 않으면 Supabase가 재설정 링크 클릭을 거부합니다.
