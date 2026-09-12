@@ -27,12 +27,15 @@ import {
 // '추가'는 책장 바로 다음에 둔 빠른 진입점 -- 기록 남기기(/library/add)로
 // 바로 가서 책을 찾아 넣으면 그 즉시 책장에 꽂힌다(사용자 요청: "책장에
 // 책 꽂는 메뉴도 하나 추가하자").
-// "추가"만 초록 포인트 대신 연두(--sprout)로 눈에 띄게 한다(사용자 요청:
-// "다른 색상으로 지정해줘 연두색이나 여튼 어울리는 색으로").
+// "추가"는 항상 초록 알약 배경으로 눈에 띄게 한다(다른 탭은 활성일 때만
+// 배경이 켜짐). 색 자체는 책장의 "+ 책", 오늘 탭의 "+ 책 기록하기"와 같은
+// --point-deep 계열로 통일한다(사용자 요청: "책 추가 버튼들은 전부 오늘에
+// 있는 책 기록하기 버튼의 녹색을 따라 해줘" -- 한때 연두(--sprout)로 구분
+// 지었던 적이 있으나 이번 요청으로 다시 통일했다).
 const PARENT_TABS = [
   { href: "/today", label: "오늘", Icon: TodayIcon },
   { href: "/library", label: "책장", Icon: LibraryIcon },
-  { href: "/library/add", label: "추가", Icon: AddIcon, accent: "sprout" },
+  { href: "/library/add", label: "추가", Icon: AddIcon, accent: "highlight" },
   { href: "/group", label: "그룹", Icon: RecommendIcon },
 ] as const;
 
@@ -177,7 +180,7 @@ export default function BottomNav() {
         const { href, label } = tab;
         const Icon = "Icon" in tab ? tab.Icon : null;
         const active = href === activeHref;
-        const isSprout = "accent" in tab && tab.accent === "sprout";
+        const isHighlighted = "accent" in tab && tab.accent === "highlight";
         const showHomeworkDot = href === "/group" && homeworkBadge !== "none";
         return (
           <Link
@@ -187,13 +190,14 @@ export default function BottomNav() {
             aria-current={active ? "page" : undefined}
             className="flex flex-1 flex-col items-center justify-center gap-[3px] rounded-[20px] py-[6px] transition-colors"
             style={{
-              // "추가"는 다른 탭과 자리는 같지만 항상 연두색으로 구분한다
-              // (사용자 요청). 그 화면에 실제로 있을 때만 배경이 더 진해진다.
-              color: isSprout ? "var(--sprout-deep)" : active ? "var(--point-deep)" : "var(--ink-2)",
-              background: isSprout
+              // "추가"는 다른 탭과 자리는 같지만 항상 초록 알약 배경으로
+              // 구분한다(다른 탭은 활성일 때만 배경이 켜짐). 색 자체는
+              // "+ 책"/"+ 책 기록하기"와 같은 --point 계열로 통일했다.
+              color: isHighlighted ? "var(--point-deep)" : active ? "var(--point-deep)" : "var(--ink-2)",
+              background: isHighlighted
                 ? active
-                  ? "rgba(139,195,74,0.42)"
-                  : "rgba(139,195,74,0.22)"
+                  ? "rgba(47,168,79,0.32)"
+                  : "rgba(47,168,79,0.16)"
                 : active
                   ? "rgba(47,168,79,0.14)"
                   : "transparent",

@@ -111,7 +111,7 @@ export default async function LibraryPage({
           <Link
             href="/library/add"
             className="d mt-3 inline-block rounded-[14px] px-4 py-2 text-sm text-white"
-            style={{ background: "var(--point)" }}
+            style={{ background: "var(--point-deep)" }}
           >
             + 책
           </Link>

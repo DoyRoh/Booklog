@@ -308,7 +308,7 @@ export default function LibraryShelf({
         <Link
           href="/library/add"
           className="d flex flex-none items-center rounded-[14px] px-3.5 text-sm text-white"
-          style={{ background: "var(--point)" }}
+          style={{ background: "var(--point-deep)" }}
         >
           + 책
         </Link>
