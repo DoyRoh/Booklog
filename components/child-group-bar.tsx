@@ -161,7 +161,7 @@ export default function ChildGroupBar() {
         boxShadow: "0 2px 6px rgba(38,54,43,0.06)",
       }}
     >
-      <div className="mx-auto flex max-w-[520px] gap-3 overflow-x-auto px-5 pt-2.5" style={{ scrollbarWidth: "none" }}>
+      <div className="mx-auto flex max-w-[520px] gap-3 overflow-x-auto px-5 pt-2.5 pb-3" style={{ scrollbarWidth: "none" }}>
         <button
           type="button"
           onClick={() => pick(null)}
