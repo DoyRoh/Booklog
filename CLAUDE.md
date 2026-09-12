@@ -1775,3 +1775,12 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **부모의 기록 남기기에도 분야 태그**: 숲지기만 추천도서에 책을 올릴 때 분야(한글/수학/…)를 고를 수 있었고, 부모의 `app/library/add`에는 이 기능 자체가 없었습니다("이거 누락됨"). "더 남기기" 안에 `add-book-to-list.tsx`와 같은 분야 칩 토글을 추가했습니다. 이미 카탈로그에 있는 책을 골랐으면 기존에 붙은 분야를 먼저 보여주고(조회만, 지우지 않음), 저장 시엔 이번에 새로 고른 분야만 `book_categories`에 추가합니다 — 다른 사람이 이미 붙여 둔 분야를 부모가 지워버리는 일은 없습니다.
 - **"기타" 분야 추가**: `lib/categories.ts`의 표준 목록에 "기타"를 추가했습니다(회색, 분류 안 되는 책 외 항목의 기본 회색과 같은 색).
 - `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음(기존 `book_categories` 테이블·정책 재사용).
+
+## 아이 프로필 삭제 (사용자 요청: "고치기 눌렀을 때 삭제 가능한 것도 만들어줘, 경고창은 한 번")
+
+더보기 → 프로필의 아이 목록에서 "고치기"를 누르면 이름 수정만 가능했고, 잘못 등록한 아이·더 이상 쓰지 않는 아이 프로필을 지울 방법이 없었습니다.
+
+- **RLS는 이미 있었습니다**: `children` 테이블에 "owners delete own children"(마이그레이션 0002, 첫 보호자(`child_guardians.role='owner'`)만 삭제 허용) 정책이 처음부터 있었는데 그동안 화면에서 부른 적이 없었습니다. `reading_records`/`group_members`/`shelf_tags`/`assignment_mission_responses` 모두 `child_id`에 `on delete cascade`라, `children` 행 하나를 지우면 그 아이의 독서기록·그룹 소속·책장 이름표·숙제 답변이 전부 함께 지워집니다(스키마 변경 없음).
+- **`app/more/page.tsx`**: `child_guardians` 조회에 `role`을 추가해 각 아이가 "owner"인지 "guardian"(초대로 합류한 보호자)인지 `ChildSwitcher`에 넘깁니다.
+- **`components/child-switcher.tsx`**: "고치기"로 펼친 편집 상자 왼쪽에 **"이 아이 삭제하기"**(owner일 때만, `--berry` 텍스트)를 추가했습니다. `window.confirm()` 한 번에 "독서기록, 사진, 음성, 배지 등 이 아이의 모든 기록이 영구히 삭제되고 되돌릴 수 없어요"를 포함시켜(요청대로 확인창은 한 번만) 확인 후 `children` 테이블에서 DELETE합니다. `.select("id")`로 실제 삭제된 행을 받아서, owner가 아닌데 어떻게든 시도한 경우(RLS가 0행으로 막음)는 "이 아이를 등록한 보호자만 삭제할 수 있어요"로 구분해 안내합니다. 삭제된 아이가 활성 아이였다면 `users.active_child_id`가 이미 `on delete set null`이라 자동으로 비워지고, `getActiveChild()`가 다음 방문 때 남은 아이 중 하나로 대체합니다. 사진·음성 스토리지 파일은 (그룹 삭제 때와 같은 이유로) 앱에서 지우지 못해 그대로 남습니다 — 기존에 문서화된 동일한 한계입니다.
+- DB 변경 없음(기존 RLS·cascade 재사용). `npm run lint`/`rm -rf .next && npm run build` 통과.

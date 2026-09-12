@@ -11,6 +11,7 @@ type Child = {
   name: string;
   avatar: Avatar | null;
   birth_date: string | null;
+  role: "owner" | "guardian";
 };
 
 
@@ -41,6 +42,7 @@ export default function ChildSwitcher({
   const [nameDraft, setNameDraft] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const activeChild = initialChildren.find((c) => c.id === activeChildId) ?? null;
 
   function startEditName(child: Child) {
@@ -61,6 +63,34 @@ export default function ChildSwitcher({
     setNameSaving(false);
     if (updateError) {
       setNameError(updateError.message);
+      return;
+    }
+    setEditingId(null);
+    window.dispatchEvent(new Event("chaeksup:profile-changed"));
+    router.refresh();
+  }
+
+  // 삭제는 되돌릴 수 없어서(독서기록·사진·음성·배지 등 그 아이의 전부가
+  // children 삭제에 cascade로 함께 지워짐) 확인창 하나에 그 내용을 다
+  // 담는다. RLS(0002의 "owners delete own children")가 첫 보호자(owner)만
+  // 허용해서, 그 외 보호자가 시도하면 0행이 지워지고 에러 없이 돌아온다 --
+  // 그 경우를 구분해 안내한다.
+  async function deleteChild(child: Child) {
+    const ok = window.confirm(
+      `${child.name} 프로필을 정말 삭제하시겠어요?\n\n독서기록, 사진, 음성, 배지 등 이 아이의 모든 기록이 영구히 삭제되고 되돌릴 수 없어요.`
+    );
+    if (!ok) return;
+    setDeletingId(child.id);
+    setNameError(null);
+    const supabase = createClient();
+    const { error: deleteError, data } = await supabase.from("children").delete().eq("id", child.id).select("id");
+    setDeletingId(null);
+    if (deleteError) {
+      setNameError(deleteError.message);
+      return;
+    }
+    if (!data || data.length === 0) {
+      setNameError("이 아이를 등록한 보호자만 삭제할 수 있어요.");
       return;
     }
     setEditingId(null);
@@ -198,24 +228,39 @@ export default function ChildSwitcher({
                     {nameError}
                   </p>
                 )}
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditingId(null)}
-                    className="d rounded-[14px] border px-4 py-2 text-xs"
-                    style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!nameDraft.trim() || nameSaving}
-                    onClick={() => saveChildName(child.id)}
-                    className="d rounded-[14px] px-4 py-2 text-xs text-white disabled:opacity-40"
-                    style={{ background: "var(--point)" }}
-                  >
-                    {nameSaving ? "저장 중..." : "저장"}
-                  </button>
+                <div className="flex items-center justify-between gap-2">
+                  {child.role === "owner" ? (
+                    <button
+                      type="button"
+                      onClick={() => deleteChild(child)}
+                      disabled={deletingId === child.id}
+                      className="d text-xs disabled:opacity-40"
+                      style={{ color: "var(--berry)" }}
+                    >
+                      {deletingId === child.id ? "삭제 중..." : "이 아이 삭제하기"}
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+                  <div className="flex flex-none gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="d rounded-[14px] border px-4 py-2 text-xs"
+                      style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!nameDraft.trim() || nameSaving}
+                      onClick={() => saveChildName(child.id)}
+                      className="d rounded-[14px] px-4 py-2 text-xs text-white disabled:opacity-40"
+                      style={{ background: "var(--point)" }}
+                    >
+                      {nameSaving ? "저장 중..." : "저장"}
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (

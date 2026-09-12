@@ -32,7 +32,7 @@ export default async function MorePage() {
     supabase.from("users").select("email, active_child_id, operator_avatar, operator_name").eq("id", userId).single(),
     supabase
       .from("child_guardians")
-      .select("children(id, name, avatar, birth_date)")
+      .select("role, children(id, name, avatar, birth_date)")
       .eq("user_id", userId),
     supabase
       .from("group_members")
@@ -48,9 +48,13 @@ export default async function MorePage() {
     name: string;
     avatar: "rabbit" | "dog" | "cat" | null;
     birth_date: string | null;
+    role: "owner" | "guardian";
   };
   const children = (guardianRows ?? [])
-    .map((row) => row.children as unknown as ChildRow | null)
+    .map((row) => {
+      const child = row.children as unknown as Omit<ChildRow, "role"> | null;
+      return child ? { ...child, role: row.role as ChildRow["role"] } : null;
+    })
     .filter((child): child is ChildRow => Boolean(child));
 
   type GroupRow = { id: string; name: string; type: string };
