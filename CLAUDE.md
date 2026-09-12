@@ -1796,3 +1796,15 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - 정적 미리보기(임시 라우트, 확인 후 삭제)로 `groupCount` 0/1/2/3 네 경우를 렌더링해, 1→2에서 그림이 그대로이고 2→3에서 곰·새가 함께 늘어나는 걸 스크린샷으로 확인했습니다.
 - **3D 숲(`/forest/3d`, `components/forest-3d.tsx`)은 이번에 손대지 않았습니다** — 거기도 아직 raw 그룹 수로 곰·백로를 그리는 별도 로직이 남아 있어(이전 라운드 "숲의 곰·백로가 속한 그룹 수만큼" 참고), 2D와 같은 문턱 방식으로 맞추려면 후속 라운드가 필요합니다. 사용자 스크린샷이 2D 화면 두 개(오늘 탭, `/forest`)만 지적한 범위라 이번엔 2D만 맞췄습니다.
 - DB 변경 없음. `npm run lint`/`rm -rf .next && npm run build` 통과.
+
+## 오늘 탭 숲 그림을 우리 숲과 완전히 같게 + 숲지기 얼굴 설명 문구 복원 (사용자 지적: "이거 안되었네", "설명들 좋았는데 다 사라졌노")
+
+바로 앞 라운드는 오늘 탭 미리보기와 우리 숲의 곰·새 "개수"만 같은 규칙(문턱값)으로 맞췄는데, 그림 자체(나무 종류·순서·장식)는 여전히 서로 다른 계산식(단순 `treeCount`/`groupCount` vs 실제 배지 배열)이라 두 화면이 다르게 보였습니다. "배지 모은 그 그림을 메인으로 하고 똑같이"라는 요청대로, 이번엔 두 화면이 **완전히 같은 배지 데이터로 완전히 같은 배치 함수**를 쓰도록 바꿨습니다.
+
+- **`lib/forest-items.ts`(신규)**: `components/forest-view.tsx`에 있던 "배지 → 나무/장식 배열" 로직(`buildForestItems`)과 나무 그림 규칙(`milestoneTreeArt`, 권수 구간별 종류·크기)을 빼냈습니다. 순수 데이터 함수라 서버·클라이언트 어디서든 안전하게 import됩니다.
+- **`components/forest-ornament.tsx`(신규)**: 장식 그림(`ForestOrnament`, 별·등불·편지새·앉은새·발자국) 렌더링을 빼냈습니다. 두 화면이 이 컴포넌트 하나를 그대로 씁니다.
+- **`components/forest-view.tsx`**: 로컬에 있던 같은 로직(`milestoneTree`, `Ornament`, `items`/`trees`/`ornaments` 계산)을 지우고 위 두 모듈을 import해서 쓰도록 정리했습니다(동작은 그대로, 코드 위치만 이동).
+- **`components/forest-strip.tsx`**: 예전엔 `treeCount`(완독 수로 셈)와 `groupCount`(문턱만) 두 숫자만 받아 자체적으로 나무를 순환 배정했는데, 이제 **`badges`와 `groups`를 그대로 받아** `buildForestItems`/`milestoneTreeArt`/`ForestOrnament`/`keeperBearCount`로 `/forest`와 똑같은 순서·모양의 나무·장식·곰을 그립니다(카드 폭이 좁아 앞에서부터 10개만 보여주고 나머지는 "+N"). 실제로 두 화면을 나란히 렌더링해 같은 나무 종류·순서·새·곰이 나오는 걸 스크린샷으로 확인했습니다.
+- **`app/today/page.tsx`**: `MILESTONE_COUNTS`로 완독 수만 세던 방식을 버리고 `/forest`가 쓰는 `loadForestData()`(배지 전체 계산)를 그대로 왕복에 추가했습니다 — 예전엔 이 계산 비용을 피하려고 일부러 간이 버전을 썼지만, 이번엔 "똑같은 그림"이 명시적 요구사항이라 그 비용을 감수했습니다. 대신 지난 라운드에 넣었던 그룹 수 전용 head-only COUNT 쿼리는 이제 필요 없어져 뺐습니다(loadForestData가 이미 그룹 목록을 포함).
+- **숲지기 얼굴(곰·백로) 고르기 설명 문구 복원**: `components/operator-profile-switcher.tsx`의 `AVATARS` 배열엔 처음부터 `hint`(곰="등불로 길을 비춰 주는 숲지기", 백로="책 소식을 물어다 주는 숲지기") 필드가 있었는데, "숲지기 프로필 줄을 아이 줄과 같은 모양으로" 리팩터 라운드에서 그 UI를 다시 짜면서 라벨("곰"/"백로")만 쓰고 `hint`를 렌더링에서 빠뜨렸습니다(값 자체는 안 지워졌던 것 — grep으로 확인). 각 얼굴 버튼 라벨 아래에 10px 회색 글자로 다시 보여줍니다.
+- 정적 미리보기(임시 라우트, 확인 후 삭제)로 두 화면을 나란히 렌더링해 그림이 일치하는 걸 확인했습니다. DB 변경 없음. `npm run lint`/`rm -rf .next && npm run build` 통과.

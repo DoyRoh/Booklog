@@ -149,7 +149,7 @@ export default function OperatorProfileSwitcher({
               <span className="text-xs" style={{ color: "var(--ink-2)" }}>
                 얼굴
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-stretch gap-2">
                 {AVATARS.map((a) => {
                   const selected = avatarDraft === a.id;
                   return (
@@ -157,7 +157,7 @@ export default function OperatorProfileSwitcher({
                       key={a.id}
                       type="button"
                       onClick={() => setAvatarDraft(a.id)}
-                      className="flex min-w-0 flex-1 items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-left"
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-[14px] border px-3 py-2 text-left"
                       style={{
                         borderColor: selected ? "var(--point)" : "var(--rule)",
                         background: selected ? "rgba(47,168,79,0.08)" : "var(--card)",
@@ -172,7 +172,12 @@ export default function OperatorProfileSwitcher({
                         height={32}
                         className="h-8 w-8 flex-none rounded-full"
                       />
-                      <span className="d truncate text-xs">{a.label}</span>
+                      <span className="min-w-0">
+                        <span className="d block text-xs">{a.label}</span>
+                        <span className="block text-[10px] leading-tight" style={{ color: "var(--ink-2)" }}>
+                          {a.hint}
+                        </span>
+                      </span>
                     </button>
                   );
                 })}

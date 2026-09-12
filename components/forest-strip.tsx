@@ -1,101 +1,84 @@
 import Link from "next/link";
-import Illustration, { AvatarIllustration, type Avatar, type IllustrationName } from "@/components/illustration";
-import { keeperBearCount, keeperBirdCount } from "@/lib/keeper-scene";
+import Illustration, { AvatarIllustration, type Avatar } from "@/components/illustration";
+import ForestOrnament from "@/components/forest-ornament";
+import type { Badge } from "@/lib/badges";
+import { buildForestItems, milestoneTreeArt } from "@/lib/forest-items";
+import { keeperBearCount } from "@/lib/keeper-scene";
 
-// 오늘 탭 요약 카드 맨 위의 우리 숲 미리보기 -- "숲이 자라요"(권수) 배지를
-// 딸 때마다 나무가 한 그루씩 심기고, 그 숲길 끝에 아이(아바타)와 등불 든
-// 곰이 서 있다. 전체 숲(장식 포함)은 /forest. 나무 종류·크기는 순서대로
-// 돌려 쓰고 별은 고정 위치에 몇 개만 둔다.
-const TREES: { name: IllustrationName; height: number }[] = [
-  { name: "tree-light", height: 40 },
-  { name: "tree-bushy", height: 44 },
-  { name: "tree-round", height: 48 },
-  { name: "tree-pine", height: 54 },
-];
-const MAX_TREES = 12;
-const STARS = [
-  { left: "6%", top: "14%", height: 11 },
-  { left: "38%", top: "8%", height: 9 },
-  { left: "62%", top: "20%", height: 12 },
-];
+// 오늘 탭 요약 카드 맨 위의 우리 숲 미리보기. 우리 숲(forest-view.tsx)과
+// 완전히 같은 배지 데이터로 완전히 같은 배치 규칙(buildForestItems)·나무
+// 그림(milestoneTreeArt)·장식(ForestOrnament)·곰 규칙(keeperBearCount)을
+// 써서, 두 화면이 실제로 같은 그림을 보여준다(사용자 요청: "그림 통일").
+// 카드 폭이 좁아 전부는 못 보여주므로 앞에서부터 일부만 자르고 "+N"으로.
+const MAX_ITEMS = 10;
 
 export default function ForestStrip({
-  treeCount,
+  badges,
   avatar,
-  groupCount = 0,
+  groups = [],
   className,
   href,
 }: {
-  treeCount: number;
+  badges: Badge[];
   avatar: Avatar | null | undefined;
-  /** 속한 그룹(숲지기) 수 -- 우리 숲(forest-view.tsx)과 같은 문턱(1곳/3곳)으로
-   *  곰·새 수를 정해 두 화면의 그림을 통일한다. */
-  groupCount?: number;
+  /** 속한 그룹(숲지기)들 -- 우리 숲과 같은 규칙(keeperBearCount)으로 곰 수를 정한다. */
+  groups?: { id: string; name: string }[];
   className?: string;
   /** 있으면 장면 전체가 이 주소(우리 숲 전체 보기)로 가는 링크가 된다. */
   href?: string;
 }) {
-  const shown = Math.min(treeCount, MAX_TREES);
-  // 나무가 많아지면 한 줄에 다 들어가도록 조금씩 작게
-  const scale = shown <= 5 ? 1 : shown <= 8 ? 0.8 : 0.66;
+  const items = buildForestItems(badges);
+  const treeCount = items.filter((i) => i.kind === "tree").length;
+  const shownItems = items.slice(0, MAX_ITEMS);
+  const hiddenCount = items.length - shownItems.length;
   // 오른쪽 "우리 숲 보기 ›"와 한 줄에 들어가야 하니 짧게(두 줄로 꺾이면 산만).
   const caption = treeCount === 0 ? "첫 책을 읽으면 나무가 심겨요" : `나무 ${treeCount}그루가 자랐어요`;
   // 곰은 우리 숲과 같이 최소 1마리(길잡이 곰)는 항상 서 있는다.
-  const bearCount = Math.max(1, keeperBearCount(groupCount));
-  const birdCount = keeperBirdCount(groupCount);
+  const bearCount = Math.max(1, keeperBearCount(groups.length));
+  const keepers = groups.length ? groups.slice(0, bearCount) : [{ id: "guide", name: "길잡이" }];
+  const skyStars = Math.min(6, 2 + Math.floor(treeCount / 5));
 
   const body = (
     <>
       <div
         className="relative overflow-hidden rounded-[16px] px-3 pt-5 pb-2"
-        style={{ background: "#DCE6D0" }}
+        style={{ background: "var(--sprout-pale)" }}
         aria-label={caption}
         role="img"
       >
-        {STARS.map((star, i) => (
+        {Array.from({ length: skyStars }, (_, i) => (
           <Illustration
             key={i}
             name="star"
-            height={star.height}
+            height={i % 2 ? 9 : 11}
             className="absolute"
-            style={{ left: star.left, top: star.top }}
-          />
-        ))}
-        {/* 숲지기(그룹) 배지로 얻는 편지 새 -- 우리 숲(forest-view.tsx)과 같은
-            문턱(1곳/3곳)이라 그림이 통일된다. */}
-        {Array.from({ length: birdCount }, (_, i) => (
-          <Illustration
-            key={`bird-${i}`}
-            name="bird-letter"
-            height={14}
-            className="absolute"
-            style={{ left: `${22 + i * 26}%`, top: `${5 + i * 5}px`, opacity: 0.9 }}
+            style={{ left: `${(i * 37 + 7) % 92}%`, top: `${6 + ((i * 13) % 14)}px`, opacity: 0.8 }}
           />
         ))}
         <div className="flex items-end gap-1">
-          <div className="flex min-w-0 flex-1 items-end gap-0.5 overflow-hidden">
-            {Array.from({ length: shown }, (_, i) => {
-              const tree = TREES[i % TREES.length];
+          <div className="flex min-w-0 flex-1 items-end gap-1 overflow-hidden">
+            {shownItems.map((item) => {
+              if (item.kind === "tree") {
+                const tree = milestoneTreeArt(item.badge.count ?? 1);
+                return <Illustration key={item.key} name={tree.name} height={tree.height} className="flex-none" />;
+              }
               return (
-                <Illustration
-                  key={i}
-                  name={tree.name}
-                  height={Math.round(tree.height * scale)}
-                  className="flex-none"
-                />
+                <span key={item.key} className="flex flex-none items-end">
+                  <ForestOrnament kind={item.ornament} avatar={avatar} inline />
+                </span>
               );
             })}
-            {treeCount > MAX_TREES && (
-              <span className="d ml-1 flex-none self-center text-xs" style={{ color: "var(--point-deep)" }}>
-                +{treeCount - MAX_TREES}
+            {hiddenCount > 0 && (
+              <span className="d ml-1 flex-none self-end pb-1 text-xs" style={{ color: "var(--point-deep)" }}>
+                +{hiddenCount}
               </span>
             )}
           </div>
           <AvatarIllustration avatar={avatar} height={56} className="flex-none" />
           {/* 곰 = 숲지기 배지 문턱(1곳/3곳)만큼 -- 우리 숲과 같은 규칙. */}
           <span className="flex flex-none items-end">
-            {Array.from({ length: bearCount }, (_, i) => (
-              <span key={i} style={{ marginLeft: i > 0 ? -10 : 0 }}>
+            {keepers.map((g, i) => (
+              <span key={g.id} style={{ marginLeft: i > 0 ? -10 : 0 }}>
                 <Illustration
                   name="bear-lantern"
                   height={i === 0 ? 72 : 60}

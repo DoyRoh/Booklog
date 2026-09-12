@@ -2,60 +2,20 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import Illustration, {
-  AvatarIllustration,
-  PawStamp,
-  type Avatar,
-  type IllustrationName,
-} from "@/components/illustration";
+import Illustration, { AvatarIllustration, type Avatar } from "@/components/illustration";
+import ForestOrnament from "@/components/forest-ornament";
 import type { Badge } from "@/lib/badges";
 import type { MilestoneMemo } from "@/lib/badge-data";
-import { ORNAMENT_BY_BADGE, ORNAMENT_LABEL, type OrnamentKind } from "@/lib/forest-scene";
+import { ORNAMENT_LABEL } from "@/lib/forest-scene";
 import { keeperBearCount } from "@/lib/keeper-scene";
+import { buildForestItems, milestoneTreeArt, type ForestItem } from "@/lib/forest-items";
 
 // 우리 숲 = 딴 배지를 한 장면으로 그린 것. "숲이 자라요"(권수) 배지 하나가
 // 나무 한 그루, 나머지 배지는 별·등불·새·발자국 장식. 책 한 권마다 나무를
 // 심으면 몇백 그루가 돼 버려서(사용자 지적), 배지 단위로만 심는다 --
-// 최대 38그루 + 장식 27개.
-// 권수 배지의 나무 -- 권수가 커질수록 다른 종류·더 큰 나무.
-function milestoneTree(count: number): { name: IllustrationName; height: number } {
-  if (count < 10) return { name: "tree-light", height: 36 };
-  if (count < 50) return { name: "tree-bushy", height: 42 };
-  if (count < 100) return { name: "tree-round", height: 48 };
-  if (count < 200) return { name: "tree-pine", height: 54 };
-  if (count < 500) return { name: "tree-round", height: 56 };
-  return { name: "tree-pine", height: 64 };
-}
-
-type Item =
-  | { kind: "tree"; key: string; badge: Badge }
-  | { kind: "ornament"; key: string; badge: Badge; ornament: OrnamentKind };
-
-function Ornament({
-  kind,
-  avatar,
-  big,
-  inline,
-}: {
-  kind: OrnamentKind;
-  avatar: Avatar | null | undefined;
-  big?: boolean;
-  inline?: boolean;
-}) {
-  const s = big ? 1.18 : 1;
-  switch (kind) {
-    case "star":
-      return <Illustration name="star" height={Math.round(14 * s)} style={{ marginBottom: inline ? 0 : 30 }} />;
-    case "lantern":
-      return <Illustration name="lantern-on" height={Math.round(30 * s)} />;
-    case "bird-letter":
-      return <Illustration name="bird-letter" height={Math.round(26 * s)} style={{ marginBottom: inline ? 0 : 22 }} />;
-    case "bird-perched":
-      return <Illustration name="bird-perched" height={Math.round(38 * s)} />;
-    case "paw":
-      return <PawStamp avatar={avatar} height={Math.round(20 * s)} style={{ marginBottom: 2, opacity: 0.85 }} />;
-  }
-}
+// 최대 38그루 + 장식 27개. 배치 규칙(buildForestItems)과 나무 그림
+// (milestoneTreeArt)은 오늘 탭 미리보기(forest-strip.tsx)와 공유해서 두
+// 화면이 똑같은 그림을 그린다.
 
 export default function ForestView({
   childName,
@@ -77,36 +37,11 @@ export default function ForestView({
   // 미리보기(forest-strip.tsx)와 같은 함수를 공유해 그림을 통일한다).
   const bearCount = keeperBearCount(groups.length);
   const keepers = bearCount > 0 ? groups.slice(0, bearCount) : [{ id: "guide", name: "길잡이" }];
-  const [picked, setPicked] = useState<Item | null>(null);
+  const [picked, setPicked] = useState<ForestItem | null>(null);
 
-  const trees = useMemo(() => badges.filter((b) => b.achieved && b.count !== undefined), [badges]);
-  const ornaments = useMemo(
-    () =>
-      badges
-        .filter((b) => b.achieved && b.count === undefined && ORNAMENT_BY_BADGE[b.id])
-        .map((b) => ({ badge: b, ornament: ORNAMENT_BY_BADGE[b.id] })),
-    [badges]
-  );
+  const items = useMemo(() => buildForestItems(badges), [badges]);
+  const treeCount = useMemo(() => items.filter((i) => i.kind === "tree").length, [items]);
   const achieved = badges.filter((b) => b.achieved).length;
-
-  // 나무 사이사이에 장식을 고르게 끼워 넣는다.
-  const items = useMemo<Item[]>(() => {
-    const out: Item[] = [];
-    const every = ornaments.length ? Math.max(1, Math.floor(trees.length / (ornaments.length + 1))) : Infinity;
-    let oi = 0;
-    trees.forEach((badge, i) => {
-      out.push({ kind: "tree", key: badge.id, badge });
-      if ((i + 1) % every === 0 && oi < ornaments.length) {
-        const o = ornaments[oi++];
-        out.push({ kind: "ornament", key: o.badge.id, badge: o.badge, ornament: o.ornament });
-      }
-    });
-    while (oi < ornaments.length) {
-      const o = ornaments[oi++];
-      out.push({ kind: "ornament", key: o.badge.id, badge: o.badge, ornament: o.ornament });
-    }
-    return out;
-  }, [trees, ornaments]);
 
   if (achieved === 0) {
     return (
@@ -140,13 +75,13 @@ export default function ForestView({
     );
   }
 
-  const skyStars = Math.min(6, 2 + Math.floor(trees.length / 5));
+  const skyStars = Math.min(6, 2 + Math.floor(treeCount / 5));
 
   return (
     <div>
       <div className="flex items-end justify-between gap-3">
         <p className="hand text-xl" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
-          {childName}의 숲에 나무 {trees.length}그루가 자랐어요
+          {childName}의 숲에 나무 {treeCount}그루가 자랐어요
         </p>
         <span className="flex flex-none items-center gap-2">
           <span className="d text-sm" style={{ color: "var(--ink-2)" }}>
@@ -174,9 +109,9 @@ export default function ForestView({
           <>
             <span className="flex h-9 w-9 flex-none items-center justify-center">
               {picked.kind === "tree" ? (
-                <Illustration name={milestoneTree(picked.badge.count ?? 1).name} height={32} />
+                <Illustration name={milestoneTreeArt(picked.badge.count ?? 1).name} height={32} />
               ) : (
-                <Ornament kind={picked.ornament} avatar={avatar} inline />
+                <ForestOrnament kind={picked.ornament} avatar={avatar} inline />
               )}
             </span>
             <div className="min-w-0">
@@ -223,7 +158,7 @@ export default function ForestView({
           {items.map((item) => {
             const active = picked?.key === item.key;
             if (item.kind === "tree") {
-              const tree = milestoneTree(item.badge.count ?? 1);
+              const tree = milestoneTreeArt(item.badge.count ?? 1);
               return (
                 <button
                   key={item.key}
@@ -249,7 +184,7 @@ export default function ForestView({
                 className="flex flex-none items-end rounded-md px-0.5 transition-transform"
                 style={{ filter: active ? "drop-shadow(0 2px 3px rgba(38,54,43,0.35))" : undefined }}
               >
-                <Ornament kind={item.ornament} avatar={avatar} big={active} />
+                <ForestOrnament kind={item.ornament} avatar={avatar} big={active} />
               </button>
             );
           })}

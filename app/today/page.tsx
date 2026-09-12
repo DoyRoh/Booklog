@@ -7,7 +7,7 @@ import AssignmentSummary from "@/components/assignment-summary";
 import RecentRecords, { type RecentRecord } from "@/components/recent-records";
 import Section from "@/components/section";
 import ForestStrip from "@/components/forest-strip";
-import { MILESTONE_COUNTS } from "@/lib/badges";
+import { loadForestData } from "@/lib/badge-data";
 import { kstDate, kstMonth, kstWeekStart } from "@/lib/kst";
 
 export default async function TodayPage() {
@@ -62,10 +62,11 @@ export default async function TodayPage() {
   // 통계/최근 기록에 쓰는 reading_records 조회와 오늘의 숙제 조회는 서로
   // 무관하므로(전부 activeChild.id에만 의존) 동시에 왕복한다 -- 오늘 탭이
   // 유독 느렸던 가장 큰 원인이 이런 조회들을 순서대로 기다리던 것이었다.
-  // 그룹 수는 화면에 숫자로 보여주진 않지만(그건 지난 라운드에서 뺐다),
-  // 우리 숲 미리보기의 곰·새 개수를 정하는 데 필요해서 head-only COUNT
-  // 하나만 같이 왕복한다(행 데이터 없이 개수만 -- 매우 가벼움).
-  const [{ data: allRecords, error: recordsError }, assignments, { count: groupCount }] = await Promise.all([
+  // 우리 숲 미리보기가 이제 /forest와 완전히 같은 그림을 그려야 해서
+  // (사용자 요청) 배지 전체(loadForestData, /forest와 같은 함수)도 여기서
+  // 같이 왕복한다 -- 예전엔 이 계산을 피해 treeCount만 세었지만, 그러면
+  // 두 화면의 그림이 서로 달라져서 이번엔 정확한 비용을 감수했다.
+  const [{ data: allRecords, error: recordsError }, assignments, forestData] = await Promise.all([
     supabase
       .from("reading_records")
       .select(
@@ -74,11 +75,7 @@ export default async function TodayPage() {
       .eq("child_id", activeChild.id)
       .order("read_date", { ascending: false }),
     getTodayAssignments(supabase, activeChild.id),
-    supabase
-      .from("group_members")
-      .select("group_id", { count: "exact", head: true })
-      .eq("child_id", activeChild.id)
-      .eq("status", "approved"),
+    loadForestData(supabase, activeChild.id),
   ]);
 
   // 마감일(end_date)을 안 정한 숙제는 날짜만으로는 절대 안 없어지므로,
@@ -146,13 +143,12 @@ export default async function TodayPage() {
         className="mt-[12px] rounded-[var(--r)] border p-[16px]"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
-        {/* 우리 숲 미리보기 -- 권수 배지("숲이 자라요")를 딴 만큼 나무가 서
-            있고, 누르면 전체 숲(배지 화면)으로. 배지 계산 전체를 여기서 또
-            돌리지 않고 완독 수로 권수 배지만 센다(추가 조회 없음). */}
+        {/* 우리 숲 미리보기 -- /forest(ForestView)와 완전히 같은 배지 데이터로
+            완전히 같은 그림(나무·장식·곰)을 그린다. 누르면 그 전체 화면으로. */}
         <ForestStrip
-          treeCount={MILESTONE_COUNTS.filter((c) => totalDone >= c).length}
+          badges={forestData.badges}
           avatar={activeChild.avatar}
-          groupCount={groupCount ?? 0}
+          groups={forestData.groups}
           className="mb-[16px]"
           href="/forest"
         />
