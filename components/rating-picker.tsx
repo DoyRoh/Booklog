@@ -12,6 +12,35 @@ const RATINGS = [
   { v: 1, l: "별로", Icon: DizzyIcon, col: "var(--c-pink)" },
 ] as const;
 
+/**
+ * 목록에서 "이 책 어땠어?"를 한눈에 보여주는 작은 스티커(블롭 + 라벨).
+ * 고르는 화면(RatingPicker)과 같은 색·아이콘·이름을 그대로 써서, 기록할 때
+ * 누른 스티커가 책장 목록에도 그대로 남아 보이게 한다.
+ */
+export function RatingSticker({ value, size = 18 }: { value: number; size?: number }) {
+  const rating = RATINGS.find((r) => r.v === value);
+  if (!rating) return null;
+  const { l, Icon, col } = rating;
+  return (
+    <span className="flex flex-none items-center gap-1" title={l}>
+      <span
+        className="flex items-center justify-center text-white"
+        style={{
+          width: size,
+          height: size,
+          background: col,
+          borderRadius: "38% 62% 68% 32% / 58% 42% 58% 42%",
+        }}
+      >
+        <Icon width={size * 0.56} height={size * 0.56} />
+      </span>
+      <span className="d text-[10px]" style={{ color: "var(--ink-2)" }}>
+        {l}
+      </span>
+    </span>
+  );
+}
+
 export default function RatingPicker({
   value,
   onChange,

@@ -31,12 +31,13 @@ export function TodayIcon(props: IconProps) {
   );
 }
 
+// 책장 탭 -- 표지 위 "책장에 꽂기" 토글(misc-icons.tsx의 BookmarkIcon)과
+// 같은 책갈피 모양으로 통일했다(사용자 요청). 두 곳이 같은 뜻("내 책장")이라
+// 아이콘도 같아야 알아보기 쉽다.
 export function LibraryIcon(props: IconProps) {
   return (
     <IconBase {...props}>
-      <rect x="3" y="7" width="4" height="13" rx="1" />
-      <rect x="9" y="4" width="4" height="16" rx="1" />
-      <path d="M15.5 9.2l3.8.9-2.6 9.8-3.8-1z" />
+      <path d="M6.5 3.6h11c.3 0 .5.2.5.5v16.4l-6-3.9-6 3.9V4.1c0-.3.2-.5.5-.5z" />
     </IconBase>
   );
 }

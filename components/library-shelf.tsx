@@ -6,6 +6,7 @@ import { SearchIcon } from "@/components/icons/misc-icons";
 import { MoreIcon } from "@/components/icons/tab-icons";
 import ViewToggle from "@/components/view-toggle";
 import type { ReadingStatus } from "@/lib/reading-status";
+import { RatingSticker } from "@/components/rating-picker";
 import RecordEditModal, { type EditableRecord } from "@/components/record-edit-modal";
 import ShelfTagPicker from "@/components/shelf-tag-picker";
 import ShelfTagManager from "@/components/shelf-tag-manager";
@@ -677,8 +678,14 @@ export default function LibraryShelf({
                           </p>
                         )}
                       </div>
-                      <span className="flex-none text-xs" style={{ color: "var(--ink-2)" }}>
-                        {formatMonthDay(row.readDate)}
+                      {/* 날짜 아래에 평가 스티커 -- 기록할 때 고른 최고/재밌어/좋아/
+                          보통/별로가 목록에도 그대로 남아 보이게 한다(사용자 요청).
+                          표지 높이(44px) 안에 들어가서 줄 높이는 그대로. */}
+                      <span className="flex flex-none flex-col items-end gap-1">
+                        <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+                          {formatMonthDay(row.readDate)}
+                        </span>
+                        {row.rating !== null && <RatingSticker value={row.rating} />}
                       </span>
                     </button>
                   </div>

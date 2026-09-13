@@ -291,7 +291,7 @@ export default function RecordEditModal({
         <div className="mx-1 mt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />
 
         <div className="mt-4">
-          <p className="d text-sm">재미있었어?</p>
+          <p className="d text-sm">책은 어땠어?</p>
           <div className="mt-2">
             <RatingPicker value={rating} onChange={setRating} />
           </div>
