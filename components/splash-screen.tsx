@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { SPLASH_QUOTES } from "@/lib/splash-quotes";
 
 const SESSION_KEY = "chaeksup:splash-shown";
-const SHOW_MS = 2200;
+// 3초 머문 뒤 0.5초 페이드아웃(사용자: "빨라져서 너무 훅 지나가, 3초 정도로") -- 탭하면 언제든 즉시 닫힘.
+const SHOW_MS = 3000;
 const FADE_MS = 500;
 
 // 페이지 로드당 한 번만 결정(모듈 스코프라 StrictMode 이중 실행에도 안전)
