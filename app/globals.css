@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+:root {
+  /* 배경 — 차분한 색연필 질감의 세이지 그린 */
+  --paper: #EAF0E5;
+  --card: #FFFFFF;
+  /* 텍스트 — 짙은 숲그림자색 */
+  --ink: #26362B;
+  --ink-2: #5C6B5F;
+  --rule: #D9E3D3;
+  --edge: rgba(38, 48, 43, .15);
+  --edge-2: rgba(38, 48, 43, .10);
+  /* 포인트 — 맑고 청명한 녹색 */
+  --point: #2FA84F;
+  --point-deep: #1B5E3A;
+  /* point-deep보다 한 단계 더 짙은 색 — 하단 탭 "추가"처럼 항상 채워진
+     초록 배경 위에서 "지금 눌려 있음(활성)"을 구분해야 할 때 전용 */
+  --point-deepest: #123D26;
+  /* 보조 강조 — 곰의 등불(따뜻한 호박색), 배지·CTA에 사용 */
+  --lantern: #E8A33D;
+  /* 포인트 강조 서브 — 숲속 열매/버섯. 사용 빈도는 낮춤 */
+  --berry: #D94A32;
+  /* 새싹 연두 — 지금은 다른 UI에서 안 쓰이지만 색 토큰은 보존 */
+  --sprout: #8BC34A;
+  /* 배지 스티커·숲 띠 바탕에 반복해서 쓰던 연한 초록 */
+  --sprout-pale: #DCE6D0;
+  --sprout-deep: #558B2F;
+  /* 표정·평점 등 카테고리 팔레트 (감정 아이콘, Phase 3) */
+  --c-red: #E8380D;
+  --c-yellow: #FFC93C;
+  --c-green: #3FAE4E;
+  --c-blue: #5AC0DE;
+  --c-pink: #E86D93;
+  --c-purple: #7C5CF0;
+  --c-teal: #2E6E63;
+  --c-orange: #F2913C;
+  --r: 22px;
+  --sb: env(safe-area-inset-bottom, 0px);
+  --st: env(safe-area-inset-top, 0px);
+  --disp: var(--font-gowun-dodum), "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --hand: var(--font-gamja-flower), "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --book: var(--font-gowun-batang), "Apple SD Gothic Neo", "Noto Serif KR", serif;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-rule: var(--rule);
+  --color-point: var(--point);
+  --color-lantern: var(--lantern);
+  --color-berry: var(--berry);
+  --font-disp: var(--disp);
+  --font-hand: var(--hand);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* 아이가 직접 기록할 때도 편하게 읽고 쓸 수 있도록, 기본 글자 크기(및
+     rem 기반 여백·터치 영역)를 전체적으로 조금 키운다. */
+  font-size: 112.5%;
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+}
+
+/* iOS 사파리의 날짜 입력칸은 기본 모양(-webkit-appearance)일 때 width:100%를
+   무시하고 고유 너비로 그려져서 카드 밖으로 삐져나갔다(숙제 만들기의
+   "언제까지"). 기본 모양을 끄고 블록으로 두면 다른 입력칸과 같은 폭·높이로
+   맞는다. 비어 있을 때 높이가 0으로 접히는 것도 min-height로 막는다. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.75rem;
+  text-align: left;
+  background: var(--card);
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+.d {
+  font-family: var(--disp);
+  /* 제목·라벨(.d)과 본문 텍스트 사이에 위계가 잘 안 보인다는 피드백으로,
+     기본 굵기를 살짝 올렸다 -- 이 앱에서 .d는 대체로 제목/버튼 라벨에만
+     붙고 본문·메타 텍스트는 붙지 않아서, 이 한 줄로 전체 위계가 또렷해진다. */
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.hand {
+  font-family: var(--hand);
+}
+
+/* 책의 한 구절처럼 읽혀야 하는 문구(스플래시 인용구)용 명조 */
+.book {
+  font-family: var(--book);
+}
+
+/* 둥근 카드형 박스(앱 전반의 표준 큰 카드 반경)는 배경의 세이지그린
+   종이톤과 흰 카드가 테두리 1px만으로는 잘 구분되지 않아, 은은한 그림자를
+   공통으로 얹는다. Tailwind의 rounded-[var(--r)] 임의값 클래스를 그대로
+   셀렉터로 써서, 컴포넌트마다 따로 손대지 않아도 전부 적용된다. */
+.rounded-\[var\(--r\)\] {
+  box-shadow: 0 2px 6px rgba(38, 54, 43, 0.06), 0 8px 18px rgba(38, 54, 43, 0.05);
+}
+
+/* 로딩 스켈레톤이 뜨자마자 바로 보이면, 리전 이전 뒤로는 화면 대부분이
+   0.2~0.5초 안에 끝나 버려서 오히려 "허옇게 반짝"하고 지나가는 느낌만
+   남는다(실사용 피드백). 처음 150ms는 투명하게 뒀다가 그 이후에만
+   서서히 나타나게 해서, 실제로 오래 걸리는 화면 전환에서만 스켈레톤이
+   보이고 빠른 전환에서는 아예 안 보이고 지나가게 한다. */
+@keyframes skeleton-delayed-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 책장 내보내기(독서 리포트) 인쇄용 -- 상단바/하단탭처럼 화면 조작용
+   요소는 인쇄에 필요 없으니 숨긴다. 프린터로는 쓰지 않고 "PDF로 저장"
+   또는 모바일 공유 시트로 쓰는 경우가 대부분일 것으로 예상. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .pt-\[52px\],
+  .pb-\[96px\] {
+    padding: 0 !important;
+  }
+}
+
+/* 기록 저장 순간의 "발자국 도장 쾅" -- 크게 떠 있다가 종이에 내려찍히듯
+   줄어들며 나타난다. 아이가 기록을 남겼을 때의 손맛(레거시 독서통장의
+   도장 찍기)을 살리는 유일한 애니메이션이라 다른 데서는 쓰지 않는다. */
+@keyframes paw-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(2.4) rotate(-14deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.94) rotate(6deg);
+  }
+  75% {
+    transform: scale(1.06) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+.paw-stamp {
+  animation: paw-stamp 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .paw-stamp {
+    animation: none;
+  }
+}
+
+/* 화면 전환 중 점 세 개 -- 아주 조용하게 */
+.loading-dot {
+  opacity: 0.25;
+  animation: loading-dot 1.1s ease-in-out infinite;
+}
+@keyframes loading-dot {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-dot { animation: none; opacity: 0.6; }
+}
