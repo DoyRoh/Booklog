@@ -2000,3 +2000,16 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 ## 스플래시를 3초로 (사용자 요청: "빨라져서 너무 훅 지나가, 3초 정도 뜨게 할까?")
 
 리전 정리·왕복 축소 뒤 첫 화면이 금방 떠서, 마음에 든다던 스플래시(밤 숲 그림 + 문구)가 2.2초 만에 사라지는 게 아쉽다는 요청. `components/splash-screen.tsx`의 `SHOW_MS`를 2200 → **3000**으로 올렸습니다(페이드아웃 0.5초는 그대로라 총 3.5초). 탭하면 즉시 닫히는 동작, 세션당 한 번만 뜨는 규칙, 움직임 최소화 설정 대응은 전부 그대로입니다. DB 변경 없음.
+
+## 실제 앱 만들기 — Capacitor로 앱스토어·플레이스토어 셸 준비 (사용자 요청: "자 이제 실제 앱 만들자")
+
+목표는 **앱스토어·플레이스토어 둘 다 출시**, 사용자는 **Mac은 있지만 Apple/Google 개발자 계정은 아직 없음**(AskUserQuestion으로 확정). 이 세션은 Linux 컨테이너라 Xcode·서명·스토어 업로드는 할 수 없으므로, 여기서 할 수 있는 것(네이티브 프로젝트·아이콘·스플래시·권한·웹 연동·문서)을 전부 만들고 Mac에서만 되는 단계는 `docs/app-release.md`로 넘겼습니다.
+
+- **방식: Capacitor "원격 URL" 모드**(`capacitor.config.ts`의 `server.url = https://booklog-13xh.vercel.app`, `CAP_SERVER_URL` 환경변수로 덮어쓰기 가능). 이 앱은 Supabase SSR·`proxy.ts` 미들웨어에 기대는 서버 렌더링 앱이라 정적 export로 번들에 넣을 수 없고, 넣는다 해도 웹과 앱이 두 벌이 됩니다. 원격 URL이면 **웹을 배포하는 것만으로 앱도 같이 바뀌고** 스토어 재심사는 네이티브 설정을 바꿀 때만 필요합니다. 대가로 (1) 오프라인이면 아무것도 못 보고 — `server.errorPath`가 `native/www/error.html`("숲이 잠시 조용하네요 / 다시 시도")을 띄웁니다, (2) Apple 4.2(최소 기능) 반려 가능성이 있습니다 — 카메라 바코드·녹음·사진이 있어 통과 가능성이 높지만, 반려되면 푸시 알림(숙제 알림)이 가장 확실한 대응이라 가이드에 적어 뒀습니다. UA에 `ChaeksupApp`을 붙여 웹 쪽에서 앱인지 알 수 있습니다.
+- **번들 ID `com.chaeksup.app`, 표시명 "책숲", 세로 고정.** 첫 업로드 전에만 바꿀 수 있고 그 뒤엔 영구히 고정입니다(가이드 0단계).
+- **네이티브 프로젝트**: `npx cap add ios/android`는 Linux에서도 돌아가 `ios/`(SPM, CocoaPods 불필요)와 `android/`를 생성했습니다. iOS `Info.plist`에 카메라·마이크·사진첩 사용 문구(한글, 바코드/낭독/장면 사진 용도 그대로), Android 매니페스트에 `CAMERA`/`RECORD_AUDIO` 권한(둘 다 `required=false` feature) — WebView의 `getUserMedia`가 이 선언 없이는 조용히 실패합니다. Android 릴리스 서명은 `android/keystore.properties`(git 제외)가 있을 때만 `build.gradle`이 읽어 쓰고, 없으면 디버그 빌드에 영향 없음.
+- **아이콘·스플래시**: `assets/`(1024 아이콘, 전경/배경 분리본, 2732² 스플래시)에서 `@capacitor/assets`로 생성. 생성 직후 iOS 43MB / Android 31MB(스플래시 PNG가 해상도·가로/세로/다크별로 수십 장)라 — iOS는 `Splash.imageset`을 256색 양자화 PNG 한 장이 1x/2x/3x를 겸하게, Android는 `drawable-land*`·`*-night*` 디렉터리를 지우고 남은 것을 양자화해 **iOS 3.2MB / Android 4.0MB**로 줄였습니다(화질은 크롭 확인). 스플래시 배경은 웹 스플래시 그림의 밤하늘색 `#1B3A2A`.
+- **웹 ↔ 네이티브 스플래시 이어 붙이기**: 네이티브 스플래시는 `launchAutoHide: false`로 두고, 웹 `components/splash-screen.tsx`가 마운트되는 순간 `lib/native.ts`의 `hideNativeSplash()`로 내립니다(같은 밤 숲 그림이라 끊김 없이 웹 스플래시로 이어짐). 상태바는 스플래시 동안 `dark`(흰 글자), 스플래시가 끝나면 `light`(진한 글자). `lib/native.ts`는 npm 플러그인 import 없이 `window.Capacitor.Plugins.*`를 옵셔널 체이닝으로 부르므로 **브라우저에서는 아무 동작도 하지 않고**, 웹 번들 크기에도 영향이 없습니다(Capacitor가 원격 페이지에 브리지를 주입해 줌).
+- **Mac에서 해야 할 것(순서)**: Xcode·Android Studio 설치 → `npm install && npx cap sync` → `npm run cap:ios`로 시뮬레이터 확인 + Signing Team → Apple Developer($99/년)·Play Console($25 1회) 가입 → App Store Connect 앱 등록·Archive·TestFlight → 업로드 키 생성·AAB 빌드·Play 비공개 테스트(신규 개인 계정은 테스터 20명×14일 뒤 정식 출시). 스크린샷·설명·개인정보 설문·**테스트 계정** 준비. 전부 `docs/app-release.md`.
+- **아직 안 한 것(출시 전 권장)**: 계정 삭제 화면(Apple 5.1.1(v) — 지금 앱엔 없음, 반려 사유가 될 수 있어 다음 라운드 후보 1순위), 푸시 알림, 유니버설 링크(비밀번호 재설정 메일은 브라우저에서 열려도 동작엔 문제 없음), `PrivacyInfo.xcprivacy`(Xcode에서 추가). 커스텀 도메인을 붙일 계획이면 **스토어 업로드 전에** 붙이고 `SERVER_URL`을 바꿔야 나중에 앱 업데이트 없이 주소를 옮길 수 있습니다.
+- `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음.

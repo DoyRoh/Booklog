@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SPLASH_QUOTES } from "@/lib/splash-quotes";
+import { hideNativeSplash, setNativeStatusBar } from "@/lib/native";
 
 const SESSION_KEY = "chaeksup:splash-shown";
 // 3초 머문 뒤 0.5초 페이드아웃(사용자: "빨라져서 너무 훅 지나가, 3초 정도로") -- 탭하면 언제든 즉시 닫힘.
@@ -47,10 +48,14 @@ export default function SplashScreen() {
     // 상태 갱신은 다음 프레임으로 미룬다(효과 안에서 동기 setState를 피함).
     const timers: ReturnType<typeof setTimeout>[] = [];
     const raf = requestAnimationFrame(() => {
+      // 네이티브 앱이면 여기서 네이티브 스플래시(같은 밤 숲 그림)를 내려
+      // 웹 스플래시로 그림에서 그림으로 이어진다(브라우저에선 no-op).
+      hideNativeSplash();
       if (!decidedThisLoad) {
         setPhase("gone");
         return;
       }
+      setNativeStatusBar("dark");
       setQuote(SPLASH_QUOTES[Math.floor(Math.random() * SPLASH_QUOTES.length)]);
       const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       timers.push(setTimeout(() => setPhase("fading"), SHOW_MS));
@@ -61,6 +66,11 @@ export default function SplashScreen() {
       timers.forEach(clearTimeout);
     };
   }, []);
+
+  useEffect(() => {
+    // 스플래시가 사라지면 상태바 글자를 세이지 배경용(진한 색)으로 되돌린다.
+    if (phase === "gone") setNativeStatusBar("light");
+  }, [phase]);
 
   if (phase === "gone") return null;
 

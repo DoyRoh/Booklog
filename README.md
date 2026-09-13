@@ -620,6 +620,9 @@ Supabase **Authentication → URL Configuration → Redirect URLs**에 `<배포 
 /lib/supabase   Supabase client/server 헬퍼
 /supabase/migrations  DB 스키마 및 RLS 정책 마이그레이션
 /legacy         서비스화 이전 개인용 프로토타입(참고용, 빌드 제외)
+/ios, /android  Capacitor 네이티브 프로젝트 (앱스토어·플레이스토어용, Mac에서 Xcode/Android Studio로 염)
+/assets         앱 아이콘·스플래시 원본 (npm run cap:assets 로 양쪽 자산 재생성)
+/native/www     앱이 서버에 못 닿을 때 보여주는 오프라인 페이지
 ```
 
 ## 스크립트
@@ -629,4 +632,13 @@ npm run dev     # 개발 서버
 npm run build   # 프로덕션 빌드
 npm run start   # 프로덕션 서버 실행
 npm run lint    # ESLint
+
+npm run cap:sync     # 네이티브 프로젝트에 설정·플러그인 반영 (Mac에서, 클론 직후·설정 변경 후)
+npm run cap:ios      # Xcode 열기
+npm run cap:android  # Android Studio 열기
+npm run cap:assets   # assets/ 원본으로 아이콘·스플래시 다시 생성
 ```
+
+## 앱스토어·플레이스토어 출시
+
+배포된 웹앱을 Capacitor로 감싼 네이티브 앱(iOS/Android)이 `ios/`, `android/`에 들어 있습니다. 앱은 `capacitor.config.ts`의 서버 주소를 그대로 띄우므로 **화면·기능 수정은 웹 배포만으로 앱에도 반영**되고, 스토어 재업로드는 아이콘·권한 문구·네이티브 설정을 바꿀 때만 필요합니다. 계정 개설부터 TestFlight·Play Console 업로드, 심사 주의점까지 Mac에서 따라 할 단계별 안내는 **[docs/app-release.md](docs/app-release.md)** 에 있습니다.

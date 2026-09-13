@@ -40,3 +40,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# native app (Capacitor) — 서명 키·로컬 SDK 경로는 절대 커밋하지 않음
+android/keystore.properties
+*.keystore
+*.jks
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/App.xcodeproj/xcuserdata/
