@@ -8,7 +8,7 @@ import Illustration from "@/components/illustration";
 import { categoryColor } from "@/lib/categories";
 import type { OperatorBook } from "@/lib/operator-books";
 import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
-import { SpineCover } from "@/components/spine-cover";
+import { useSpinesPerRow } from "@/components/use-spines-per-row";
 
 type ViewMode = "list" | "cover" | "spine";
 
@@ -40,6 +40,7 @@ export default function OperatorBookBrowser({
   // 컨트롤 줄에도 항상 있어서 목록 보기로 안 바꿔도 바로 올릴 수 있다.
   const [mode, setMode] = useState<ViewMode>("cover");
   const [category, setCategory] = useState<string>("all");
+  const { ref: spineShelfRef, perRow: spinesPerRow } = useSpinesPerRow();
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -225,27 +226,26 @@ export default function OperatorBookBrowser({
           ))}
         </div>
       ) : (
-        <div className="mt-[16px] flex flex-col gap-5">
-          {/* 한 줄에 7권 -- 아이의 책장 책등 보기와 같은 규격 */}
-          {chunk(filtered, 7).map((row, rowIndex) => (
+        <div ref={spineShelfRef} className="mt-[16px] flex flex-col gap-5">
+          {/* 한 줄 권수는 선반 폭에 맞춰 자동 -- 아이의 책장 책등 보기와 같은 규격 */}
+          {chunk(filtered, spinesPerRow).map((row, rowIndex) => (
             <div key={rowIndex}>
-              <div className="flex items-end gap-1 px-3">
+              <div className="flex items-end gap-1 px-2">
                 {row.map((book) => (
                   <Link
                     key={book.itemId}
                     href={`/teacher/books/${book.bookId}?group=${groupId}`}
-                    className="relative flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2"
+                    className="flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2"
                     style={{
                       height: spineHeight(book.title),
-                      backgroundColor: spineColor(book.title),
+                      background: spineColor(book.title),
                       boxShadow: "inset -2px 0 0 rgba(0,0,0,0.12)",
                     }}
                     title={`${book.title} · ${book.readCount}/${memberCount}명 읽음`}
                   >
-                    <SpineCover coverUrl={book.coverUrl} />
                     <span
-                      className="d relative block text-[11px] leading-none text-white"
-                      style={{ writingMode: "vertical-rl", textOrientation: "mixed", maxHeight: "148px", overflow: "hidden", textShadow: "0 1px 2px rgba(0,0,0,0.55)" }}
+                      className="d block text-[11px] leading-none text-white"
+                      style={{ writingMode: "vertical-rl", textOrientation: "mixed", maxHeight: "148px", overflow: "hidden" }}
                     >
                       {book.title}
                     </span>

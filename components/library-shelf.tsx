@@ -12,7 +12,7 @@ import ShelfTagPicker from "@/components/shelf-tag-picker";
 import ShelfTagManager from "@/components/shelf-tag-manager";
 import { createClient } from "@/lib/supabase/client";
 import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
-import { SpineCover } from "@/components/spine-cover";
+import { useSpinesPerRow } from "@/components/use-spines-per-row";
 import { useRouter } from "next/navigation";
 
 // 같은 책이 여러 그룹의 숙제로 겹쳐서 나올 수 있으므로(child_id+book_id
@@ -138,6 +138,7 @@ export default function LibraryShelf({
   // 잠깐 들고 있다가 애니메이션이 끝날 즈음 기록 고치기 모달을 연다. 움직임
   // 최소화 설정이면 바로 연다.
   const [opening, setOpening] = useState<string | null>(null);
+  const { ref: spineShelfRef, perRow: spinesPerRow } = useSpinesPerRow();
   const openBook = (book: DedupedBook) => {
     if (organizing) {
       toggleSelected(book.recordId);
@@ -617,22 +618,21 @@ export default function LibraryShelf({
       )}
 
       {filtered.length > 0 && mode === "spine" && (
-        <div className="mt-[16px] flex flex-col gap-5">
-          {/* 한 줄에 7권(32px × 7 + 간격 4.5px × 6 = 251px). 책장이 흰 카드(p-4) 안으로
-              들어온 뒤 안쪽 폭이 360px 폰에서 257px로 줄어, 예전 8권(298px)은 오른쪽
-              끝 책이 잘렸다(미리보기로 확인). */}
-          {chunk(filtered, 7).map((row, rowIndex) => (
+        <div ref={spineShelfRef} className="mt-[16px] flex flex-col gap-5">
+          {/* 한 줄 권수는 선반 폭을 재서 정한다(useSpinesPerRow) -- 360px 폰에서 7권,
+              넓은 폰에서는 그만큼 더. 고정 권수였을 땐 넓은 폰 오른쪽이 비었다. */}
+          {chunk(filtered, spinesPerRow).map((row, rowIndex) => (
             <div key={rowIndex}>
-              <div className="flex items-end gap-1 px-3">
+              <div className="flex items-end gap-1 px-2">
                 {row.map((book) => (
                   <button
                     key={book.bookId}
                     type="button"
                     onClick={() => openBook(book)}
-                    className={`relative flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2 ${opening === book.recordId ? "book-pull" : ""}`}
+                    className={`flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2 ${opening === book.recordId ? "book-pull" : ""}`}
                     style={{
                       height: spineHeight(book.title),
-                      backgroundColor: spineColor(book.title),
+                      background: spineColor(book.title),
                       boxShadow: selected.has(book.recordId)
                         ? "0 0 0 3px var(--point)"
                         : "inset -2px 0 0 rgba(0,0,0,0.12)",
@@ -641,15 +641,13 @@ export default function LibraryShelf({
                     aria-pressed={organizing ? selected.has(book.recordId) : undefined}
                     title={book.title}
                   >
-                    <SpineCover coverUrl={book.coverUrl} />
                     <span
-                      className="d relative block text-[11px] leading-none text-white"
+                      className="d block text-[11px] leading-none text-white"
                       style={{
                         writingMode: "vertical-rl",
                         textOrientation: "mixed",
                         maxHeight: "148px",
                         overflow: "hidden",
-                        textShadow: "0 1px 2px rgba(0,0,0,0.55)",
                       }}
                     >
                       {book.title}

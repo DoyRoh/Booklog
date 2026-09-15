@@ -35,16 +35,19 @@ export function spineColor(title: string) {
   return SPINE_COLORS[hashOf(title) % SPINE_COLORS.length];
 }
 
-// 책등 바탕 -- 실제 책등 사진은 어느 책 DB에도 없어서 표지에서 만들어 낸다
-// (사용자 결정). 표지 가운데 세로 띠를 책등 높이에 맞춰 늘려 붙이고, 그 위에
-// 진한 어두운 막을 덮은 뒤 살짝 블러를 준다(SPINE_BLUR_PX). 블러 없이 쓰면
-// 「100층짜리 집」처럼 표지 한가운데 큰 제목 글자가 있는 책은 그 글자가 우리가
-// 얹은 흰 제목과 두 겹으로 겹쳐 지저분했다. 블러를 주면 색·분위기만 남고
-// 글자·세부는 뭉개져 실제 책등을 멀리서 보는 느낌이 된다. CSS `filter`는
-// 배경 이미지에 직접 못 걸어서 안쪽 레이어(components/spine-cover.tsx)로
-// 그린다. 여기엔 값만 두고, 표지가 없을 때의 바탕색은 spineColor().
-export const SPINE_BLUR_PX = 2.5; // "중간" -- 색+형태는 남고 글자는 안 읽히는 정도
-export const SPINE_SCRIM = "linear-gradient(rgba(16,24,19,0.5), rgba(16,24,19,0.66))";
+// 책등 바탕은 제목 해시로 고른 팔레트 단색(spineColor)만 쓴다. 표지 이미지를
+// 띠로 잘라 붙이는 방식(가운데 띠·어두운 막·블러까지)을 시도했지만 실제
+// 표지 위에 얹은 흰 제목의 가독성이 떨어져 사용자 결정으로 되돌렸다.
+
+// 책등 한 권의 폭과 사이 간격(px). 한 줄에 몇 권 세울지는 고정 권수가 아니라
+// 실제 선반 폭을 재서 정한다(components/use-spines-per-row.ts) -- 예전엔 7권
+// 고정이라 넓은 폰에서 오른쪽이 비었다.
+export const SPINE_WIDTH = 32;
+export const SPINE_GAP = 4.5; // gap-1 = 0.25rem, 루트 글자 크기 112.5% 기준
+
+export function spinesPerRow(rowInnerWidth: number) {
+  return Math.max(1, Math.floor((rowInnerWidth + SPINE_GAP) / (SPINE_WIDTH + SPINE_GAP)));
+}
 
 export function chunk<T>(items: T[], size: number): T[][] {
   const rows: T[][] = [];
