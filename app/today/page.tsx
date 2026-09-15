@@ -1,0 +1,242 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { getVerifiedUserId } from "@/lib/supabase/verified-user";
+import { getProfileSnapshot } from "@/lib/profile-snapshot";
+import { getTodayAssignments } from "@/lib/assignments";
+import AssignmentSummary from "@/components/assignment-summary";
+import RecentRecords, { type RecentRecord } from "@/components/recent-records";
+import Section from "@/components/section";
+import ForestStrip from "@/components/forest-strip";
+import { loadForestData } from "@/lib/badge-data";
+import { kstDate, kstMonth, kstWeekStart } from "@/lib/kst";
+
+export default async function TodayPage() {
+  const supabase = await createClient();
+  const userId = await getVerifiedUserId();
+
+  if (!userId) {
+    return (
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
+        <h1 className="d text-xl">오늘</h1>
+        <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
+          로그인하기
+        </Link>
+      </div>
+    );
+  }
+
+  // 지금 활성화된 프로필과 활성 아이는 둘 다 userId에만 의존하고 서로
+  // 무관하므로 동시에 물어본다(아이 프로필이 아니면 activeChild 조회는
+  // 버려지지만, 흔한 아이 프로필 쪽에서 왕복 하나를 아끼는 게 더 이득이다).
+  const { activeProfile, activeChild } = await getProfileSnapshot(supabase, userId);
+
+  if (activeProfile.type === "operator") {
+    return (
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
+        <h1 className="d text-xl">오늘</h1>
+        <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
+          숲지기 프로필로 보고 있어요. 대시보드에서 그룹 아이들의 읽기·숙제 상황을 볼 수 있어요.
+        </p>
+        <Link
+          href="/teacher"
+          className="d mt-2 inline-block text-sm"
+          style={{ color: "var(--point)" }}
+        >
+          대시보드로 가기
+        </Link>
+      </div>
+    );
+  }
+
+  if (!activeChild) {
+    return (
+      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
+        <h1 className="d text-xl">오늘</h1>
+        <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
+          아이를 등록하면 오늘의 숙제가 여기에 표시돼요. 위쪽 프로필에서 아이를 추가해 주세요.
+        </p>
+      </div>
+    );
+  }
+
+  // 통계/최근 기록에 쓰는 reading_records 조회와 오늘의 숙제 조회는 서로
+  // 무관하므로(전부 activeChild.id에만 의존) 동시에 왕복한다 -- 오늘 탭이
+  // 유독 느렸던 가장 큰 원인이 이런 조회들을 순서대로 기다리던 것이었다.
+  // 우리 숲 미리보기가 이제 /forest와 완전히 같은 그림을 그려야 해서
+  // (사용자 요청) 배지 전체(loadForestData, /forest와 같은 함수)도 여기서
+  // 같이 왕복한다 -- 예전엔 이 계산을 피해 treeCount만 세었지만, 그러면
+  // 두 화면의 그림이 서로 달라져서 이번엔 정확한 비용을 감수했다.
+  const [{ data: allRecords, error: recordsError }, assignments, forestData] = await Promise.all([
+    supabase
+      .from("reading_records")
+      .select(
+        "id, book_id, status, rating, emotion, favorite, parent_memo, read_date, pages_read, photo_url, voice_url, shelf_tag_id, books(title, author, cover_url)"
+      )
+      .eq("child_id", activeChild.id)
+      .order("read_date", { ascending: false }),
+    getTodayAssignments(supabase, activeChild.id),
+    loadForestData(supabase, activeChild.id),
+  ]);
+
+  // 마감일(end_date)을 안 정한 숙제는 날짜만으로는 절대 안 없어지므로,
+  // 오늘 탭 요약에서는 책을 전부 다 읽어서 완료된 숙제를 따로 걸러낸다
+  // (실사용 피드백: 다 끝난 숙제가 계속 "오늘의 숙제"에 남아있던 문제).
+  // 그룹 탭(/group?tab=assignments)은 관리 화면이라 완료된 것도 그대로 보여준다.
+  const activeAssignments = assignments.filter((a) => {
+    const completedCount = a.books.filter((b) => b.completed).length;
+    return a.books.length === 0 || completedCount < a.books.length;
+  });
+
+  const doneRecords = (allRecords ?? []).filter((r) => r.status === "done");
+  const totalDone = doneRecords.length;
+
+  const todayKey = kstDate();
+  const todayCount = doneRecords.filter((r) => r.read_date === todayKey).length;
+
+  // 이번 주 시작(월요일) -- 한국 시간 기준(lib/kst.ts), 배지 계산과 공유.
+  const weekKey = kstWeekStart();
+  const weekCount = doneRecords.filter((r) => r.read_date >= weekKey).length;
+
+  const thisMonthKey = kstMonth();
+  const monthCount = doneRecords.filter((r) => r.read_date.startsWith(thisMonthKey)).length;
+
+  const recentRecords: RecentRecord[] = (allRecords ?? []).slice(0, 5).map((r) => {
+    const book = r.books as unknown as {
+      title: string;
+      author: string | null;
+      cover_url: string | null;
+    } | null;
+    return {
+      id: r.id,
+      bookId: r.book_id,
+      title: book?.title ?? "",
+      author: book?.author ?? null,
+      coverUrl: book?.cover_url ?? null,
+      status: r.status,
+      rating: r.rating,
+      emotion: r.emotion,
+      favorite: r.favorite,
+      memo: r.parent_memo ?? "",
+      readDate: r.read_date,
+      pagesRead: r.pages_read,
+      shelfTagId: r.shelf_tag_id,
+      photoPath: r.photo_url,
+      voicePath: r.voice_url,
+    };
+  });
+
+  return (
+    <div className="mx-auto max-w-[520px] px-5 pt-[12px] pb-[40px]">
+      <p className="hand text-[24px] leading-[32px]" style={{ color: "var(--point-deep)", wordBreak: "keep-all" }}>
+        {activeChild.name}, 오늘도 책숲을 걸어볼까요?
+      </p>
+
+      {recordsError && (
+        <p className="mt-4 text-sm" style={{ color: "var(--berry)" }}>
+          기록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요. ({recordsError.message})
+        </p>
+      )}
+
+      {/* 오늘 탭이 가장 먼저 보여줘야 하는 건 "지금까지 얼마나 읽었는지"
+          요약이라, 요약 박스를 맨 위로 올리고 기록 버튼은 그 아래로
+          내렸다(레거시 "유안이 독서 기록" 화면 구조 참고). */}
+      <div
+        className="mt-[12px] rounded-[var(--r)] border p-[16px]"
+        style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+      >
+        {/* 우리 숲 미리보기 -- /forest(ForestView)와 완전히 같은 배지 데이터로
+            완전히 같은 그림(나무·장식·곰)을 그린다. 누르면 그 전체 화면으로. */}
+        <ForestStrip
+          badges={forestData.badges}
+          avatar={activeChild.avatar}
+          groups={forestData.groups}
+          className="mb-[16px]"
+          href="/forest"
+        />
+        {/* 제목 행: "읽은 책"과 큰 숫자를 한 줄, baseline 맞춤. '권'은 작고 연하게. */}
+        <p className="flex items-baseline gap-[8px]">
+          <span className="text-[14px] leading-[20px]" style={{ color: "var(--ink-2)" }}>
+            읽은 책
+          </span>
+          <span className="d text-[28px] font-semibold leading-[32px]" style={{ color: "var(--point-deep)" }}>
+            {totalDone}
+            <span className="ml-[3px] text-[14px] font-normal" style={{ color: "var(--ink-2)" }}>
+              권
+            </span>
+          </span>
+        </p>
+
+        {/* 통계는 오늘·이번 주·이번 달 세 가지만 -- "그룹"은 그룹 탭으로
+            들어가는 입구일 뿐 이 카드가 답할 통계가 아니라는 지적으로 뺐다
+            (카드 높이도 그만큼 줄어든다). 그룹 목록은 우리 숲 미리보기 옆
+            아이콘이나 하단 "그룹" 탭에서 이미 바로 들어갈 수 있다. */}
+        <div
+          className="mt-[16px] grid pt-[12px]"
+          style={{ borderTop: "1px solid rgba(38,54,43,0.08)", gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}
+        >
+          {(
+            [
+              { value: todayCount, label: "오늘" },
+              { value: weekCount, label: "이번 주" },
+              { value: monthCount, label: "이번 달" },
+            ] as const
+          ).map((stat) => (
+            <div key={stat.label} className="flex flex-col items-center gap-[4px] text-center">
+              <span className="d text-[20px] font-semibold leading-[24px]">{stat.value}</span>
+              <span className="text-[13px] leading-[18px]" style={{ color: "var(--ink-2)" }}>
+                {stat.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Link
+        href="/library/add"
+        className="d mt-[12px] flex h-[52px] items-center justify-center rounded-[14px] text-center text-[16px] font-semibold text-white"
+        // 주요 버튼(가장 자주 쓰는 행동 CTA)은 짙은 숲 초록으로 통일한다는
+        // 최신 지시에 따라, 예전에 이 버튼만 콕 집어 요청받았던 레드
+        // (--berry)에서 되돌렸다.
+        style={{ background: "var(--point-deep)" }}
+      >
+        + 책 기록하기
+      </Link>
+
+      <Section
+        className="mt-[24px]"
+        title="오늘의 숙제"
+        flush={activeAssignments.length > 0}
+        action={
+          activeAssignments.length > 0 ? (
+            <Link href="/group" className="text-xs" style={{ color: "var(--ink-2)" }}>
+              전체 보기 ›
+            </Link>
+          ) : undefined
+        }
+      >
+        {activeAssignments.length === 0 ? (
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+            지금 진행 중인 숙제가 없어요. 책장에서 자유롭게 책을 기록해 보세요.
+          </p>
+        ) : (
+          <AssignmentSummary assignments={activeAssignments} />
+        )}
+      </Section>
+
+      {recentRecords.length > 0 && (
+        <Section
+          className="mt-[20px]"
+          title="최근 기록"
+          flush
+          action={
+            <Link href="/library?view=list" className="text-xs" style={{ color: "var(--ink-2)" }}>
+              전체 보기 ›
+            </Link>
+          }
+        >
+          <RecentRecords childId={activeChild.id} childName={activeChild.name} records={recentRecords} />
+        </Section>
+      )}
+    </div>
+  );
+}
