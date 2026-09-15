@@ -7,7 +7,8 @@ import { shortMd } from "@/components/log-row";
 import Illustration from "@/components/illustration";
 import { categoryColor } from "@/lib/categories";
 import type { OperatorBook } from "@/lib/operator-books";
-import { PLANK_STYLE, chunk, spineHeight, spineStyle } from "@/lib/shelf-visual";
+import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
+import { SpineCover } from "@/components/spine-cover";
 
 type ViewMode = "list" | "cover" | "spine";
 
@@ -233,16 +234,17 @@ export default function OperatorBookBrowser({
                   <Link
                     key={book.itemId}
                     href={`/teacher/books/${book.bookId}?group=${groupId}`}
-                    className="flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2"
+                    className="relative flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2"
                     style={{
                       height: spineHeight(book.title),
-                      ...spineStyle(book.title, book.coverUrl),
+                      backgroundColor: spineColor(book.title),
                       boxShadow: "inset -2px 0 0 rgba(0,0,0,0.12)",
                     }}
                     title={`${book.title} · ${book.readCount}/${memberCount}명 읽음`}
                   >
+                    <SpineCover coverUrl={book.coverUrl} />
                     <span
-                      className="d block text-[11px] leading-none text-white"
+                      className="d relative block text-[11px] leading-none text-white"
                       style={{ writingMode: "vertical-rl", textOrientation: "mixed", maxHeight: "148px", overflow: "hidden", textShadow: "0 1px 2px rgba(0,0,0,0.55)" }}
                     >
                       {book.title}

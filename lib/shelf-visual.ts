@@ -1,5 +1,3 @@
-import type React from "react";
-
 // 나무 선반 책장의 생김새 -- 아이의 책장 탭(components/library-shelf.tsx),
 // 그룹 추천도서 선반(components/recommend-shelf.tsx), 숲지기의 추천도서
 // 전면·책등 보기가 함께 쓴다. 서버 컴포넌트에서도 안전하게 import할 수
@@ -37,23 +35,16 @@ export function spineColor(title: string) {
   return SPINE_COLORS[hashOf(title) % SPINE_COLORS.length];
 }
 
-// 책등 바탕 -- 표지가 있으면 **표지 가운데 세로 띠**를 책등 높이에 맞춰
-// 늘려 붙인다(실제 책등 사진은 어느 책 DB에도 없어서, 표지에서 만들어 내는
-// 방식 — 사용자 결정. 처음엔 왼쪽 가장자리를 썼는데 표지 여백·제본선이
-// 걸려 밋밋해서 가운데로 바꿨다). 표지를 CSS 배경으로 쓰므로 카카오 CDN 같은
-// 외부 도메인이어도 CORS/캔버스 오염 문제가 없고, 색을 따로 저장할 컬럼도
-// 필요 없다. 위에 꽤 진한 어두운 막을 덮어 흰 제목이 확실히 읽히게 한다
-// (사용자 피드백: "더 어둡게"). 표지가 없으면 예전처럼 제목 해시 색.
-export function spineStyle(title: string, coverUrl: string | null | undefined): React.CSSProperties {
-  if (!coverUrl) return { background: spineColor(title) };
-  return {
-    backgroundColor: spineColor(title),
-    backgroundImage: `linear-gradient(rgba(16,24,19,0.5), rgba(16,24,19,0.66)), url("${coverUrl.replace(/"/g, "%22")}")`,
-    backgroundSize: "auto 100%, auto 100%",
-    backgroundPosition: "center center, center center",
-    backgroundRepeat: "no-repeat, no-repeat",
-  };
-}
+// 책등 바탕 -- 실제 책등 사진은 어느 책 DB에도 없어서 표지에서 만들어 낸다
+// (사용자 결정). 표지 가운데 세로 띠를 책등 높이에 맞춰 늘려 붙이고, 그 위에
+// 진한 어두운 막을 덮은 뒤 살짝 블러를 준다(SPINE_BLUR_PX). 블러 없이 쓰면
+// 「100층짜리 집」처럼 표지 한가운데 큰 제목 글자가 있는 책은 그 글자가 우리가
+// 얹은 흰 제목과 두 겹으로 겹쳐 지저분했다. 블러를 주면 색·분위기만 남고
+// 글자·세부는 뭉개져 실제 책등을 멀리서 보는 느낌이 된다. CSS `filter`는
+// 배경 이미지에 직접 못 걸어서 안쪽 레이어(components/spine-cover.tsx)로
+// 그린다. 여기엔 값만 두고, 표지가 없을 때의 바탕색은 spineColor().
+export const SPINE_BLUR_PX = 2.5; // "중간" -- 색+형태는 남고 글자는 안 읽히는 정도
+export const SPINE_SCRIM = "linear-gradient(rgba(16,24,19,0.5), rgba(16,24,19,0.66))";
 
 export function chunk<T>(items: T[], size: number): T[][] {
   const rows: T[][] = [];

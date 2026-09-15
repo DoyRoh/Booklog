@@ -11,7 +11,8 @@ import RecordEditModal, { type EditableRecord } from "@/components/record-edit-m
 import ShelfTagPicker from "@/components/shelf-tag-picker";
 import ShelfTagManager from "@/components/shelf-tag-manager";
 import { createClient } from "@/lib/supabase/client";
-import { PLANK_STYLE, chunk, spineHeight, spineStyle } from "@/lib/shelf-visual";
+import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
+import { SpineCover } from "@/components/spine-cover";
 import { useRouter } from "next/navigation";
 
 // 같은 책이 여러 그룹의 숙제로 겹쳐서 나올 수 있으므로(child_id+book_id
@@ -628,10 +629,10 @@ export default function LibraryShelf({
                     key={book.bookId}
                     type="button"
                     onClick={() => openBook(book)}
-                    className={`flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2 ${opening === book.recordId ? "book-pull" : ""}`}
+                    className={`relative flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2 ${opening === book.recordId ? "book-pull" : ""}`}
                     style={{
                       height: spineHeight(book.title),
-                      ...spineStyle(book.title, book.coverUrl),
+                      backgroundColor: spineColor(book.title),
                       boxShadow: selected.has(book.recordId)
                         ? "0 0 0 3px var(--point)"
                         : "inset -2px 0 0 rgba(0,0,0,0.12)",
@@ -640,8 +641,9 @@ export default function LibraryShelf({
                     aria-pressed={organizing ? selected.has(book.recordId) : undefined}
                     title={book.title}
                   >
+                    <SpineCover coverUrl={book.coverUrl} />
                     <span
-                      className="d block text-[11px] leading-none text-white"
+                      className="d relative block text-[11px] leading-none text-white"
                       style={{
                         writingMode: "vertical-rl",
                         textOrientation: "mixed",
