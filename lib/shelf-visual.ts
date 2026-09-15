@@ -37,19 +37,20 @@ export function spineColor(title: string) {
   return SPINE_COLORS[hashOf(title) % SPINE_COLORS.length];
 }
 
-// 책등 바탕 -- 표지가 있으면 **표지의 왼쪽 가장자리 띠**를 책등 높이에 맞춰
+// 책등 바탕 -- 표지가 있으면 **표지 가운데 세로 띠**를 책등 높이에 맞춰
 // 늘려 붙인다(실제 책등 사진은 어느 책 DB에도 없어서, 표지에서 만들어 내는
-// 방식 — 사용자 결정). 표지를 CSS 배경으로 쓰므로 카카오 CDN 같은 외부
-// 도메인이어도 CORS/캔버스 오염 문제가 없고, 색을 따로 저장할 컬럼도 필요
-// 없다. 위에 옅은 어두운 막을 덮어 흰 제목이 읽히게 한다. 표지가 없으면
-// 예전처럼 제목 해시 색.
+// 방식 — 사용자 결정. 처음엔 왼쪽 가장자리를 썼는데 표지 여백·제본선이
+// 걸려 밋밋해서 가운데로 바꿨다). 표지를 CSS 배경으로 쓰므로 카카오 CDN 같은
+// 외부 도메인이어도 CORS/캔버스 오염 문제가 없고, 색을 따로 저장할 컬럼도
+// 필요 없다. 위에 꽤 진한 어두운 막을 덮어 흰 제목이 확실히 읽히게 한다
+// (사용자 피드백: "더 어둡게"). 표지가 없으면 예전처럼 제목 해시 색.
 export function spineStyle(title: string, coverUrl: string | null | undefined): React.CSSProperties {
   if (!coverUrl) return { background: spineColor(title) };
   return {
     backgroundColor: spineColor(title),
-    backgroundImage: `linear-gradient(rgba(20,30,24,0.22), rgba(20,30,24,0.42)), url("${coverUrl.replace(/"/g, "%22")}")`,
+    backgroundImage: `linear-gradient(rgba(16,24,19,0.5), rgba(16,24,19,0.66)), url("${coverUrl.replace(/"/g, "%22")}")`,
     backgroundSize: "auto 100%, auto 100%",
-    backgroundPosition: "left center, left center",
+    backgroundPosition: "center center, center center",
     backgroundRepeat: "no-repeat, no-repeat",
   };
 }
