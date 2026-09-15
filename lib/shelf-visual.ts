@@ -1,3 +1,5 @@
+import type React from "react";
+
 // 나무 선반 책장의 생김새 -- 아이의 책장 탭(components/library-shelf.tsx),
 // 그룹 추천도서 선반(components/recommend-shelf.tsx), 숲지기의 추천도서
 // 전면·책등 보기가 함께 쓴다. 서버 컴포넌트에서도 안전하게 import할 수
@@ -33,6 +35,23 @@ export function spineHeight(title: string) {
 
 export function spineColor(title: string) {
   return SPINE_COLORS[hashOf(title) % SPINE_COLORS.length];
+}
+
+// 책등 바탕 -- 표지가 있으면 **표지의 왼쪽 가장자리 띠**를 책등 높이에 맞춰
+// 늘려 붙인다(실제 책등 사진은 어느 책 DB에도 없어서, 표지에서 만들어 내는
+// 방식 — 사용자 결정). 표지를 CSS 배경으로 쓰므로 카카오 CDN 같은 외부
+// 도메인이어도 CORS/캔버스 오염 문제가 없고, 색을 따로 저장할 컬럼도 필요
+// 없다. 위에 옅은 어두운 막을 덮어 흰 제목이 읽히게 한다. 표지가 없으면
+// 예전처럼 제목 해시 색.
+export function spineStyle(title: string, coverUrl: string | null | undefined): React.CSSProperties {
+  if (!coverUrl) return { background: spineColor(title) };
+  return {
+    backgroundColor: spineColor(title),
+    backgroundImage: `linear-gradient(rgba(20,30,24,0.22), rgba(20,30,24,0.42)), url("${coverUrl.replace(/"/g, "%22")}")`,
+    backgroundSize: "auto 100%, auto 100%",
+    backgroundPosition: "left center, left center",
+    backgroundRepeat: "no-repeat, no-repeat",
+  };
 }
 
 export function chunk<T>(items: T[], size: number): T[][] {

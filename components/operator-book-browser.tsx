@@ -7,7 +7,7 @@ import { shortMd } from "@/components/log-row";
 import Illustration from "@/components/illustration";
 import { categoryColor } from "@/lib/categories";
 import type { OperatorBook } from "@/lib/operator-books";
-import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
+import { PLANK_STYLE, chunk, spineHeight, spineStyle } from "@/lib/shelf-visual";
 
 type ViewMode = "list" | "cover" | "spine";
 
@@ -225,10 +225,10 @@ export default function OperatorBookBrowser({
         </div>
       ) : (
         <div className="mt-[16px] flex flex-col gap-5">
-          {/* 한 줄에 8권 -- 아이의 책장 책등 보기와 같은 규격 */}
-          {chunk(filtered, 8).map((row, rowIndex) => (
+          {/* 한 줄에 7권 -- 아이의 책장 책등 보기와 같은 규격 */}
+          {chunk(filtered, 7).map((row, rowIndex) => (
             <div key={rowIndex}>
-              <div className="flex items-end gap-1.5 px-3">
+              <div className="flex items-end gap-1 px-3">
                 {row.map((book) => (
                   <Link
                     key={book.itemId}
@@ -236,14 +236,14 @@ export default function OperatorBookBrowser({
                     className="flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2"
                     style={{
                       height: spineHeight(book.title),
-                      background: spineColor(book.title),
+                      ...spineStyle(book.title, book.coverUrl),
                       boxShadow: "inset -2px 0 0 rgba(0,0,0,0.12)",
                     }}
                     title={`${book.title} · ${book.readCount}/${memberCount}명 읽음`}
                   >
                     <span
                       className="d block text-[11px] leading-none text-white"
-                      style={{ writingMode: "vertical-rl", textOrientation: "mixed", maxHeight: "148px", overflow: "hidden" }}
+                      style={{ writingMode: "vertical-rl", textOrientation: "mixed", maxHeight: "148px", overflow: "hidden", textShadow: "0 1px 2px rgba(0,0,0,0.55)" }}
                     >
                       {book.title}
                     </span>

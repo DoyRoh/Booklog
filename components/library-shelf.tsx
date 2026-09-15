@@ -11,7 +11,7 @@ import RecordEditModal, { type EditableRecord } from "@/components/record-edit-m
 import ShelfTagPicker from "@/components/shelf-tag-picker";
 import ShelfTagManager from "@/components/shelf-tag-manager";
 import { createClient } from "@/lib/supabase/client";
-import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
+import { PLANK_STYLE, chunk, spineHeight, spineStyle } from "@/lib/shelf-visual";
 import { useRouter } from "next/navigation";
 
 // 같은 책이 여러 그룹의 숙제로 겹쳐서 나올 수 있으므로(child_id+book_id
@@ -133,6 +133,26 @@ export default function LibraryShelf({
   const [shelfFilter, setShelfFilter] = useState<ShelfFilter>("all");
   const [sort, setSort] = useState<SortMode>("new");
   const [editing, setEditing] = useState<DedupedBook | null>(null);
+  // 책을 눌렀을 때 "펼쳐지는" 짧은 애니메이션(사용자 요청). 눌린 책의 recordId를
+  // 잠깐 들고 있다가 애니메이션이 끝날 즈음 기록 고치기 모달을 연다. 움직임
+  // 최소화 설정이면 바로 연다.
+  const [opening, setOpening] = useState<string | null>(null);
+  const openBook = (book: DedupedBook) => {
+    if (organizing) {
+      toggleSelected(book.recordId);
+      return;
+    }
+    const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || opening) {
+      setEditing(book);
+      return;
+    }
+    setOpening(book.recordId);
+    window.setTimeout(() => {
+      setEditing(book);
+      setOpening(null);
+    }, 380);
+  };
   // 우측 상단 "⋯" 메뉴(보기 방식 · 책장 정리 · 내보내기). 자주 안 바꾸는 설정이라 첫 줄에서 뺐다.
   const [menuOpen, setMenuOpen] = useState(false);
   // 책장 정리 모드 -- 책을 눌러 고르고 한 번에 어느 책장으로 옮긴다.
@@ -541,9 +561,11 @@ export default function LibraryShelf({
                   <button
                     key={book.bookId}
                     type="button"
-                    onClick={() => (organizing ? toggleSelected(book.recordId) : setEditing(book))}
-                    className="aspect-[3/4] overflow-hidden rounded-[8px] text-left"
+                    onClick={() => openBook(book)}
+                    className={`aspect-[3/4] overflow-hidden rounded-[8px] text-left ${opening === book.recordId ? "book-open" : ""}`}
                     style={{
+                      position: "relative",
+                      zIndex: opening === book.recordId ? 5 : undefined,
                       background: "var(--card)",
                       border: "1px solid var(--rule)",
                       boxShadow: selected.has(book.recordId)
@@ -595,19 +617,21 @@ export default function LibraryShelf({
 
       {filtered.length > 0 && mode === "spine" && (
         <div className="mt-[16px] flex flex-col gap-5">
-          {/* 한 줄에 8권(32px × 8 + 간격 6px × 7 = 298px -- 가장 좁은 폰의 안쪽 폭 326px에 들어감) */}
-          {chunk(filtered, 8).map((row, rowIndex) => (
+          {/* 한 줄에 7권(32px × 7 + 간격 4.5px × 6 = 251px). 책장이 흰 카드(p-4) 안으로
+              들어온 뒤 안쪽 폭이 360px 폰에서 257px로 줄어, 예전 8권(298px)은 오른쪽
+              끝 책이 잘렸다(미리보기로 확인). */}
+          {chunk(filtered, 7).map((row, rowIndex) => (
             <div key={rowIndex}>
-              <div className="flex items-end gap-1.5 px-3">
+              <div className="flex items-end gap-1 px-3">
                 {row.map((book) => (
                   <button
                     key={book.bookId}
                     type="button"
-                    onClick={() => (organizing ? toggleSelected(book.recordId) : setEditing(book))}
-                    className="flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2"
+                    onClick={() => openBook(book)}
+                    className={`flex w-8 flex-none items-start justify-center overflow-hidden rounded-t-[3px] pt-2 ${opening === book.recordId ? "book-pull" : ""}`}
                     style={{
                       height: spineHeight(book.title),
-                      background: spineColor(book.title),
+                      ...spineStyle(book.title, book.coverUrl),
                       boxShadow: selected.has(book.recordId)
                         ? "0 0 0 3px var(--point)"
                         : "inset -2px 0 0 rgba(0,0,0,0.12)",
@@ -623,6 +647,7 @@ export default function LibraryShelf({
                         textOrientation: "mixed",
                         maxHeight: "148px",
                         overflow: "hidden",
+                        textShadow: "0 1px 2px rgba(0,0,0,0.55)",
                       }}
                     >
                       {book.title}
@@ -657,8 +682,8 @@ export default function LibraryShelf({
                     {index > 0 && <div className="mx-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }} />}
                     <button
                       type="button"
-                      onClick={() => (organizing ? toggleSelected(row.recordId) : setEditing(row))}
-                      className="flex w-full items-center gap-2.5 px-4 py-2 text-left"
+                      onClick={() => openBook(row)}
+                      className={`flex w-full items-center gap-2.5 px-4 py-2 text-left ${opening === row.recordId ? "book-nudge" : ""}`}
                       aria-pressed={organizing ? selected.has(row.recordId) : undefined}
                       style={selected.has(row.recordId) ? { background: "rgba(47,168,79,0.10)" } : undefined}
                     >

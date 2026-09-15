@@ -189,3 +189,51 @@ input[type="date"]::-webkit-date-and-time-value {
 @media (prefers-reduced-motion: reduce) {
   .loading-dot { animation: none; opacity: 0.6; }
 }
+
+/* 책장에서 책을 눌렀을 때 -- 표지가 왼쪽 등을 축으로 살짝 펼쳐지고(book-open),
+   책등은 선반에서 위로 쑥 뽑히고(book-pull), 목록 줄은 오른쪽으로 살짝
+   밀린다(book-nudge). 끝날 즈음 기록 고치기 시트가 아래에서 올라온다
+   (sheet-up + backdrop-in). 전부 0.4초 안쪽의 짧은 손맛용. */
+@keyframes book-open {
+  0% { transform: perspective(600px) rotateY(0deg); }
+  60% { transform: perspective(600px) rotateY(-34deg) scale(1.05); }
+  100% { transform: perspective(600px) rotateY(-26deg) scale(1.04); }
+}
+.book-open {
+  animation: book-open 0.42s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  transform-origin: left center;
+  box-shadow: 8px 6px 14px rgba(38,54,43,0.28) !important;
+}
+@keyframes book-pull {
+  0% { transform: translateY(0); }
+  60% { transform: translateY(-14px) scale(1.08); }
+  100% { transform: translateY(-10px) scale(1.06); }
+}
+.book-pull {
+  animation: book-pull 0.38s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  transform-origin: bottom center;
+  position: relative;
+  z-index: 5;
+}
+@keyframes book-nudge {
+  0% { transform: translateX(0); }
+  60% { transform: translateX(10px); }
+  100% { transform: translateX(6px); }
+}
+.book-nudge {
+  animation: book-nudge 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  background: rgba(47,168,79,0.08);
+}
+@keyframes sheet-up {
+  from { transform: translateY(28px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.sheet-up { animation: sheet-up 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.backdrop-in { animation: backdrop-in 0.22s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .book-open, .book-pull, .book-nudge, .sheet-up, .backdrop-in { animation: none; }
+}

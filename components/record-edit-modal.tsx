@@ -208,12 +208,12 @@ export default function RecordEditModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+      className="backdrop-in fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
       style={{ background: "rgba(38,54,43,0.45)" }}
       onClick={onClose}
     >
       <div
-        className="max-h-[85vh] w-full max-w-[480px] overflow-y-auto rounded-t-[24px] p-5 pb-8 sm:rounded-[24px]"
+        className="sheet-up max-h-[85vh] w-full max-w-[480px] overflow-y-auto rounded-t-[24px] p-5 pb-8 sm:rounded-[24px]"
         style={{ background: "var(--card)" }}
         onClick={(e) => e.stopPropagation()}
       >
