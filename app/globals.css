@@ -237,3 +237,15 @@ input[type="date"]::-webkit-date-and-time-value {
 @media (prefers-reduced-motion: reduce) {
   .book-open, .book-pull, .book-nudge, .sheet-up, .backdrop-in { animation: none; }
 }
+
+/* 기분 스티커를 고르면 블롭이 톡 튀어오른다 -- 여덟 개 중 여러 개를 고르는
+   손맛. 고를 때마다 다시 마운트돼(key 교체) 매번 새로 돈다. */
+@keyframes sticker-pop {
+  0% { transform: scale(0.6) rotate(-10deg); }
+  55% { transform: scale(1.22) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.sticker-pop { animation: sticker-pop 0.38s cubic-bezier(0.2, 0.9, 0.3, 1.25) both; }
+@media (prefers-reduced-motion: reduce) {
+  .sticker-pop { animation: none; }
+}

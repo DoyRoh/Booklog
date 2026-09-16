@@ -2027,3 +2027,13 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 ## GitHub Pages 레거시 사이트가 PR 머지로 사라진 것 (사용자 질문: "https://doyroh.github.io/Booklog/ 어디 갔냐")
 
 예전 `main`(레거시 "유안이 독서기록" 정적 사이트, 루트 `index.html` 하나)과 이 브랜치는 **공통 조상이 없는 별개 히스토리**였고, PR #1 머지 커밋(`afe0d73`)의 트리가 우리 브랜치 쪽 파일만 남겨 루트 `index.html`이 빠졌습니다 — GitHub Pages가 `main` 루트를 서비스하고 있어 그 주소가 404가 된 것. 내용은 `legacy/index.html`에 동일하게 보관돼 있어(diff 없음) 손실은 없습니다. 루트에 `legacy/`로 넘기는 얇은 `index.html`(meta refresh)과 `.nojekyll`을 추가해 옛 주소가 다시 열리게 했습니다. Next.js·Vercel은 루트 `index.html`을 보지 않으므로 앱에는 영향 없음. **`main`에 머지돼야 Pages가 다시 빌드됩니다**(이 세션은 main에 직접 푸시하지 않음). Pages 설정이 꺼져 있으면 저장소 Settings → Pages에서 `main` / root로 다시 켜야 합니다.
+
+## "어떤 기분이 들었어?" — 두 줄짜리 기분 스티커 여덟 개 (사용자 요청: "아이들이 감정이 별로 다양하지 않대. 무서웠다던가")
+
+"책은 어땠어?" 스티커(최고~별로)는 1~5점 척도라 "얼마나 좋았나"만 담기고, 무서웠다·슬펐다 같은 "어떤 느낌이었나"는 담을 자리가 없었습니다. 예전에 뺐던 기분 칩(재밌어요/웃겼어요/감동적이에요/슬퍼요/그저그래요)은 점수와 겹치는 질문이라 뺀 것이었으므로, 이번엔 **점수와 겹치지 않는 감정**만 골라 별도 줄로 다시 넣었습니다("딱 두 줄로 여덟 개, 고르는 재미 있게").
+
+- **`lib/feelings.ts`**: 무서웠어·웃겼어·슬펐어·신기했어 / 뭉클했어·두근두근·화났어·따뜻했어(이 순서가 4×2 배치 순서). 여러 개 고를 수 있고, **`reading_records.emotion`(text)에 key를 쉼표로 이어 저장**합니다(`scared,funny`) — 예전 기분 칩이 쓰던 컬럼을 그대로 재사용해 **마이그레이션 없음**. `parseFeelings`(모르는 값은 버림 — 예전 한글 칩 문자열이 남아 있어도 안전)·`serializeFeelings`(항상 정해진 순서)·`feelingLabels`(목록 표시용 "무서웠어 · 웃겼어", key가 하나도 없으면 원문 그대로).
+- **`components/icons/feeling-icons.tsx`**: 평점 스티커와 같은 규칙(24 viewBox, 색 블롭 위 흰 stroke)으로 손으로 그린 표정 여덟 개(떨리는 입·웃음 눈물·눈물 방울·별빛 눈·하트·하트 둘·김 나는 눈썹·찻잔). 색은 기존 `--c-*` 팔레트 8색을 하나씩(무서웠어는 밤 같은 `--c-teal`).
+- **`components/feeling-picker.tsx`**: `grid-cols-4`로 딱 두 줄. 안 고른 스티커는 반투명 + 3도 기울여 두고, 고르면 블롭이 톡 튀어오릅니다(`app/globals.css`의 `sticker-pop`, key 교체로 매번 다시 재생, 움직임 최소화면 끔). 블롭 모양도 네 가지를 돌려 써 도장 찍은 듯 똑같아 보이지 않게. 섹션 오른쪽에 "여러 개 골라도 돼" / "N개 골랐어".
+- **넣은 곳**: 기록 남기기(`app/library/add`)와 기록 고치기(`components/record-edit-modal.tsx`) 둘 다 "책은 어땠어?" 바로 아래(접히는 "더 남기기" 밖). 오늘 탭 최근 기록 줄(`recent-records.tsx`)이 emotion을 원문 그대로 찍던 걸 `feelingLabels`로 바꿔 key 대신 한글이 보이게 했습니다. 책장 목록 줄에는 아직 안 넣었습니다(날짜+평점 스티커로 이미 꽉 참).
+- 임시 미리보기 라우트(삭제)로 360/430px에서 4×2가 한 줄에 다 들어가는 걸 확인. `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음.

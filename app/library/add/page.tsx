@@ -13,6 +13,8 @@ import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
 import QuestionPrompt from "@/components/question-prompt";
 import RatingPicker from "@/components/rating-picker";
+import FeelingPicker from "@/components/feeling-picker";
+import { serializeFeelings, type FeelingKey } from "@/lib/feelings";
 import ReadDatePicker from "@/components/read-date-picker";
 import ShelfTagPicker from "@/components/shelf-tag-picker";
 import { BOOK_CATEGORIES, categoryColor } from "@/lib/categories";
@@ -90,6 +92,7 @@ function AddBookForm() {
   const [status, setStatus] = useState<ReadingStatus>("done");
   const [readDate, setReadDate] = useState(() => kstDate());
   const [rating, setRating] = useState<number | null>(null);
+  const [feelings, setFeelings] = useState<FeelingKey[]>([]);
   // 기본 화면엔 제목·상태·날짜·평점·저장만 두고, 나머지(책장·즐겨찾기·
   // 메모·사진·목소리)는 "더 남기기"를 눌렀을 때만 펼친다 -- 30초 기록이
   // 목표인데 첫 화면이 길면 기록 자체를 안 하게 된다.
@@ -422,6 +425,7 @@ function AddBookForm() {
         status,
         read_date: readDate,
         rating,
+        emotion: serializeFeelings(feelings),
         favorite,
         pages_read: status === "reading" && pagesRead ? Number(pagesRead) : null,
         parent_memo: memo || null,
@@ -687,6 +691,18 @@ function AddBookForm() {
                 다 읽고 나서 골라도 괜찮아요.
               </p>
             )}
+          </div>
+
+          <div>
+            <div className="flex items-baseline justify-between">
+              <p className="d text-sm">어떤 기분이 들었어?</p>
+              <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                {feelings.length > 0 ? `${feelings.length}개 골랐어` : "여러 개 골라도 돼"}
+              </p>
+            </div>
+            <div className="mt-2">
+              <FeelingPicker value={feelings} onChange={setFeelings} />
+            </div>
           </div>
 
           <button

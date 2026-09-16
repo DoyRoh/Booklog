@@ -8,6 +8,8 @@ import { getSignedMediaUrl, uploadChildPhoto, uploadChildVoice } from "@/lib/sto
 import type { ReadingStatus } from "@/lib/reading-status";
 import { BOOK_CATEGORIES, categoryColor } from "@/lib/categories";
 import RatingPicker from "@/components/rating-picker";
+import FeelingPicker from "@/components/feeling-picker";
+import { parseFeelings, serializeFeelings, type FeelingKey } from "@/lib/feelings";
 import ReadDatePicker from "@/components/read-date-picker";
 import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
@@ -52,6 +54,7 @@ export default function RecordEditModal({
   const router = useRouter();
   const [status, setStatus] = useState<ReadingStatus>(record.status);
   const [rating, setRating] = useState(record.rating);
+  const [feelings, setFeelings] = useState<FeelingKey[]>(() => parseFeelings(record.emotion));
   // 이미 뭔가 남겨둔 기록(메모·사진·목소리·즐겨찾기·책장)이면 펼친 채로,
   // 아니면 접은 채로 연다(기록 남기기 화면의 "더 남기기"와 같은 구조).
   const [more, setMore] = useState(
@@ -127,6 +130,7 @@ export default function RecordEditModal({
     const updates: Record<string, unknown> = {
       status,
       rating,
+      emotion: serializeFeelings(feelings),
       favorite,
       parent_memo: memo || null,
       read_date: readDate,
@@ -300,6 +304,18 @@ export default function RecordEditModal({
               다 읽고 나서 골라도 괜찮아요.
             </p>
           )}
+        </div>
+
+        <div className="mt-4">
+          <div className="flex items-baseline justify-between">
+            <p className="d text-sm">어떤 기분이 들었어?</p>
+            <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+              {feelings.length > 0 ? `${feelings.length}개 골랐어` : "여러 개 골라도 돼"}
+            </p>
+          </div>
+          <div className="mt-2">
+            <FeelingPicker value={feelings} onChange={setFeelings} />
+          </div>
         </div>
 
         <button

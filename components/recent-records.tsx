@@ -3,6 +3,7 @@
 import { useState } from "react";
 import RecordEditModal from "@/components/record-edit-modal";
 import type { ReadingStatus } from "@/lib/reading-status";
+import { feelingLabels } from "@/lib/feelings";
 
 export type RecentRecord = {
   id: string;
@@ -57,7 +58,7 @@ export default function RecentRecords({
               <p className="truncate text-xs" style={{ color: "var(--ink-2)" }}>
                 {record.readDate}
                 {record.rating ? ` · 평점 ${record.rating}` : ""}
-                {record.emotion ? ` · ${record.emotion}` : ""}
+                {feelingLabels(record.emotion) ? ` · ${feelingLabels(record.emotion)}` : ""}
               </p>
             </div>
           </button>
