@@ -4,7 +4,7 @@
 
 Next.js(App Router) + TypeScript + Supabase 기반. 자세한 제품/스키마 설계는 `CLAUDE.md`를 참고하세요.
 
-이 저장소의 `legacy/index.html`은 서비스형으로 확장하기 전의 개인용 프로토타입("유안이 독서기록")으로, 디자인 시스템과 UI 참고용으로만 남겨둔 것이며 빌드에는 포함되지 않습니다.
+이 저장소의 `legacy/index.html`은 서비스형으로 확장하기 전의 개인용 프로토타입("유안이 독서기록")으로, 디자인 시스템과 UI 참고용으로만 남겨둔 것이며 빌드에는 포함되지 않습니다. GitHub Pages(https://doyroh.github.io/Booklog/)는 `main` 브랜치 루트에서 서비스되며, 루트 `index.html`이 `legacy/`로 넘겨 주는 진입점입니다(Next.js 빌드와 무관).
 
 ## 로컬 실행 방법
 
