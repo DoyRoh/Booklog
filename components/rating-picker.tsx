@@ -1,6 +1,6 @@
 "use client";
 
-import type { SVGProps } from "react";
+import Image from "next/image";
 
 // "책은 어땠어?" -- 별 다섯 개. 예전엔 최고/재밌어/좋아/보통/별로 표정
 // 스티커였는데, 그 아래 "어떤 기분이 들었어?" 표정 스티커 줄이 생기면서
@@ -15,19 +15,28 @@ const LABELS: Record<number, string> = {
   1: "별로였어",
 };
 
-// 레거시 앱의 손그림 별 path(record-icons.tsx의 Star5Icon)를 채움/빈 별
-// 두 가지로 그린다. 이모지 별 아님.
-function StarIcon({ filled, ...props }: SVGProps<SVGSVGElement> & { filled: boolean }) {
+// 사용자가 직접 그린 크레용 별 그림(public/illustrations/star-rating.png,
+// 원본은 docs/illustrations/star-rating-src.png). 벡터 별은 "이질적"이라는
+// 지적으로 교체 -- 빈 별은 같은 그림을 회색·반투명으로 눌러서 모양이 똑같이
+// 이어지게 한다.
+const STAR_SRC = "/illustrations/star-rating.png";
+
+function StarIcon({ filled, size }: { filled: boolean; size: number }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-      <path
-        d="M12 2.5l2.9 6.2 6.6.8-4.9 4.5 1.3 6.5-5.9-3.3-5.9 3.3 1.3-6.5L2.5 9.5l6.6-.8z"
-        fill={filled ? "var(--lantern)" : "var(--card)"}
-        stroke={filled ? "var(--lantern)" : "var(--rule)"}
-        strokeWidth={filled ? 1 : 1.6}
-        strokeLinejoin="round"
-      />
-    </svg>
+    <Image
+      src={STAR_SRC}
+      alt=""
+      width={size}
+      height={size}
+      draggable={false}
+      style={{
+        width: size,
+        height: size,
+        objectFit: "contain",
+        filter: filled ? undefined : "grayscale(1) brightness(1.15)",
+        opacity: filled ? 1 : 0.32,
+      }}
+    />
   );
 }
 
@@ -43,7 +52,7 @@ export function RatingSticker({ value, size = 12 }: { value: number; size?: numb
   return (
     <span className="flex flex-none items-center gap-[1px]" title={ratingLabel(value) ?? undefined}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <StarIcon key={n} filled={n <= value} width={size} height={size} />
+        <StarIcon key={n} filled={n <= value} size={size} />
       ))}
     </span>
   );
@@ -73,7 +82,7 @@ export default function RatingPicker({
             >
               {/* 채워질 때마다 다시 마운트돼 톡 튀어오른다(기분 스티커와 같은 손맛) */}
               <span key={filled ? `on-${value}` : "off"} className={filled ? "sticker-pop" : undefined}>
-                <StarIcon filled={filled} width={36} height={36} />
+                <StarIcon filled={filled} size={38} />
               </span>
             </button>
           );
