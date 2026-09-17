@@ -2037,3 +2037,12 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **`components/feeling-picker.tsx`**: `grid-cols-4`로 딱 두 줄. 안 고른 스티커는 반투명 + 3도 기울여 두고, 고르면 블롭이 톡 튀어오릅니다(`app/globals.css`의 `sticker-pop`, key 교체로 매번 다시 재생, 움직임 최소화면 끔). 블롭 모양도 네 가지를 돌려 써 도장 찍은 듯 똑같아 보이지 않게. 섹션 오른쪽에 "여러 개 골라도 돼" / "N개 골랐어".
 - **넣은 곳**: 기록 남기기(`app/library/add`)와 기록 고치기(`components/record-edit-modal.tsx`) 둘 다 "책은 어땠어?" 바로 아래(접히는 "더 남기기" 밖). 오늘 탭 최근 기록 줄(`recent-records.tsx`)이 emotion을 원문 그대로 찍던 걸 `feelingLabels`로 바꿔 key 대신 한글이 보이게 했습니다. 책장 목록 줄에는 아직 안 넣었습니다(날짜+평점 스티커로 이미 꽉 참).
 - 임시 미리보기 라우트(삭제)로 360/430px에서 4×2가 한 줄에 다 들어가는 걸 확인. `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음.
+
+## "책은 어땠어?"를 표정 스티커에서 별 다섯 개로 (사용자 지적: "이중에 재밌어는 뭔가 감정 아냐? 별점 형태로 바꿀까?")
+
+바로 위에서 "어떤 기분이 들었어?" 표정 스티커 줄을 넣고 나니, 그 위의 평점 스티커(최고/재밌어/좋아/보통/별로)가 같은 색 블롭 모양에 "재밌어" 같은 기분 말까지 섞여 있어 두 줄이 같은 질문으로 보였습니다. 위는 **점수(별)**, 아래는 **기분(표정)**으로 모양부터 갈랐습니다.
+
+- **`components/rating-picker.tsx`**: 한 줄에 큰 별 다섯 개(36px, 탭 영역 48px). 누르면 거기까지 채워지고(채움 `--lantern`, 빈 별은 `--rule` 테두리), 같은 별을 다시 누르면 비웁니다. 채워지는 별은 기분 스티커와 같은 `sticker-pop`으로 톡 튀어오릅니다. 아래 한 줄 캡션 — 5 "최고야" / 4 "좋았어" / 3 "괜찮았어" / 2 "그냥 그랬어" / 1 "별로였어", 안 골랐으면 "별을 눌러 골라 봐". 별 모양은 레거시 손그림 별(`Star5Icon`의 path)을 그대로 써서 이모지 없이. `role="radiogroup"` + 별마다 `aria-label`.
+- **`RatingSticker`**(책장 목록 줄)도 작은 별 다섯 개(12px, 채워진 개수 = 점수)로. `ratingLabel(value)`를 export해 다른 곳에서 캡션 문구를 재사용할 수 있게 했습니다.
+- 저장값은 그대로 `reading_records.rating` 1~5라 기존 기록·DB는 손대지 않았고, 호출부(`app/library/add`, `record-edit-modal`, `library-shelf`)는 바꿀 게 없었습니다. `record-icons.tsx`의 표정 아이콘 4종(Grin/Smile/Meh/Dizzy)은 이제 안 쓰이지만 레거시 아이콘 모음이라 남겨 뒀습니다.
+- 임시 미리보기(삭제)로 360/430px에서 별 줄·캡션·목록 줄 작은 별을 확인. `npm run lint`/`rm -rf .next && npm run build` 통과.

@@ -1,42 +1,50 @@
 "use client";
 
-import { Star5Icon, GrinIcon, SmileIcon, MehIcon, DizzyIcon } from "@/components/icons/record-icons";
+import type { SVGProps } from "react";
 
-// 레거시 "유안이 독서기록"의 평점 스티커(최고/재밌어/좋아/보통/별로)를
-// 그대로 옮겨왔다 -- 숫자 원형 버튼보다 아이가 읽고 고르기 쉽다.
-const RATINGS = [
-  { v: 5, l: "최고", Icon: Star5Icon, col: "var(--c-red)" },
-  { v: 4, l: "재밌어", Icon: GrinIcon, col: "var(--c-yellow)" },
-  { v: 3, l: "좋아", Icon: SmileIcon, col: "var(--c-green)" },
-  { v: 2, l: "보통", Icon: MehIcon, col: "var(--c-blue)" },
-  { v: 1, l: "별로", Icon: DizzyIcon, col: "var(--c-pink)" },
-] as const;
+// "책은 어땠어?" -- 별 다섯 개. 예전엔 최고/재밌어/좋아/보통/별로 표정
+// 스티커였는데, 그 아래 "어떤 기분이 들었어?" 표정 스티커 줄이 생기면서
+// "재밌어"가 기분처럼 읽히고 두 줄이 같은 질문으로 보였다(사용자 지적).
+// 위는 별(점수), 아래는 표정(기분)으로 모양부터 갈라 둔다. 저장값은 그대로
+// reading_records.rating 1~5.
+const LABELS: Record<number, string> = {
+  5: "최고야",
+  4: "좋았어",
+  3: "괜찮았어",
+  2: "그냥 그랬어",
+  1: "별로였어",
+};
+
+// 레거시 앱의 손그림 별 path(record-icons.tsx의 Star5Icon)를 채움/빈 별
+// 두 가지로 그린다. 이모지 별 아님.
+function StarIcon({ filled, ...props }: SVGProps<SVGSVGElement> & { filled: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path
+        d="M12 2.5l2.9 6.2 6.6.8-4.9 4.5 1.3 6.5-5.9-3.3-5.9 3.3 1.3-6.5L2.5 9.5l6.6-.8z"
+        fill={filled ? "var(--lantern)" : "var(--card)"}
+        stroke={filled ? "var(--lantern)" : "var(--rule)"}
+        strokeWidth={filled ? 1 : 1.6}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ratingLabel(value: number | null | undefined) {
+  return value ? LABELS[value] ?? null : null;
+}
 
 /**
- * 목록에서 "이 책 어땠어?"를 한눈에 보여주는 작은 스티커(블롭 + 라벨).
- * 고르는 화면(RatingPicker)과 같은 색·아이콘·이름을 그대로 써서, 기록할 때
- * 누른 스티커가 책장 목록에도 그대로 남아 보이게 한다.
+ * 목록에서 평가를 한눈에 보여주는 작은 별 묶음(채워진 개수 = 점수).
  */
-export function RatingSticker({ value, size = 18 }: { value: number; size?: number }) {
-  const rating = RATINGS.find((r) => r.v === value);
-  if (!rating) return null;
-  const { l, Icon, col } = rating;
+export function RatingSticker({ value, size = 12 }: { value: number; size?: number }) {
+  if (value < 1 || value > 5) return null;
   return (
-    <span className="flex flex-none items-center gap-1" title={l}>
-      <span
-        className="flex items-center justify-center text-white"
-        style={{
-          width: size,
-          height: size,
-          background: col,
-          borderRadius: "38% 62% 68% 32% / 58% 42% 58% 42%",
-        }}
-      >
-        <Icon width={size * 0.56} height={size * 0.56} />
-      </span>
-      <span className="d text-[10px]" style={{ color: "var(--ink-2)" }}>
-        {l}
-      </span>
+    <span className="flex flex-none items-center gap-[1px]" title={ratingLabel(value) ?? undefined}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <StarIcon key={n} filled={n <= value} width={size} height={size} />
+      ))}
     </span>
   );
 }
@@ -49,38 +57,34 @@ export default function RatingPicker({
   onChange: (value: number | null) => void;
 }) {
   return (
-    <div className="grid grid-cols-5 gap-1.5">
-      {RATINGS.map(({ v, l, Icon, col }) => {
-        const active = value === v;
-        return (
-          <button
-            key={v}
-            type="button"
-            onClick={() => onChange(active ? null : v)}
-            className="flex flex-col items-center gap-1.5 rounded-[14px] border py-2.5"
-            style={{
-              borderColor: active ? "var(--point)" : "var(--rule)",
-              background: active ? "rgba(47,168,79,0.06)" : "var(--card)",
-            }}
-          >
-            <span
-              className="flex items-center justify-center text-white"
-              style={{
-                width: 34,
-                height: 34,
-                background: col,
-                borderRadius: "38% 62% 68% 32% / 58% 42% 58% 42%",
-                opacity: active ? 1 : 0.55,
-              }}
+    <div>
+      <div className="flex items-center justify-between px-1" role="radiogroup" aria-label="책은 어땠어?">
+        {[1, 2, 3, 4, 5].map((n) => {
+          const filled = value !== null && n <= value;
+          return (
+            <button
+              key={n}
+              type="button"
+              role="radio"
+              aria-checked={value === n}
+              aria-label={`별 ${n}개 · ${LABELS[n]}`}
+              onClick={() => onChange(value === n ? null : n)}
+              className="flex h-12 w-12 items-center justify-center"
             >
-              <Icon width={18} height={18} />
-            </span>
-            <span className="d text-xs" style={{ color: active ? "var(--ink)" : "var(--ink-2)" }}>
-              {l}
-            </span>
-          </button>
-        );
-      })}
+              {/* 채워질 때마다 다시 마운트돼 톡 튀어오른다(기분 스티커와 같은 손맛) */}
+              <span key={filled ? `on-${value}` : "off"} className={filled ? "sticker-pop" : undefined}>
+                <StarIcon filled={filled} width={36} height={36} />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <p
+        className="d mt-1 text-center text-xs"
+        style={{ color: value ? "var(--ink)" : "var(--ink-2)", minHeight: 18 }}
+      >
+        {value ? `별 ${value}개 · ${LABELS[value]}` : "별을 눌러 골라 봐"}
+      </p>
     </div>
   );
 }
