@@ -87,7 +87,7 @@ export default function OperatorGroupBar() {
     <div
       className="no-print fixed inset-x-0 z-40 border-b"
       style={{
-        top: "52px",
+        top: "calc(52px + var(--st))",
         background: "var(--card)",
         borderColor: "var(--rule)",
         boxShadow: "0 2px 6px rgba(38,54,43,0.06)",

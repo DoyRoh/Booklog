@@ -80,7 +80,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               내용이 가려지지 않을 만큼의 여백. "추가"는 다시 알약 바 안의
               보통 탭으로 돌아와 있어(독립 버튼으로 떠 있지 않음) 추가
               여백이 필요 없다. */}
-          <main className="flex-1 pt-[52px] pb-[96px]">{children}</main>
+          <main className="flex-1 pb-[96px]" style={{ paddingTop: "calc(52px + var(--st))" }}>{children}</main>
           <BottomNav />
         </ProfileProvider>
       </body>

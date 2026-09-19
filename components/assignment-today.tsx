@@ -243,7 +243,7 @@ function QuestionMission({ childId, mission }: { childId: string; mission: Today
     <div
       id={`mission-${mission.id}`}
       className="mt-2 rounded-[12px] p-3"
-      style={{ background: "var(--paper)", scrollMarginTop: "190px" }}
+      style={{ background: "var(--paper)", scrollMarginTop: "calc(190px + var(--st))" }}
     >
       <p className="text-sm">{mission.question}</p>
 
@@ -393,7 +393,7 @@ function AssignmentCard({
     <div
       id={assignment.id}
       className="overflow-hidden rounded-[var(--r)] border"
-      style={{ borderColor: done ? "var(--point)" : "var(--rule)", background: "var(--card)", scrollMarginTop: "190px" }}
+      style={{ borderColor: done ? "var(--point)" : "var(--rule)", background: "var(--card)", scrollMarginTop: "calc(190px + var(--st))" }}
     >
       {/* 마감일 구역 -- 사용자가 지정한 정보 순서의 맨 앞. 그룹은 위
           그룹 탭에서 이미 골랐으므로 여기 또 보여줄 필요가 없고(사용자

@@ -141,7 +141,7 @@ export default function RecommendShelf({
                 key={book.itemId}
                 id={`book-${book.itemId}`}
                 className="flex items-center gap-2.5 py-3"
-                style={{ scrollMarginTop: "190px", ...(index === 0 ? {} : { borderTop: "1px solid rgba(38,54,43,0.08)" }) }}
+                style={{ scrollMarginTop: "calc(190px + var(--st))", ...(index === 0 ? {} : { borderTop: "1px solid rgba(38,54,43,0.08)" }) }}
               >
                 <Link href={href} aria-label={`${book.title} 읽어보기`} className="flex min-w-0 flex-1 items-center gap-2.5">
                   {book.coverUrl ? (
@@ -184,7 +184,7 @@ export default function RecommendShelf({
                 const bookGroupId = book.groupId ?? groupId;
                 const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(bookGroupId)}`;
                 return (
-                  <div key={book.itemId} id={`book-${book.itemId}`} className="relative" style={{ scrollMarginTop: "190px" }}>
+                  <div key={book.itemId} id={`book-${book.itemId}`} className="relative" style={{ scrollMarginTop: "calc(190px + var(--st))" }}>
                     <Link
                       href={href}
                       aria-label={`${book.title} 읽어보기`}

@@ -155,7 +155,7 @@ export default function ChildGroupBar() {
     // 시안처럼 흰 패널 없이 배경(세이지)과 이어지게 둔다(사용자 지적:
     // "숙제·추천도서 선택 메뉴 흰색 배경 없애라"). 고정 바라 배경색은
     // 불투명해야 아래 내용이 비치지 않으므로 --paper를 그대로 쓴다.
-    <div className="no-print fixed inset-x-0 z-40" style={{ top: "52px", background: "var(--paper)" }}>
+    <div className="no-print fixed inset-x-0 z-40" style={{ top: "calc(52px + var(--st))", background: "var(--paper)" }}>
       <div className="mx-auto flex max-w-[520px] gap-3 overflow-x-auto px-5 pt-2.5 pb-3" style={{ scrollbarWidth: "none" }}>
         <button
           type="button"

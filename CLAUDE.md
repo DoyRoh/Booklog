@@ -2056,3 +2056,11 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - **로컬 Postgres에서 실제로 검증**(이 세션에 클러스터가 있어 마이그레이션 0001~0029를 mock auth/storage 위에 전부 적용): 로그인 안 한 호출 → 거부, `authenticated`가 `auth.users`를 직접 지우려는 시도 → permission denied, 계정 A로 실행 → A만 사라지고 B·교사 T 계정 유지, A 혼자 등록한 아이와 그 파일만 삭제·공동 아이는 B에게 남음, A의 그룹과 그 낭독 파일만 삭제·T의 그룹과 파일 유지, T 그룹 숙제의 `created_by`/승인자만 null, 공동 아이의 기록은 `group_id`만 비워진 채 보존.
 - **`components/delete-account.tsx`**: 프로필·설정 맨 아래 "계정" 섹션. "계정 삭제하기 ›" → 지워지는 것 목록 + "삭제할래요" → "정말 삭제할까요?" 두 단계 화면 안 버튼(iOS 홈 화면 앱에서 `window.confirm`이 안 뜨는 문제를 기록 삭제 때 겪어서 같은 방식). 성공하면 로컬 세션만 지우고(계정이 이미 없어 서버 로그아웃은 실패할 수 있음) 온보딩 쿠키를 지운 뒤 `/login?deleted=1`로 — 로그인 화면이 "계정이 삭제됐어요" 한 줄을 보여줍니다.
 - 약관 제7조·처리방침의 "운영자에게 요청" 문구를 "프로필·설정 화면에서 직접"으로 고쳤고, `docs/app-release.md`의 5.1.1 항목과 "아직 안 한 것" 목록, README의 마이그레이션 범위(0029까지)를 갱신했습니다.
+
+## 시뮬레이터 첫 실행 — 상단에 빈 띠가 생기고 스크롤하면 사라지던 것 (사용자 스크린샷: "윗쪽 여백 너무 커. 근데 스크롤 내리면 사라짐")
+
+iOS 시뮬레이터에서 상단바("신유안의 책숲") 위로 90px 남짓 빈 세이지색 띠가 있다가 스크롤하면 사라졌습니다. **안전영역(노치·상태바) 여백을 두 번 넣고 있던 게 원인**입니다 — `capacitor.config.ts`의 `ios.contentInset: "automatic"`이면 WKWebView가 스크롤 뷰 인셋으로 상태바 높이만큼 페이지 전체를 한 번 밀어 넣는데(이 인셋은 스크롤하면 같이 올라감 = "스크롤하면 사라짐"), 웹 쪽 `TopBar`도 이미 `paddingTop: var(--st)`(= `env(safe-area-inset-top)`)로 같은 높이를 더하고 있었습니다. 주석엔 "여백은 웹의 env()로 처리한다"고 적혀 있었는데 값이 그와 어긋나 있던 것.
+
+- **`capacitor.config.ts`**: `contentInset: "never"`(Capacitor 기본값)로 — 네이티브는 안 밀고 웹만 처리. **맥에서 `npx cap sync`를 다시 돌려야 반영됩니다**(네이티브 설정이라 Vercel 배포로는 안 바뀜).
+- **웹 쪽은 "상단바 = 52px"로 못 박아 둔 곳에 전부 `+ var(--st)`**: 이제 상단바가 화면 맨 위(y=0)부터 시작하고 자기 안에 안전영역 여백을 품으므로 실제 높이가 52 + st가 됩니다. 그걸 전제하던 `app/layout.tsx`의 `main` 위 여백(`pt-[52px]` → `calc(52px + var(--st))`, 인쇄 규칙도 `main`으로), 고정 그룹 바 두 개의 `top`(`child-group-bar.tsx`·`operator-group-bar.tsx`), 앵커 스크롤 여유(`section.tsx` 68px, `recommend-shelf.tsx`·`assignment-today.tsx` 190px)를 전부 맞췄습니다. 브라우저·PWA에서는 `--st`가 0이라 예전과 픽셀 하나 안 바뀝니다.
+- 이 환경에선 iOS 웹뷰를 못 돌려 실기 확인은 사용자 몫: `git pull` → `npx cap sync` → Xcode ▶ 다시 실행해서 상단바가 상태바 바로 아래 붙고, 스크롤해도 안 움직이는지.

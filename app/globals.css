@@ -142,8 +142,7 @@ input[type="date"]::-webkit-date-and-time-value {
   .no-print {
     display: none !important;
   }
-  .pt-\[52px\],
-  .pb-\[96px\] {
+  main {
     padding: 0 !important;
   }
 }

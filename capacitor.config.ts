@@ -26,9 +26,12 @@ const config: CapacitorConfig = {
   appendUserAgent: "ChaeksupApp",
   backgroundColor: "#EAF0E5",
   ios: {
-    contentInset: "automatic",
     // 상단 노치·하단 홈바 영역까지 웹뷰가 차지하고, 여백은 웹의
-    // env(safe-area-inset-*)로 처리한다(이미 viewportFit=cover).
+    // env(safe-area-inset-*)로만 처리한다(이미 viewportFit=cover).
+    // "automatic"이면 WKWebView가 안전영역만큼 스크롤 인셋을 한 번 더
+    // 넣어서 상단바 위에 빈 띠가 생기고, 스크롤하면 그 띠가 사라지는
+    // 이중 여백이 됐다(시뮬레이터 첫 실행에서 확인).
+    contentInset: "never",
     preferredContentMode: "mobile",
   },
   android: {

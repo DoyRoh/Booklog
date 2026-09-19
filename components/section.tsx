@@ -32,7 +32,7 @@ export default function Section({
       // 상단바(TopBar, 52px 고정)가 항상 떠 있어 제목 줄이 그 밑에 가려
       // 보인다("이상한 위치로 이동해"). id가 있는 섹션에만 상단바 높이만큼
       // 여유(scroll-margin-top)를 줘서 제목이 상단바 바로 아래에 보이게 한다.
-      style={{ borderColor: "var(--rule)", background: "var(--card)", ...(id ? { scrollMarginTop: "68px" } : {}) }}
+      style={{ borderColor: "var(--rule)", background: "var(--card)", ...(id ? { scrollMarginTop: "calc(68px + var(--st))" } : {}) }}
     >
       <header
         className="flex items-start justify-between gap-3 px-[24px] pt-[18px] pb-[14px]"
