@@ -165,7 +165,7 @@ export default function BottomNav() {
   return (
     <nav
       aria-label="주 메뉴"
-      className="no-print fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-32px)] max-w-[420px] items-stretch gap-[4px] rounded-[26px] p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
+      className="no-print fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-32px)] max-w-[420px] md:max-w-[520px] items-stretch gap-[4px] rounded-[26px] p-[6px] transition-transform duration-300 ease-out motion-reduce:transition-none"
       style={{
         bottom: "calc(var(--sb) + 14px)",
         // 96% 반투명이면 스크롤 중에 알약 뒤의 글자가 비쳐 보여 "내용이랑

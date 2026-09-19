@@ -8,7 +8,7 @@ import Illustration from "@/components/illustration";
 import { categoryColor } from "@/lib/categories";
 import type { OperatorBook } from "@/lib/operator-books";
 import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
-import { useSpinesPerRow } from "@/components/use-spines-per-row";
+import { useCoversPerRow, useSpinesPerRow } from "@/components/use-spines-per-row";
 
 type ViewMode = "list" | "cover" | "spine";
 
@@ -41,6 +41,7 @@ export default function OperatorBookBrowser({
   const [mode, setMode] = useState<ViewMode>("cover");
   const [category, setCategory] = useState<string>("all");
   const { ref: spineShelfRef, perRow: spinesPerRow } = useSpinesPerRow();
+  const { ref: coverShelfRef, perRow: coversPerRow } = useCoversPerRow();
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -172,10 +173,10 @@ export default function OperatorBookBrowser({
           />
         </div>
       ) : mode === "cover" ? (
-        <div className="mt-[16px] flex flex-col gap-2">
-          {chunk(filtered, 3).map((row, rowIndex) => (
+        <div ref={coverShelfRef} className="mt-[16px] flex flex-col gap-2">
+          {chunk(filtered, coversPerRow).map((row, rowIndex) => (
             <div key={rowIndex}>
-              <div className="grid grid-cols-3 gap-4 px-3">
+              <div className="grid gap-4 px-3" style={{ gridTemplateColumns: `repeat(${coversPerRow}, minmax(0, 1fr))` }}>
                 {row.map((book) => (
                   <Link
                     key={book.itemId}
@@ -202,7 +203,7 @@ export default function OperatorBookBrowser({
                 ))}
               </div>
               <div style={PLANK_STYLE} />
-              <div className="mt-1.5 grid grid-cols-3 gap-4 px-3">
+              <div className="mt-1.5 grid gap-4 px-3" style={{ gridTemplateColumns: `repeat(${coversPerRow}, minmax(0, 1fr))` }}>
                 {row.map((book) => (
                   <div key={book.itemId} className="flex flex-col items-center gap-1">
                     <p className="w-full truncate text-center text-xs" style={{ color: "var(--ink-2)" }}>

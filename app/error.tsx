@@ -7,7 +7,7 @@ import { DB_TIMEOUT_MESSAGE } from "@/lib/supabase/fetch-with-timeout";
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const timeout = error.message?.includes("응답하지 않아요");
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-16 text-center">
+    <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-16 text-center">
       <p className="hand text-xl" style={{ color: "var(--point-deep)" }}>
         {timeout ? "숲이 잠시 조용하네요" : "길을 잠깐 잃었어요"}
       </p>

@@ -34,7 +34,7 @@ export default async function TeacherChildDetailPage({
 
   if (!userId || !groupId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
+      <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px]">
         <Link href={groupId ? `/teacher/children?group=${groupId}` : "/teacher/children"} className="text-sm" style={{ color: "var(--point)" }}>
           ← 아이들
         </Link>
@@ -59,7 +59,7 @@ export default async function TeacherChildDetailPage({
 
   if (!membership || !group || !child) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
+      <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px]">
         <Link href={`/teacher/children?group=${groupId}`} className="text-sm" style={{ color: "var(--ink-2)" }}>
           ← 아이들
         </Link>
@@ -112,7 +112,7 @@ export default async function TeacherChildDetailPage({
   const readCount = books.filter((b) => b.readStatus === "done").length;
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
+    <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">
       <Link href={`/teacher/children?group=${groupId}`} className="text-sm" style={{ color: "var(--ink-2)" }}>
         ← 아이들
       </Link>

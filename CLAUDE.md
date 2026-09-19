@@ -2064,3 +2064,13 @@ iOS 시뮬레이터에서 상단바("신유안의 책숲") 위로 90px 남짓 �
 - **`capacitor.config.ts`**: `contentInset: "never"`(Capacitor 기본값)로 — 네이티브는 안 밀고 웹만 처리. **맥에서 `npx cap sync`를 다시 돌려야 반영됩니다**(네이티브 설정이라 Vercel 배포로는 안 바뀜).
 - **웹 쪽은 "상단바 = 52px"로 못 박아 둔 곳에 전부 `+ var(--st)`**: 이제 상단바가 화면 맨 위(y=0)부터 시작하고 자기 안에 안전영역 여백을 품으므로 실제 높이가 52 + st가 됩니다. 그걸 전제하던 `app/layout.tsx`의 `main` 위 여백(`pt-[52px]` → `calc(52px + var(--st))`, 인쇄 규칙도 `main`으로), 고정 그룹 바 두 개의 `top`(`child-group-bar.tsx`·`operator-group-bar.tsx`), 앵커 스크롤 여유(`section.tsx` 68px, `recommend-shelf.tsx`·`assignment-today.tsx` 190px)를 전부 맞췄습니다. 브라우저·PWA에서는 `--st`가 0이라 예전과 픽셀 하나 안 바뀝니다.
 - 이 환경에선 iOS 웹뷰를 못 돌려 실기 확인은 사용자 몫: `git pull` → `npx cap sync` → Xcode ▶ 다시 실행해서 상단바가 상태바 바로 아래 붙고, 스크롤해도 안 움직이는지.
+
+## 아이패드 대응 — 본문 폭 760px + 표지 선반 5권 (사용자 요청: "아이패드로도 하고 싶어. 아이들 패드 잘 쓰니까")
+
+Xcode 프로젝트는 처음부터 iPhone·iPad 겸용(`TARGETED_DEVICE_FAMILY = 1,2`, iPad는 네 방향 회전 허용)이라 네이티브 쪽은 손댈 게 없었고, 웹 화면이 모든 페이지에서 가운데 520px 한 줄로 고정돼 아이패드에서 양옆이 비는 것만 고쳤습니다. 디자인 자체는 그대로입니다.
+
+- **본문 폭**: 모든 페이지 컨테이너·상단바·고정 그룹 바 두 개·우리 숲 모달·오류 화면(`max-w-[520px]`, 27개 파일)에 `md:max-w-[760px]`를 붙여 768px 이상에서 760px로 넓어집니다. 하단 알약 바는 420 → md 520, 기록 남기기·그룹 만들기 폼은 420 → md 560. 인증·온보딩·404·약관은 좁은 폭 그대로(읽는 글이라 넓을수록 불리).
+- **표지 선반 한 줄 권수를 폭에 맞춰 자동으로**: `lib/shelf-visual.ts`의 `coversPerRow(innerWidth)`(≥560px 5권, ≥440px 4권, 그 외 3권)와 `components/use-spines-per-row.ts`의 `useCoversPerRow()`를 추가해 아이 책장(`library-shelf.tsx`)·숲길 추천도서(`recommend-shelf.tsx`)·숲지기 추천도서(`operator-book-browser.tsx`) 세 곳의 `chunk(filtered, 3)` + `grid-cols-3`을 측정값 기반(`gridTemplateColumns: repeat(n, …)`)으로 바꿨습니다. 책등은 이미 폭 자동이라 그대로.
+- **덤으로 잡은 버그**: `useSpinesPerRow`가 `useRef` + 마운트 시 1회 effect라, 책등 선반이 나중에 마운트되면(전면 보기로 시작해 책등으로 전환) 측정이 영영 안 돌아 기본 7권에 머물렀습니다. 두 훅 모두 **콜백 ref + 상태로 든 엘리먼트**(`useState<HTMLDivElement|null>`)를 의존성으로 쓰는 `useMeasuredPerRow`로 다시 짜서, 선반이 언제 나타나든 그때 측정을 시작합니다(아이패드에서 전환 후 한 줄 12권이 실제로 서는 것 확인).
+- 임시 미리보기 라우트(삭제)로 820×1180(아이패드 세로)·1180×820(가로)·390(폰)을 렌더해 본문 760/760/390px, 표지 5/5/3권을 측정·스크린샷으로 확인했습니다. `docs/app-release.md`에 13형 iPad 스크린샷이 필요하다는 안내를 추가했습니다. `npm run lint`/`rm -rf .next && npm run build` 통과. DB 변경 없음.
+

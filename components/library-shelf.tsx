@@ -12,7 +12,7 @@ import ShelfTagPicker from "@/components/shelf-tag-picker";
 import ShelfTagManager from "@/components/shelf-tag-manager";
 import { createClient } from "@/lib/supabase/client";
 import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
-import { useSpinesPerRow } from "@/components/use-spines-per-row";
+import { useCoversPerRow, useSpinesPerRow } from "@/components/use-spines-per-row";
 import { useRouter } from "next/navigation";
 
 // 같은 책이 여러 그룹의 숙제로 겹쳐서 나올 수 있으므로(child_id+book_id
@@ -139,6 +139,7 @@ export default function LibraryShelf({
   // 최소화 설정이면 바로 연다.
   const [opening, setOpening] = useState<string | null>(null);
   const { ref: spineShelfRef, perRow: spinesPerRow } = useSpinesPerRow();
+  const { ref: coverShelfRef, perRow: coversPerRow } = useCoversPerRow();
   const openBook = (book: DedupedBook) => {
     if (organizing) {
       toggleSelected(book.recordId);
@@ -554,11 +555,12 @@ export default function LibraryShelf({
       )}
 
       {filtered.length > 0 && mode === "cover" && (
-        <div className="mt-[16px] flex flex-col gap-2">
-          {chunk(filtered, 3).map((row, rowIndex) => (
+        <div ref={coverShelfRef} className="mt-[16px] flex flex-col gap-2">
+          {/* 한 줄 권수는 선반 폭을 재서 정한다(useCoversPerRow) -- 폰 3권, 아이패드 4~5권 */}
+          {chunk(filtered, coversPerRow).map((row, rowIndex) => (
             <div key={rowIndex}>
               {/* 표지는 선반 위에 "올려진" 느낌으로 -- 바닥 그림자를 아래로만 */}
-              <div className="grid grid-cols-3 gap-4 px-3">
+              <div className="grid gap-4 px-3" style={{ gridTemplateColumns: `repeat(${coversPerRow}, minmax(0, 1fr))` }}>
                 {row.map((book) => (
                   <button
                     key={book.bookId}
@@ -592,7 +594,7 @@ export default function LibraryShelf({
                 ))}
               </div>
               <div style={PLANK_STYLE} />
-              <div className="mt-1.5 grid grid-cols-3 gap-4 px-3">
+              <div className="mt-1.5 grid gap-4 px-3" style={{ gridTemplateColumns: `repeat(${coversPerRow}, minmax(0, 1fr))` }}>
                 {row.map((book) => (
                   <div key={book.bookId} className="flex flex-col items-center gap-1">
                     <p className="w-full truncate text-center text-xs" style={{ color: "var(--ink-2)" }}>

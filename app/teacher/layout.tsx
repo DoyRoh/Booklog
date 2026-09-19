@@ -29,7 +29,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   if (user?.active_profile_type === "operator") return <>{children}</>;
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
+    <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">
       <h1 className="d text-xl">숲지기 화면</h1>
       <p className="mt-3 text-sm" style={{ color: "var(--ink-2)" }}>
         지금은 <b>아이 프로필</b>로 보고 있어요. 숲지기 화면(대시보드·아이들·추천도서·숙제)은 숲지기 프로필로

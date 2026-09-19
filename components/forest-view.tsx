@@ -187,7 +187,7 @@ export default function ForestView({
             style={{ cursor: "default" }}
           />
           <div
-            className="mx-auto flex w-full max-w-[520px] flex-none flex-col rounded-t-[var(--r)]"
+            className="mx-auto flex w-full max-w-[520px] md:max-w-[760px] flex-none flex-col rounded-t-[var(--r)]"
             style={{ background: "var(--card)", maxHeight: "88vh" }}
           >
             <div

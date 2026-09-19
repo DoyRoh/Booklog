@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ShelfBookmark } from "@/components/read-toggles";
 import ViewToggle from "@/components/view-toggle";
+import { useCoversPerRow } from "@/components/use-spines-per-row";
 import { BOOK_CATEGORIES } from "@/lib/categories";
 import type { RecommendBook } from "@/lib/recommend-books";
 
@@ -61,6 +62,7 @@ export default function RecommendShelf({
   // 이유(둘러보기)로 표지가 우선이지만, "목록형으로도 볼 수 있게"라는
   // 요청으로 목록 보기를 추가했다. 마지막 보기 모드는 localStorage에 저장.
   const [mode, setMode] = useState<ShelfMode>("cover");
+  const { ref: coverShelfRef, perRow: coversPerRow } = useCoversPerRow();
 
   useEffect(() => {
     const saved = window.localStorage.getItem(MODE_STORAGE_KEY);
@@ -176,10 +178,10 @@ export default function RecommendShelf({
       ) : (
       /* 3권씩 선반 한 칸. 표지를 누르면 기록 남기기(책 정보 미리 채움),
           표지 오른쪽 위 책갈피 = 내 책장에 꽂기/빼기, 오른쪽 아래 체크 = 읽었어요. */
-      <div className="mt-5 flex flex-col gap-5">
-        {chunk(filtered, 3).map((row, rowIndex) => (
+      <div ref={coverShelfRef} className="mt-5 flex flex-col gap-5">
+        {chunk(filtered, coversPerRow).map((row, rowIndex) => (
           <div key={rowIndex}>
-            <div className="grid grid-cols-3 gap-4 px-3">
+            <div className="grid gap-4 px-3" style={{ gridTemplateColumns: `repeat(${coversPerRow}, minmax(0, 1fr))` }}>
               {row.map((book) => {
                 const bookGroupId = book.groupId ?? groupId;
                 const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(bookGroupId)}`;
@@ -225,7 +227,7 @@ export default function RecommendShelf({
               })}
             </div>
             <div className="mt-2" style={PLANK_STYLE} />
-            <div className="mt-2 grid grid-cols-3 gap-4 px-3">
+            <div className="mt-2 grid gap-4 px-3" style={{ gridTemplateColumns: `repeat(${coversPerRow}, minmax(0, 1fr))` }}>
               {row.map((book) => (
                 <div key={book.itemId} className="min-w-0">
                   <p

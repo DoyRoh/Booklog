@@ -49,6 +49,15 @@ export function spinesPerRow(rowInnerWidth: number) {
   return Math.max(1, Math.floor((rowInnerWidth + SPINE_GAP) / (SPINE_WIDTH + SPINE_GAP)));
 }
 
+// 표지 선반 한 줄 권수. 폰(카드 안 폭 ~280~400px)은 3권, 아이패드처럼 넓어지면
+// 표지 한 장이 130px 안팎을 넘지 않는 선에서 4~5권. 아이패드 세로(본문 760px,
+// 카드 안 ~690px)에서 5권 = 표지 약 120px.
+export function coversPerRow(rowInnerWidth: number) {
+  if (rowInnerWidth >= 560) return 5;
+  if (rowInnerWidth >= 440) return 4;
+  return 3;
+}
+
 export function chunk<T>(items: T[], size: number): T[][] {
   const rows: T[][] = [];
   for (let i = 0; i < items.length; i += size) rows.push(items.slice(i, i + size));

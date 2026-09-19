@@ -24,7 +24,7 @@ export default async function SearchPage({
 
   if (!userId) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
+      <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px]">
         <h1 className="d text-xl">검색</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
@@ -36,7 +36,7 @@ export default async function SearchPage({
   const activeChild = await getActiveChild(supabase, userId);
   if (!activeChild) {
     return (
-      <div className="mx-auto max-w-[520px] px-5 pt-[20px]">
+      <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px]">
         <h1 className="d text-xl">검색</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
           아이를 등록하면 숙제·추천도서를 검색할 수 있어요. 위쪽 프로필에서 아이를 추가해 주세요.
@@ -57,7 +57,7 @@ export default async function SearchPage({
   const selectedGroupName = group ? (groups.find((g) => g.id === group)?.name ?? null) : null;
 
   return (
-    <div className="mx-auto max-w-[520px] px-5 pt-[20px] pb-[16px]">
+    <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">
       <h1 className="d text-xl">숙제·추천도서 검색</h1>
       <div className="mt-4">
         <SearchBar groups={groups} />

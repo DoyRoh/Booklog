@@ -83,7 +83,7 @@ npm run cap:android             # Android Studio가 열림
 2. Xcode에서 기기 선택을 **Any iOS Device (arm64)** 로 → Product → **Archive** → Organizer 창에서 **Distribute App** → App Store Connect → Upload. 5~30분 뒤 App Store Connect의 TestFlight 탭에 빌드가 뜹니다.
 3. **TestFlight**로 먼저 배포: 내부 테스터(본인·가족)에게 TestFlight 앱으로 설치시켜 실기기에서 한 번 더 확인. 외부 테스터(학부모 등)는 간단 심사 후 최대 1만 명.
 4. **앱 정보 채우기** — 필요한 자산:
-   - 스크린샷: 6.7형(iPhone 15 Pro Max 등, 1290×2796) 최소 1장, 권장 3~6장. 6.5형·5.5형도 요구되면 같은 이미지를 리사이즈해 올려도 됨. 시뮬레이터에서 ⌘S로 찍으면 정확한 크기가 나옵니다.
+   - 스크린샷: 6.7형(iPhone 15 Pro Max 등, 1290×2796) 최소 1장, 권장 3~6장. 6.5형·5.5형도 요구되면 같은 이미지를 리사이즈해 올려도 됨. **iPad도 지원하므로 13형 iPad(iPad Pro 13인치 시뮬레이터, 2064×2752) 스크린샷도 최소 1장 필요**(세로 화면으로 찍으면 됨). 시뮬레이터에서 ⌘S로 찍으면 정확한 크기가 나옵니다.
    - 설명(4000자 이내), 부제(30자), 키워드(100자, 쉼표 구분: 독서기록,독서,어린이,그림책,책장,숙제,유치원,학원), 지원 URL(문의 받을 페이지 — 없으면 노션 페이지나 이메일 안내 페이지 하나), **개인정보 처리방침 URL: `https://<도메인>/privacy`** (이미 앱에 있음).
    - 연령 등급: 설문에 전부 "없음" → 4+.
    - 카테고리: 교육(주), 도서(부).
@@ -131,4 +131,4 @@ npm run cap:android             # Android Studio가 열림
 
 - **푸시 알림(숙제 등록·마감 알림)** — Apple 4.2 반려 시 가장 확실한 대응이자 실제 재방문을 만드는 기능. Firebase Cloud Messaging 또는 OneSignal + Supabase 함수가 필요해 별도 라운드.
 - **딥링크/유니버설 링크** — 비밀번호 재설정 메일의 링크는 지금은 사파리/크롬에서 열리고 거기서 재설정이 끝납니다(동작엔 문제 없음). 앱 안에서 바로 열리게 하려면 도메인 소유 확인 파일(`apple-app-site-association`, `assetlinks.json`)이 필요합니다.
-- **iPad 레이아웃** — iPhone 전용(세로)으로 제출해도 되고, iPad 지원을 켜면 큰 화면 스크린샷도 요구됩니다. 지금 설정은 iPhone·iPad 둘 다 켜져 있으니, iPad를 뺄 거면 Xcode → General → Supported Destinations에서 iPad 제거.
+- **iPad 레이아웃** — iPhone·iPad 겸용으로 제출합니다(사용자 결정). 웹 쪽은 768px 이상에서 본문 폭 760px, 표지 선반 한 줄 5권으로 넓어지도록 맞춰 뒀고, 그 이상의 아이패드 전용 레이아웃(2단 등)은 하지 않았습니다. iPad를 빼려면 Xcode → General → Supported Destinations에서 iPad 제거(그러면 iPad 스크린샷도 불필요).

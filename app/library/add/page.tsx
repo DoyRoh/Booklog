@@ -452,7 +452,7 @@ function AddBookForm() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-[420px] flex-col px-5 pt-[20px] pb-[16px]">
+    <div className="mx-auto flex min-h-screen max-w-[420px] md:max-w-[560px] flex-col px-5 pt-[20px] pb-[16px]">
       <div className="flex items-center justify-between">
         <h1 className="d text-xl">기록 남기기</h1>
         <Link href="/library" className="text-sm" style={{ color: "var(--ink-2)" }}>

@@ -156,7 +156,7 @@ export default function ChildGroupBar() {
     // "숙제·추천도서 선택 메뉴 흰색 배경 없애라"). 고정 바라 배경색은
     // 불투명해야 아래 내용이 비치지 않으므로 --paper를 그대로 쓴다.
     <div className="no-print fixed inset-x-0 z-40" style={{ top: "calc(52px + var(--st))", background: "var(--paper)" }}>
-      <div className="mx-auto flex max-w-[520px] gap-3 overflow-x-auto px-5 pt-2.5 pb-3" style={{ scrollbarWidth: "none" }}>
+      <div className="mx-auto flex max-w-[520px] md:max-w-[760px] gap-3 overflow-x-auto px-5 pt-2.5 pb-3" style={{ scrollbarWidth: "none" }}>
         <button
           type="button"
           onClick={() => pick(null)}
@@ -250,7 +250,7 @@ export default function ChildGroupBar() {
           채우고 선택 안 된 쪽도 진한 글자(--ink, 굵게)로 바꿔 두 라벨 다
           한눈에 읽히게 했다. 오른쪽 끝의 돋보기는 전체 검색(/search,
           핵심 기능)으로. */}
-      <div className="mx-auto flex max-w-[520px] items-center gap-2 px-5 pt-1.5 pb-2.5">
+      <div className="mx-auto flex max-w-[520px] md:max-w-[760px] items-center gap-2 px-5 pt-1.5 pb-2.5">
         <div className="flex flex-1 gap-1 rounded-full p-1" style={{ background: "var(--sprout-pale)" }}>
           {(
             [

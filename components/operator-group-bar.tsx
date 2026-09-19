@@ -94,7 +94,7 @@ export default function OperatorGroupBar() {
       }}
     >
       <div
-        className="mx-auto flex max-w-[520px] gap-3 overflow-x-auto px-5 py-2"
+        className="mx-auto flex max-w-[520px] md:max-w-[760px] gap-3 overflow-x-auto px-5 py-2"
         style={{ scrollbarWidth: "none" }}
       >
         {groups.map((group) => {
