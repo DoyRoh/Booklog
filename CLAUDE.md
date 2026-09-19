@@ -2047,3 +2047,12 @@ iOS 사파리의 `input[type="date"]`는 기본 모양(`-webkit-appearance`)일 
 - 저장값은 그대로 `reading_records.rating` 1~5라 기존 기록·DB는 손대지 않았고, 호출부(`app/library/add`, `record-edit-modal`, `library-shelf`)는 바꿀 게 없었습니다. `record-icons.tsx`의 표정 아이콘 4종(Grin/Smile/Meh/Dizzy)은 이제 안 쓰이지만 레거시 아이콘 모음이라 남겨 뒀습니다.
 - 임시 미리보기(삭제)로 360/430px에서 별 줄·캡션·목록 줄 작은 별을 확인. `npm run lint`/`rm -rf .next && npm run build` 통과.
 - **후속(사용자가 크레용 별을 직접 그려옴: "별이 너무 이질적이어서 그림으로 만들었어")**: 벡터 별(`Star5Icon` path)이 크레용 일러스트 톤과 안 맞아, 사용자가 그린 크레용 별 PNG(원본 `docs/illustrations/star-rating-src.png`, 1254² 투명 배경)를 여백만 잘라 192px로 줄여 `public/illustrations/star-rating.png`로 넣었습니다. `components/rating-picker.tsx`의 `StarIcon`이 이제 SVG 대신 이 그림(`next/image`)을 그리고, **빈 별은 같은 그림에 `grayscale(1) brightness(1.15)` + 불투명도 0.32**를 걸어 모양이 그대로 이어지게 했습니다(빈 별용 그림을 따로 두지 않아 하나만 관리). 큰 별 38px, 목록 줄 작은 별 12px 그대로. 임시 미리보기(삭제)로 확인, lint·build 통과.
+
+## 계정 삭제(회원 탈퇴) 화면 — Apple 5.1.1(v) 대응 (출시 준비 1순위 공백)
+
+"이제 어플출시 해보자"에 앞서, `docs/app-release.md`에 반려 사유 1순위로 적어 뒀던 "앱 안에 계정 삭제가 없다"를 먼저 메웠습니다. 지금까지는 운영자가 SQL로 지워 주는 방법뿐이었습니다(약관·처리방침에도 "운영자에게 요청"으로 적혀 있었음).
+
+- **마이그레이션 0029 `delete_my_account()`**: SECURITY DEFINER 함수 하나가 `auth.uid()` 본인 계정만 지웁니다(서비스 롤 키 없이 RLS·권한 벽을 넘는 이 프로젝트의 기존 방식 — `join_child_by_invite_code`와 같은 패턴). 순서는 `reset_all.sql`과 같은 이유로 "참조하는 쪽부터": (1) **내가 유일한 보호자인 아이**만 사진·음성 파일(`reading-media`의 `{child_id}/...`)과 함께 삭제(독서기록·소속·이름표·답변은 cascade), 공동 보호자가 있는 아이는 남기고 내 연결만 끊김(처리방침 문구 그대로), (2) **내가 그룹장인 그룹**은 그 숙제의 낭독 녹음 파일까지 지우고 삭제(추천도서·숙제·그룹원 cascade, 남의 독서기록의 `group_id`는 0023의 set null), (3) 남의 그룹에 남긴 `assignments.created_by`·`group_members.approved_by`는 null로만(데이터 보존), (4) `auth.users` 삭제 → `public.users`·동의·보호자 연결·운영진 행 cascade, 내가 낸 질문은 `created_by`만 null(0009). 공유 카탈로그(`books`·표지 버킷)는 개인정보가 아니라 남깁니다. **SQL Editor에서 실행 필요.**
+- **로컬 Postgres에서 실제로 검증**(이 세션에 클러스터가 있어 마이그레이션 0001~0029를 mock auth/storage 위에 전부 적용): 로그인 안 한 호출 → 거부, `authenticated`가 `auth.users`를 직접 지우려는 시도 → permission denied, 계정 A로 실행 → A만 사라지고 B·교사 T 계정 유지, A 혼자 등록한 아이와 그 파일만 삭제·공동 아이는 B에게 남음, A의 그룹과 그 낭독 파일만 삭제·T의 그룹과 파일 유지, T 그룹 숙제의 `created_by`/승인자만 null, 공동 아이의 기록은 `group_id`만 비워진 채 보존.
+- **`components/delete-account.tsx`**: 프로필·설정 맨 아래 "계정" 섹션. "계정 삭제하기 ›" → 지워지는 것 목록 + "삭제할래요" → "정말 삭제할까요?" 두 단계 화면 안 버튼(iOS 홈 화면 앱에서 `window.confirm`이 안 뜨는 문제를 기록 삭제 때 겪어서 같은 방식). 성공하면 로컬 세션만 지우고(계정이 이미 없어 서버 로그아웃은 실패할 수 있음) 온보딩 쿠키를 지운 뒤 `/login?deleted=1`로 — 로그인 화면이 "계정이 삭제됐어요" 한 줄을 보여줍니다.
+- 약관 제7조·처리방침의 "운영자에게 요청" 문구를 "프로필·설정 화면에서 직접"으로 고쳤고, `docs/app-release.md`의 5.1.1 항목과 "아직 안 한 것" 목록, README의 마이그레이션 범위(0029까지)를 갱신했습니다.

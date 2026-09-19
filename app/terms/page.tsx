@@ -62,7 +62,7 @@ export default function TermsPage() {
         <section>
           <p className="d text-sm">제7조 (계정 삭제)</p>
           <p className="mt-1">
-            이용자는 언제든지 서비스 운영자에게 요청하여 계정과 그에 연결된 아이 프로필·독서기록을
+            이용자는 언제든지 앱의 프로필·설정 화면에서 직접 계정과 그에 연결된 아이 프로필·독서기록을
             삭제할 수 있습니다.
           </p>
         </section>

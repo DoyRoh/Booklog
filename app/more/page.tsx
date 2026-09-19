@@ -7,6 +7,7 @@ import ChildSwitcher from "@/components/child-switcher";
 import OperatorProfileSwitcher, { type OperatorGroup } from "@/components/operator-profile-switcher";
 import Section from "@/components/section";
 import ProfileModeSwitch from "@/components/profile-mode-switch";
+import DeleteAccount from "@/components/delete-account";
 
 export default async function MorePage() {
   const supabase = await createClient();
@@ -146,6 +147,10 @@ export default async function MorePage() {
           </Link>
         </Section>
       )}
+
+      <Section className="mt-5" title="계정" description="계정을 지우면 아이 프로필·독서기록·내가 만든 그룹이 함께 삭제돼요.">
+        <DeleteAccount />
+      </Section>
     </div>
   );
 }

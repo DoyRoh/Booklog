@@ -21,6 +21,8 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(searchParams.get("error"));
+  // 계정 삭제 직후 돌아온 경우(components/delete-account.tsx) 한 줄 안내
+  const deleted = searchParams.get("deleted") === "1";
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -68,6 +70,11 @@ function LoginForm() {
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         />
 
+        {deleted && !error && (
+          <p className="mt-4 text-sm" style={{ color: "var(--point-deep)" }}>
+            계정이 삭제됐어요. 그동안 책숲을 함께 걸어 주셔서 고마워요.
+          </p>
+        )}
         {error && (
           <p className="text-sm" style={{ color: "var(--berry)" }}>
             {error}
