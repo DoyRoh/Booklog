@@ -65,7 +65,13 @@ export default function PrivacyPage() {
 
         <section>
           <p className="d text-sm">7. 문의</p>
-          <p className="mt-1">개인정보 관련 문의는 서비스 운영자에게 연락해 주세요.</p>
+          <p className="mt-1">
+            개인정보 관련 문의는{" "}
+            <Link href="/support" style={{ color: "var(--point)" }}>
+              고객지원 페이지
+            </Link>
+            의 이메일로 연락해 주세요.
+          </p>
         </section>
       </div>
 

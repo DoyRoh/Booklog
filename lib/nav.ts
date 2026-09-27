@@ -9,6 +9,7 @@ export const AUTH_HIDDEN_PREFIXES = [
   "/reset-password",
   "/terms",
   "/privacy",
+  "/support",
 ];
 
 export function isChromeHidden(pathname: string) {

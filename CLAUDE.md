@@ -2083,3 +2083,7 @@ Xcode 프로젝트는 처음부터 iPhone·iPad 겸용(`TARGETED_DEVICE_FAMILY =
 - **생성물**: `assets/icon-only.png`(iOS·스토어용 1024, 글자 폭 ≈ 화면의 82%), `assets/icon-background.png`(안드로이드 adaptive 배경 = 숲 전체) + `assets/icon-foreground.png`(adaptive 전경 = **안전영역 66% 안에 들어가는 작은 글자**, 원형 마스크에서 안 잘리게), 웹 `public/icon-512/192.png`·`apple-touch-icon.png`(확정안 그대로)와 `icon-maskable-512.png`(안전영역 80%용 조금 작은 글자). `npx @capacitor/assets generate`로 iOS `AppIcon-512@2x.png`와 안드로이드 mipmap 48장을 다시 만들었습니다 — 이 도구에 아이콘만 만드는 옵션이 없어 **`assets/splash*.png`를 잠시 옮겨 두고** 돌려 스플래시(예전에 용량을 줄여 둔 것)를 건드리지 않았습니다.
 - 확인: iOS 1024·안드로이드 사각/원형 런처·maskable 네 가지를 나란히 렌더해 원형 마스크 안에서도 글자가 잘리지 않는 것 확인. **맥에서 `git pull` → `npx cap sync` → Xcode ▶** 하면 홈 화면 아이콘이 바뀝니다(네이티브 리소스라 Vercel 배포로는 안 바뀜). 웹 PWA 아이콘은 배포되면 바뀌지만, 이미 홈 화면에 추가된 PWA는 다시 추가해야 새 아이콘이 보입니다.
 
+
+## 고객지원 페이지 `/support` — 앱스토어 "지원 URL"용 (출시 준비)
+
+App Store Connect의 지원 URL 칸에 넣을 페이지가 없어 개인정보처리방침 주소를 임시로 넣고 있었습니다. `app/support/page.tsx`(신규): 문의 이메일(`SUPPORT_EMAIL` 상수, 지금은 sangwkk@naver.com — 바꾸려면 이 한 줄) 버튼 + 자주 묻는 질문 4개(비밀번호 재설정·검색에 없는 책·그룹 만들기·계정 삭제) + 약관·처리방침 링크. 약관·처리방침처럼 앱 크롬 없이 단독으로 보이도록 `lib/nav.ts`의 숨김 목록에 추가했고, `proxy.ts` 보호 경로가 아니라 로그인 없이 열립니다. 개인정보처리방침 7조의 "운영자에게 연락"을 이 페이지 링크로 바꿨고, `docs/app-release.md`의 지원 URL 안내를 `https://<도메인>/support`로 갱신했습니다. 배포되면 App Store Connect 지원 URL을 `https://booklog-13xh.vercel.app/support`로 바꿔 넣으면 됩니다. DB 변경 없음. lint·build 통과.
