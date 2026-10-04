@@ -2087,3 +2087,7 @@ Xcode 프로젝트는 처음부터 iPhone·iPad 겸용(`TARGETED_DEVICE_FAMILY =
 ## 고객지원 페이지 `/support` — 앱스토어 "지원 URL"용 (출시 준비)
 
 App Store Connect의 지원 URL 칸에 넣을 페이지가 없어 개인정보처리방침 주소를 임시로 넣고 있었습니다. `app/support/page.tsx`(신규): 문의 이메일(`SUPPORT_EMAIL` 상수, 지금은 sangwkk@naver.com — 바꾸려면 이 한 줄) 버튼 + 자주 묻는 질문 4개(비밀번호 재설정·검색에 없는 책·그룹 만들기·계정 삭제) + 약관·처리방침 링크. 약관·처리방침처럼 앱 크롬 없이 단독으로 보이도록 `lib/nav.ts`의 숨김 목록에 추가했고, `proxy.ts` 보호 경로가 아니라 로그인 없이 열립니다. 개인정보처리방침 7조의 "운영자에게 연락"을 이 페이지 링크로 바꿨고, `docs/app-release.md`의 지원 URL 안내를 `https://<도메인>/support`로 갱신했습니다. 배포되면 App Store Connect 지원 URL을 `https://booklog-13xh.vercel.app/support`로 바꿔 넣으면 됩니다. DB 변경 없음. lint·build 통과.
+
+## 첫 App Store 심사 제출 완료 + 암호화 질문 자동 답변
+
+사용자가 App Store Connect 정보(이름 "책숲 - 함께 걷는 …"·연령 4+·무료·개인정보 설문·심사 정보·스크린샷 6.9형/13형)를 채우고 맥에서 Archive → 업로드 → 빌드 선택 → 심사 제출까지 마쳤습니다. 제출 직전 "수출 규정 준수 정보가 누락된 빌드"로 한 번 막혀 App Store Connect에서 직접 답했는데, 다음 빌드부터는 이 질문이 안 뜨도록 `ios/App/App/Info.plist`에 `ITSAppUsesNonExemptEncryption = false`를 넣었습니다(앱은 표준 HTTPS만 씀). 네이티브 설정이라 다음 Archive 때 `git pull` → `npx cap sync` 뒤에 반영됩니다. 심사 중 Supabase 무료 플랜이 자동 정지되면 로그인 불가로 반려되므로, 심사 기간엔 매일 앱을 열거나 Pro로 올리도록 안내했습니다.
