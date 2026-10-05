@@ -2117,3 +2117,9 @@ App Store Connect의 지원 URL 칸에 넣을 페이지가 없어 개인정보�
 ## 신고 확인·처리 스크립트 (사용자 질문: "마스터로서 신고가 쌓이는 걸 data table에서 보면서 관리해야 하나?")
 
 신고는 `content_reports`에 쌓이지만 테이블엔 `target_id`(uuid)만 있어 Table Editor로는 무엇이 신고됐는지 읽기 어렵습니다. `supabase/admin/reports.sql`(신규)을 SQL Editor 스니펫으로 저장해 두고 하루 한 번 ①만 돌리면 됩니다 — 신고 시각(한국 시간)·종류(그룹/질문)·내용(그룹 이름 또는 질문 문장)·만든 사람 이메일·이유·신고한 사람·같은 대상 신고 수·대상 id를 한 표로 보여줍니다(SQL Editor는 RLS를 우회해 전체가 보임). ②에 주석으로 처리 쿼리(질문 삭제, 그룹 삭제, 계정 정지 `banned_until` — 대시보드 Ban user가 더 쉬움), ③에 처리한 신고 정리. 신고한 사람 화면에서는 이미 즉시 숨겨지므로, 운영자는 "모두에게서 지울지"만 판단하면 됩니다(약관에 적은 24시간 안에). 로컬 Postgres에서 신고 두 건으로 조회가 읽히는 것 확인. 알림(메일·카톡)과 앱 안 관리자 화면은 신고가 실제로 들어오기 시작하면 붙이기로 하고 이번엔 만들지 않았습니다.
+
+## 신고가 들어오면 운영자에게 메일 (사용자 요청: "신고가 들어오면 나한테 알려주던지 뭔가 조치를 취해줘")
+
+- **마이그레이션 0032**: `content_reports`에 insert 트리거 → `private.notify_new_report()`(SECURITY DEFINER)가 그룹 이름/질문 문장·만든 사람·신고한 사람 이메일·누적 신고 수를 붙여 **pg_net으로 Resend 메일 API를 직접 호출**합니다(앱 서버·Vercel 환경변수 불필요). Resend 키와 받는 주소는 `private.notify_config` 한 줄에 넣는데, `private` 스키마는 `public`에서 권한을 빼서 앱 사용자(anon/authenticated)가 못 읽습니다(로컬에서 permission denied 확인). 키는 저장소에 안 들어갑니다. 설정이 없으면 트리거는 아무것도 안 하고, 메일 호출이 실패해도 `exception when others`로 신고 접수 자체는 막지 않습니다(로컬에서 pg_net을 흉내 낸 함수로 정상 호출·미설정·네트워크 실패 세 경우 확인). 메일은 일반 텍스트(사용자가 만든 그룹 이름을 HTML에 넣지 않으려고).
+- **Resend 기본 발신 주소(onboarding@resend.dev)는 Resend 가입 메일로만 보낼 수 있어서**, 받는 주소 = Resend 가입 메일(byul890808@gmail.com)이어야 합니다. 설정 방법은 마이그레이션 파일 맨 위 주석.
+- 실제 처리는 여전히 `supabase/admin/reports.sql`의 ②(삭제·정지) — 메일 본문이 그 방법과 대상 id를 함께 알려 줍니다. 자동 숨김(신고 N건 이상이면 모두에게서 숨김)과 앱 안 관리자 화면은 만들지 않았습니다.
