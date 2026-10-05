@@ -53,10 +53,11 @@ Profile tab (rightmost tab) → "아이 / 숲지기".
   and recommended books from groups the child belongs to.
 - Teacher view (switch profile to 숲지기): dashboard, children, recommended books
   (+ 책 추가), and homework (+ 숙제 만들기).
-- Report / block: open any public group (Profile → 그룹 찾기 → 둘러보기 → tap a group)
-  and scroll to the bottom for "이 그룹 신고하기" (report) and "숲지기 차단하기" (block
+- Report / block: open a public group created by another user — e.g. "숲속 그림책 도서관"
+  (Profile → 그룹 찾기 → 둘러보기 → tap the group) — and scroll to the bottom for "이 그룹 신고하기" (report) and "숲지기 차단하기" (block
   the creator). Questions in the "오늘의 질문" box (Add tab → 더 남기기) added by other
-  users have a "신고" (report) button.
+  users have a "신고" (report) button (tap "다른 질문" until "이 책에서 제일 용감했던 친구는
+  누구였어?" appears).
 - Account deletion: Profile tab → bottom → "계정 삭제하기" → confirm twice.
 
 No sample files are needed. Camera and microphone are optional (barcode scanning,
