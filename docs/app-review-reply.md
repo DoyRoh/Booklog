@@ -41,7 +41,7 @@ child's completion — without access to the child's photos or voice recordings.
 
 **3. How to access the main features**
 
-Demo account (email / password): <sangwkk@naver.com> / <비밀번호>
+Demo account (email / password): <데모 계정 이메일> / <비밀번호>
 
 There is a single account type. One account can hold both a child profile (parent view)
 and a "forest keeper" (teacher/organization) profile; switch between them from the
@@ -67,8 +67,9 @@ photos, voice notes).
 to group names/descriptions, recommended book lists and a shared bank of reading
 questions; there is no chat, comments or messaging. Users can report a group or a
 question and block a group's creator; reported content and everything from blocked users
-disappears from the reporter's view immediately. Reports are stored in our database and
-reviewed by the developer within 24 hours; offending content is removed and the account
+disappears from the reporter's view immediately. Every report is stored in our database
+and the developer is notified by email the moment it is filed; reports are reviewed within
+24 hours, and offending content is removed and the account
 suspended or deleted. Our Terms of Use (shown and agreed to at sign-up) state that
 objectionable content and abusive users are not tolerated. Support:
 https://booklog-13xh.vercel.app/support
