@@ -2123,3 +2123,10 @@ App Store Connect의 지원 URL 칸에 넣을 페이지가 없어 개인정보�
 - **마이그레이션 0032**: `content_reports`에 insert 트리거 → `private.notify_new_report()`(SECURITY DEFINER)가 그룹 이름/질문 문장·만든 사람·신고한 사람 이메일·누적 신고 수를 붙여 **pg_net으로 Resend 메일 API를 직접 호출**합니다(앱 서버·Vercel 환경변수 불필요). Resend 키와 받는 주소는 `private.notify_config` 한 줄에 넣는데, `private` 스키마는 `public`에서 권한을 빼서 앱 사용자(anon/authenticated)가 못 읽습니다(로컬에서 permission denied 확인). 키는 저장소에 안 들어갑니다. 설정이 없으면 트리거는 아무것도 안 하고, 메일 호출이 실패해도 `exception when others`로 신고 접수 자체는 막지 않습니다(로컬에서 pg_net을 흉내 낸 함수로 정상 호출·미설정·네트워크 실패 세 경우 확인). 메일은 일반 텍스트(사용자가 만든 그룹 이름을 HTML에 넣지 않으려고).
 - **Resend 기본 발신 주소(onboarding@resend.dev)는 Resend 가입 메일로만 보낼 수 있어서**, 받는 주소 = Resend 가입 메일(byul890808@gmail.com)이어야 합니다. 설정 방법은 마이그레이션 파일 맨 위 주석.
 - 실제 처리는 여전히 `supabase/admin/reports.sql`의 ②(삭제·정지) — 메일 본문이 그 방법과 대상 id를 함께 알려 줍니다. 자동 숨김(신고 N건 이상이면 모두에게서 숨김)과 앱 안 관리자 화면은 만들지 않았습니다.
+
+## 이미 가입된 이메일로 회원가입하면 막기 (사용자 신고: "존재하는 계정으로 새로 가입 시도하면 가입 메일이 또 가네")
+
+Supabase는 이메일 존재를 숨기려고 이미 있는 이메일로 `signUp`을 불러도 오류 없이 넘어가고 확인 메일을 다시 보내는 경우가 있어서, 앱이 "가입 확인 이메일을 보냈어요"라고 잘못 안내했습니다.
+
+- **마이그레이션 0033 `is_email_registered(email)`**: SECURITY DEFINER로 `auth.users`에 그 이메일이 있는지 true/false만 돌려줍니다(앞뒤 공백·대소문자 무시, anon도 호출 가능). 대가로 "이 이메일이 가입돼 있는지"는 누구나 알 수 있지만 그 외 정보는 안 드러나, 중복 가입 혼란을 막는 쪽을 택했습니다. 로컬 Postgres에서 있는/없는 이메일 판정 확인. **SQL Editor에서 실행 필요.**
+- **`app/(auth)/signup/page.tsx`**: `signUp` 전에 이 함수를 먼저 불러 이미 있으면 **signUp 자체를 안 부르고**(메일도 안 감) "이미 가입된 이메일이에요 · 로그인 / 비밀번호 찾기"를 보여줍니다. 함수가 아직 없으면(마이그레이션 전) 그냥 진행하고, 대비책으로 `signUp` 결과의 `user.identities`가 빈 배열(Supabase가 중복 이메일에 돌려주는 모양)이어도 같은 안내를 띄웁니다 — 이 경우엔 메일은 이미 갔을 수 있지만 잘못된 "메일 보냈어요" 화면은 안 뜹니다.

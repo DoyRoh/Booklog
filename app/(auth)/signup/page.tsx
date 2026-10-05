@@ -12,18 +12,35 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [exists, setExists] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setExists(false);
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({ email, password });
+
+    // 이미 가입된 이메일이면 signUp을 부르지 않는다 — Supabase는 중복 가입에도
+    // 오류 없이 확인 메일을 다시 보내기 때문. (함수가 아직 없으면 그냥 진행)
+    const { data: registered } = await supabase.rpc("is_email_registered", { p_email: email });
+    if (registered === true) {
+      setLoading(false);
+      setExists(true);
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({ email, password });
 
     setLoading(false);
     if (error) {
       setError(translateAuthError(error.message));
+      return;
+    }
+    // 위 확인을 건너뛴 경우의 대비: 이미 있는 이메일이면 identities가 빈 배열로 온다.
+    if (data.user && data.user.identities?.length === 0) {
+      setExists(true);
       return;
     }
     setDone(true);
@@ -76,6 +93,22 @@ export default function SignupPage() {
           <p className="text-sm" style={{ color: "var(--berry)" }}>
             {error}
           </p>
+        )}
+
+        {exists && (
+          <div className="rounded-[14px] px-4 py-3 text-sm" style={{ background: "var(--card)" }}>
+            <p style={{ color: "var(--berry)" }}>이미 가입된 이메일이에요.</p>
+            <p className="mt-1" style={{ color: "var(--ink-2)" }}>
+              <Link href="/login" style={{ color: "var(--point)" }}>
+                로그인
+              </Link>
+              하거나, 비밀번호가 기억나지 않으면{" "}
+              <Link href="/forgot-password" style={{ color: "var(--point)" }}>
+                비밀번호 찾기
+              </Link>
+              를 눌러 주세요.
+            </p>
+          </div>
         )}
 
         <button
