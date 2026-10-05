@@ -61,6 +61,14 @@ export default function SupportPage() {
               </dd>
             </div>
             <div>
+              <dt className="font-semibold">부적절한 그룹이나 질문을 봤어요.</dt>
+              <dd className="mt-0.5" style={{ color: "var(--ink-2)" }}>
+                그룹 화면 맨 아래 &ldquo;이 그룹 신고하기&rdquo;·&ldquo;숲지기 차단하기&rdquo;, 오늘의 질문의
+                &ldquo;신고&rdquo;를 눌러 주세요. 신고한 내용은 바로 내 화면에서 숨겨지고, 운영자가 24시간 안에
+                확인해 삭제하거나 계정을 정지합니다. 급한 경우 위 이메일로도 알려 주세요.
+              </dd>
+            </div>
+            <div>
               <dt className="font-semibold">계정을 삭제하고 싶어요.</dt>
               <dd className="mt-0.5" style={{ color: "var(--ink-2)" }}>
                 프로필·설정 화면 맨 아래 &ldquo;계정 삭제하기&rdquo;에서 직접 삭제할 수 있어요. 아이

@@ -7,6 +7,7 @@ import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
 import GroupRemoveButton from "@/components/group-remove-button";
 import Section from "@/components/section";
+import { getHiddenContent, isGroupHidden } from "@/lib/moderation";
 
 type GroupRow = {
   id: string;
@@ -34,7 +35,7 @@ export default async function RecommendPage() {
 
   // 서로 무관한 조회 셋(활성 아이, 내가 운영진인 그룹, 공개 그룹 목록)을
   // 동시에 왕복한다.
-  const [{ activeChild, activeProfile }, { data: operatorRows }, { data: openGroupRows }] = await Promise.all([
+  const [{ activeChild, activeProfile }, { data: operatorRows }, { data: openGroupRows }, hidden] = await Promise.all([
     getProfileSnapshot(supabase, userId),
     supabase
       .from("group_members")
@@ -43,8 +44,9 @@ export default async function RecommendPage() {
       .eq("status", "approved"),
     supabase
       .from("groups")
-      .select("id, name, type, description, operator_name, book_lists(book_list_items(created_at, books(cover_url)))")
+      .select("id, name, type, description, operator_name, owner_id, book_lists(book_list_items(created_at, books(cover_url)))")
       .eq("join_policy", "open"),
+    getHiddenContent(supabase),
   ]);
 
   const { data: memberRows } = activeChild
@@ -76,10 +78,12 @@ export default async function RecommendPage() {
     type: string;
     description: string | null;
     operator_name: string | null;
+    owner_id: string | null;
     book_lists: { book_list_items: { created_at: string | null; books: { cover_url: string | null } | null }[] }[] | null;
   };
   const browseGroups = ((openGroupRows ?? []) as unknown as OpenRow[])
-    .filter((g) => !myGroupIds.includes(g.id))
+    // 신고한 그룹, 차단한 숲지기의 그룹은 둘러보기에서 뺀다(마이그레이션 0030).
+    .filter((g) => !myGroupIds.includes(g.id) && !isGroupHidden(hidden, g))
     .map((g) => {
       const items = (g.book_lists ?? [])
         .flatMap((list) => list.book_list_items ?? [])

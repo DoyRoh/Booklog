@@ -16,6 +16,9 @@ export default function QuestionPrompt({
   const [adding, setAdding] = useState(false);
   const [newText, setNewText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [myId, setMyId] = useState<string | null>(null);
+  const [confirmReport, setConfirmReport] = useState(false);
+  const [reportNote, setReportNote] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -23,7 +26,31 @@ export default function QuestionPrompt({
       setQuestions(qs);
       if (qs.length > 0) setIndex(Math.floor(Math.random() * qs.length));
     });
+    supabase.auth.getSession().then(({ data }) => setMyId(data.session?.user.id ?? null));
   }, []);
+
+  const current = questions[index];
+  // 다른 사용자가 보탠 질문만 신고할 수 있다(기본 질문·내 질문 제외).
+  const canReport = Boolean(current?.createdBy && current.createdBy !== myId);
+
+  // 질문 신고(Apple 1.2): 신고 접수 후 그 질문은 내 질문 목록에서 바로 뺀다.
+  async function reportCurrent() {
+    if (!current) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("content_reports")
+      .insert({ target_type: "question", target_id: current.id, reason: "부적절한 질문" });
+    setConfirmReport(false);
+    if (error) {
+      setReportNote("신고를 보내지 못했어요. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+    const rest = questions.filter((q) => q.id !== current.id);
+    setQuestions(rest);
+    setIndex(rest.length > 0 ? Math.floor(Math.random() * rest.length) : 0);
+    onAnswerChange("");
+    setReportNote("신고했어요. 이 질문은 더 이상 보이지 않아요.");
+  }
 
   function shuffle() {
     if (questions.length <= 1) return;
@@ -34,6 +61,8 @@ export default function QuestionPrompt({
     });
     // 질문이 바뀌면 이전 질문에 쓰던 답은 지운다 -- 질문마다 새로 답할 수 있게.
     onAnswerChange("");
+    setConfirmReport(false);
+    setReportNote(null);
   }
 
   async function submitNew() {
@@ -75,7 +104,7 @@ export default function QuestionPrompt({
                 오늘의 질문
               </p>
               <p className="hand mt-1 text-lg" style={{ color: "var(--ink)" }}>
-                {questions[index]?.text}
+                {current?.text}
               </p>
             </>
           )}
@@ -98,7 +127,33 @@ export default function QuestionPrompt({
             >
               + 질문 추가
             </button>
+            {canReport && !confirmReport && (
+              <button
+                type="button"
+                onClick={() => setConfirmReport(true)}
+                className="ml-auto text-xs"
+                style={{ color: "var(--ink-2)" }}
+              >
+                신고
+              </button>
+            )}
           </div>
+          {confirmReport && (
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              <span style={{ color: "var(--ink-2)" }}>이 질문을 신고할까요?</span>
+              <button type="button" onClick={() => setConfirmReport(false)} className="d" style={{ color: "var(--ink-2)" }}>
+                취소
+              </button>
+              <button type="button" onClick={reportCurrent} className="d" style={{ color: "var(--berry)" }}>
+                신고하기
+              </button>
+            </div>
+          )}
+          {reportNote && (
+            <p className="mt-2 text-xs" style={{ color: "var(--ink-2)" }}>
+              {reportNote}
+            </p>
+          )}
           <textarea
             value={answer}
             onChange={(e) => onAnswerChange(e.target.value)}

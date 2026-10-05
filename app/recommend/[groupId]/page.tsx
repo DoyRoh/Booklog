@@ -10,6 +10,9 @@ import GroupIntroEditor from "@/components/group-intro-editor";
 import GroupRemoveButton from "@/components/group-remove-button";
 import Section from "@/components/section";
 import RecommendShelf from "@/components/recommend-shelf";
+import GroupReportBlock from "@/components/group-report-block";
+import UnblockButton from "@/components/unblock-button";
+import { getHiddenContent } from "@/lib/moderation";
 
 // 팔로우 전 미리보기로 보여줄 추천도서 수. 전부 공개하면 팔로우할 이유가
 // 없고, 아예 안 보이면 "어떤 그룹인지" 고를 수가 없다.
@@ -37,7 +40,7 @@ export default async function GroupDetailPage({
   // 서로 무관한 조회 넷(그룹 정보, 내 운영진 멤버십, 활성 아이, 활성
   // 프로필)을 먼저 동시에 왕복한다 -- 추천도서 목록은 활성 아이 id가
   // 있어야 조회할 수 있어서 그 다음 단계로 미룬다.
-  const [{ data: group }, { data: myMembership }, { activeChild, activeProfile }] = await Promise.all([
+  const [{ data: group }, { data: myMembership }, { activeChild, activeProfile }, hidden] = await Promise.all([
     supabase.from("groups").select("id, name, type, join_policy, invite_code, description, owner_id, operator_name").eq("id", groupId).single(),
     supabase
       .from("group_members")
@@ -47,6 +50,7 @@ export default async function GroupDetailPage({
       .eq("status", "approved")
       .maybeSingle(),
     getProfileSnapshot(supabase, userId),
+    getHiddenContent(supabase),
   ]);
 
   if (!group) {
@@ -71,6 +75,28 @@ export default async function GroupDetailPage({
     myMembership?.role === "admin" ||
     myMembership?.role === "curator";
   const isOperator = isOperatorMember && activeProfile.type === "operator";
+  const isOwnGroup = group.owner_id === userId;
+
+  // 내가 신고한 그룹, 내가 차단한 숲지기의 그룹은 내용을 보여주지 않는다
+  // (마이그레이션 0030 · Apple 1.2). 차단이면 여기서 풀 수 있다.
+  const blockedOwner = !isOwnGroup && !!group.owner_id && hidden.blockedUserIds.has(group.owner_id);
+  const reported = !isOwnGroup && hidden.reportedGroupIds.has(group.id);
+  if (!isOperatorMember && (blockedOwner || reported)) {
+    return (
+      <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px]">
+        <Link href="/recommend" className="text-sm" style={{ color: "var(--ink-2)" }}>
+          ← 그룹 목록
+        </Link>
+        <h1 className="d mt-2 text-xl">숨긴 그룹</h1>
+        <p className="mt-2 text-sm" style={{ color: "var(--ink-2)" }}>
+          {blockedOwner
+            ? "차단한 숲지기가 만든 그룹이라 내용을 보여주지 않아요."
+            : "신고한 그룹이라 내용을 보여주지 않아요. 운영자가 확인하고 있어요."}
+        </p>
+        {blockedOwner && group.owner_id && <UnblockButton blockedId={group.owner_id} />}
+      </div>
+    );
+  }
 
   // 셋 다 activeChild.id/groupId에만 의존하고 서로 무관하므로 동시에
   // 왕복한다. 추천도서 목록 조회는 lib/recommend-books.ts로 옮겨서
@@ -230,6 +256,18 @@ export default async function GroupDetailPage({
             }
           />
         </Section>
+      )}
+
+      {/* 다른 사람이 만든 그룹: 신고·차단 (Apple 1.2). */}
+      {!isOperator && !isOwnGroup && group.owner_id && (
+        <div className="mt-10 border-t pt-4" style={{ borderColor: "rgba(38,54,43,0.08)" }}>
+          <GroupReportBlock
+            groupId={group.id}
+            ownerId={group.owner_id}
+            operatorName={group.operator_name}
+            activeChildId={activeChild?.id ?? null}
+          />
+        </div>
       )}
 
       {/* 그룹 정리: 그룹장은 삭제, 그룹장이 아닌 운영진은 운영 그만두기.

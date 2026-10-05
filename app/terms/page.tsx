@@ -5,7 +5,7 @@ export default function TermsPage() {
     <div className="mx-auto flex max-w-[560px] flex-col px-6 pb-20 pt-10">
       <h1 className="d text-xl">이용약관</h1>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-        시행일: 2026년 9월 8일
+        시행일: 2026년 10월 5일
       </p>
 
       <div className="mt-6 flex flex-col gap-5 text-sm leading-relaxed" style={{ color: "var(--ink)" }}>
@@ -40,6 +40,18 @@ export default function TermsPage() {
           <p className="mt-1">
             이용자는 아이의 독서기록·사진·음성 등 콘텐츠를 등록할 때 타인의 권리를 침해하지 않아야
             하며, 서비스를 본래 목적(독서 기록·추천) 이외의 용도로 사용해서는 안 됩니다.
+          </p>
+        </section>
+
+        <section>
+          <p className="d text-sm">제4조의2 (금지 콘텐츠와 신고·차단)</p>
+          <p className="mt-1">
+            그룹 이름·소개, 추천도서, 질문 등 다른 이용자에게 보이는 콘텐츠에 음란·폭력·혐오·차별·괴롭힘,
+            광고·스팸, 타인의 권리를 침해하는 내용을 올려서는 안 되며, 서비스는 이러한 콘텐츠와 이를 올리는
+            이용자를 일절 용인하지 않습니다. 이용자는 그룹 화면의 &ldquo;신고하기&rdquo;와 &ldquo;숲지기
+            차단하기&rdquo;, 질문의 &ldquo;신고&rdquo;로 부적절한 콘텐츠를 신고하거나 해당 이용자를 차단할 수
+            있습니다. 서비스는 접수된 신고를 24시간 안에 확인하여 콘텐츠를 삭제하고, 위반한 이용자의 계정을
+            정지 또는 삭제합니다.
           </p>
         </section>
 
