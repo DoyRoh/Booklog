@@ -8,6 +8,7 @@ import JoinByCode from "@/components/join-by-code";
 import GroupRemoveButton from "@/components/group-remove-button";
 import Section from "@/components/section";
 import { getHiddenContent, isGroupHidden } from "@/lib/moderation";
+import { getFollowerCounts } from "@/lib/followers";
 
 type GroupRow = {
   id: string;
@@ -81,7 +82,12 @@ export default async function RecommendPage() {
     owner_id: string | null;
     book_lists: { book_list_items: { created_at: string | null; books: { cover_url: string | null } | null }[] }[] | null;
   };
-  const browseGroups = ((openGroupRows ?? []) as unknown as OpenRow[])
+  const openRows = (openGroupRows ?? []) as unknown as OpenRow[];
+  const followerCounts = await getFollowerCounts(
+    supabase,
+    openRows.map((g) => g.id)
+  );
+  const browseGroups = openRows
     // 신고한 그룹, 차단한 숲지기의 그룹은 둘러보기에서 뺀다(마이그레이션 0030).
     .filter((g) => !myGroupIds.includes(g.id) && !isGroupHidden(hidden, g))
     .map((g) => {
@@ -95,11 +101,12 @@ export default async function RecommendPage() {
         description: g.description,
         operatorName: g.operator_name,
         bookCount: items.length,
+        followers: followerCounts.get(g.id) ?? 0,
         covers: items.map((it) => it.books?.cover_url ?? null).filter((c): c is string => Boolean(c)).slice(0, 4),
       };
     })
-    // 추천도서가 많은 그룹이 위로 -- 고를 거리가 있는 순.
-    .sort((a, b) => b.bookCount - a.bookCount);
+    // 팔로워가 많은(인기 있는) 숲지기가 위로, 같으면 추천도서가 많은 순.
+    .sort((a, b) => b.followers - a.followers || b.bookCount - a.bookCount);
 
   return (
     <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">

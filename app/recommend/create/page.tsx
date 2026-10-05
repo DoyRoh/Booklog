@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { randomInviteCode } from "@/lib/invite-code";
+import { operatorNameError } from "@/lib/operator-name";
 
 type GroupType = "kindergarten" | "school" | "library" | "family" | "community" | "creator";
 type JoinPolicy = "approval" | "open";
@@ -84,7 +85,7 @@ export default function CreateGroupPage() {
       .update({ operator_name: trimmedOperator })
       .eq("id", user.id);
     if (nameError) {
-      setError(nameError.message);
+      setError(operatorNameError(nameError));
       setSaving(false);
       return;
     }
@@ -159,7 +160,7 @@ export default function CreateGroupPage() {
         <label className="flex flex-col gap-1.5">
           <span className="d text-sm">숲지기 이름</span>
           <span className="text-xs" style={{ color: "var(--ink-2)" }}>
-            아이와 부모에게 보이는 내 이름이에요. 그룹이 여러 개여도 숲지기 이름은 하나예요.
+            아이와 부모에게 보이는 내 이름이에요. 다른 숲지기와 겹치지 않는 이름이어야 하고, 그룹이 여러 개여도 숲지기 이름은 하나예요.
           </span>
           <input
             type="text"

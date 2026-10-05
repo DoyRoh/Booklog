@@ -13,6 +13,7 @@ import RecommendShelf from "@/components/recommend-shelf";
 import GroupReportBlock from "@/components/group-report-block";
 import UnblockButton from "@/components/unblock-button";
 import { getHiddenContent } from "@/lib/moderation";
+import { getFollowerCounts } from "@/lib/followers";
 
 // 팔로우 전 미리보기로 보여줄 추천도서 수. 전부 공개하면 팔로우할 이유가
 // 없고, 아예 안 보이면 "어떤 그룹인지" 고를 수가 없다.
@@ -101,7 +102,7 @@ export default async function GroupDetailPage({
   // 셋 다 activeChild.id/groupId에만 의존하고 서로 무관하므로 동시에
   // 왕복한다. 추천도서 목록 조회는 lib/recommend-books.ts로 옮겨서
   // 숲길 탭(그룹 필터)과 로직을 공유한다.
-  const [{ data: childMembership }, { bookListId, books: recommendBooks }, { data: pendingRows }] =
+  const [{ data: childMembership }, { bookListId, books: recommendBooks }, { data: pendingRows }, followerCounts] =
     await Promise.all([
       activeChild
         ? supabase
@@ -116,7 +117,9 @@ export default async function GroupDetailPage({
       isOperator
         ? supabase.from("group_members").select("id, children(name)").eq("group_id", groupId).eq("status", "pending")
         : Promise.resolve({ data: [] }),
+      group.join_policy === "open" ? getFollowerCounts(supabase, [groupId]) : Promise.resolve(new Map<string, number>()),
     ]);
+  const followers = followerCounts.get(groupId);
 
   // 아이 보기에서 "팔로잉/참가 중"은 아이 자신의 멤버십으로만 판단한다
   // (숲지기 계정이라고 아이가 자동으로 그룹원인 건 아니다).
@@ -146,6 +149,7 @@ export default async function GroupDetailPage({
               </>
             )}
             {GROUP_TYPE_LABELS[group.type] ?? group.type}
+            {typeof followers === "number" && ` · 팔로워 ${followers}명`}
             {isOperatorMember && !isOperator && " · 내가 운영하는 그룹"}
           </p>
         </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { OperatorAvatar } from "@/lib/active-profile";
+import { operatorNameError } from "@/lib/operator-name";
 
 export type OperatorGroup = {
   groupId: string;
@@ -68,7 +69,7 @@ export default function OperatorProfileSwitcher({
       .eq("id", userId);
     if (updateError) {
       setSaving(false);
-      setError(updateError.message);
+      setError(operatorNameError(updateError));
       return;
     }
     // 얼굴(곰/백로)도 이름과 같이 내 그룹 전부에 복사해 둔다 -- 우리 숲의
@@ -110,7 +111,7 @@ export default function OperatorProfileSwitcher({
       .eq("id", userId);
     if (updateError) {
       setSwitching(false);
-      setError(updateError.message);
+      setError(operatorNameError(updateError));
       return;
     }
     window.dispatchEvent(new Event("chaeksup:profile-changed"));

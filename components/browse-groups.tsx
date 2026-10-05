@@ -13,6 +13,7 @@ type OpenGroup = {
   description?: string | null;
   operatorName?: string | null;
   bookCount?: number;
+  followers?: number;
   covers?: string[];
 };
 
@@ -121,6 +122,7 @@ export default function BrowseGroups({
                 )}
                 {GROUP_TYPE_LABELS[group.type] ?? group.type}
                 {typeof group.bookCount === "number" && ` · 추천도서 ${group.bookCount}권`}
+                {typeof group.followers === "number" && group.followers > 0 && ` · 팔로워 ${group.followers}명`}
               </p>
               {group.description && (
                 <p
