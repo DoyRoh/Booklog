@@ -3,10 +3,12 @@
 import { useState } from "react";
 import SceneBanner from "@/components/scene-banner";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/auth-errors";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,12 @@ export default function SignupPage() {
     // 위 확인을 건너뛴 경우의 대비: 이미 있는 이메일이면 identities가 빈 배열로 온다.
     if (data.user && data.user.identities?.length === 0) {
       setExists(true);
+      return;
+    }
+    // 이메일 확인을 끈 프로젝트면 가입과 동시에 로그인 세션이 온다 — 메일 안내 대신 바로 온보딩으로.
+    if (data.session) {
+      router.replace("/onboarding");
+      router.refresh();
       return;
     }
     setDone(true);

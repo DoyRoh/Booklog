@@ -8,6 +8,7 @@ const KNOWN_MESSAGES: [RegExp, string][] = [
   [/user already registered/i, "이미 가입된 이메일이에요. 로그인해 주세요."],
   [/password should be at least/i, "비밀번호는 6자 이상이어야 해요."],
   [/unable to validate email address/i, "이메일 형식이 올바르지 않아요."],
+  [/email rate limit/i, "인증 메일을 짧은 시간에 너무 많이 보냈어요. 1시간쯤 뒤에 다시 시도해 주세요."],
   [/rate limit/i, "요청이 너무 많아요. 잠시 후 다시 시도해 주세요."],
   [/for security purposes/i, "잠시 후 다시 시도해 주세요."],
   [/new password should be different/i, "이전과 다른 비밀번호를 입력해 주세요."],
