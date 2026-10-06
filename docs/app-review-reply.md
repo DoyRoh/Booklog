@@ -15,7 +15,7 @@ Thank you for reviewing Chaeksup (책숲). Please find the requested information
 
 **1. Screen recording**
 
-Recorded on a physical iPhone running iOS <버전, 예: 26.0>: https://drive.google.com/file/d/1UKRhw90_5U5RO1t9sxG1AEU1P46FNMcp/view?usp=drivesdk
+Recorded on a physical iPhone running iOS 26.6.2: https://drive.google.com/file/d/1UKRhw90_5U5RO1t9sxG1AEU1P46FNMcp/view?usp=drivesdk
 
 The recording starts from launching the app and shows: sign-up with email, onboarding
 (terms consent, adding a child profile), recording a book (title search, rating, feelings,
@@ -43,7 +43,7 @@ child's completion — without access to the child's photos or voice recordings.
 
 **3. How to access the main features**
 
-Demo account (email / password): <데모 계정 이메일> / <비밀번호>
+Demo account (email / password): byul890808+demo@gmail.com / <비밀번호 — 저장소에는 남기지 않음, App Store Connect에만 입력>
 
 There is a single account type. One account can hold both a child profile (parent view)
 and a "forest keeper" (teacher/organization) profile; switch between them from the
@@ -101,4 +101,4 @@ Developers terms of service. All illustrations and characters in the app are ori
 artwork created by the developer.
 
 Thank you,
-<이름>
+Donghee Roh
