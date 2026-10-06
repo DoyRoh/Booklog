@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { READING_MEDIA_BUCKET } from "@/lib/storage";
 
 /**
  * 계정 삭제(회원 탈퇴). Apple 심사 5.1.1(v) -- 계정을 만들 수 있으면 앱 안에서
  * 지울 수도 있어야 한다. 확인창은 window.confirm() 대신 화면 안 두 단계
  * 버튼(iOS 홈 화면 앱에서 네이티브 confirm이 안 뜨는 문제를 기록 삭제 때
- * 이미 겪음). 실제 삭제는 마이그레이션 0029의 delete_my_account()가 한다.
+ * 이미 겪음). 사진·음성 파일은 Supabase가 SQL 직접 삭제를 막아서 먼저
+ * Storage API로 지우고(0034의 my_account_media_paths, 실패해도 진행),
+ * DB 행은 delete_my_account()가 지운다.
  */
 export default function DeleteAccount() {
   const router = useRouter();
@@ -22,6 +25,17 @@ export default function DeleteAccount() {
     setBusy(true);
     setError(null);
     const supabase = createClient();
+    // 보호자 연결이 살아 있을 때 지워야 storage RLS를 통과한다. 실패해도
+    // 계정 삭제는 진행 -- 남은 파일은 연결이 없어 아무도 읽을 수 없다.
+    try {
+      const { data: paths } = await supabase.rpc("my_account_media_paths");
+      const list = ((paths ?? []) as string[]).filter(Boolean);
+      for (let i = 0; i < list.length; i += 500) {
+        await supabase.storage.from(READING_MEDIA_BUCKET).remove(list.slice(i, i + 500));
+      }
+    } catch {
+      /* ignore */
+    }
     const { error: rpcError } = await supabase.rpc("delete_my_account");
     if (rpcError) {
       setError(`삭제하지 못했어요. 잠시 후 다시 시도해 주세요. (${rpcError.message})`);
