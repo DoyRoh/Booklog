@@ -143,6 +143,7 @@ export default function CreateGroupPage() {
     await supabase.from("users").update({ active_profile_type: "operator" }).eq("id", user.id);
     window.dispatchEvent(new Event("chaeksup:profile-changed"));
 
+    window.dispatchEvent(new Event("chaeksup:profile-changed"));
     router.replace(`/recommend/${groupId}`);
     router.refresh();
   }

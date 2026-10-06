@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getProfileSnapshot } from "@/lib/profile-snapshot";
 import type { OperatorAvatar } from "@/lib/active-profile";
@@ -49,6 +50,9 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
     loading: true,
   });
 
+  const pathname = usePathname();
+  const checkedPath = useRef<string | null>(null);
+
   useEffect(() => {
     // 이벤트·auth 변화로 load()가 겹쳐 불리면 먼저 시작한 조회의 결과가
     // 나중에 도착해 새 상태를 덮어쓸 수 있다(프로필을 바꿨는데 하단 탭이
@@ -95,6 +99,7 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
 
     load();
     window.addEventListener("chaeksup:profile-changed", load);
+    window.addEventListener("chaeksup:profile-stale", load);
 
     // 로그인/로그아웃은 router.replace()+router.refresh()로 하는 소프트
     // 네비게이션이라, 루트 레이아웃에 마운트된 이 컴포넌트는 계정이
@@ -114,9 +119,24 @@ export default function ProfileProvider({ children }: { children: React.ReactNod
 
     return () => {
       window.removeEventListener("chaeksup:profile-changed", load);
+      window.removeEventListener("chaeksup:profile-stale", load);
       subscription.unsubscribe();
     };
   }, []);
+
+  // 안전망: 아이 프로필인데 아이가 비어 있는 채로 화면을 옮기면(가입 직후
+  // 처럼 아이를 등록하기 전에 읽힌 경우) 한 번 더 읽는다. 아이가 정말 없는
+  // 계정은 화면을 옮길 때마다 가벼운 조회 하나가 더 돌 뿐이다.
+  useEffect(() => {
+    if (state.loading) return;
+    // 경로가 바뀔 때만 한 번 -- 아이가 정말 없는 계정에서 다시 읽은 결과가
+    // 또 이 효과를 부르는 무한 반복을 막는다.
+    if (checkedPath.current === pathname) return;
+    checkedPath.current = pathname;
+    if (state.role === "parent" && !state.childId) {
+      window.dispatchEvent(new Event("chaeksup:profile-stale"));
+    }
+  }, [pathname, state.loading, state.role, state.childId]);
 
   return <ProfileContext.Provider value={state}>{children}</ProfileContext.Provider>;
 }

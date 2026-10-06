@@ -2146,3 +2146,9 @@ Supabase 기본 메일 한도(프로젝트 전체 시간당 ~2통) 때문에 확
 ## 계정 삭제가 "Direct deletion from storage tables is not allowed"로 실패하던 것 (녹화 중 발견)
 
 Supabase가 `storage.objects`를 SQL로 직접 지우는 걸 트리거로 막기 시작해서, 0029의 `delete_my_account()` 안 `delete from storage.objects` 두 줄 때문에 함수 전체가 실패했습니다(트랜잭션이라 아무것도 안 지워짐). **마이그레이션 0034**: `delete_my_account()`를 storage를 건드리지 않는 버전으로 다시 만들고, 새 함수 `my_account_media_paths()`(SECURITY DEFINER)가 "계정과 함께 사라질 아이 = 내가 유일한 보호자인 아이"의 `reading-media` 파일 경로를 돌려줍니다. `components/delete-account.tsx`가 RPC 전에 그 경로를 Storage API(`remove`, 500개씩)로 먼저 지웁니다 — 보호자 연결이 살아 있을 때라 storage RLS를 통과하고, 실패해도 계정 삭제는 진행합니다(남은 파일은 연결이 없어 아무도 못 읽음). 내가 운영한 그룹의 다른 아이 낭독 녹음은 그 아이 보호자의 데이터라 이제 지우지 않습니다. 로컬 Postgres에 Supabase와 같은 삭제 차단 트리거를 걸고 검증: 경로 목록엔 단독 아이 파일만, 계정·단독 아이·내 그룹만 삭제, 공동 보호자 아이와 상대 계정 유지. **SQL Editor에서 0034 실행 필요**(앱 재빌드 불필요 — 웹 배포만으로 반영).
+
+## 새로 가입한 계정에서 상단 제목이 "책숲"이고 그룹 탭의 그룹 바가 안 뜨던 것 (녹화 중 발견)
+
+이메일 확인을 끈 뒤로는 가입하는 순간 세션이 생겨 `ProfileProvider`가 바로 프로필을 읽는데, 그때는 아직 아이가 없습니다. 온보딩이 아이를 등록하고 `/today`로 보내도 **프로필을 다시 읽으라는 신호(`chaeksup:profile-changed`)를 안 쏴서** 컨텍스트에 `childId`가 비어 있는 채로 남았고 — 상단 제목은 "{아이}의 책숲" 대신 "책숲", 그룹 탭의 `ChildGroupBar`는 `childId`가 없어 아예 안 그려져 그 자리만 비었습니다(서버에서 그리는 본문은 정상이라 숙제 목록은 보임). 앱을 완전히 껐다 켜면 다시 읽혀 정상이 됩니다.
+- `app/onboarding/page.tsx`의 `finish()`, `app/recommend/create/page.tsx`의 그룹 만들기 완료 뒤에 이벤트를 쏘게 했습니다.
+- `components/profile-context.tsx`에 안전망: 아이 프로필인데 `childId`가 비어 있으면 **경로가 바뀔 때 한 번** 다시 읽습니다(같은 경로에선 다시 안 불러 무한 반복 없음). 이런 종류의 "다시 읽기 빠뜨림"이 다른 곳에서 생겨도 화면을 한 번 옮기면 풀립니다. DB 변경 없음.
