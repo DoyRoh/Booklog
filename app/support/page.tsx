@@ -5,7 +5,7 @@ import Link from "next/link";
 // 질문 몇 개만 두어, 심사관과 실제 사용자 모두 어디로 연락해야 하는지
 // 바로 알 수 있게 한다. 인증 화면과 같이 앱 크롬(상단바·하단탭) 없이
 // 단독으로 보인다(lib/nav.ts).
-const SUPPORT_EMAIL = "sangwkk@naver.com";
+import { SUPPORT_EMAIL } from "@/lib/support";
 
 export const metadata: Metadata = {
   title: "책숲 고객지원",

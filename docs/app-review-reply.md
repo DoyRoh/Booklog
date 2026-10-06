@@ -15,14 +15,16 @@ Thank you for reviewing Chaeksup (책숲). Please find the requested information
 
 **1. Screen recording**
 
-Recorded on a physical iPhone running iOS <버전, 예: 26.0>: <영상 링크>
+Recorded on a physical iPhone running iOS <버전, 예: 26.0>: https://drive.google.com/file/d/1UKRhw90_5U5RO1t9sxG1AEU1P46FNMcp/view?usp=drivesdk
 
 The recording starts from launching the app and shows: sign-up with email, onboarding
 (terms consent, adding a child profile), recording a book (title search, rating, feelings,
 photo), the bookshelf, joining a group and viewing its recommended books and homework,
 switching to the teacher ("forest keeper") profile and creating homework, reporting a
 group and a question, blocking a group's creator, logging out and in, and deleting the
-account (Profile tab → Settings → "계정 삭제하기").
+account (Profile tab → bottom → "계정 삭제하기" → confirm twice). After deletion the
+user is signed out, and signing in again with the same email and password fails, which
+shows the account no longer exists.
 
 **2. Purpose and target audience**
 

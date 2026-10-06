@@ -2152,3 +2152,11 @@ Supabase가 `storage.objects`를 SQL로 직접 지우는 걸 트리거로 막기
 이메일 확인을 끈 뒤로는 가입하는 순간 세션이 생겨 `ProfileProvider`가 바로 프로필을 읽는데, 그때는 아직 아이가 없습니다. 온보딩이 아이를 등록하고 `/today`로 보내도 **프로필을 다시 읽으라는 신호(`chaeksup:profile-changed`)를 안 쏴서** 컨텍스트에 `childId`가 비어 있는 채로 남았고 — 상단 제목은 "{아이}의 책숲" 대신 "책숲", 그룹 탭의 `ChildGroupBar`는 `childId`가 없어 아예 안 그려져 그 자리만 비었습니다(서버에서 그리는 본문은 정상이라 숙제 목록은 보임). 앱을 완전히 껐다 켜면 다시 읽혀 정상이 됩니다.
 - `app/onboarding/page.tsx`의 `finish()`, `app/recommend/create/page.tsx`의 그룹 만들기 완료 뒤에 이벤트를 쏘게 했습니다.
 - `components/profile-context.tsx`에 안전망: 아이 프로필인데 `childId`가 비어 있으면 **경로가 바뀔 때 한 번** 다시 읽습니다(같은 경로에선 다시 안 불러 무한 반복 없음). 이런 종류의 "다시 읽기 빠뜨림"이 다른 곳에서 생겨도 화면을 한 번 옮기면 풀립니다. DB 변경 없음.
+
+## 온보딩 약관을 새 창 대신 화면 안 시트로 (실사용 피드백: "돌아가기 누르면 어플이 아니라 인터넷 창이라 다 초기화")
+
+온보딩의 "이용약관"·"개인정보처리방침" 링크가 `target="_blank"`라 앱(Capacitor)에서는 사파리가 따로 떴고, 그 페이지의 "← 돌아가기"가 무조건 `/onboarding`으로 가서 사파리 안에서 온보딩이 처음부터 다시 시작되는 것처럼 보였습니다.
+- **본문을 컴포넌트로 분리**: `components/legal/terms-content.tsx`·`privacy-content.tsx`. `/terms`·`/privacy` 페이지와 온보딩이 같은 본문을 씁니다(문구를 한 곳에서만 고치면 됨).
+- **`components/legal/legal-sheet.tsx`**: 온보딩에서 링크를 누르면 페이지 이동 없이 아래에서 올라오는 시트로 본문을 보여주고, 맨 아래 "다 읽었어요"(또는 바깥 탭·ESC)로 닫습니다. 체크박스·입력이 그대로 남습니다. 시트 안의 처리방침은 고객지원 링크를 글자로만 두고(`linkSupport={false}`, 링크를 타면 온보딩을 벗어나므로) 문의 이메일을 함께 적습니다.
+- **`components/back-link.tsx`**: `/terms`·`/privacy`의 "돌아가기"가 앱 안에서 넘어왔으면(고객지원 화면 등, 같은 출처 referrer) 직전 화면으로, 링크로 바로 열었으면 `/login`으로 갑니다.
+- 고객지원 이메일은 `lib/support.ts`의 `SUPPORT_EMAIL` 한 곳으로 옮겼습니다(고객지원 페이지·처리방침 공용). 웹 배포만으로 반영되고 앱 재빌드·재심사는 필요 없습니다. DB 변경 없음. lint·build 통과.

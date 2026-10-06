@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import SceneBanner from "@/components/scene-banner";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/sign-out-button";
+import LegalSheet from "@/components/legal/legal-sheet";
 import { AvatarIllustration } from "@/components/illustration";
 
 type Role = "parent" | "teacher";
@@ -52,6 +52,7 @@ export default function OnboardingPage() {
   const [role, setRole] = useState<Role | null>(null);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedVoice, setAgreedVoice] = useState(false);
+  const [legalDoc, setLegalDoc] = useState<"terms" | "privacy" | null>(null);
   const [childName, setChildName] = useState("");
   const [childBirthDate, setChildBirthDate] = useState("");
   const [childAvatar, setChildAvatar] = useState<Avatar | null>(null);
@@ -237,25 +238,31 @@ export default function OnboardingPage() {
             />
             <span className="text-sm">
               <span style={{ color: "var(--berry)" }}>(필수)</span>{" "}
-              <Link
-                href="/terms"
-                target="_blank"
-                onClick={(e) => e.stopPropagation()}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLegalDoc("terms");
+                }}
                 className="underline"
                 style={{ color: "var(--point-deep)" }}
               >
                 이용약관
-              </Link>{" "}
+              </button>{" "}
               및{" "}
-              <Link
-                href="/privacy"
-                target="_blank"
-                onClick={(e) => e.stopPropagation()}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLegalDoc("privacy");
+                }}
                 className="underline"
                 style={{ color: "var(--point-deep)" }}
               >
                 개인정보처리방침
-              </Link>
+              </button>
               에 동의합니다
             </span>
           </label>
@@ -383,6 +390,7 @@ export default function OnboardingPage() {
           )}
         </div>
       )}
+      {legalDoc && <LegalSheet doc={legalDoc} onClose={() => setLegalDoc(null)} />}
     </div>
   );
 }
