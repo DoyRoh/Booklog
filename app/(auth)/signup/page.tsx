@@ -31,7 +31,13 @@ export default function SignupPage() {
       return;
     }
 
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    // 확인 메일의 링크가 localhost(Supabase Site URL 기본값)가 아니라 지금 쓰는
+    // 주소로 돌아오게 한다. 앱(Capacitor)에서도 origin은 배포 주소다.
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/auth/confirm?next=/onboarding` },
+    });
 
     setLoading(false);
     if (error) {
@@ -51,8 +57,13 @@ export default function SignupPage() {
       <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-16">
         <h1 className="d text-2xl">책숲</h1>
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-          가입 확인 이메일을 보냈어요. 메일함을 확인한 뒤 로그인해 주세요.
+          <b style={{ color: "var(--ink)" }}>{email}</b>로 가입 확인 메일을 보냈어요.
         </p>
+        <ol className="mt-4 flex list-decimal flex-col gap-1.5 pl-5 text-sm" style={{ color: "var(--ink-2)" }}>
+          <li>메일함(스팸함 포함)에서 책숲 메일을 열고</li>
+          <li>메일 속 확인 링크를 누른 뒤</li>
+          <li>책숲으로 돌아와 로그인해 주세요.</li>
+        </ol>
         <Link href="/login" className="mt-6 text-sm" style={{ color: "var(--point)" }}>
           로그인으로 이동
         </Link>

@@ -2130,3 +2130,7 @@ Supabase는 이메일 존재를 숨기려고 이미 있는 이메일로 `signUp`
 
 - **마이그레이션 0033 `is_email_registered(email)`**: SECURITY DEFINER로 `auth.users`에 그 이메일이 있는지 true/false만 돌려줍니다(앞뒤 공백·대소문자 무시, anon도 호출 가능). 대가로 "이 이메일이 가입돼 있는지"는 누구나 알 수 있지만 그 외 정보는 안 드러나, 중복 가입 혼란을 막는 쪽을 택했습니다. 로컬 Postgres에서 있는/없는 이메일 판정 확인. **SQL Editor에서 실행 필요.**
 - **`app/(auth)/signup/page.tsx`**: `signUp` 전에 이 함수를 먼저 불러 이미 있으면 **signUp 자체를 안 부르고**(메일도 안 감) "이미 가입된 이메일이에요 · 로그인 / 비밀번호 찾기"를 보여줍니다. 함수가 아직 없으면(마이그레이션 전) 그냥 진행하고, 대비책으로 `signUp` 결과의 `user.identities`가 빈 배열(Supabase가 중복 이메일에 돌려주는 모양)이어도 같은 안내를 띄웁니다 — 이 경우엔 메일은 이미 갔을 수 있지만 잘못된 "메일 보냈어요" 화면은 안 뜹니다.
+
+## 가입 확인 메일 링크가 localhost로 가던 것 (사용자 신고: "confirm 누르면 localhost 빈 페이지, 그래도 로그인은 됨")
+
+`signUp()`에 `emailRedirectTo`가 없어서 확인 메일 링크가 Supabase **Site URL**(아직 `http://localhost:3000`)로 돌아왔습니다. 이메일 확인 자체는 Supabase가 리다이렉트 전에 끝내므로 로그인은 됐던 것. `app/(auth)/signup/page.tsx`가 이제 `emailRedirectTo: {origin}/auth/confirm?next=/onboarding`을 넘기고(앱에서도 origin은 배포 주소), `app/auth/confirm/route.ts`는 앱에서 가입하고 링크를 사파리에서 열어 code 교환이 실패하는 경우(교환용 값이 앱에만 있음) — 확인은 이미 끝났으므로 — `/login?confirmed=1`로 보내 "이메일 확인이 끝났어요. 앱에서 가입했다면 책숲 앱으로 돌아가 로그인해 주세요"를 보여줍니다. 가입 완료 화면도 메일 확인 3단계 안내로. **Supabase 대시보드 Authentication → URL Configuration에서 Site URL을 `https://booklog-13xh.vercel.app`으로, Redirect URLs에 `https://booklog-13xh.vercel.app/**`를 넣어야** emailRedirectTo가 허용 목록을 통과합니다(안 넣으면 여전히 Site URL로 감). 약관 동의는 원래대로 첫 로그인 뒤 온보딩에서(가입 화면엔 추가하지 않음 — 사용자 확인). DB 변경 없음.
