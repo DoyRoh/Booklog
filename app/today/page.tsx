@@ -88,7 +88,10 @@ export default async function TodayPage() {
   });
 
   const doneRecords = (allRecords ?? []).filter((r) => r.status === "done");
-  const totalDone = doneRecords.length;
+  // 큰 숫자는 책장의 "다 읽었어요" 권수와 같은 기준(같은 책을 여러 번 기록해도
+  // 한 권). 다시 읽은 횟수까지 센 기록 수는 다를 때만 옆에 작게 보여준다.
+  const totalDone = new Set(doneRecords.map((r) => r.book_id)).size;
+  const doneReadCount = doneRecords.length;
 
   const todayKey = kstDate();
   const todayCount = doneRecords.filter((r) => r.read_date === todayKey).length;
@@ -164,6 +167,11 @@ export default async function TodayPage() {
               권
             </span>
           </span>
+          {doneReadCount > totalDone && (
+            <span className="text-[13px] leading-[20px]" style={{ color: "var(--ink-2)" }}>
+              · 다시 읽은 것까지 {doneReadCount}번
+            </span>
+          )}
         </p>
 
         {/* 통계는 오늘·이번 주·이번 달 세 가지만 -- "그룹"은 그룹 탭으로
