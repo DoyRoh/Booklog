@@ -24,6 +24,10 @@ export type ManagedRow = {
   lantern?: boolean;
   right?: string;
   rightTone?: "good" | "muted";
+  /** 삭제할 때 실제로 지울 행 id들(안 주면 [id]). 같은 책이 여러 목록에 있을 때 "전체"에서 빼면 전부. */
+  deleteIds?: string[];
+  /** 추천도서 줄의 책 id -- "목록에 넣기"에 쓴다. */
+  bookId?: string;
 };
 
 /**
@@ -41,6 +45,8 @@ export default function ManagedLogList({
   emptyText,
   table,
   deleteNoun,
+  deleteLabel = "삭제",
+  listTargets,
 }: {
   heading: string;
   headingSub?: string;
@@ -51,6 +57,9 @@ export default function ManagedLogList({
   table: "book_list_items" | "assignments";
   /** 확인 문구용: "추천도서에서 뺄까요" / "숙제를 지울까요" */
   deleteNoun: string;
+  deleteLabel?: string;
+  /** 추천도서: 고른 책을 넣을 수 있는 다른 목록들(있으면 선택 바에 "목록에 넣기"). */
+  listTargets?: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [selecting, setSelecting] = useState(false);
@@ -79,7 +88,30 @@ export default function ManagedLogList({
     setBusy(true);
     setError(null);
     const supabase = createClient();
-    const { error: dbError } = await supabase.from(table).delete().in("id", Array.from(picked));
+    const ids = rows.filter((r) => picked.has(r.id)).flatMap((r) => r.deleteIds ?? [r.id]);
+    const { error: dbError } = await supabase.from(table).delete().in("id", ids);
+    setBusy(false);
+    if (dbError) {
+      setError(dbError.message);
+      return;
+    }
+    stop();
+    router.refresh();
+  }
+
+  async function addToList(listId: string) {
+    const bookIds = rows.filter((r) => picked.has(r.id) && r.bookId).map((r) => r.bookId!);
+    if (!listId || bookIds.length === 0 || busy) return;
+    setBusy(true);
+    setError(null);
+    const supabase = createClient();
+    // 이미 그 목록에 있는 책은 조용히 건너뛴다(book_list_id+book_id 유니크, 0014).
+    const { error: dbError } = await supabase
+      .from("book_list_items")
+      .upsert(
+        bookIds.map((bookId) => ({ book_list_id: listId, book_id: bookId, required: false })),
+        { onConflict: "book_list_id,book_id", ignoreDuplicates: true }
+      );
     setBusy(false);
     if (dbError) {
       setError(dbError.message);
@@ -204,9 +236,31 @@ export default function ManagedLogList({
               className="d rounded-[14px] px-3 py-1.5 text-xs text-white disabled:opacity-40"
               style={{ background: "var(--berry)" }}
             >
-              삭제
+              {deleteLabel}
             </button>
           </span>
+        </div>
+      )}
+      {selecting && listTargets && listTargets.length > 0 && (
+        <div className="flex items-center justify-end gap-2 px-4 pb-3" style={{ background: "rgba(47,168,79,0.06)" }}>
+          <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+            고른 책을
+          </span>
+          <select
+            value=""
+            disabled={picked.size === 0 || busy}
+            onChange={(e) => addToList(e.target.value)}
+            aria-label="고른 책을 넣을 목록"
+            className="d max-w-[180px] truncate rounded-full border px-2.5 py-1 text-xs outline-none disabled:opacity-40"
+            style={{ borderColor: "var(--point)", background: "var(--card)", color: "var(--point-deep)" }}
+          >
+            <option value="">목록에 넣기 ▾</option>
+            {listTargets.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
         </div>
       )}
     </LogGroup>

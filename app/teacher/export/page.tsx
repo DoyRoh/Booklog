@@ -48,10 +48,13 @@ export default async function TeacherExportPage({
     const sections = await loadOperatorBookSections(supabase, userId, groupParam);
     const section = sections.find((s) => s.id === groupParam) ?? sections[0] ?? null;
     groupName = section?.name ?? "";
-    header = ["번호", "올린 날", "분야", "제목", "저자", "읽은 아이", "숙제 중"];
+    const multiList = (section?.lists.length ?? 0) > 1;
+    const listName = new Map((section?.lists ?? []).map((l) => [l.id, l.name]));
+    header = ["번호", "올린 날", ...(multiList ? ["목록"] : []), "분야", "제목", "저자", "읽은 아이", "숙제 중"];
     rows = (section?.books ?? []).map((book, index) => [
       String(index + 1),
       shortDate(book.addedAt),
+      ...(multiList ? [Object.keys(book.itemsByList).map((id) => listName.get(id) ?? "").filter(Boolean).join(" · ")] : []),
       book.categories.join(" · "),
       book.title,
       book.author ?? "",
