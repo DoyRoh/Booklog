@@ -17,12 +17,7 @@ export type RecommendBook = {
   addedAt: string;
   /** 여러 그룹을 합쳐 볼 때(숲길 "전체") 이 책이 어느 그룹 것인지. */
   groupId?: string;
-  /** 이 책이 들어 있는 추천 목록 id들(그룹 하나 안에서, 같은 책이 여러 목록에 있을 수 있다). */
-  listIds: string[];
 };
-
-/** 그룹 안의 추천 목록(자동차 좋아하는 친구, 영어 그림책 …). 만든 순서대로. */
-export type RecommendList = { id: string; name: string; description: string | null };
 
 const STATUS_RANK: Record<ReadingStatus, number> = { want: 0, reading: 1, done: 2 };
 
@@ -38,48 +33,33 @@ export async function getRecommendBooks(
   supabase: SupabaseClient<any>,
   groupId: string,
   childId: string | null
-): Promise<{ bookListId: string | null; lists: RecommendList[]; books: RecommendBook[] }> {
-  // 그룹 하나에 추천 목록이 여러 개일 수 있다(사용자 요청: "자동차 좋아하는
-  // 아이들용 / 영어책 / 연령대별"). 목록 행과 그 안의 책들을 임베드로 한 번에.
-  // 숲길 "전체"는 그룹마다 이 함수를 부르니 왕복을 늘리지 않는다.
-  const { data: listRows } = await supabase
+): Promise<{ bookListId: string | null; listName: string; books: RecommendBook[] }> {
+  // 목록 행과 그 안의 책들을 임베드로 한 번에(예전엔 book_lists → book_list_items
+  // 순차 왕복 2번). 숲길 "전체"는 그룹마다 이 함수를 부르니 여기서 줄인 왕복이 곱해진다.
+  const { data: bookList } = await supabase
     .from("book_lists")
-    .select("id, name, description, created_at, book_list_items(id, created_at, books(id, title, author, cover_url))")
+    .select("id, name, book_list_items(id, created_at, books(id, title, author, cover_url))")
     .eq("group_id", groupId)
-    .order("created_at", { ascending: true });
+    .limit(1)
+    .maybeSingle();
 
-  type ItemRow = { id: string; created_at: string; books: { id: string; title: string; author: string | null; cover_url: string | null } | null };
-  const rows = (listRows ?? []) as unknown as {
-    id: string;
-    name: string;
-    description: string | null;
-    book_list_items: ItemRow[] | null;
-  }[];
-  const lists: RecommendList[] = rows.map((l) => ({ id: l.id, name: l.name, description: l.description }));
-
-  if (rows.length === 0) {
-    return { bookListId: null, lists, books: [] };
+  if (!bookList) {
+    return { bookListId: null, listName: "추천도서", books: [] };
   }
 
-  // 같은 책이 여러 목록에 있으면 한 권으로 합치고, 어느 목록들에 있는지만 모은다.
-  // 대표 행(itemId·올린 날짜)은 가장 최근에 올린 것.
-  const byBook = new Map<string, { id: string; addedAt: string; book: NonNullable<ItemRow["books"]>; listIds: string[] }>();
-  for (const list of rows) {
-    for (const item of list.book_list_items ?? []) {
-      if (!item.books) continue;
-      const prev = byBook.get(item.books.id);
-      if (!prev) {
-        byBook.set(item.books.id, { id: item.id, addedAt: item.created_at, book: item.books, listIds: [list.id] });
-      } else {
-        prev.listIds.push(list.id);
-        if (item.created_at > prev.addedAt) {
-          prev.id = item.id;
-          prev.addedAt = item.created_at;
-        }
-      }
-    }
-  }
-  const items = Array.from(byBook.values()).sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+  const itemRows = ((bookList.book_list_items as unknown as { id: string; created_at: string; books: unknown }[] | null) ?? [])
+    .slice()
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+  const items = itemRows
+    .map((row) => ({
+      id: row.id,
+      addedAt: row.created_at as string,
+      book: row.books as unknown as
+        | { id: string; title: string; author: string | null; cover_url: string | null }
+        | null,
+    }))
+    .filter((row) => row.book);
 
   const listedBookIds = items.map((row) => row.book!.id);
   const today = kstDate();
@@ -131,8 +111,7 @@ export async function getRecommendBooks(
     readStatus: statusByBook.get(row.book!.id) ?? null,
     inAssignment: assignedBookIds.has(row.book!.id),
     addedAt: row.addedAt,
-    listIds: row.listIds,
   }));
 
-  return { bookListId: rows[0].id, lists, books };
+  return { bookListId: bookList.id, listName: bookList.name, books };
 }
