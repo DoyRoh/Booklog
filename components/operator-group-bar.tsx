@@ -75,7 +75,9 @@ export default function OperatorGroupBar() {
     [pathname, router]
   );
 
-  if (!onTab || role !== "operator" || !groups || groups.length <= 1) return null;
+  // 아이들 탭의 첫 화면(그룹 카드 목록)은 그룹을 고르는 화면 자체라 바를 숨긴다.
+  const childrenLanding = pathname === "/teacher/children" && !searchParams.get("group");
+  if (!onTab || childrenLanding || role !== "operator" || !groups || groups.length <= 1) return null;
 
   const queryGroup = searchParams.get("group");
   const selectedId =
