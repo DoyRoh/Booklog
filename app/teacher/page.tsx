@@ -279,7 +279,24 @@ export default async function TeacherDashboardPage() {
 
           {/* 그룹 자체(이름·소개·유형·삭제)를 만지는 자리는 여기 "설정"
               하나뿐 -- 책·숙제를 올리고 고치는 건 각 탭에서 한다. */}
-          <Section id="operating-groups" className="mt-5" title="운영 중인 그룹" description={`${summaries.length}개`} flush>
+          {/* 새 그룹 만들기는 이 카드 머리 오른쪽에 -- 카드 밖 점선 버튼으로 떨어져
+              있으면 다른 기능처럼 보인다는 지적. */}
+          <Section
+            id="operating-groups"
+            className="mt-5"
+            title="운영 중인 그룹"
+            description={`${summaries.length}개`}
+            action={
+              <Link
+                href="/recommend/create"
+                className="d inline-block whitespace-nowrap rounded-full px-3 py-1 text-xs text-white"
+                style={{ background: "var(--point-deep)" }}
+              >
+                + 새 그룹
+              </Link>
+            }
+            flush
+          >
             {summaries.map((g, i) => (
               <Link
                 key={g.id}
@@ -299,14 +316,6 @@ export default async function TeacherDashboardPage() {
               </Link>
             ))}
           </Section>
-
-          <Link
-            href="/recommend/create"
-            className="d mt-5 flex items-center justify-center rounded-[var(--r)] border border-dashed px-4 py-3 text-sm"
-            style={{ borderColor: "rgba(38,54,43,0.28)", color: "var(--ink-2)" }}
-          >
-            + 새 그룹 만들기 (예: 6살 추천도서)
-          </Link>
         </>
       )}
     </div>

@@ -136,7 +136,16 @@ export default async function TeacherChildrenPage({
   if (!selected) {
     return (
       <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">
-        <h1 className="d text-xl">아이들</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="d text-xl">아이들</h1>
+          <Link
+            href="/recommend/create"
+            className="d flex-none whitespace-nowrap rounded-full px-3 py-1 text-xs text-white"
+            style={{ background: "var(--point-deep)" }}
+          >
+            + 새 그룹
+          </Link>
+        </div>
         <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
           그룹을 누르면 그 그룹의 아이들을 보고, 가입 신청을 승인할 수 있어요.
         </p>
@@ -152,14 +161,6 @@ export default async function TeacherChildrenPage({
             ))}
           </div>
         )}
-
-        <Link
-          href="/recommend/create"
-          className="d mt-3 block rounded-[var(--r)] border border-dashed py-3 text-center text-sm"
-          style={{ borderColor: "var(--rule)", color: "var(--point-deep)" }}
-        >
-          + 새 그룹 만들기
-        </Link>
       </div>
     );
   }
