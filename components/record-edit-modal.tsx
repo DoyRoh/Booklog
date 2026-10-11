@@ -11,6 +11,7 @@ import RatingPicker from "@/components/rating-picker";
 import FeelingPicker from "@/components/feeling-picker";
 import { parseFeelings, serializeFeelings, type FeelingKey } from "@/lib/feelings";
 import ReadDatePicker from "@/components/read-date-picker";
+import { kstDate } from "@/lib/kst";
 import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
 import ShelfTagPicker from "@/components/shelf-tag-picker";
@@ -253,7 +254,15 @@ export default function RecordEditModal({
               <button
                 key={value}
                 type="button"
-                onClick={() => setStatus(value)}
+                onClick={() => {
+                  // 날짜는 "다 읽은 날"이라, 다 읽었어요로 바꾸는 순간 오늘로(원래 다 읽은
+                  // 기록이었다면 원래 날짜로) 맞춘다. 읽는 중에 남아 있던 날짜가
+                  // 완독일로 굳지 않게.
+                  if (value === "done" && status !== "done") {
+                    setReadDate(record.status === "done" ? record.readDate : kstDate());
+                  }
+                  setStatus(value);
+                }}
                 className="d flex-1 rounded-[14px] border py-2.5 text-sm"
                 style={{
                   borderColor: status === value ? "var(--point)" : "var(--rule)",
@@ -271,7 +280,7 @@ export default function RecordEditModal({
           <ReadDatePicker
             value={readDate}
             onChange={setReadDate}
-            disabled={status === "want"}
+            disabled={status !== "done"}
             disabledHint="다 읽고 나서 골라요"
           />
         </div>

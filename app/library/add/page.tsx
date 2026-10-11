@@ -642,7 +642,11 @@ function AddBookForm() {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setStatus(value)}
+                  onClick={() => {
+                    // 날짜는 "다 읽은 날"이라, 다 읽었어요로 바꾸는 순간 오늘로 맞춘다.
+                    if (value === "done" && status !== "done") setReadDate(kstDate());
+                    setStatus(value);
+                  }}
                   className="d flex-1 rounded-[14px] border py-2.5 text-sm"
                   style={{
                     borderColor: status === value ? "var(--point)" : "var(--rule)",
@@ -659,7 +663,7 @@ function AddBookForm() {
           <ReadDatePicker
             value={readDate}
             onChange={setReadDate}
-            disabled={status === "want"}
+            disabled={status !== "done"}
             disabledHint="다 읽고 나서 골라요"
           />
 
