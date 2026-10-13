@@ -44,3 +44,16 @@ export async function bookExist(libCode: string, isbn13: string): Promise<Availa
     return { code: libCode, error: true };
   }
 }
+
+/** 한 지역에서 이 책을 가진 도서관 목록(1시간 캐시). */
+export async function librariesHolding(isbn13: string, region: string): Promise<LibraryInfo[]> {
+  const response = await call("libSrchByBook", { isbn: isbn13, region, pageNo: "1", pageSize: "50" }, 3600);
+  const libs = (response.libs as { lib?: Record<string, string> }[] | undefined) ?? [];
+  return libs
+    .map(({ lib }) => ({
+      code: String(lib?.libCode ?? ""),
+      name: String(lib?.libName ?? ""),
+      address: String(lib?.address ?? ""),
+    }))
+    .filter((lib) => lib.code && lib.name);
+}

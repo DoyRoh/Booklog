@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { REGIONS } from "@/lib/library-regions";
 import { loadMyLibraries, saveMyLibraries, MAX_LIBRARIES, type SavedLibrary } from "@/lib/my-libraries";
@@ -40,10 +41,10 @@ export default function MyLibraries() {
     }
   }
 
-  async function update(next: SavedLibrary[]) {
+  async function update(next: SavedLibrary[], withRegion?: string) {
     const prev = mine;
     setMine(next);
-    const err = await saveMyLibraries(supabase, next);
+    const err = await saveMyLibraries(supabase, next, withRegion);
     if (err) {
       setMine(prev);
       setError("저장하지 못했어요. 다시 시도해 주세요.");
@@ -144,7 +145,7 @@ export default function MyLibraries() {
                       type="button"
                       disabled={picked || full}
                       onClick={async () => {
-                        await update([...mine, { code: lib.code, name: lib.name }]);
+                        await update([...mine, { code: lib.code, name: lib.name }], region);
                         setAdding(false);
                         setRegion("");
                         setLibs(null);
@@ -178,6 +179,12 @@ export default function MyLibraries() {
             닫기
           </button>
         </div>
+      )}
+
+      {mine.length > 0 && (
+        <Link href="/library/borrowable" className="d mt-3 block text-sm" style={{ color: "var(--point-deep)" }}>
+          도서관 갈 때 보는 목록 ›
+        </Link>
       )}
 
       {error && (

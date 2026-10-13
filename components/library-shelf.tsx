@@ -368,6 +368,9 @@ export default function LibraryShelf({
                 >
                   책장 정리
                 </button>
+                <Link href="/library/borrowable" className="block px-4 py-2 text-sm" style={{ color: "var(--ink)" }} onClick={() => setMenuOpen(false)}>
+                  도서관 갈 때 보는 목록
+                </Link>
                 <Link href="/library/export" className="block px-4 py-2 text-sm" style={{ color: "var(--ink)" }} onClick={() => setMenuOpen(false)}>
                   내보내기
                 </Link>

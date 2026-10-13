@@ -2195,3 +2195,6 @@ Supabase가 `storage.objects`를 SQL로 직접 지우는 걸 트리거로 막기
 - **프로필·설정 → "내 도서관"**(`components/my-libraries.tsx`, `#my-libraries`): 지역 고르기 → 이름·동네로 거르기 → 눌러서 추가, "빼기".
 - **기록 고치기 창**(`components/library-availability.tsx`): 책의 ISBN13(`book_isbns`)으로 내 도서관마다 "빌릴 수 있어요 / 대출 중 / 없어요" + "정보나루 기준이라 실제와 다를 수 있어요". 도서관을 안 정했으면 설정으로 가는 링크, ISBN 없는 책(직접 입력·전집)은 안내만.
 - **검증 한계**: 이 세션에서 data4library.kr이 네트워크로 막혀 실제 응답을 못 받아 봤습니다(필드명 `libs[].lib.libCode/libName/address`, `result.hasBook/loanAvailable`은 공개 문서 기준). 배포 후 실제로 지역 목록이 뜨는지 확인 필요. tsc·lint·build 통과. DB 변경 없음.
+- **후속(사용자 요청: 1. 다른 도서관에서 찾기, 2. 도서관 갈 때 보는 목록)**:
+  - **다른 도서관에서 찾기**(기록 고치기 창의 근처 도서관 상자 아래): 정보나루 `libSrchByBook`으로 한 지역에서 이 책을 가진 도서관 전부를 보여 주고, 앞 10곳만 `bookExist`로 대출 여부를 확인해 빌릴 수 있는 곳을 위로 정렬(`/api/libraries/holding`, `CHECK_LIMIT` — 하루 호출 한도 때문). 지역 기본값은 내 도서관을 고를 때 쓴 지역(`user_metadata.library_region`, `loadMyRegion`).
+  - **도서관 갈 때 보는 목록**(`/library/borrowable` + `components/borrowable-list.tsx`, 책장 ⋯ 메뉴와 프로필의 내 도서관 아래에서 진입): 책장의 "읽고 싶어요" 책(ISBN13 있는 것, 최근 40권)을 **버튼을 눌렀을 때만** 내 도서관 3곳에 동시 3개씩 조회해 "빌릴 수 있어요 / 지금은 대출 중 / 내 도서관에 없는 책"으로 나눔. 결과는 서버 fetch 캐시(1시간)로 재사용.

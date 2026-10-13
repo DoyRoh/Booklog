@@ -15,8 +15,17 @@ export async function loadMyLibraries(supabase: SupabaseClient): Promise<SavedLi
     .slice(0, MAX_LIBRARIES);
 }
 
-export async function saveMyLibraries(supabase: SupabaseClient, libraries: SavedLibrary[]) {
-  const { error } = await supabase.auth.updateUser({ data: { libraries: libraries.slice(0, MAX_LIBRARIES) } });
+/** 내 도서관을 고를 때 마지막으로 고른 지역(시/도 코드) — "다른 도서관에서 찾기"의 기본값. */
+export async function loadMyRegion(supabase: SupabaseClient): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  const raw = data.session?.user.user_metadata?.library_region;
+  return typeof raw === "string" ? raw : "";
+}
+
+export async function saveMyLibraries(supabase: SupabaseClient, libraries: SavedLibrary[], region?: string) {
+  const payload: Record<string, unknown> = { libraries: libraries.slice(0, MAX_LIBRARIES) };
+  if (region) payload.library_region = region;
+  const { error } = await supabase.auth.updateUser({ data: payload });
   if (!error) window.dispatchEvent(new Event(LIBRARIES_CHANGED));
   return error;
 }
