@@ -8,6 +8,7 @@ import { getSignedMediaUrl, uploadChildPhoto, uploadChildVoice } from "@/lib/sto
 import type { ReadingStatus } from "@/lib/reading-status";
 import { BOOK_CATEGORIES, categoryColor } from "@/lib/categories";
 import RatingPicker from "@/components/rating-picker";
+import LibraryAvailability from "@/components/library-availability";
 import FeelingPicker from "@/components/feeling-picker";
 import { parseFeelings, serializeFeelings, type FeelingKey } from "@/lib/feelings";
 import ReadDatePicker from "@/components/read-date-picker";
@@ -246,6 +247,8 @@ export default function RecordEditModal({
             )}
           </div>
         </div>
+
+        <LibraryAvailability bookId={record.bookId} />
 
         <div className="mt-4">
           <p className="d text-sm">지금 상태</p>

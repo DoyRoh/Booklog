@@ -8,6 +8,7 @@ import OperatorProfileSwitcher, { type OperatorGroup } from "@/components/operat
 import Section from "@/components/section";
 import ProfileModeSwitch from "@/components/profile-mode-switch";
 import DeleteAccount from "@/components/delete-account";
+import MyLibraries from "@/components/my-libraries";
 
 export default async function MorePage() {
   const supabase = await createClient();
@@ -147,6 +148,15 @@ export default async function MorePage() {
           </Link>
         </Section>
       )}
+
+      <Section
+        id="my-libraries"
+        className="mt-5"
+        title="내 도서관"
+        description="자주 가는 공공도서관을 3곳까지 정해 두면, 책을 눌렀을 때 그 도서관에 있는지·지금 빌릴 수 있는지 보여 줘요."
+      >
+        <MyLibraries />
+      </Section>
 
       <Section className="mt-5" title="계정" description="계정을 지우면 아이 프로필·독서기록·내가 만든 그룹이 함께 삭제돼요.">
         <DeleteAccount />

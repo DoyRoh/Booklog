@@ -2185,3 +2185,13 @@ Supabase가 `storage.objects`를 SQL로 직접 지우는 걸 트리거로 막기
 ## 고객지원 문의 이메일 변경 (사용자 요청)
 
 `lib/support.ts`의 `SUPPORT_EMAIL`을 sangwkk@naver.com → **byul890808@gmail.com**으로 바꿨습니다. 고객지원 페이지(`/support`)의 문의 버튼과 개인정보처리방침(페이지·온보딩 시트)의 문의 이메일이 모두 이 상수를 써서 한 번에 바뀝니다. 웹 배포만으로 반영(앱 재빌드·재심사 불필요). App Store Connect에 적어 둔 연락처가 따로 있으면 그쪽은 직접 고쳐야 합니다.
+
+## 근처 도서관 대출 가능 여부 — 도서관 정보나루 연동 (사용자 요청)
+
+"책장에 넣은 책을 근처 도서관에서 빌릴 수 있는지" — 위치 권한 대신 **지역을 골라 자주 가는 도서관을 정해 두는 방식**(위치 권한은 네이티브 권한 문구 + 앱 재심사가 필요해 다음 앱 업데이트 때 검토)으로 만들었습니다. 사용자가 data4library.kr 인증키를 받아 Vercel 환경변수 `LIBRARY_API_KEY`(Secret)로 넣었습니다.
+
+- **`lib/library-api.ts`(서버 전용)**: `libSrch`(시/도 도서관 목록, 하루 캐시)·`bookExist`(도서관 코드 + ISBN13 → 소장·대출 가능, 1시간 캐시 — 정보나루 자료가 하루 단위 갱신). 지역 코드는 `lib/library-regions.ts`(클라이언트도 씀). 라우트 `/api/libraries?region=`와 `/api/libraries/availability?isbn=&libs=`(최대 3곳), 둘 다 로그인 필요.
+- **내 도서관 저장 = 계정 메타데이터**(`auth.updateUser({ data: { libraries } })`, `lib/my-libraries.ts`): 테이블·마이그레이션 없이 기기 사이에서 따라옵니다. 최대 3곳.
+- **프로필·설정 → "내 도서관"**(`components/my-libraries.tsx`, `#my-libraries`): 지역 고르기 → 이름·동네로 거르기 → 눌러서 추가, "빼기".
+- **기록 고치기 창**(`components/library-availability.tsx`): 책의 ISBN13(`book_isbns`)으로 내 도서관마다 "빌릴 수 있어요 / 대출 중 / 없어요" + "정보나루 기준이라 실제와 다를 수 있어요". 도서관을 안 정했으면 설정으로 가는 링크, ISBN 없는 책(직접 입력·전집)은 안내만.
+- **검증 한계**: 이 세션에서 data4library.kr이 네트워크로 막혀 실제 응답을 못 받아 봤습니다(필드명 `libs[].lib.libCode/libName/address`, `result.hasBook/loanAvailable`은 공개 문서 기준). 배포 후 실제로 지역 목록이 뜨는지 확인 필요. tsc·lint·build 통과. DB 변경 없음.
