@@ -6,6 +6,8 @@ import SignOutButton from "@/components/sign-out-button";
 import ChildSwitcher from "@/components/child-switcher";
 import OperatorProfileSwitcher, { type OperatorGroup } from "@/components/operator-profile-switcher";
 import Section from "@/components/section";
+import AdminFillCovers from "@/components/admin-fill-covers";
+import { isAdminEmail } from "@/lib/admin";
 import ProfileModeSwitch from "@/components/profile-mode-switch";
 import DeleteAccount from "@/components/delete-account";
 import MyLibraries from "@/components/my-libraries";
@@ -157,6 +159,12 @@ export default async function MorePage() {
       >
         <MyLibraries />
       </Section>
+
+      {isAdminEmail(profile?.email) && (
+        <Section className="mt-5" title="운영 도구" description="책숲 운영자에게만 보여요. 공식 숲지기 시드를 넣은 뒤 표지를 채워요.">
+          <AdminFillCovers />
+        </Section>
+      )}
 
       <Section className="mt-5" title="계정" description="계정을 지우면 아이 프로필·독서기록·내가 만든 그룹이 함께 삭제돼요.">
         <DeleteAccount />

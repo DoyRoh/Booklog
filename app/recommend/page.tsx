@@ -45,7 +45,7 @@ export default async function RecommendPage() {
       .eq("status", "approved"),
     supabase
       .from("groups")
-      .select("id, name, type, description, operator_name, owner_id, book_lists(book_list_items(created_at, books(cover_url)))")
+      .select("id, name, type, description, operator_name, owner_id, verified, book_lists(book_list_items(created_at, books(cover_url)))")
       .eq("join_policy", "open"),
     getHiddenContent(supabase),
   ]);
@@ -80,6 +80,7 @@ export default async function RecommendPage() {
     description: string | null;
     operator_name: string | null;
     owner_id: string | null;
+    verified: boolean | null;
     book_lists: { book_list_items: { created_at: string | null; books: { cover_url: string | null } | null }[] }[] | null;
   };
   const openRows = (openGroupRows ?? []) as unknown as OpenRow[];
@@ -100,13 +101,18 @@ export default async function RecommendPage() {
         type: g.type,
         description: g.description,
         operatorName: g.operator_name,
+        verified: Boolean(g.verified),
         bookCount: items.length,
         followers: followerCounts.get(g.id) ?? 0,
         covers: items.map((it) => it.books?.cover_url ?? null).filter((c): c is string => Boolean(c)).slice(0, 4),
       };
     })
-    // 팔로워가 많은(인기 있는) 숲지기가 위로, 같으면 추천도서가 많은 순.
-    .sort((a, b) => b.followers - a.followers || b.bookCount - a.bookCount);
+    // 책숲 공식 그룹(verified)이 먼저 -- 처음 온 사람도 바로 팔로우할 곳이
+    // 있게. 그다음 팔로워가 많은(인기 있는) 숲지기, 같으면 추천도서가 많은 순.
+    .sort(
+      (a, b) =>
+        Number(b.verified) - Number(a.verified) || b.followers - a.followers || b.bookCount - a.bookCount
+    );
 
   return (
     <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">

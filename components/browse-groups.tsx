@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
+import OfficialBadge from "@/components/official-badge";
 
 type OpenGroup = {
   id: string;
@@ -12,6 +13,7 @@ type OpenGroup = {
   type: string;
   description?: string | null;
   operatorName?: string | null;
+  verified?: boolean;
   bookCount?: number;
   followers?: number;
   covers?: string[];
@@ -112,7 +114,10 @@ export default function BrowseGroups({
             style={{ borderColor: "var(--rule)", background: "var(--card)" }}
           >
             <Link href={`/recommend/${group.id}`} className="min-w-0 flex-1">
-              <p className="d text-sm">{group.name}</p>
+              <p className="d text-sm">
+                {group.name}
+                {group.verified && <OfficialBadge />}
+              </p>
               <p className="text-xs" style={{ color: "var(--ink-2)" }}>
                 {group.operatorName && (
                   <>

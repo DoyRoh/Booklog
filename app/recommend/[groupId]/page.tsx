@@ -1,4 +1,5 @@
 import Link from "next/link";
+import OfficialBadge from "@/components/official-badge";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getProfileSnapshot } from "@/lib/profile-snapshot";
@@ -42,7 +43,7 @@ export default async function GroupDetailPage({
   // 프로필)을 먼저 동시에 왕복한다 -- 추천도서 목록은 활성 아이 id가
   // 있어야 조회할 수 있어서 그 다음 단계로 미룬다.
   const [{ data: group }, { data: myMembership }, { activeChild, activeProfile }, hidden] = await Promise.all([
-    supabase.from("groups").select("id, name, type, join_policy, invite_code, description, owner_id, operator_name").eq("id", groupId).single(),
+    supabase.from("groups").select("id, name, type, join_policy, invite_code, description, owner_id, operator_name, verified").eq("id", groupId).single(),
     supabase
       .from("group_members")
       .select("role, status")
@@ -140,7 +141,10 @@ export default async function GroupDetailPage({
 
       <div className="mt-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="d text-xl">{group.name}</h1>
+          <h1 className="d text-xl">
+            {group.name}
+            {group.verified && <OfficialBadge />}
+          </h1>
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             {group.operator_name && (
               <>
