@@ -47,6 +47,10 @@ export default function OperatorProfileSwitcher({
   const [avatarDraft, setAvatarDraft] = useState<OperatorAvatar>(avatar ?? "bear");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 숲지기 프로필 삭제는 화면 안 두 단계(iOS 웹뷰에서 window.confirm이 안 뜨는
+  // 경우가 있어 기록 삭제 때와 같은 방식).
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function startEdit() {
     setNameDraft(savedName);
@@ -90,6 +94,42 @@ export default function OperatorProfileSwitcher({
     setSavedAvatar(avatarDraft);
     setEditing(false);
     window.dispatchEvent(new Event("chaeksup:profile-changed"));
+    router.refresh();
+  }
+
+  // 숲지기 프로필 = "이 계정이 운영하는 그룹들". 그래서 삭제는 내가 만든 그룹을
+  // 지우고(추천도서·숙제·그룹원 목록 cascade, 아이들의 독서기록은 group_id만
+  // 비워진 채 남음 -- 0023), 남이 만든 그룹의 운영진 자리에서는 빠지는 것.
+  // 숲지기 이름·얼굴도 비워서 이름을 다른 사람이 쓸 수 있게 한다(0031 유일 제약).
+  async function deleteOperatorProfile() {
+    setDeleting(true);
+    setError(null);
+    const supabase = createClient();
+    const owned = await supabase.from("groups").delete().eq("owner_id", userId);
+    if (owned.error) {
+      setDeleting(false);
+      setError(`그룹을 지우지 못했어요: ${owned.error.message}`);
+      return;
+    }
+    const left = await supabase
+      .from("group_members")
+      .delete()
+      .eq("user_id", userId)
+      .in("role", ["teacher", "admin", "curator"]);
+    if (left.error) {
+      setDeleting(false);
+      setError(`운영진에서 빠지지 못했어요: ${left.error.message}`);
+      return;
+    }
+    await supabase
+      .from("users")
+      .update({ active_profile_type: "child", operator_name: null, operator_avatar: null, active_operator_group_id: null })
+      .eq("id", userId);
+    setDeleting(false);
+    setEditing(false);
+    setConfirmingDelete(false);
+    window.dispatchEvent(new Event("chaeksup:profile-changed"));
+    router.push("/more");
     router.refresh();
   }
 
@@ -202,10 +242,52 @@ export default function OperatorProfileSwitcher({
                 {error}
               </p>
             )}
-            <div className="flex justify-end gap-2">
+            {confirmingDelete ? (
+              <div className="rounded-[14px] border p-3" style={{ borderColor: "var(--berry)" }}>
+                <p className="text-xs leading-relaxed" style={{ color: "var(--ink)" }}>
+                  숲지기 프로필을 지우면 운영 중인 그룹 {groups.length}개({groups.map((g) => g.groupName).join(", ")})의 추천도서·숙제·그룹원 목록이 함께
+                  삭제돼요. 다른 사람이 만든 그룹이면 운영진에서만 빠져요. 아이들이 남긴 독서기록은 그대로
+                  남아요. 되돌릴 수 없어요.
+                </p>
+                <div className="mt-3 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(false)}
+                    disabled={deleting}
+                    className="d rounded-[14px] border px-4 py-2 text-xs"
+                    style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deleteOperatorProfile}
+                    disabled={deleting}
+                    className="d rounded-[14px] px-4 py-2 text-xs text-white disabled:opacity-40"
+                    style={{ background: "var(--berry)" }}
+                  >
+                    {deleting ? "지우는 중…" : "정말 삭제할게요"}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            <div className="flex items-center justify-end gap-2">
+              {!confirmingDelete && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="mr-auto text-xs underline underline-offset-2"
+                  style={{ color: "var(--berry)" }}
+                >
+                  숲지기 프로필 삭제
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => setEditing(false)}
+                onClick={() => {
+                  setEditing(false);
+                  setConfirmingDelete(false);
+                }}
                 className="d rounded-[14px] border px-4 py-2 text-xs"
                 style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
               >
