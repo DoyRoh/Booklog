@@ -145,7 +145,7 @@ export default function BrowseGroups({
       {keepers.map((keeper) => (
         <div
           key={keeper.key}
-          className="flex gap-3 rounded-[18px] border py-3 pl-3"
+          className="flex gap-2.5 rounded-[18px] border py-2.5 pl-2.5"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         >
           {/* 왼쪽: 숲지기 얼굴과 이름 */}
@@ -154,7 +154,7 @@ export default function BrowseGroups({
             <img
               src={`/illustrations/face-${keeper.avatar}.png`}
               alt=""
-              className="h-12 w-12 rounded-full border"
+              className="h-10 w-10 rounded-full border"
               style={{ borderColor: "var(--rule)" }}
             />
             <p
@@ -183,10 +183,10 @@ export default function BrowseGroups({
               const following = followingIds.includes(group.id);
               const cover = group.covers?.[0];
               return (
-                <div key={group.id} className="relative w-[100px] flex-none">
+                <div key={group.id} className="relative w-[76px] flex-none">
                   <Link href={`/recommend/${group.id}`} className="block">
                     <div
-                      className="flex h-[120px] w-full items-center justify-center overflow-hidden rounded-[10px]"
+                      className="flex h-[100px] w-full items-center justify-center overflow-hidden rounded-[10px]"
                       style={{ background: "var(--paper)" }}
                     >
                       {cover ? (
@@ -199,7 +199,7 @@ export default function BrowseGroups({
                       )}
                     </div>
                     <p
-                      className="d mt-1.5 text-xs leading-[16px]"
+                      className="d mt-1 text-[11px] leading-[14px]"
                       style={{ wordBreak: "keep-all", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
                     >
                       {group.name}
@@ -215,14 +215,14 @@ export default function BrowseGroups({
                     disabled={pending === group.id}
                     onClick={() => (following ? unfollow(group.id) : follow(group.id))}
                     aria-label={following ? `${group.name} 팔로우 끊기` : `${group.name} 팔로우`}
-                    className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full disabled:opacity-40"
+                    className="absolute right-0.5 top-0.5 flex h-6 w-6 items-center justify-center rounded-full disabled:opacity-40"
                     style={{
                       background: following ? "var(--point-deep)" : "var(--card)",
                       border: following ? "none" : "1.5px solid var(--point-deep)",
                       boxShadow: "0 1px 3px rgba(38,54,43,0.25)",
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                       {following ? (
                         <path d="M3 7.2l2.6 2.6L11 4.4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       ) : (
