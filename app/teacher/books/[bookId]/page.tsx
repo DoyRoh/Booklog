@@ -1,4 +1,6 @@
 import Link from "next/link";
+import BookAgeEditor from "@/components/book-age-editor";
+import { parseAgeBands } from "@/lib/age-bands";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import Section from "@/components/section";
@@ -32,7 +34,7 @@ export default async function TeacherBookDetailPage({
     );
   }
 
-  const [{ data: membership }, { data: group }, { data: book }] = await Promise.all([
+  const [{ data: membership }, { data: group }, { data: book }, { data: listItem }] = await Promise.all([
     supabase
       .from("group_members")
       .select("id")
@@ -43,6 +45,13 @@ export default async function TeacherBookDetailPage({
       .maybeSingle(),
     supabase.from("groups").select("id, name").eq("id", groupId).maybeSingle(),
     supabase.from("books").select("id, title, author, cover_url").eq("id", bookId).maybeSingle(),
+    supabase
+      .from("book_list_items")
+      .select("id, age_bands, book_lists!inner(group_id)")
+      .eq("book_id", bookId)
+      .eq("book_lists.group_id", groupId)
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   if (!membership || !group || !book) {
@@ -125,6 +134,12 @@ export default async function TeacherBookDetailPage({
         <p className="mt-3 text-xs" style={{ color: "var(--lantern)" }}>
           이 책이 들어간 숙제: {(assignmentRows ?? []).map((a) => a.title).join(", ")}
         </p>
+      )}
+
+      {listItem && (
+        <Section className="mt-5" title="추천 연령" description="여러 개 고를 수 있어요. 비워 두면 연령 미정이에요.">
+          <BookAgeEditor itemId={listItem.id} initial={parseAgeBands(listItem.age_bands)} />
+        </Section>
       )}
 
       <Section

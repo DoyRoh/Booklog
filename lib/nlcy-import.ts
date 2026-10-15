@@ -12,6 +12,7 @@ import {
   type NlcyCategoryKey,
   type NlcyScrapeResult,
 } from "@/lib/nlcy-scrape";
+import { nlcyTargetToBands, type AgeBand } from "@/lib/age-bands";
 
 type KakaoDoc = { title?: string; authors?: string[]; publisher?: string; thumbnail?: string; isbn?: string; datetime?: string; contents?: string };
 const compact = (t: string) => t.replace(/[\s\p{P}\p{S}]/gu, "").toLowerCase();
@@ -49,11 +50,23 @@ function firstAuthor(author: string | null) {
 
 export type NlcyImportResult = NlcyScrapeResult & { added: number; missed: string[] };
 
-/** 한 분류를 읽어 카탈로그에 넣고 addItems(목록 id, 책 id들)로 그룹 목록에 넣는다. 넣은 수를 돌려준다. */
+/** 목록에 넣을 책 한 권과 그 추천 연령. */
+export type NlcyListItem = { bookId: string; ageBands: AgeBand[] };
+
+// 엑셀 "대상"이 비어 있을 때 분류로 정하는 연령(테마는 섞여 있어 비워 둠).
+const CATEGORY_BANDS: Record<NlcyCategoryKey, AgeBand[]> = {
+  infant: ["preschool"],
+  lower: ["lower"],
+  upper: ["upper"],
+  teen: ["teen"],
+  theme: [],
+};
+
+/** 한 분류를 읽어 카탈로그에 넣고 addItems(목록 id, 책+연령)로 그룹 목록에 넣는다. 넣은 수를 돌려준다. */
 export async function importNlcyCategory(
   supabase: SupabaseClient<Database>,
   key: NlcyCategoryKey,
-  addItems: (listId: string, bookIds: string[]) => Promise<number>
+  addItems: (listId: string, items: NlcyListItem[]) => Promise<number>
 ): Promise<NlcyImportResult> {
   const category = NLCY_CATEGORIES.find((c) => c.key === key)!;
   const scraped = await scrapeNlcyCategory(key);
@@ -80,7 +93,13 @@ export async function importNlcyCategory(
     return res.ok ? (((await res.json()).documents ?? []) as KakaoDoc[]) : [];
   };
 
-  const bookIds: string[] = [];
+  const items = new Map<string, Set<AgeBand>>();
+  const keep = (bookId: string, b: NlcyBook) => {
+    const bands = nlcyTargetToBands(b.target);
+    const set = items.get(bookId) ?? new Set<AgeBand>();
+    for (const band of bands.length ? bands : CATEGORY_BANDS[key]) set.add(band);
+    items.set(bookId, set);
+  };
   const missed: string[] = [];
   const queue: NlcyBook[] = [...scraped.books];
 
@@ -90,7 +109,7 @@ export async function importNlcyCategory(
       if (b.isbn) {
         const { data } = await supabase.from("book_isbns").select("book_id").eq("isbn", b.isbn).maybeSingle();
         if (data?.book_id) {
-          bookIds.push(data.book_id);
+          keep(data.book_id, b);
           continue;
         }
       }
@@ -136,11 +155,14 @@ export async function importNlcyCategory(
         if (isbn) await supabase.from("book_isbns").insert({ book_id: bookId, isbn });
       }
       if (!doc) missed.push(b.title);
-      bookIds.push(bookId);
+      keep(bookId, b);
     }
   }
   await Promise.all(Array.from({ length: 5 }, worker));
 
-  const added = await addItems(listId, [...new Set(bookIds)]);
+  const added = await addItems(
+    listId,
+    [...items].map(([bookId, bands]) => ({ bookId, ageBands: [...bands] }))
+  );
   return { ...scraped, added, missed };
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ViewToggle from "@/components/view-toggle";
+import { AGE_BANDS, AGE_BAND_LABELS, type AgeBand } from "@/lib/age-bands";
 import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
 import { shortMd } from "@/components/log-row";
 import Illustration from "@/components/illustration";
@@ -35,6 +36,8 @@ export default function OperatorBookBrowser({
   // 컨트롤 줄에도 항상 있어서 목록 보기로 안 바꿔도 바로 올릴 수 있다.
   const [mode, setMode] = useState<ViewMode>("cover");
   const [category, setCategory] = useState<string>("all");
+  // 연령 필터: "all" | 구간 | "none"(연령 미정 -- 아직 안 붙인 책을 찾아 붙이기 좋게)
+  const [age, setAge] = useState<AgeBand | "none" | "all">("all");
   const { ref: spineShelfRef, perRow: spinesPerRow } = useSpinesPerRow();
   const { ref: coverShelfRef, perRow: coversPerRow } = useCoversPerRow();
 
@@ -60,9 +63,24 @@ export default function OperatorBookBrowser({
     return Array.from(set).sort((a, b) => a.localeCompare(b, "ko"));
   }, [books]);
 
+  // 연령 분포 -- 칩마다 권수를 붙여 이 그룹이 몇 살 책 위주인지 한눈에 보이게.
+  const ageCounts = useMemo(() => {
+    const counts = new Map<AgeBand | "none", number>();
+    for (const book of books) {
+      if (book.ageBands.length === 0) counts.set("none", (counts.get("none") ?? 0) + 1);
+      for (const b of book.ageBands) counts.set(b, (counts.get(b) ?? 0) + 1);
+    }
+    return counts;
+  }, [books]);
+
   const filtered = useMemo(
-    () => (category === "all" ? books : books.filter((b) => b.categories.includes(category))),
-    [books, category]
+    () =>
+      books.filter(
+        (b) =>
+          (category === "all" || b.categories.includes(category)) &&
+          (age === "all" || (age === "none" ? b.ageBands.length === 0 : b.ageBands.includes(age)))
+      ),
+    [books, category, age]
   );
 
   const rows: ManagedRow[] = filtered.map((book, index) => {
@@ -84,9 +102,39 @@ export default function OperatorBookBrowser({
 
   return (
     <div>
+      {/* 연령 -- 권수까지 붙여 분포를 보여 준다. 미정은 눌러서 아직 안 붙인 책을 모아 볼 수 있다. */}
+      {books.length > 0 && (
+        <div className="-mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1">
+          <span className="d flex-none self-center text-xs" style={{ color: "var(--ink-2)" }}>
+            연령
+          </span>
+          {([...AGE_BANDS, "none"] as const)
+            .filter((key) => ageCounts.has(key))
+            .map((key) => {
+              const on = age === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setAge(on ? "all" : key)}
+                  className="d flex-none rounded-full border px-3 py-1 text-xs"
+                  style={{
+                    borderColor: on ? "var(--point-deep)" : "var(--rule)",
+                    background: on ? "var(--point-deep)" : "var(--card)",
+                    color: on ? "#fff" : "var(--ink-2)",
+                  }}
+                  aria-pressed={on}
+                >
+                  {key === "none" ? "미정" : AGE_BAND_LABELS[key]} {ageCounts.get(key)}
+                </button>
+              );
+            })}
+        </div>
+      )}
+
       {/* 분야 필터 -- 실제 분야가 둘 이상일 때만(하나뿐이면 고를 게 없다) */}
       {categories.length > 1 && (
-        <div className="-mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1">
+        <div className="-mx-5 mt-2 flex gap-2 overflow-x-auto px-5 pb-1">
           <span className="d flex-none self-center text-xs" style={{ color: "var(--ink-2)" }}>
             분야
           </span>
@@ -133,7 +181,7 @@ export default function OperatorBookBrowser({
 
       {filtered.length === 0 ? (
         <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
-          {books.length === 0 ? "아직 추천도서가 없어요. ‘+ 책 추가’로 올려 주세요." : "이 분야의 책이 없어요."}
+          {books.length === 0 ? "아직 추천도서가 없어요. ‘+ 책 추가’로 올려 주세요." : "조건에 맞는 책이 없어요."}
         </p>
       ) : mode === "list" ? (
         <div className="mt-[12px]">

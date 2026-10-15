@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { shortMd } from "@/components/log-row";
 import type { ManagedRow } from "@/components/managed-log-list";
 import { categoryColor } from "@/lib/categories";
+import { parseAgeBands, type AgeBand } from "@/lib/age-bands";
 import { isCurrent } from "@/lib/assignment-period";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
 
@@ -13,6 +14,8 @@ export type OperatorBook = {
   author: string | null;
   coverUrl: string | null;
   categories: string[];
+  /** 추천 연령(0038). 비어 있으면 연령 미정. */
+  ageBands: AgeBand[];
   addedAt: string;
   readCount: number;
   inAssignment: boolean;
@@ -24,6 +27,7 @@ type ItemRow = {
   id: string;
   book_id: string;
   created_at: string;
+  age_bands: string[] | null;
   books: {
     id: string;
     title: string;
@@ -59,7 +63,7 @@ export async function loadOperatorBookSections(
   let query = operatorGroupsQuery(
     supabase,
     userId,
-    "book_lists(book_list_items(id, book_id, created_at, books(id, title, author, cover_url, book_categories(category)))), members:group_members(child_id, status), reading_records(child_id, book_id), assignments(start_date, end_date, created_at, assignment_books(book_id))"
+    "book_lists(book_list_items(id, book_id, created_at, age_bands, books(id, title, author, cover_url, book_categories(category)))), members:group_members(child_id, status), reading_records(child_id, book_id), assignments(start_date, end_date, created_at, assignment_books(book_id))"
   ).eq("reading_records.status", "done");
   if (groupId) query = query.eq("id", groupId);
   const { data } = await query.overrideTypes<GroupRow[], { merge: false }>();
@@ -88,6 +92,7 @@ export async function loadOperatorBookSections(
         author: item.books!.author,
         coverUrl: item.books!.cover_url,
         categories: (item.books!.book_categories ?? []).map((c) => c.category),
+        ageBands: parseAgeBands(item.age_bands),
         addedAt: item.created_at,
         readCount: readersByBook.get(item.books!.id)?.size ?? 0,
         inAssignment: assigned.has(item.books!.id),

@@ -47,16 +47,31 @@ export async function GET(request: Request) {
       // 한 분류씩 차례로(누리집에 한꺼번에 몰리지 않게). 한 분류가 실패해도 나머지는 계속.
       for (const c of NLCY_CATEGORIES) {
         try {
-          const r = await importNlcyCategory(supabase, c.key as NlcyCategoryKey, async (listId, bookIds) => {
-            if (bookIds.length === 0) return 0;
+          const r = await importNlcyCategory(supabase, c.key as NlcyCategoryKey, async (listId, items) => {
+            if (items.length === 0) return 0;
             const { data, error } = await supabase
               .from("book_list_items")
               .upsert(
-                bookIds.map((book_id) => ({ book_list_id: listId, book_id })),
+                items.map((i) => ({ book_list_id: listId, book_id: i.bookId, age_bands: i.ageBands.length ? i.ageBands : null })),
                 { onConflict: "book_list_id,book_id", ignoreDuplicates: true }
               )
               .select("id");
             if (error) throw new Error(error.message);
+            // 이미 있던 책은 연령이 비어 있을 때만 채운다(숲지기가 고친 값은 덮어쓰지 않음).
+            const byBands = new Map<string, string[]>();
+            for (const i of items) {
+              if (i.ageBands.length === 0) continue;
+              const k = i.ageBands.join(",");
+              byBands.set(k, [...(byBands.get(k) ?? []), i.bookId]);
+            }
+            for (const [k, ids] of byBands) {
+              await supabase
+                .from("book_list_items")
+                .update({ age_bands: k.split(",") })
+                .eq("book_list_id", listId)
+                .in("book_id", ids)
+                .is("age_bands", null);
+            }
             return data?.length ?? 0;
           });
           totalAdded += r.added;

@@ -1,5 +1,6 @@
 "use client";
 
+import { isOutsideBand, type AgeBand } from "@/lib/age-bands";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ShelfBookmark } from "@/components/read-toggles";
@@ -45,15 +46,21 @@ type ShelfMode = "cover" | "list";
 
 const MODE_STORAGE_KEY = "chaeksup:recommend-shelf-view";
 
+// 나이에 안 맞는 책의 투명도(사용자 결정: 모양 변화 없이 투명도로만).
+const DIM = 0.4;
+
 export default function RecommendShelf({
   groupId,
   books,
   activeChildId,
+  childBand = null,
   footnote,
 }: {
   groupId: string;
   books: RecommendBook[];
   activeChildId: string | null;
+  /** 이 아이의 연령 구간 -- 추천 연령이 정해졌는데 여기에 안 맞는 책은 투명도로만 흐리게(모양은 그대로). */
+  childBand?: AgeBand | null;
   /** 선반 아래 한 줄 안내(예: 팔로우 전 미리보기 안내). */
   footnote?: React.ReactNode;
 }) {
@@ -143,7 +150,11 @@ export default function RecommendShelf({
                 key={book.itemId}
                 id={`book-${book.itemId}`}
                 className="flex items-center gap-2.5 py-3"
-                style={{ scrollMarginTop: "calc(190px + var(--st))", ...(index === 0 ? {} : { borderTop: "1px solid rgba(38,54,43,0.08)" }) }}
+                style={{
+                  scrollMarginTop: "calc(190px + var(--st))",
+                  ...(index === 0 ? {} : { borderTop: "1px solid rgba(38,54,43,0.08)" }),
+                  ...(isOutsideBand(book.ageBands, childBand) ? { opacity: DIM } : {}),
+                }}
               >
                 <Link href={href} aria-label={`${book.title} 읽어보기`} className="flex min-w-0 flex-1 items-center gap-2.5">
                   {book.coverUrl ? (
@@ -186,7 +197,12 @@ export default function RecommendShelf({
                 const bookGroupId = book.groupId ?? groupId;
                 const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(bookGroupId)}`;
                 return (
-                  <div key={book.itemId} id={`book-${book.itemId}`} className="relative" style={{ scrollMarginTop: "calc(190px + var(--st))" }}>
+                  <div
+                    key={book.itemId}
+                    id={`book-${book.itemId}`}
+                    className="relative"
+                    style={{ scrollMarginTop: "calc(190px + var(--st))", ...(isOutsideBand(book.ageBands, childBand) ? { opacity: DIM } : {}) }}
+                  >
                     <Link
                       href={href}
                       aria-label={`${book.title} 읽어보기`}
@@ -229,7 +245,7 @@ export default function RecommendShelf({
             <div className="mt-2" style={PLANK_STYLE} />
             <div className="mt-2 grid gap-4 px-3" style={{ gridTemplateColumns: `repeat(${coversPerRow}, minmax(0, 1fr))` }}>
               {row.map((book) => (
-                <div key={book.itemId} className="min-w-0">
+                <div key={book.itemId} className="min-w-0" style={isOutsideBand(book.ageBands, childBand) ? { opacity: DIM } : undefined}>
                   <p
                     className="text-sm leading-snug"
                     style={{ overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}

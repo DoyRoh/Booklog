@@ -1,3 +1,4 @@
+import { parseAgeBands, type AgeBand } from "@/lib/age-bands";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ReadingStatus } from "@/lib/reading-status";
 import { kstDate } from "@/lib/kst";
@@ -15,6 +16,8 @@ export type RecommendBook = {
   inAssignment: boolean;
   /** 목록에 올린 날짜(ISO). 목록 줄의 날짜 칸. */
   addedAt: string;
+  /** 추천 연령(0038). 비어 있으면 연령 미정 -- 흐리게 하지 않는다. */
+  ageBands: AgeBand[];
   /** 여러 그룹을 합쳐 볼 때(숲길 "전체") 이 책이 어느 그룹 것인지. */
   groupId?: string;
 };
@@ -36,18 +39,25 @@ export async function getRecommendBooks(
 ): Promise<{ bookListId: string | null; listName: string; books: RecommendBook[] }> {
   // 목록 행과 그 안의 책들을 임베드로 한 번에(예전엔 book_lists → book_list_items
   // 순차 왕복 2번). 숲길 "전체"는 그룹마다 이 함수를 부르니 여기서 줄인 왕복이 곱해진다.
-  const { data: bookList } = await supabase
-    .from("book_lists")
-    .select("id, name, book_list_items(id, created_at, books(id, title, author, cover_url))")
-    .eq("group_id", groupId)
-    .limit(1)
-    .maybeSingle();
+  const query = (cols: string) =>
+    supabase.from("book_lists").select(cols).eq("group_id", groupId).limit(1).maybeSingle();
+  let { data: bookList, error: listError } = await query(
+    "id, name, book_list_items(id, created_at, age_bands, books(id, title, author, cover_url))"
+  );
+  // 마이그레이션 0038(age_bands) 전이면 그 컬럼 없이 다시 -- 실패를 빈 목록으로 위장하지 않게.
+  if (listError) {
+    ({ data: bookList, error: listError } = await query(
+      "id, name, book_list_items(id, created_at, books(id, title, author, cover_url))"
+    ));
+  }
+  if (listError) throw listError;
 
   if (!bookList) {
     return { bookListId: null, listName: "추천도서", books: [] };
   }
 
-  const itemRows = ((bookList.book_list_items as unknown as { id: string; created_at: string; books: unknown }[] | null) ?? [])
+  const list = bookList as unknown as { id: string; name: string; book_list_items: unknown };
+  const itemRows = ((list.book_list_items as unknown as { id: string; created_at: string; age_bands?: string[] | null; books: unknown }[] | null) ?? [])
     .slice()
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
@@ -55,6 +65,7 @@ export async function getRecommendBooks(
     .map((row) => ({
       id: row.id,
       addedAt: row.created_at as string,
+      ageBands: parseAgeBands(row.age_bands),
       book: row.books as unknown as
         | { id: string; title: string; author: string | null; cover_url: string | null }
         | null,
@@ -111,7 +122,8 @@ export async function getRecommendBooks(
     readStatus: statusByBook.get(row.book!.id) ?? null,
     inAssignment: assignedBookIds.has(row.book!.id),
     addedAt: row.addedAt,
+    ageBands: row.ageBands,
   }));
 
-  return { bookListId: bookList.id, listName: bookList.name, books };
+  return { bookListId: list.id, listName: list.name, books };
 }

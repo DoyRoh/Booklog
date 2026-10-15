@@ -6,6 +6,8 @@ export type ActiveChild = {
   avatar: "rabbit" | "dog" | "cat" | null;
   /** 숲길·숙제 탭이 공유하는 "지금 보고 있는 그룹"(children.active_group_id). */
   activeGroupId: string | null;
+  /** 생년월일(YYYY-MM-DD) -- 추천 연령에 맞는지 계산할 때 씀. */
+  birthDate: string | null;
 };
 
 /**
@@ -23,7 +25,7 @@ export async function getActiveChild(
   // 영향을 준다).
   const { data: profile, error: profileError } = await supabase
     .from("users")
-    .select("active_child_id, children(id, name, avatar, active_group_id)")
+    .select("active_child_id, children(id, name, avatar, active_group_id, birth_date)")
     .eq("id", userId)
     .single();
 
@@ -34,15 +36,15 @@ export async function getActiveChild(
   // "조회 실패가 빈 상태로 위장되던 문제" 원칙과 동일).
   if (profileError) throw profileError;
 
-  type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null; active_group_id: string | null };
+  type ChildRow = { id: string; name: string; avatar: "rabbit" | "dog" | "cat" | null; active_group_id: string | null; birth_date: string | null };
   const embeddedChild = profile?.children as unknown as ChildRow | null | undefined;
   if (embeddedChild) {
-    return { id: embeddedChild.id, name: embeddedChild.name, avatar: embeddedChild.avatar, activeGroupId: embeddedChild.active_group_id };
+    return { id: embeddedChild.id, name: embeddedChild.name, avatar: embeddedChild.avatar, activeGroupId: embeddedChild.active_group_id, birthDate: embeddedChild.birth_date };
   }
 
   const { data: guardianRows, error: guardianError } = await supabase
     .from("child_guardians")
-    .select("children(id, name, avatar, active_group_id)")
+    .select("children(id, name, avatar, active_group_id, birth_date)")
     .eq("user_id", userId)
     .order("created_at", { ascending: true })
     .limit(1);
@@ -50,5 +52,5 @@ export async function getActiveChild(
   if (guardianError) throw guardianError;
 
   const first = guardianRows?.[0]?.children as unknown as ChildRow | null | undefined;
-  return first ? { id: first.id, name: first.name, avatar: first.avatar, activeGroupId: first.active_group_id } : null;
+  return first ? { id: first.id, name: first.name, avatar: first.avatar, activeGroupId: first.active_group_id, birthDate: first.birth_date } : null;
 }

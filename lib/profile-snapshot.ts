@@ -16,7 +16,7 @@ export async function getProfileSnapshot(
 ): Promise<{ activeProfile: ActiveProfile; activeChild: ActiveChild | null }> {
   const { data: user } = await supabase
     .from("users")
-    .select("active_profile_type, operator_avatar, operator_name, active_child_id, children(id, name, avatar)")
+    .select("active_profile_type, operator_avatar, operator_name, active_child_id, children(id, name, avatar, birthDate:birth_date)")
     .eq("id", userId)
     .single();
 
@@ -38,7 +38,7 @@ export async function getProfileSnapshot(
       ? Promise.resolve(null)
       : supabase
           .from("child_guardians")
-          .select("children(id, name, avatar)")
+          .select("children(id, name, avatar, birthDate:birth_date)")
           .eq("user_id", userId)
           .order("created_at", { ascending: true })
           .limit(1)

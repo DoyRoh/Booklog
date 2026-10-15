@@ -1,3 +1,4 @@
+import { childAgeBand } from "@/lib/age-bands";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
@@ -145,7 +146,9 @@ export default async function RecommendPage() {
         title="둘러보기"
         description="숲지기마다 공개 그룹을 옆으로 넘겨 봐요. 그룹을 누르면 추천도서를 미리 보고, + 를 누르면 팔로우해요."
       >
-        <BrowseGroups groups={browseGroups} followingIds={activeProfile.type === "operator" ? [] : myGroupIds} activeChildId={activeChild?.id ?? null} />
+        <BrowseGroups groups={browseGroups} followingIds={activeProfile.type === "operator" ? [] : myGroupIds} activeChildId={activeChild?.id ?? null}
+          childBand={activeProfile.type === "operator" ? null : childAgeBand(activeChild?.birthDate)}
+        />
       </Section>
     </div>
   );

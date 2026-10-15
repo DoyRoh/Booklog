@@ -1,3 +1,4 @@
+import { childAgeBand } from "@/lib/age-bands";
 import Link from "next/link";
 import Section from "@/components/section";
 import BrowseGroups from "@/components/browse-groups";
@@ -97,7 +98,7 @@ export default async function GroupPage({
             title="둘러보기"
             description="누구나 따라 걸을 수 있는 공개 그룹이에요. 눌러서 추천도서를 미리 보고, 마음에 들면 팔로우해요."
           >
-            <BrowseGroups groups={browse} followingIds={[]} activeChildId={activeChild.id} />
+            <BrowseGroups groups={browse} followingIds={[]} activeChildId={activeChild.id} childBand={childAgeBand(activeChild.birthDate)} />
           </Section>
         )}
       </div>
@@ -130,7 +131,7 @@ export default async function GroupPage({
           className="mt-[16px] rounded-[var(--r)] border p-4"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         >
-          <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
+          <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} childBand={childAgeBand(activeChild.birthDate)} />
         </div>
       </>
     );

@@ -3,6 +3,7 @@ import OfficialBadge from "@/components/official-badge";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getProfileSnapshot } from "@/lib/profile-snapshot";
+import { childAgeBand } from "@/lib/age-bands";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import { getRecommendBooks } from "@/lib/recommend-books";
 import GroupApprovals from "@/components/group-approvals";
@@ -250,6 +251,7 @@ export default async function GroupDetailPage({
             groupId={groupId}
             books={isChildMember ? recommendBooks : recommendBooks.slice(0, PREVIEW_LIMIT)}
             activeChildId={isChildMember ? (activeChild?.id ?? null) : null}
+            childBand={childAgeBand(activeChild?.birthDate)}
             footnote={
               !isChildMember && recommendBooks.length > PREVIEW_LIMIT
                 ? `미리보기 ${PREVIEW_LIMIT}권 · 팔로우하면 ${recommendBooks.length}권 전부 볼 수 있어요`

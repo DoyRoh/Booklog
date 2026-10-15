@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import AgeBandPicker from "@/components/age-band-picker";
+import { parseAgeBands, type AgeBand } from "@/lib/age-bands";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import BookFinder from "@/components/book-finder";
 import { ensureBook, type BookCandidate } from "@/lib/book-catalog";
 import { BOOK_CATEGORIES } from "@/lib/categories";
+
+const LAST_AGES_KEY = "chaeksup:last-age-bands";
 
 export default function AddBookToList({ bookListIds }: { bookListIds: string[] }) {
   const router = useRouter();
@@ -16,10 +20,17 @@ export default function AddBookToList({ bookListIds }: { bookListIds: string[] }
   // 표시는 없앴다 -- 꼭 읽혀야 하는 책은 추천도서가 아니라 숙제로 낸다.
   const [pending, setPending] = useState<BookCandidate | null>(null);
   const [pendingCategories, setPendingCategories] = useState<Set<string>>(new Set());
+  // 추천 연령은 직전에 고른 값으로 미리 채운다 -- 같은 연령 책을 연달아 올릴 때 손댈 필요가 없게.
+  const [pendingAges, setPendingAges] = useState<AgeBand[]>([]);
 
   function pickCandidate(candidate: BookCandidate) {
     setPending(candidate);
     setPendingCategories(new Set());
+    let last: AgeBand[] = [];
+    try {
+      last = parseAgeBands(JSON.parse(window.localStorage.getItem(LAST_AGES_KEY) ?? "[]"));
+    } catch {}
+    setPendingAges(last);
     setError(null);
   }
 
@@ -58,7 +69,12 @@ export default function AddBookToList({ bookListIds }: { bookListIds: string[] }
     const { error: itemError } = await supabase
       .from("book_list_items")
       .upsert(
-        bookListIds.map((bookListId) => ({ book_list_id: bookListId, book_id: bookId, required: false })),
+        bookListIds.map((bookListId) => ({
+          book_list_id: bookListId,
+          book_id: bookId,
+          required: false,
+          age_bands: pendingAges.length ? pendingAges : null,
+        })),
         { onConflict: "book_list_id,book_id", ignoreDuplicates: true }
       );
     if (itemError) {
@@ -67,6 +83,9 @@ export default function AddBookToList({ bookListIds }: { bookListIds: string[] }
       return;
     }
 
+    try {
+      window.localStorage.setItem(LAST_AGES_KEY, JSON.stringify(pendingAges));
+    } catch {}
     setAdding(false);
     setPending(null);
     router.refresh();
@@ -91,6 +110,13 @@ export default function AddBookToList({ bookListIds }: { bookListIds: string[] }
               </p>
             )}
           </div>
+        </div>
+
+        <p className="d mt-3 text-xs" style={{ color: "var(--ink-2)" }}>
+          몇 살에게 추천하나요? (여러 개 선택 가능, 비우면 연령 미정)
+        </p>
+        <div className="mt-1.5">
+          <AgeBandPicker value={pendingAges} onChange={setPendingAges} />
         </div>
 
         <p className="d mt-3 text-xs" style={{ color: "var(--ink-2)" }}>

@@ -27,8 +27,12 @@ export async function POST(request: Request) {
       const scraped = await scrapeNlcyCategory(key);
       return NextResponse.json({ ...scraped, added: 0, dryRun: true });
     }
-    const result = await importNlcyCategory(supabase, key, async (listId, bookIds) => {
-      const { data, error } = await supabase.rpc("admin_add_list_items", { p_list: listId, p_books: bookIds });
+    const result = await importNlcyCategory(supabase, key, async (listId, items) => {
+      // 0038: 책마다 추천 연령도 함께(이미 있는 책은 연령이 비어 있을 때만 채움).
+      const { data, error } = await supabase.rpc("admin_add_list_items_with_age", {
+        p_list: listId,
+        p_items: items.map((i) => ({ book_id: i.bookId, age_bands: i.ageBands })),
+      });
       if (error) throw new Error(error.message);
       return data ?? 0;
     });

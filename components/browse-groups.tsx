@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
+import { AGE_BAND_LABELS, ageBandsLabel, groupFitsBand, mainAgeBands, type AgeBand } from "@/lib/age-bands";
 
 type OpenGroup = {
   id: string;
@@ -18,6 +19,8 @@ type OpenGroup = {
   bookCount?: number;
   followers?: number;
   covers?: string[];
+  ages?: { band: AgeBand; count: number }[];
+  agedCount?: number;
 };
 
 type Keeper = {
@@ -58,11 +61,15 @@ export default function BrowseGroups({
   groups,
   followingIds,
   activeChildId,
+  childBand = null,
 }: {
   groups: OpenGroup[];
   followingIds: string[];
   activeChildId: string | null;
+  /** 아이의 연령 구간 -- 있으면 "우리 아이 나이에 맞는 그룹만" 필터가 기본으로 켜진다. */
+  childBand?: AgeBand | null;
 }) {
+  const [onlyFit, setOnlyFit] = useState(true);
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -133,10 +140,43 @@ export default function BrowseGroups({
     );
   }
 
-  const keepers = groupByKeeper(groups);
+  // 연령이 정해진 책의 3분의 1 이상이 아이 구간이면 맞는 그룹. 연령 미정 그룹은 거르지 않는다.
+  const fits = (g: OpenGroup) =>
+    !childBand || groupFitsBand(g.ages ?? [], g.agedCount ?? 0, childBand) !== false;
+  const filterOn = Boolean(childBand) && onlyFit;
+  const shown = filterOn ? groups.filter(fits) : groups;
+  const hiddenCount = groups.length - shown.length;
+  const keepers = groupByKeeper(shown);
 
   return (
     <div className="flex flex-col gap-3">
+      {childBand && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setOnlyFit((v) => !v)}
+            aria-pressed={onlyFit}
+            className="d rounded-full border px-3 py-1 text-xs"
+            style={{
+              borderColor: onlyFit ? "var(--point-deep)" : "var(--rule)",
+              background: onlyFit ? "var(--point-deep)" : "var(--card)",
+              color: onlyFit ? "#fff" : "var(--ink-2)",
+            }}
+          >
+            우리 아이 나이({AGE_BAND_LABELS[childBand]})에 맞는 그룹만
+          </button>
+          {filterOn && hiddenCount > 0 && (
+            <span className="text-[11px]" style={{ color: "var(--ink-2)" }}>
+              다른 나이 그룹 {hiddenCount}개 숨김
+            </span>
+          )}
+        </div>
+      )}
+      {keepers.length === 0 && (
+        <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+          이 나이에 맞는 그룹이 아직 없어요. 위 버튼을 눌러 전체를 볼 수 있어요.
+        </p>
+      )}
       {error && (
         <p className="text-sm" style={{ color: "var(--berry)" }}>
           {error}
@@ -210,8 +250,16 @@ export default function BrowseGroups({
                         </span>
                       </div>
                     )}
+                    {(() => {
+                      const main = mainAgeBands(group.ages ?? [], group.agedCount ?? 0);
+                      return (
+                        <p className="mt-1 truncate text-[10px] leading-[13px]" style={{ color: "var(--point-deep)" }}>
+                          {main.length > 0 ? ageBandsLabel(main) : "연령 미정"}
+                        </p>
+                      );
+                    })()}
                     <p
-                      className="d mt-1 text-[11px] leading-[14px]"
+                      className="d text-[11px] leading-[14px]"
                       style={{ wordBreak: "keep-all", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
                     >
                       {group.name}
