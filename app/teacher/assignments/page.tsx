@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PrintExportLink from "@/components/print-export-link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { shortMd } from "@/components/log-row";
@@ -64,7 +65,12 @@ export default async function TeacherAssignmentsPage({
       className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pb-10"
       style={{ paddingTop: showGroupTiles ? `${20 + OPERATOR_GROUP_BAR_HEIGHT}px` : "20px" }}
     >
-      <h1 className="d text-xl">숙제</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="d text-xl">숙제</h1>
+        {selected && selected.cards.length > 0 && (
+          <PrintExportLink href={`/teacher/export?group=${selected.id}&type=assignments`} />
+        )}
+      </div>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         추천도서 서랍에서 골라 기간을 정해 낸 숙제예요. 오른쪽은 몇 명이 끝냈는지, 누르면 아이별로 자세히
         보여요.
@@ -76,13 +82,6 @@ export default async function TeacherAssignmentsPage({
             숙제 {selected.cards.length}개
           </span>
           <div className="h-px min-w-[4px] flex-1" style={{ background: "rgba(38,54,43,0.08)" }} />
-          <Link
-            href={`/teacher/export?group=${selected.id}&type=assignments`}
-            className="d flex-none rounded-full border px-3 py-1 text-[12px]"
-            style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
-          >
-            내보내기
-          </Link>
         </div>
       )}
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import ViewToggle from "@/components/view-toggle";
 import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
 import { shortMd } from "@/components/log-row";
 import Illustration from "@/components/illustration";
@@ -11,12 +12,6 @@ import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual"
 import { useCoversPerRow, useSpinesPerRow } from "@/components/use-spines-per-row";
 
 type ViewMode = "list" | "cover" | "spine";
-
-const VIEW_LABELS: Record<ViewMode, string> = {
-  list: "목록 보기",
-  cover: "전면 보기",
-  spine: "책등 보기",
-};
 
 const STORAGE_KEY = "chaeksup:teacher-books-view";
 
@@ -117,7 +112,7 @@ export default function OperatorBookBrowser({
         </div>
       )}
 
-      {/* N권 ─── + 책 추가 · 보기 ▾ · 내보내기 (책장 탭의 컨트롤 줄과 같은
+      {/* N권 ─── + 책 추가 · 보기 아이콘(책장 탭과 같은 ViewToggle) (책장 탭의 컨트롤 줄과 같은
           모양). "+ 책 추가"는 목록 보기의 ManagedLogList 안에도 있지만,
           기본 보기가 전면·책등으로 바뀌면서 그 화면에서도 바로 올릴 수
           있게 여기 한 번 더 뒀다. */}
@@ -133,26 +128,7 @@ export default function OperatorBookBrowser({
         >
           + 책 추가
         </Link>
-        <select
-          value={mode}
-          onChange={(e) => switchMode(e.target.value as ViewMode)}
-          aria-label="보기 방식"
-          className="d w-[92px] flex-none truncate rounded-full border px-2 py-1 text-[12px] outline-none"
-          style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--ink-2)" }}
-        >
-          {(Object.keys(VIEW_LABELS) as ViewMode[]).map((value) => (
-            <option key={value} value={value}>
-              {VIEW_LABELS[value]}
-            </option>
-          ))}
-        </select>
-        <Link
-          href={`/teacher/export?group=${groupId}&type=books`}
-          className="d flex-none rounded-full border px-3 py-1 text-[12px]"
-          style={{ borderColor: "var(--rule)", background: "var(--card)", color: "var(--point-deep)" }}
-        >
-          내보내기
-        </Link>
+        <ViewToggle mode={mode} onChange={switchMode} modes={["cover", "spine", "list"]} />
       </div>
 
       {filtered.length === 0 ? (

@@ -98,3 +98,14 @@ export function PlusIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+/** 프린터 -- 추천도서·숙제 제목 옆의 작은 "인쇄·내보내기" 링크. */
+export function PrinterIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M7 9V4h10v5" />
+      <rect x="3.5" y="9" width="17" height="8" rx="2" />
+      <path d="M7 14h10v6H7z" />
+    </IconBase>
+  );
+}

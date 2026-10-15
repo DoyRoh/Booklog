@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PrintExportLink from "@/components/print-export-link";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import OperatorBookBrowser from "@/components/operator-book-browser";
@@ -47,7 +48,10 @@ export default async function TeacherBooksPage({
       className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pb-10"
       style={{ paddingTop: showGroupTiles ? `${20 + OPERATOR_GROUP_BAR_HEIGHT}px` : "20px" }}
     >
-      <h1 className="d text-xl">추천도서</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="d text-xl">추천도서</h1>
+        {selected && selected.books.length > 0 && <PrintExportLink href={`/teacher/export?group=${selected.id}&type=books`} />}
+      </div>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
         그룹마다 책 서랍이 하나씩 있어요. 보기 방식을 바꾸거나 분야로 좁혀 볼 수 있고, 목록 보기의 ‘선택’으로
         여러 권을 한 번에 뺄 수 있어요.
