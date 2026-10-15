@@ -51,7 +51,7 @@ const PROFILE_TAB = { href: "/more", label: "프로필", face: true } as const;
 
 const OPERATOR_TABS = [
   { href: "/teacher", label: "대시보드", Icon: DashboardIcon },
-  { href: "/teacher/children", label: "아이들", Icon: ChildrenIcon },
+  { href: "/teacher/children", label: "그룹", Icon: ChildrenIcon },
   { href: "/teacher/books", label: "추천도서", Icon: RecommendIcon },
   { href: "/teacher/assignments", label: "숙제", Icon: AssignmentIcon },
 ] as const;

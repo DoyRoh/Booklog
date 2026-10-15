@@ -4,6 +4,7 @@ import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { AvatarIllustration } from "@/components/illustration";
 import { OPERATOR_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
 import { operatorGroupsQuery } from "@/lib/operator-groups";
+import { pickActiveGroupId } from "@/lib/active-operator-group";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import GroupApprovals from "@/components/group-approvals";
 import Section from "@/components/section";
@@ -48,7 +49,7 @@ export default async function TeacherChildrenPage({
   if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px]">
-        <h1 className="d text-xl">아이들</h1>
+        <h1 className="d text-xl">그룹</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
         </Link>
@@ -71,7 +72,7 @@ export default async function TeacherChildrenPage({
     book_lists: { book_list_items: { book_id: string }[] | null }[] | null;
     reading_records: { child_id: string; book_id: string }[] | null;
   };
-  const [{ data: groupRows }, { data: completionRows }] = await Promise.all([
+  const [{ data: groupRows }, { data: completionRows }, { data: userRow }] = await Promise.all([
     operatorGroupsQuery(
       supabase,
       userId,
@@ -83,6 +84,7 @@ export default async function TeacherChildrenPage({
       .overrideTypes<GroupRow[], { merge: false }>(),
     // security_invoker 뷰라 RLS상 내가 볼 수 있는 숙제 행만 온다.
     supabase.from("assignment_completion").select("assignment_id, child_id, completed"),
+    supabase.from("users").select("active_operator_group_id").eq("id", userId).single(),
   ]);
   const groups = groupRows ?? [];
 
@@ -130,42 +132,30 @@ export default async function TeacherChildrenPage({
     };
   });
 
-  const selected = groupParam ? (sections.find((s) => s.id === groupParam) ?? null) : null;
+  // 추천도서·숙제 탭과 같은 규칙으로 그룹 하나를 고른다(URL > 저장된 값 > 첫 그룹).
+  // 그룹 전환은 상단 고정 바(`OperatorGroupBar`)에서.
+  const selectedId = pickActiveGroupId(sections, groupParam, userRow?.active_operator_group_id);
+  const selected = sections.find((s) => s.id === selectedId) ?? null;
 
-  // ── 1단계: 그룹 카드 목록 ─────────────────────────────────────────
   if (!selected) {
     return (
       <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="d text-xl">아이들</h1>
-          <Link
-            href="/recommend/create"
-            className="d flex-none whitespace-nowrap rounded-full px-3 py-1 text-xs text-white"
-            style={{ background: "var(--point-deep)" }}
-          >
-            + 새 그룹
-          </Link>
-        </div>
-        <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-          그룹을 누르면 그 그룹의 아이들을 보고, 가입 신청을 승인할 수 있어요.
+        <h1 className="d text-xl">그룹</h1>
+        <p className="mt-4 text-sm" style={{ color: "var(--ink-2)" }}>
+          아직 운영하는 그룹이 없어요.
         </p>
-
-        {sections.length === 0 ? (
-          <p className="mt-6 text-sm" style={{ color: "var(--ink-2)" }}>
-            아직 운영하는 그룹이 없어요.
-          </p>
-        ) : (
-          <div className="mt-5 flex flex-col gap-3">
-            {sections.map((section) => (
-              <GroupCard key={section.id} section={section} />
-            ))}
-          </div>
-        )}
+        <Link
+          href="/recommend/create"
+          className="d mt-4 inline-block rounded-full px-4 py-2 text-sm text-white"
+          style={{ background: "var(--point-deep)" }}
+        >
+          + 새 그룹 만들기
+        </Link>
       </div>
     );
   }
 
-  // ── 2단계: 그룹 하나의 아이들과 관리 ──────────────────────────────
+  // ── 고른 그룹 하나의 아이들과 관리 ──────────────────────────────
   // 그룹이 둘 이상이면 상단바 아래 고정 그룹 전환 바(`OperatorGroupBar`,
   // 루트 레이아웃)가 뜬다 -- 그만큼 본문 위쪽 여백을 미리 마련한다.
   const showGroupTiles = sections.length > 1;
@@ -175,11 +165,7 @@ export default async function TeacherChildrenPage({
       className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pb-[16px]"
       style={{ paddingTop: showGroupTiles ? `${20 + OPERATOR_GROUP_BAR_HEIGHT}px` : "20px" }}
     >
-      <Link href="/teacher/children" className="text-sm" style={{ color: "var(--ink-2)" }}>
-        ← 그룹 목록
-      </Link>
-
-      <div className="mt-2 flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="d text-xl">{selected.name}</h1>
           <p className="mt-0.5 text-sm" style={{ color: "var(--ink-2)" }}>
@@ -253,62 +239,5 @@ export default async function TeacherChildrenPage({
         )}
       </Section>
     </div>
-  );
-}
-
-const AVATAR_PREVIEW = 6;
-
-/** 1단계의 그룹 카드: 이름·유형 / 아이 N명 · 승인 대기 / 소개 두 줄 / 아이 얼굴 몇 개. */
-function GroupCard({ section }: { section: GroupSection }) {
-  const faces = section.children.slice(0, AVATAR_PREVIEW);
-  const more = section.children.length - faces.length;
-  return (
-    <Link
-      href={`/teacher/children?group=${section.id}`}
-      className="block rounded-[var(--r)] border px-5 py-4"
-      style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-    >
-      <div className="flex items-center gap-2">
-        <p className="d min-w-0 flex-1 truncate text-[17px] leading-[24px]">{section.name}</p>
-        <span className="flex-none text-sm" style={{ color: "var(--ink-2)" }}>
-          ›
-        </span>
-      </div>
-      <p className="mt-0.5 text-[13px]" style={{ color: "var(--ink-2)" }}>
-        {GROUP_TYPE_LABELS[section.type] ?? section.type} · 아이 {section.children.length}명
-        {section.pending.length > 0 && (
-          <span className="d" style={{ color: "var(--lantern)" }}>
-            {" · "}승인 대기 {section.pending.length}명
-          </span>
-        )}
-      </p>
-      {section.description && (
-        <p
-          className="mt-2 text-sm"
-          style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}
-        >
-          {section.description}
-        </p>
-      )}
-      {faces.length > 0 && (
-        <div className="mt-3 flex items-center">
-          {faces.map((child, i) => (
-            <span
-              key={child.id}
-              title={child.name}
-              className="flex h-8 w-8 items-center justify-center rounded-full border-2"
-              style={{ background: "var(--paper)", borderColor: "var(--card)", marginLeft: i === 0 ? 0 : -8 }}
-            >
-              <AvatarIllustration avatar={child.avatar} height={24} />
-            </span>
-          ))}
-          {more > 0 && (
-            <span className="ml-1.5 text-xs" style={{ color: "var(--ink-2)" }}>
-              +{more}
-            </span>
-          )}
-        </div>
-      )}
-    </Link>
   );
 }
