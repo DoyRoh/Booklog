@@ -5,7 +5,7 @@
 // 같은 화면의 "목록다운로드(엑셀)" 주소는 분류(schBdcode) + 연도(schOpt2=YYYY-)로
 // 그 해 목록 전체를 xlsx로 준다(2026-10 GitHub Actions에서 실제로 받아 확인):
 //   번호 | 추천연월 | 테마 | 대상 | 책제목 | 주제구분 | 지은이 | 발행사 | 발행년도 | ISBN | 청구기호 | 가격
-// 그래서 분류마다 2025·2026 두 파일만 받아 읽는다.
+// 그래서 분류마다 작년·올해 두 파일만 받아 읽는다.
 
 import { inflateRawSync } from "node:zlib";
 import { NLCY_CATEGORIES, type NlcyCategoryKey } from "@/lib/nlcy-categories";
@@ -13,7 +13,11 @@ export { NLCY_CATEGORIES, type NlcyCategoryKey };
 
 export const NLCY_OPERATOR_NAME = "국립어린이청소년도서관";
 const EXCEL_URL = "https://nlcy.go.kr/NLCY/board/C10600000000_suggestBookListExcel.do";
-const YEARS = ["2025", "2026"];
+// 작년 + 올해(한국 날짜). 해가 바뀌어도 자동 실행이 계속 따라간다.
+function targetYears() {
+  const y = new Date(Date.now() + 9 * 3600_000).getUTCFullYear();
+  return [String(y - 1), String(y)];
+}
 
 export type NlcyBook = {
   title: string;
@@ -110,7 +114,8 @@ async function fetchYear(code: string, year: string): Promise<Record<string, str
 
 export async function scrapeNlcyCategory(key: NlcyCategoryKey): Promise<NlcyScrapeResult> {
   const category = NLCY_CATEGORIES.find((c) => c.key === key)!;
-  const perYear = await Promise.all(YEARS.map((y) => fetchYear(category.code, y)));
+  const years = targetYears();
+  const perYear = await Promise.all(years.map((y) => fetchYear(category.code, y)));
   const seen = new Set<string>();
   const books: NlcyBook[] = [];
   for (const row of perYear.flat()) {
@@ -134,6 +139,6 @@ export async function scrapeNlcyCategory(key: NlcyCategoryKey): Promise<NlcyScra
   return {
     months: [...new Set(books.map((b) => b.month))].sort(),
     books,
-    debug: { pagesFetched: YEARS.length },
+    debug: { pagesFetched: years.length },
   };
 }
