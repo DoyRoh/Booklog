@@ -1,22 +1,17 @@
-// 임시 검사 3: 쪽 넘기기·월 필터 동작.
-const BASE = "https://nlcy.go.kr/NLCY/contents/C10600000000.do";
-const get = async (u: string) => (await fetch(u, { headers: { "User-Agent": "Mozilla/5.0" } })).text();
-const sq = (s: string) => s.replace(/\s+/g, " ");
-const items = (h: string) =>
-  [...h.matchAll(/<p class="tit">([\s\S]*?)<\/p>/g)].map((m, i) => {
-    const month = [...h.matchAll(/\((\d{4})년 (\d{1,2})월 추천도서\)/g)][i * 2]?.slice(1).join("-");
-    return `${month}|${m[1].trim().slice(0, 30)}`;
-  });
-const h = await get(`${BASE}?schBdcode=_nlcy_normal0801&page=1`);
-const i = h.indexOf("function fn_search");
-console.log("FN_SEARCH", sq(h.slice(i, i + 2500)));
-const p = h.search(/class="[^"]*paging|class="[^"]*pagination|board_paging/);
-console.log("PAGING", sq(h.slice(p - 200, p + 2500)));
-for (const q of ["", "&schOpt2=2025-06", "&schOpt2=2025-06&recYear=2025&recMonth=06", "&schOpt2=-"]) {
-  for (let page = 1; page <= 30; page++) {
-    const its = items(await get(`${BASE}?schBdcode=_nlcy_normal0801${q}&page=${page}`));
-    console.log(`Q[${q}] p${page} n=${its.length} ${its.slice(0, 3).join(" / ")} ... ${its.slice(-1)}`);
-    if (its.length === 0) break;
-    if (q !== "" && page > 3) break;
-  }
+// 임시 검사 4: 엑셀 다운로드와 월 검색.
+const B = "https://nlcy.go.kr/NLCY";
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+for (const opt of ["2025-", "2026-", "2025-06"]) {
+  const u = `${B}/board/C10600000000_suggestBookListExcel.do?schOpt2=${opt}&bcid=nlcy_normal08&schBdcode=_nlcy_normal0801`;
+  const r = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0", Referer: `${B}/contents/C10600000000.do` } });
+  const buf = Buffer.from(await r.arrayBuffer());
+  console.log(`\nEXCEL ${opt} HTTP ${r.status} type=${r.headers.get("content-type")} disp=${r.headers.get("content-disposition")} len=${buf.length} magic=${buf.subarray(0, 4).toString("hex")}`);
+  const text = buf.toString("utf8");
+  console.log(text.replace(/\s+/g, " ").slice(0, 3000));
+  await wait(1500);
 }
+const h = await (await fetch(`${B}/contents/C10600000000.do?schBdcode=_nlcy_normal0801&schOpt2=2025-06&ext2=1&schOpt3=search`, { headers: { "User-Agent": "Mozilla/5.0" } })).text();
+console.log("\nMONTH 2025-06 titles:", [...h.matchAll(/<p class="tit">([\s\S]*?)<\/p>/g)].map((m) => m[1].trim()).join(" / "));
+console.log("months:", [...new Set([...h.matchAll(/\((\d{4}년 \d{1,2}월) 추천도서\)/g)].map((m) => m[1]))].join(","));
+const p = h.search(/page=2|pageIndex|fn_link_page|goPage\(|paging/i);
+console.log("PAGINGHINT", h.slice(Math.max(0, p - 300), p + 600).replace(/\s+/g, " "));
