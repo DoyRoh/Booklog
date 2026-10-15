@@ -10,11 +10,13 @@ type Holding = { code: string; name: string; address: string; loanAvailable: boo
 
 type Result = { code: string; hasBook?: boolean; loanAvailable?: boolean; error?: true };
 
-/** 기록 고치기 창 안: 내 도서관(최대 3곳)에 이 책이 있는지, 지금 빌릴 수 있는지. */
-export default function LibraryAvailability({ bookId }: { bookId: string }) {
+/** 내 도서관(최대 3곳)에 이 책이 있는지, 지금 빌릴 수 있는지.
+ *  기록 고치기 창은 bookId로(카탈로그의 ISBN을 찾아서), 기록 남기기 화면은
+ *  검색으로 고른 책의 isbn을 바로 넘긴다(아직 카탈로그에 없는 새 책일 수 있어서). */
+export default function LibraryAvailability({ bookId, isbn: isbnProp }: { bookId?: string | null; isbn?: string | null }) {
   const [supabase] = useState(() => createClient());
   const [mine, setMine] = useState<SavedLibrary[] | null>(null);
-  const [isbn, setIsbn] = useState<string | null | undefined>(undefined);
+  const [fetched, setFetched] = useState<{ bookId: string; isbn: string | null } | null>(null);
   const [results, setResults] = useState<Result[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,16 +27,20 @@ export default function LibraryAvailability({ bookId }: { bookId: string }) {
     return () => window.removeEventListener(LIBRARIES_CHANGED, load);
   }, [supabase]);
 
+  const direct = (isbnProp ?? "").replace(/[^0-9X]/gi, "");
+  const isbn: string | null | undefined =
+    direct.length === 13 ? direct : !bookId ? null : fetched?.bookId === bookId ? fetched.isbn : undefined;
   useEffect(() => {
+    if (direct.length === 13 || !bookId) return;
     supabase
       .from("book_isbns")
       .select("isbn")
       .eq("book_id", bookId)
       .then(({ data }) => {
         const all = (data ?? []).map((r) => r.isbn.replace(/[^0-9X]/gi, ""));
-        setIsbn(all.find((v) => v.length === 13) ?? null);
+        setFetched({ bookId, isbn: all.find((v) => v.length === 13) ?? null });
       });
-  }, [supabase, bookId]);
+  }, [supabase, bookId, direct]);
 
   useEffect(() => {
     if (!isbn || !mine || mine.length === 0) return;

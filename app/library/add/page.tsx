@@ -9,6 +9,7 @@ import { AvatarIllustration, PawStamp, type Avatar } from "@/components/illustra
 import { hasVoiceConsent } from "@/lib/consent";
 import { uploadBookCover, uploadChildPhoto, uploadChildVoice } from "@/lib/storage";
 import BarcodeScanner from "@/components/barcode-scanner";
+import LibraryAvailability from "@/components/library-availability";
 import PhotoPicker from "@/components/photo-picker";
 import VoiceRecorder from "@/components/voice-recorder";
 import QuestionPrompt from "@/components/question-prompt";
@@ -615,6 +616,12 @@ function AddBookForm() {
                       : "책 정보를 찾았어요"}
                 </p>
               </div>
+            )}
+
+            {/* 고른 책이 내 도서관에 있는지·지금 빌릴 수 있는지 -- 기록하기 전에
+                바로 보이게(특히 "읽고 싶어요"로 담을 때). 책이 바뀌면 key로 새로 조회. */}
+            {title.trim() && (bookId || isbn) && (
+              <LibraryAvailability key={isbn || bookId || ""} bookId={bookId} isbn={isbn} />
             )}
 
             {/* 전권 세트처럼 ISBN 검색으로 표지를 못 찾은, 새로 등록하는
