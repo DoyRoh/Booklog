@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import SignOutButton from "@/components/sign-out-button";
 import LegalSheet from "@/components/legal/legal-sheet";
 import { AvatarIllustration } from "@/components/illustration";
+import { kstDate } from "@/lib/kst";
 
 type Role = "parent" | "teacher";
 type Avatar = "rabbit" | "dog" | "cat";
@@ -95,6 +96,13 @@ export default function OnboardingPage() {
     // 있어서, role은 이제 "최초에 고른 기본값" 정도의 의미다. 지금 당장
     // 보여줄 화면은 active_profile_type으로 정하고, 나중에 더보기에서
     // 다른 프로필을 추가하면 그때그때 전환할 수 있다.
+    // 아이폰 날짜 선택기는 max를 무시하고 미래 날짜도 골라진다.
+    if (role === "parent" && childBirthDate && childBirthDate > kstDate()) {
+      setError("생년월일이 오늘보다 뒤예요. 다시 골라 주세요.");
+      setSaving(false);
+      return;
+    }
+
     const { error: roleError } = await supabase
       .from("users")
       .update({ role, active_profile_type: role === "parent" ? "child" : "operator" })

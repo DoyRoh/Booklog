@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { kstDate } from "@/lib/kst";
 import { AvatarIllustration } from "@/components/illustration";
 
 type Avatar = "rabbit" | "dog" | "cat";
@@ -136,6 +137,11 @@ export default function ChildSwitcher({
 
   async function addChild() {
     if (!name.trim() || !avatar) return;
+    // 아이폰 날짜 선택기는 max를 무시하고 미래 날짜도 골라진다.
+    if (birthDate && birthDate > kstDate()) {
+      setError("생년월일이 오늘보다 뒤예요. 다시 골라 주세요.");
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -371,7 +377,7 @@ export default function ChildSwitcher({
               type="date"
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
-              max={new Date().toISOString().split("T")[0]}
+              max={kstDate()}
               className="rounded-[14px] border px-4 py-3 text-sm outline-none"
               style={{ borderColor: "var(--rule)" }}
             />
