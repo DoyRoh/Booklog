@@ -10,7 +10,7 @@ import type { AgeBand } from "@/lib/age-bands";
 /**
  * 숲지기 책 상세의 "추천 정보" -- 추천 연령(그룹 목록의 책), 분야(공용 카탈로그),
  * 숲지기 설명(그룹 목록의 책)을 한 번에 고쳐 저장한다.
- * withItemFields=false면(마이그레이션 0038·0039 전) 분야만.
+ * hasAges/hasNote: 마이그레이션 0038(연령)·0039(설명)이 실행됐는지 -- 안 된 칸은 숨긴다.
  */
 export default function BookRecommendEditor({
   itemId,
@@ -18,14 +18,16 @@ export default function BookRecommendEditor({
   initialAges,
   initialCategories,
   initialNote,
-  withItemFields,
+  hasAges,
+  hasNote,
 }: {
   itemId: string;
   bookId: string;
   initialAges: AgeBand[];
   initialCategories: string[];
   initialNote: string;
-  withItemFields: boolean;
+  hasAges: boolean;
+  hasNote: boolean;
 }) {
   const router = useRouter();
   const [ages, setAges] = useState<AgeBand[]>(initialAges);
@@ -53,10 +55,13 @@ export default function BookRecommendEditor({
     setError(null);
     const supabase = createClient();
 
-    if (withItemFields) {
+    if (hasAges || hasNote) {
       const { error: itemError } = await supabase
         .from("book_list_items")
-        .update({ age_bands: ages.length ? ages : null, note: note.trim() || null })
+        .update({
+          ...(hasAges ? { age_bands: ages.length ? ages : null } : {}),
+          ...(hasNote ? { note: note.trim() || null } : {}),
+        })
         .eq("id", itemId);
       if (itemError) {
         setError(itemError.message);
@@ -94,7 +99,7 @@ export default function BookRecommendEditor({
 
   return (
     <div className="flex flex-col gap-4">
-      {withItemFields && (
+      {hasAges && (
         <div>
           <p className="d text-xs" style={{ color: "var(--ink-2)" }}>
             추천 연령 <span style={{ opacity: 0.7 }}>· 여러 개 고를 수 있어요. 비우면 연령 미정</span>
@@ -138,7 +143,7 @@ export default function BookRecommendEditor({
         </div>
       </div>
 
-      {withItemFields && (
+      {hasNote && (
         <label className="block">
           <span className="d text-xs" style={{ color: "var(--ink-2)" }}>
             설명 <span style={{ opacity: 0.7 }}>· 왜 이 책을 추천하는지 (선택)</span>

@@ -10,9 +10,10 @@ import type { ReadingStatus } from "@/lib/reading-status";
 const RANK: Record<ReadingStatus, number> = { want: 0, reading: 1, done: 2 };
 const LABEL: Record<ReadingStatus, string> = { done: "읽었어요", reading: "읽는 중", want: "읽고 싶어요" };
 
-type ListItem = { id: string; age_bands: string[] | null; note: string | null; hasItemFields: boolean };
+type ListItem = { id: string; age_bands: string[] | null; note: string | null; hasAges: boolean; hasNote: boolean };
 
-// 이 그룹 목록의 책 한 줄. 0038(age_bands)·0039(note) 전이면 그 컬럼 없이 다시 -- 편집기는 분야만 보인다.
+// 이 그룹 목록의 책 한 줄. 0038(age_bands)·0039(note)를 하나씩 따로 확인한다 --
+// 둘 중 하나만 실행돼 있어도 그 칸은 보이게(둘 다 있어야 보이던 버그).
 async function loadListItem(
   supabase: Awaited<ReturnType<typeof createClient>>,
   bookId: string,
@@ -26,14 +27,19 @@ async function loadListItem(
       .eq("book_lists.group_id", groupId)
       .limit(1)
       .maybeSingle();
-  const full = await q("id, age_bands, note");
-  if (!full.error) {
-    const row = full.data as unknown as { id: string; age_bands: string[] | null; note: string | null } | null;
-    return row ? { ...row, hasItemFields: true } : null;
+  const attempts: [string, boolean, boolean][] = [
+    ["id, age_bands, note", true, true],
+    ["id, age_bands", true, false],
+    ["id, note", false, true],
+    ["id", false, false],
+  ];
+  for (const [cols, hasAges, hasNote] of attempts) {
+    const res = await q(cols);
+    if (res.error) continue;
+    const row = res.data as unknown as { id: string; age_bands?: string[] | null; note?: string | null } | null;
+    return row ? { id: row.id, age_bands: row.age_bands ?? null, note: row.note ?? null, hasAges, hasNote } : null;
   }
-  const bare = await q("id");
-  const row = bare.data as unknown as { id: string } | null;
-  return row ? { id: row.id, age_bands: null, note: null, hasItemFields: false } : null;
+  return null;
 }
 
 // 책 한 권을 그룹 아이들이 각각 어디까지 읽었는지. 추천도서 탭에서 책을
@@ -165,7 +171,8 @@ export default async function TeacherBookDetailPage({
             initialAges={parseAgeBands(listItem.age_bands)}
             initialCategories={(categoryRows ?? []).map((r) => r.category as string)}
             initialNote={listItem.note ?? ""}
-            withItemFields={listItem.hasItemFields}
+            hasAges={listItem.hasAges}
+            hasNote={listItem.hasNote}
           />
         </Section>
       )}
