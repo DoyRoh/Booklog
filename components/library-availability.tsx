@@ -8,6 +8,8 @@ import { REGIONS } from "@/lib/library-regions";
 
 type Holding = { code: string; name: string; address: string; loanAvailable: boolean | null };
 
+const COLLAPSE_KEY = "chaeksup:library-box-collapsed";
+
 type Result = { code: string; hasBook?: boolean; loanAvailable?: boolean; error?: true };
 
 /** 내 도서관(최대 3곳)에 이 책이 있는지, 지금 빌릴 수 있는지.
@@ -19,6 +21,20 @@ export default function LibraryAvailability({ bookId, isbn: isbnProp }: { bookId
   const [fetched, setFetched] = useState<{ bookId: string; isbn: string | null } | null>(null);
   const [results, setResults] = useState<Result[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 접어 둔 상태는 기기에 기억한다(기록 남기기·고치기 어디서든 같은 상태).
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return typeof window !== "undefined" && window.localStorage.getItem(COLLAPSE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  function toggleCollapsed(next: boolean) {
+    setCollapsed(next);
+    try {
+      window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+    } catch {}
+  }
 
   useEffect(() => {
     const load = () => loadMyLibraries(supabase).then(setMine);
@@ -62,7 +78,22 @@ export default function LibraryAvailability({ bookId, isbn: isbnProp }: { bookId
 
   return (
     <div className="mt-4 rounded-[14px] border px-4 py-3" style={{ borderColor: "var(--rule)" }}>
-      <p className="d text-sm">근처 도서관</p>
+      <button
+        type="button"
+        onClick={() => toggleCollapsed(!collapsed)}
+        aria-expanded={!collapsed}
+        className="flex w-full items-center justify-between gap-2 text-left"
+      >
+        <span className="d text-sm">근처 도서관</span>
+        <span className="flex items-center gap-1 text-xs" style={{ color: "var(--ink-2)" }}>
+          {collapsed ? "펼치기" : "접기"}
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden
+            style={{ transform: collapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 200ms" }}>
+            <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+      {collapsed ? null : <>
       {mine.length === 0 ? (
         <Link href="/more#my-libraries" className="mt-1 block text-xs" style={{ color: "var(--point-deep)" }}>
           자주 가는 도서관을 정하면 빌릴 수 있는지 알려 줘요 ›
@@ -105,6 +136,7 @@ export default function LibraryAvailability({ bookId, isbn: isbnProp }: { bookId
         </>
       )}
       {isbn && <HoldingFinder isbn={isbn} supabase={supabase} />}
+      </>}
     </div>
   );
 }
@@ -117,6 +149,25 @@ function HoldingFinder({ isbn, supabase }: { isbn: string; supabase: ReturnType<
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [checking, setChecking] = useState<string | null>(null);
+
+  // 대출 여부를 아직 안 본 도서관(앞 10곳 밖)은 눌러서 그 자리에서 확인한다.
+  async function checkOne(code: string) {
+    setChecking(code);
+    try {
+      const res = await fetch(`/api/libraries/availability?isbn=${isbn}&libs=${code}`);
+      const json = await res.json();
+      const r = (json.results as Result[] | undefined)?.[0];
+      if (res.ok && r && !r.error) {
+        setList((prev) =>
+          prev ? prev.map((l) => (l.code === code ? { ...l, loanAvailable: Boolean(r.hasBook && r.loanAvailable) } : l)) : prev
+        );
+      }
+    } finally {
+      setChecking(null);
+    }
+  }
 
   async function search(code: string) {
     setRegion(code);
@@ -136,6 +187,12 @@ function HoldingFinder({ isbn, supabase }: { isbn: string; supabase: ReturnType<
       setLoading(false);
     }
   }
+
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const shown = (list ?? []).filter((lib) => {
+    const hay = `${lib.name} ${lib.address}`.toLowerCase();
+    return words.every((w) => hay.includes(w));
+  });
 
   if (!open) {
     return (
@@ -189,8 +246,23 @@ function HoldingFinder({ isbn, supabase }: { isbn: string; supabase: ReturnType<
         </p>
       )}
       {list && list.length > 0 && (
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="도서관 이름·동네로 찾기"
+          aria-label="도서관 검색"
+          className="mt-2 w-full min-w-0 rounded-[10px] border px-3 py-2 text-sm"
+          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+        />
+      )}
+      {list && list.length > 0 && shown.length === 0 && (
+        <p className="mt-2 text-xs" style={{ color: "var(--ink-2)" }}>
+          &ldquo;{query.trim()}&rdquo;에 맞는 도서관이 없어요. 이 책을 가진 도서관만 보여요.
+        </p>
+      )}
+      {list && shown.length > 0 && (
         <ul className="mt-1 max-h-56 overflow-y-auto">
-          {list.map((lib) => {
+          {shown.map((lib) => {
             const [label, color] =
               lib.loanAvailable === true
                 ? ["빌릴 수 있어요", "var(--point-deep)"]
@@ -205,9 +277,21 @@ function HoldingFinder({ isbn, supabase }: { isbn: string; supabase: ReturnType<
                     {lib.address}
                   </span>
                 </span>
-                <span className="d flex-none text-xs" style={{ color }}>
-                  {label}
-                </span>
+                {lib.loanAvailable === null ? (
+                  <button
+                    type="button"
+                    onClick={() => checkOne(lib.code)}
+                    disabled={checking === lib.code}
+                    className="d flex-none rounded-full border px-2.5 py-1 text-xs disabled:opacity-40"
+                    style={{ borderColor: "var(--rule)", color: "var(--point-deep)" }}
+                  >
+                    {checking === lib.code ? "확인 중…" : "대출 확인"}
+                  </button>
+                ) : (
+                  <span className="d flex-none text-xs" style={{ color }}>
+                    {label}
+                  </span>
+                )}
               </li>
             );
           })}
@@ -215,7 +299,7 @@ function HoldingFinder({ isbn, supabase }: { isbn: string; supabase: ReturnType<
       )}
       {list && total > 10 && (
         <p className="mt-1 text-[11px]" style={{ color: "var(--ink-2)" }}>
-          대출 여부는 위에서부터 10곳까지만 확인해요.
+          위에서부터 10곳은 바로 확인했어요. 나머지는 &ldquo;대출 확인&rdquo;을 눌러 주세요.
         </p>
       )}
     </div>
