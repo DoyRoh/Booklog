@@ -66,17 +66,19 @@ export default function AddBookToList({ bookListIds }: { bookListIds: string[] }
     // 여러 그룹을 동시에 골랐으면 그룹마다(=목록마다) 한 줄씩. 이미 있는
     // 목록엔 조용히 건너뛴다(마이그레이션 0014의 book_list_id+book_id 유니크
     // 제약을 그대로 이용 -- upsert 한 번으로 중복 걱정 없이 처리).
-    const { error: itemError } = await supabase
-      .from("book_list_items")
-      .upsert(
+    const upsertItems = (withAge: boolean) =>
+      supabase.from("book_list_items").upsert(
         bookListIds.map((bookListId) => ({
           book_list_id: bookListId,
           book_id: bookId,
           required: false,
-          age_bands: pendingAges.length ? pendingAges : null,
+          ...(withAge ? { age_bands: pendingAges.length ? pendingAges : null } : {}),
         })),
         { onConflict: "book_list_id,book_id", ignoreDuplicates: true }
       );
+    let { error: itemError } = await upsertItems(true);
+    // 마이그레이션 0038(age_bands) 전이면 연령 없이 -- 책 올리기 자체는 막지 않는다.
+    if (itemError && /age_bands/.test(itemError.message)) ({ error: itemError } = await upsertItems(false));
     if (itemError) {
       setError(itemError.message);
       setAdding(false);

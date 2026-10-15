@@ -33,7 +33,12 @@ export async function POST(request: Request) {
         p_list: listId,
         p_items: items.map((i) => ({ book_id: i.bookId, age_bands: i.ageBands })),
       });
-      if (error) throw new Error(error.message);
+      if (error) {
+        // 0038 전이면 예전 함수(연령 없이)로.
+        const fallback = await supabase.rpc("admin_add_list_items", { p_list: listId, p_books: items.map((i) => i.bookId) });
+        if (fallback.error) throw new Error(error.message);
+        return fallback.data ?? 0;
+      }
       return data ?? 0;
     });
     return NextResponse.json({ ...result, dryRun: false });

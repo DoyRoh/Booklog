@@ -49,14 +49,23 @@ export async function GET(request: Request) {
         try {
           const r = await importNlcyCategory(supabase, c.key as NlcyCategoryKey, async (listId, items) => {
             if (items.length === 0) return 0;
-            const { data, error } = await supabase
-              .from("book_list_items")
-              .upsert(
-                items.map((i) => ({ book_list_id: listId, book_id: i.bookId, age_bands: i.ageBands.length ? i.ageBands : null })),
-                { onConflict: "book_list_id,book_id", ignoreDuplicates: true }
-              )
-              .select("id");
+            const upsert = (withAge: boolean) =>
+              supabase
+                .from("book_list_items")
+                .upsert(
+                  items.map((i) => ({
+                    book_list_id: listId,
+                    book_id: i.bookId,
+                    ...(withAge ? { age_bands: i.ageBands.length ? i.ageBands : null } : {}),
+                  })),
+                  { onConflict: "book_list_id,book_id", ignoreDuplicates: true }
+                )
+                .select("id");
+            let { data, error } = await upsert(true);
+            const ageMissing = Boolean(error && /age_bands/.test(error.message));
+            if (ageMissing) ({ data, error } = await upsert(false));
             if (error) throw new Error(error.message);
+            if (ageMissing) return data?.length ?? 0;
             // 이미 있던 책은 연령이 비어 있을 때만 채운다(숲지기가 고친 값은 덮어쓰지 않음).
             const byBands = new Map<string, string[]>();
             for (const i of items) {

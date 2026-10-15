@@ -60,13 +60,20 @@ export async function loadOperatorBookSections(
   userId: string,
   groupId?: string
 ): Promise<OperatorBookSection[]> {
-  let query = operatorGroupsQuery(
-    supabase,
-    userId,
-    "book_lists(book_list_items(id, book_id, created_at, age_bands, books(id, title, author, cover_url, book_categories(category)))), members:group_members(child_id, status), reading_records(child_id, book_id), assignments(start_date, end_date, created_at, assignment_books(book_id))"
-  ).eq("reading_records.status", "done");
-  if (groupId) query = query.eq("id", groupId);
-  const { data } = await query.overrideTypes<GroupRow[], { merge: false }>();
+  const run = (withAge: boolean) => {
+    let query = operatorGroupsQuery(
+      supabase,
+      userId,
+      `book_lists(book_list_items(id, book_id, created_at, ${withAge ? "age_bands, " : ""}books(id, title, author, cover_url, book_categories(category)))), members:group_members(child_id, status), reading_records(child_id, book_id), assignments(start_date, end_date, created_at, assignment_books(book_id))`
+    ).eq("reading_records.status", "done");
+    if (groupId) query = query.eq("id", groupId);
+    return query.overrideTypes<GroupRow[], { merge: false }>();
+  };
+  // 마이그레이션 0038(age_bands) 전이면 그 컬럼 없이 다시 -- 조회 실패를
+  // "운영하는 그룹이 없어요"로 위장하지 않게(실제로 그렇게 보였던 버그).
+  let { data, error } = await run(true);
+  if (error) ({ data, error } = await run(false));
+  if (error) throw error;
 
   return (data ?? []).map((group) => {
     // 책 → 읽은 아이 집합
