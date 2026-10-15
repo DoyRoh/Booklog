@@ -11,6 +11,8 @@ export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // 비밀번호 확인 칸 — 이메일 확인 메일이 없어 오타 난 비밀번호로 가입하면 바로 로그인이 막힌다.
+  const [password2, setPassword2] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -24,6 +26,10 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     setExists(false);
+    if (password !== password2) {
+      setError("비밀번호가 서로 달라요. 두 칸에 같은 비밀번호를 넣어 주세요.");
+      return;
+    }
     setLoading(true);
 
     const supabase = createClient();
@@ -119,10 +125,34 @@ export default function SignupPage() {
           minLength={6}
           placeholder="비밀번호 (6자 이상)"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setConfirming(false);
+          }}
           className="rounded-[14px] border px-4 py-3 text-sm outline-none"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         />
+        <input
+          type="password"
+          required
+          minLength={6}
+          placeholder="비밀번호 확인"
+          value={password2}
+          onChange={(e) => {
+            setPassword2(e.target.value);
+            setConfirming(false);
+          }}
+          className="rounded-[14px] border px-4 py-3 text-sm outline-none"
+          style={{
+            borderColor: password2 && password2 !== password ? "var(--berry)" : "var(--rule)",
+            background: "var(--card)",
+          }}
+        />
+        {password2 && password2 !== password && (
+          <p className="-mt-1 text-xs" style={{ color: "var(--berry)" }}>
+            비밀번호가 서로 달라요.
+          </p>
+        )}
 
         {error && (
           <p className="text-sm" style={{ color: "var(--berry)" }}>
@@ -197,6 +227,12 @@ export default function SignupPage() {
         이미 계정이 있으신가요?{" "}
         <Link href="/login" style={{ color: "var(--point)" }}>
           로그인
+        </Link>
+      </p>
+      <p className="mt-2 text-center text-sm" style={{ color: "var(--ink-2)" }}>
+        비밀번호를 잊으셨나요?{" "}
+        <Link href="/forgot-password" style={{ color: "var(--point)" }}>
+          비밀번호 찾기
         </Link>
       </p>
     </div>
