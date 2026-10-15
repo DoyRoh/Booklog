@@ -20,7 +20,12 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(searchParams.get("error"));
+  const [error, setError] = useState<string | null>(null);
+  // 주소의 ?error= 는 매번 새로 읽는다 -- 로그인 직후 미들웨어가 같은 /login으로
+  // 되돌려 보내면 컴포넌트가 그대로 남아 useState 초기값이 다시 안 읽혀서,
+  // 버튼을 눌러도 "반응이 없는" 것처럼 보였다.
+  const urlError = searchParams.get("error");
+  const shownError = error ?? urlError;
   // 계정 삭제 직후 돌아온 경우(components/delete-account.tsx) 한 줄 안내
   const deleted = searchParams.get("deleted") === "1";
   // 가입 확인 메일 링크를 다른 브라우저(앱에서 가입 → 사파리에서 링크)로 연 경우
@@ -72,19 +77,19 @@ function LoginForm() {
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         />
 
-        {confirmed && !error && (
+        {confirmed && !shownError && (
           <p className="text-sm" style={{ color: "var(--point-deep)" }}>
             이메일 확인이 끝났어요. 앱에서 가입했다면 책숲 앱으로 돌아가 로그인해 주세요.
           </p>
         )}
-        {deleted && !error && (
+        {deleted && !shownError && (
           <p className="mt-4 text-sm" style={{ color: "var(--point-deep)" }}>
             계정이 삭제됐어요. 그동안 책숲을 함께 걸어 주셔서 고마워요.
           </p>
         )}
-        {error && (
+        {shownError && (
           <p className="text-sm" style={{ color: "var(--berry)" }}>
-            {error}
+            {shownError}
           </p>
         )}
 
