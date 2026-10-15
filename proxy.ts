@@ -80,13 +80,29 @@ export async function proxy(request: NextRequest) {
     const cachedCompleted = request.cookies.get("chaeksup_onboarded")?.value === "1";
     let completed = cachedCompleted;
     if (!cachedCompleted) {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("users")
         .select("onboarding_completed")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
       completed = profile?.onboarding_completed ?? false;
       markOnboarded = completed;
+      // 조회는 성공했는데 내 users 행이 없다 = 계정이 이미 삭제됐는데 이
+      // 브라우저에 예전 세션이 남아 있는 경우다(getClaims는 토큰을 로컬에서만
+      // 검증해 삭제된 계정을 못 알아챈다). 그대로 두면 온보딩에서
+      // consents 외래키 오류가 난다 -- 세션을 지우고 로그인으로 보낸다.
+      if (!profileError && !profile) {
+        await supabase.auth.signOut({ scope: "local" });
+        redirectTo = isPublicAuthPath
+          ? null
+          : `/login?error=${encodeURIComponent("계정을 찾을 수 없어요. 다시 가입하거나 로그인해 주세요.")}`;
+        const response = redirectTo
+          ? NextResponse.redirect(new URL(redirectTo, request.url))
+          : NextResponse.next({ request: { headers: new Headers(request.headers) } });
+        cookiesToApply.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        response.cookies.delete("chaeksup_onboarded");
+        return response;
+      }
     }
 
     if (isPublicAuthPath) {

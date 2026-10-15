@@ -110,6 +110,13 @@ export default function OnboardingPage() {
       { user_id: user.id, type: "voice_recording", agreed: agreedVoice },
     ]);
     if (consentError) {
+      // 23503 = 외래키 위반: 계정이 이미 삭제됐는데 이 기기에 예전 로그인이 남아 있다.
+      if (consentError.code === "23503") {
+        await supabase.auth.signOut({ scope: "local" });
+        document.cookie = "chaeksup_onboarded=; Max-Age=0; path=/";
+        window.location.href = `/login?error=${encodeURIComponent("계정을 찾을 수 없어요. 다시 가입하거나 로그인해 주세요.")}`;
+        return;
+      }
       setError(consentError.message);
       setSaving(false);
       return;

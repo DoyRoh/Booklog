@@ -2300,3 +2300,10 @@ App Store 심사 통과(버전 1.0 배포 준비됨). 이어서 두 가지 요�
 - **`app/auth/confirm/route.ts`**: `token_hash` + `type` 파라미터가 오면 `verifyOtp({ type, token_hash })`로 세션을 만듭니다 — 어느 기기·브라우저에서 열어도 됩니다. 기존 `code` 방식도 그대로 둡니다.
 - **메일 템플릿은 못 바꿈 → 재설정 메일만 implicit 방식으로**: Supabase 기본 메일 서버에선 템플릿 편집이 막혀 있어(커스텀 SMTP 필요) token_hash 링크를 쓸 수 없었습니다. 대신 `app/(auth)/forgot-password/page.tsx`가 재설정 메일을 보낼 때만 `@supabase/supabase-js`의 `flowType: "implicit"` 클라이언트(세션 저장 안 함)로 `resetPasswordForEmail(redirectTo: /reset-password)`를 부릅니다. 그러면 기본 템플릿 링크가 `/reset-password#access_token=…&refresh_token=…&type=recovery`로 도착해 어느 브라우저에서도 열립니다. `app/reset-password/page.tsx`가 해시의 토큰으로 `setSession()`하고 주소창에서 해시를 지웁니다(앱 기본 클라이언트는 PKCE라 implicit 해시를 스스로 처리하지 않음). `/auth/confirm`의 token_hash 처리는 나중에 커스텀 SMTP를 붙여 템플릿을 고칠 때를 위해 남겨 둡니다. Supabase Redirect URLs에 `https://booklog-13xh.vercel.app/**`가 있어야 합니다.
 - **`app/reset-password/page.tsx`**: 바꾼 뒤 1.5초 만에 `/today`로 넘기던 걸 없애고, "비밀번호가 바뀌었어요 · 책숲 앱을 쓰고 있다면 앱으로 돌아가 새 비밀번호로 로그인해 주세요" + "웹에서 계속하기" 버튼으로 — 사파리에서 열린 경우 앱으로 돌아가야 한다는 걸 알려 줍니다. DB 변경 없음.
+
+## 삭제된 계정의 세션이 남아 온보딩에서 consents 외래키 오류 (사용자 신고)
+
+새 아이를 등록하는 온보딩 마지막 단계에서 `insert or update on table "consents" violates foreign key constraint "consents_user_id_fkey"`가 떴습니다. `consents.user_id`는 `public.users(id)`를 참조하는데 그 행이 없다는 뜻이고, 원인은 **계정을 삭제한 뒤에도 그 브라우저(사파리)에 예전 로그인 세션이 남아 있던 것**입니다 — `proxy.ts`가 속도 때문에 `getClaims()`로 토큰을 로컬에서만 검증해서, 이미 지운 계정의 토큰도 만료 전까지는 "로그인된 사용자"로 통과시킵니다. 온보딩 쿠키도 없으니 온보딩으로 보내졌고, 거기서 `users` update는 0행(오류 없음), `consents` insert는 외래키로 실패했습니다.
+- **`proxy.ts`**: 온보딩 여부를 조회할 때 `.single()` → `.maybeSingle()`로 바꿔, 조회는 성공했는데 내 `users` 행이 없으면 로컬 세션을 지우고(`signOut({ scope: "local" })`, 온보딩 쿠키도 삭제) `/login?error=계정을 찾을 수 없어요…`로 보냅니다(로그인·가입 화면에서는 리다이렉트 없이 세션만 지움).
+- **`app/onboarding/page.tsx`**: 그래도 consents insert가 외래키 오류(23503)면 같은 방식으로 로그아웃 후 로그인 화면으로(이미 온보딩 화면에 들어와 있던 경우의 안전망).
+- DB 변경 없음. lint·tsc 통과.
