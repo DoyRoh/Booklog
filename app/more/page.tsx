@@ -120,8 +120,9 @@ export default async function MorePage() {
         </div>
 
         <div className="mt-5 pt-4" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}>
-          <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-            숲지기 프로필 <span style={{ opacity: 0.7 }}>· 그룹을 만들어 운영하는 사람 — 선생님도, 가족도, 도서관도</span>
+          <p className="text-xs" style={{ color: "var(--ink-2)" }}>숲지기 프로필</p>
+          <p className="mt-1 text-xs leading-[18px]" style={{ color: "var(--ink-2)", opacity: 0.8, wordBreak: "keep-all" }}>
+            그룹을 만들어 운영하는 사람이에요. 선생님도, 가족도, 도서관도 될 수 있어요. 숲지기 한 명이 여러 그룹을 만들어 관리해요.
           </p>
           <div className="mt-2">
             <OperatorProfileSwitcher
