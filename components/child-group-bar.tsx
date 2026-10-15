@@ -28,6 +28,7 @@ import { getGroupHomeworkBadges, type HomeworkBadge } from "@/lib/homework-badge
  * export하면 서버 컴포넌트엔 숫자가 아니라 클라이언트 참조가 넘어간다.
  */
 const GROUP_PATH = "/group";
+const GROUP_TAB_KEY = "chaeksup:group-tab";
 const TILE_COLORS = ["#6B8F71", "#A6763F", "#D9A441", "#7C9C82", "#B5654A", "#5E7A6B", "#C9A66B"];
 
 function tileColor(name: string): string {
@@ -75,6 +76,16 @@ export default function ChildGroupBar() {
   const onTab = pathname === GROUP_PATH;
   // 기본 소제목 탭은 숙제(app/group/page.tsx와 같은 규칙).
   const tab = searchParams.get("tab") === "books" ? "books" : "assignments";
+
+  // 숙제/추천도서 중 마지막으로 본 쪽을 기억해 둔다 -- 하단 "그룹"을 다시
+  // 누르면 그쪽이 열리게(components/bottom-nav.tsx). sessionStorage라 앱을
+  // 새로 켜면 지워지고 다시 숙제부터 보인다(할 일을 먼저 보여 준다는 원칙).
+  useEffect(() => {
+    if (!onTab) return;
+    try {
+      sessionStorage.setItem(GROUP_TAB_KEY, tab);
+    } catch {}
+  }, [onTab, tab]);
 
   useEffect(() => {
     if (role !== "parent" || !onTab || !childId) return;

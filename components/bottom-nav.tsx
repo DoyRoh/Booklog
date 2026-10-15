@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useProfile } from "@/components/profile-context";
 import { isChromeHidden } from "@/lib/nav";
 import { createClient } from "@/lib/supabase/client";
@@ -132,6 +132,7 @@ function useHomeworkBadge(role: string | null, childId: string | null, pathname:
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { role, loading, childId, childAvatar, operatorAvatar } = useProfile();
   const hidden = useHideOnScroll();
   const homeworkBadge = useHomeworkBadge(role, childId, pathname);
@@ -186,6 +187,19 @@ export default function BottomNav() {
           <Link
             key={href}
             href={href}
+            onClick={(e) => {
+              // 그룹 탭은 마지막으로 본 소제목(추천도서)으로 돌아간다 --
+              // 기억은 child-group-bar.tsx가 sessionStorage에 남긴다.
+              if (href !== "/group") return;
+              let last: string | null = null;
+              try {
+                last = sessionStorage.getItem("chaeksup:group-tab");
+              } catch {}
+              if (last === "books") {
+                e.preventDefault();
+                router.push("/group?tab=books");
+              }
+            }}
             aria-label={showHomeworkDot ? `${label} · ${homeworkBadge === "done" ? "오늘 숙제 완료" : "오늘 숙제 있음"}` : label}
             aria-current={active ? "page" : undefined}
             className="flex flex-1 flex-col items-center justify-center gap-[3px] rounded-[20px] py-[6px] transition-colors"
