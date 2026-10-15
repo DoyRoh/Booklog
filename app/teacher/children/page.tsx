@@ -8,6 +8,7 @@ import { pickActiveGroupId } from "@/lib/active-operator-group";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import GroupApprovals from "@/components/group-approvals";
 import Section from "@/components/section";
+import InviteCodeCopy from "@/components/invite-code-copy";
 
 type AvatarKind = "rabbit" | "dog" | "cat" | null;
 
@@ -169,16 +170,18 @@ export default async function TeacherChildrenPage({
         <div className="min-w-0">
           <h1 className="d text-xl">{selected.name}</h1>
           <p className="mt-0.5 text-sm" style={{ color: "var(--ink-2)" }}>
-            {GROUP_TYPE_LABELS[selected.type] ?? selected.type} · 아이 {selected.children.length}명
-            {selected.joinPolicy === "approval" && selected.inviteCode && (
-              <>
-                {" · 초대 코드 "}
-                <span className="d" style={{ color: "var(--point-deep)" }}>
-                  {selected.inviteCode}
-                </span>
-              </>
-            )}
+            {GROUP_TYPE_LABELS[selected.type] ?? selected.type} ·{" "}
+            {selected.joinPolicy === "open" ? "공개" : "승인제"} · 아이 {selected.children.length}명
           </p>
+          {/* 공개·승인제 모두 초대 코드가 있다 -- 코드로 들어오면 공개 그룹은 바로 팔로우, 승인제는 가입 신청. */}
+          {selected.inviteCode && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+                초대 코드
+              </span>
+              <InviteCodeCopy code={selected.inviteCode} />
+            </div>
+          )}
         </div>
         <Link href={`/recommend/${selected.id}`} className="d flex-none pt-1 text-xs" style={{ color: "var(--point)" }}>
           그룹 설정 ›
@@ -209,8 +212,8 @@ export default async function TeacherChildrenPage({
       >
         {selected.children.length === 0 ? (
           <p className="px-[24px] py-4 text-sm" style={{ color: "var(--ink-2)" }}>
-            {selected.joinPolicy === "approval" && selected.inviteCode
-              ? `아직 승인된 아이가 없어요. 초대 코드 ${selected.inviteCode}를 알려 주세요.`
+            {selected.inviteCode
+              ? `아직 ${selected.joinPolicy === "open" ? "따르는" : "승인된"} 아이가 없어요. 초대 코드 ${selected.inviteCode}를 알려 주세요.`
               : "아직 이 그룹을 따르는 아이가 없어요."}
           </p>
         ) : (
