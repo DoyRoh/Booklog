@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { REGIONS } from "@/lib/library-regions";
 import { loadMyLibraries, saveMyLibraries, MAX_LIBRARIES, type SavedLibrary } from "@/lib/my-libraries";
 
-type Lib = { code: string; name: string; address: string };
+type Lib = { code: string; name: string; address: string; region?: string };
 
 export default function MyLibraries() {
   const [supabase] = useState(() => createClient());
@@ -17,14 +17,39 @@ export default function MyLibraries() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 지역을 안 골랐을 때는 이름으로 전국에서 찾는다(지역을 몰라도 도서관 이름만 알면 됨).
+  const [found, setFound] = useState<Lib[] | null>(null);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     loadMyLibraries(supabase).then(setMine);
   }, [supabase]);
 
+  useEffect(() => {
+    if (region || !adding) return;
+    const q = query.trim();
+    if (q.replace(/\s+/g, "").length < 2) return;
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/libraries?q=${encodeURIComponent(q)}`);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "도서관을 찾지 못했어요.");
+        setFound(json.libraries as Lib[]);
+        setError(null);
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [query, region, adding]);
+
   async function pickRegion(code: string) {
     setRegion(code);
     setLibs(null);
+    setFound(null);
     setQuery("");
     setError(null);
     if (!code) return;
@@ -51,12 +76,16 @@ export default function MyLibraries() {
     }
   }
 
+  const nationwide = !region;
+  const shortQuery = query.trim().replace(/\s+/g, "").length < 2;
   const filtered = useMemo(() => {
+    if (!region) return shortQuery ? [] : (found ?? []);
     if (!libs) return [];
     const q = query.trim().replace(/\s+/g, "");
     const list = q ? libs.filter((l) => (l.name + l.address).replace(/\s+/g, "").includes(q)) : libs;
     return list.slice(0, 40);
-  }, [libs, query]);
+  }, [libs, query, region, found, shortQuery]);
+  const showList = nationwide ? !shortQuery && found !== null : libs !== null;
 
   const full = mine.length >= MAX_LIBRARIES;
 
@@ -108,7 +137,7 @@ export default function MyLibraries() {
               className="flex-none rounded-[12px] border px-2 py-2 text-sm"
               style={{ borderColor: "var(--rule)", background: "var(--card)" }}
             >
-              <option value="">지역</option>
+              <option value="">전국</option>
               {REGIONS.map((r) => (
                 <option key={r.code} value={r.code}>
                   {r.name}
@@ -118,19 +147,24 @@ export default function MyLibraries() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              disabled={!libs}
-              placeholder="도서관·동네 이름"
+              disabled={!nationwide && !libs}
+              placeholder={nationwide ? "도서관 이름으로 찾기" : "도서관·동네 이름"}
               className="min-w-0 flex-1 rounded-[12px] border px-3 py-2 text-sm outline-none disabled:opacity-50"
               style={{ borderColor: "var(--rule)", background: "var(--card)" }}
             />
           </div>
 
-          {loading && (
+          {nationwide && shortQuery && (
             <p className="mt-3 text-xs" style={{ color: "var(--ink-2)" }}>
-              도서관을 불러오는 중…
+              도서관 이름을 두 글자 이상 넣으면 전국에서 찾아요. 지역을 고르면 그 지역 도서관을 모두 볼 수 있어요.
             </p>
           )}
-          {libs && (
+          {(loading || (nationwide && searching)) && (
+            <p className="mt-3 text-xs" style={{ color: "var(--ink-2)" }}>
+              도서관을 찾는 중…
+            </p>
+          )}
+          {showList && (
             <ul className="mt-2 max-h-64 overflow-y-auto">
               {filtered.length === 0 && (
                 <li className="py-2 text-xs" style={{ color: "var(--ink-2)" }}>
@@ -145,10 +179,11 @@ export default function MyLibraries() {
                       type="button"
                       disabled={picked || full}
                       onClick={async () => {
-                        await update([...mine, { code: lib.code, name: lib.name }], region);
+                        await update([...mine, { code: lib.code, name: lib.name }], lib.region ?? region);
                         setAdding(false);
                         setRegion("");
                         setLibs(null);
+                        setFound(null);
                         setQuery("");
                       }}
                       className="w-full py-2 text-left disabled:opacity-50"
@@ -171,6 +206,7 @@ export default function MyLibraries() {
               setAdding(false);
               setRegion("");
               setLibs(null);
+              setFound(null);
               setQuery("");
             }}
             className="mt-2 text-xs"

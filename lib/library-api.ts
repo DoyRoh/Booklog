@@ -2,7 +2,9 @@
 // 응답은 { response: { libs: [{ lib: {...} }] } } / { response: { result: {...} } } 모양.
 const BASE = "http://data4library.kr/api";
 
-export { REGIONS } from "./library-regions";
+import { REGIONS } from "./library-regions";
+
+export { REGIONS };
 
 export type LibraryInfo = { code: string; name: string; address: string };
 
@@ -30,6 +32,30 @@ export async function listLibraries(region: string): Promise<LibraryInfo[]> {
     }))
     .filter((lib) => lib.code && lib.name)
     .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+}
+
+/**
+ * 이름·동네로 전국에서 찾기 — 지역을 몰라도 도서관 이름만 알면 고를 수 있게.
+ * 시/도별 목록(각각 하루 캐시)을 한꺼번에 불러 이름·주소에 모든 단어가 들어간 곳만.
+ * 한 지역이 실패해도 나머지 결과는 돌려준다.
+ */
+export async function searchLibraries(query: string, limit = 40): Promise<(LibraryInfo & { region: string })[]> {
+  const words = query.trim().split(/\s+/).filter(Boolean).map((w) => w.toLowerCase());
+  if (words.length === 0) return [];
+  const all = await Promise.all(
+    REGIONS.map(async (r) => (await listLibraries(r.code).catch(() => [])).map((lib) => ({ ...lib, region: r.code })))
+  );
+  const hay = (l: LibraryInfo) => (l.name + " " + l.address).toLowerCase().replace(/\s+/g, "");
+  return all
+    .flat()
+    .filter((l) => words.every((w) => hay(l).includes(w)))
+    // 이름에 걸린 곳을 주소에만 걸린 곳보다 앞으로.
+    .sort((a, b) => {
+      const an = words.every((w) => a.name.toLowerCase().includes(w)) ? 0 : 1;
+      const bn = words.every((w) => b.name.toLowerCase().includes(w)) ? 0 : 1;
+      return an - bn || a.name.localeCompare(b.name, "ko");
+    })
+    .slice(0, limit);
 }
 
 export type Availability = { code: string; hasBook: boolean; loanAvailable: boolean } | { code: string; error: true };
