@@ -66,9 +66,9 @@ export default async function RecommendPage() {
     (g, i, arr) => arr.findIndex((other) => other.id === g.id) === i
   );
   const myGroupIds = myGroups.map((g) => g.id);
-  // 둘러보기에는 아직 안 따라가는 그룹만 -- 내 그룹에 있는 게 아래에 또
-  // 뜨면 같은 그룹이 두 번 보인다. 끊기는 그룹 상세의 "팔로잉"에서.
-  const browseGroups = allBrowse.filter((g) => !myGroupIds.includes(g.id));
+  // 둘러보기는 숲지기 상자별로 그 숲지기의 공개 그룹을 전부 보여주고, 이미 따르는
+  // 그룹은 체크 동그라미로 표시한다(눌러서 끊기).
+  const browseGroups = allBrowse;
 
   return (
     <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">
@@ -143,9 +143,9 @@ export default async function RecommendPage() {
       <Section
         className="mt-5"
         title="둘러보기"
-        description="공개된 기관·크리에이터의 추천도서예요. 누르면 소개와 최근 추천도서 10권을 먼저 둘러보고, 마음에 들면 팔로우해요."
+        description="숲지기마다 공개 그룹을 옆으로 넘겨 봐요. 그룹을 누르면 추천도서를 미리 보고, + 를 누르면 팔로우해요."
       >
-        <BrowseGroups groups={browseGroups} followingIds={[]} activeChildId={activeChild?.id ?? null} />
+        <BrowseGroups groups={browseGroups} followingIds={activeProfile.type === "operator" ? [] : myGroupIds} activeChildId={activeChild?.id ?? null} />
       </Section>
     </div>
   );

@@ -8,6 +8,8 @@ export type BrowseGroup = {
   type: string;
   description: string | null;
   operatorName: string | null;
+  operatorAvatar: "bear" | "egret" | null;
+  ownerId: string | null;
   verified: boolean;
   bookCount: number;
   followers: number;
@@ -20,6 +22,7 @@ type OpenRow = {
   type: string;
   description: string | null;
   operator_name: string | null;
+  operator_avatar?: string | null;
   owner_id: string | null;
   verified: boolean | null;
   book_lists: { book_list_items: { created_at: string | null; books: { cover_url: string | null } | null }[] }[] | null;
@@ -35,20 +38,20 @@ export async function loadBrowseGroups(
   supabase: SupabaseClient<any>,
   excludeIds: string[] = []
 ): Promise<BrowseGroup[]> {
-  const [{ data }, hidden] = await Promise.all([
-    supabase
-      .from("groups")
-      .select("id, name, type, description, operator_name, owner_id, verified, book_lists(book_list_items(created_at, books(cover_url)))")
-      .eq("join_policy", "open"),
+  const cols = "id, name, type, description, operator_name, owner_id, verified, book_lists(book_list_items(created_at, books(cover_url)))";
+  const [first, hidden] = await Promise.all([
+    supabase.from("groups").select(`${cols}, operator_avatar`).eq("join_policy", "open"),
     getHiddenContent(supabase),
   ]);
+  // operator_avatar(0028)가 아직 없으면 얼굴 없이 다시 -- 둘러보기 자체는 안 깨지게.
+  const data = first.error ? (await supabase.from("groups").select(cols).eq("join_policy", "open")).data : first.data;
   const rows = ((data ?? []) as unknown as OpenRow[]).filter((g) => !excludeIds.includes(g.id) && !isGroupHidden(hidden, g));
   const followerCounts = await getFollowerCounts(
     supabase,
     rows.map((g) => g.id)
   );
   return rows
-    .map((g) => {
+    .map((g): BrowseGroup => {
       const items = (g.book_lists ?? [])
         .flatMap((list) => list.book_list_items ?? [])
         .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
@@ -58,6 +61,8 @@ export async function loadBrowseGroups(
         type: g.type,
         description: g.description,
         operatorName: g.operator_name,
+        operatorAvatar: g.operator_avatar === "egret" ? "egret" : g.operator_avatar === "bear" ? "bear" : null,
+        ownerId: g.owner_id,
         verified: Boolean(g.verified),
         bookCount: items.length,
         followers: followerCounts.get(g.id) ?? 0,
