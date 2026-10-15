@@ -2237,3 +2237,7 @@ App Store 심사 통과(버전 1.0 배포 준비됨). 이어서 두 가지 요�
 ## 하단 "그룹"을 다시 누르면 마지막에 본 소제목(추천도서)으로 (사용자 확인)
 
 추천도서를 보다가 다른 탭에 갔다 오면 숙제로 돌아와 있던 것 — 소제목은 주소(`?tab=books`)에만 있었고 하단 "그룹"은 항상 `/group`(기본 숙제)으로 가서였습니다. `components/child-group-bar.tsx`가 그룹 화면에서 보고 있는 소제목을 `sessionStorage`(`chaeksup:group-tab`)에 남기고, `components/bottom-nav.tsx`의 "그룹" 링크가 누를 때 그 값이 추천도서면 `/group?tab=books`로 보냅니다. sessionStorage라 앱을 새로 켜면 지워져 다시 숙제부터(할 일 먼저 원칙). 오늘 탭의 숙제 "전체 보기" 같은 숙제 전용 링크는 그대로 숙제로 갑니다. DB 변경 없음.
+
+## 아이 프로필 고치기에서 캐릭터도 바꾸기 (사용자 요청)
+
+`components/child-switcher.tsx`의 고치기 상자에 이름 칸 아래 토끼·강아지·고양이 세 칸(그림 + 이름, 고른 칸은 초록 테두리)을 추가했습니다. 저장하면 `children.name`과 `children.avatar`를 함께 바꾸고(기존 "guardians update own children" 정책), 프로필 변경 이벤트로 상단 얼굴·하단 프로필 탭이 바로 바뀝니다. 발자국 도장·숲의 아이 모습도 avatar를 따라갑니다. DB 변경 없음.

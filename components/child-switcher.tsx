@@ -40,6 +40,7 @@ export default function ChildSwitcher({
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState("");
+  const [avatarDraft, setAvatarDraft] = useState<Avatar>("rabbit");
   const [nameSaving, setNameSaving] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -48,10 +49,12 @@ export default function ChildSwitcher({
   function startEditName(child: Child) {
     setEditingId(child.id);
     setNameDraft(child.name);
+    setAvatarDraft(child.avatar ?? "rabbit");
     setNameError(null);
   }
 
-  // 숲지기 이름 고치기와 같은 패턴 -- 이름을 바꾸면 상단 "OO의 책숲"
+  // 숲지기 이름 고치기와 같은 패턴 -- 이름과 캐릭터(토끼/강아지/고양이)를 함께
+  // 고친다. 캐릭터는 상단 얼굴·발자국 도장·숲의 아이 모습이 모두 따라 바뀐다. 이름을 바꾸면 상단 "OO의 책숲"
   // 제목도 즉시 바뀌어야 하므로 프로필 변경 이벤트를 같이 쏜다.
   async function saveChildName(childId: string) {
     const next = nameDraft.trim();
@@ -59,7 +62,7 @@ export default function ChildSwitcher({
     setNameSaving(true);
     setNameError(null);
     const supabase = createClient();
-    const { error: updateError } = await supabase.from("children").update({ name: next }).eq("id", childId);
+    const { error: updateError } = await supabase.from("children").update({ name: next, avatar: avatarDraft }).eq("id", childId);
     setNameSaving(false);
     if (updateError) {
       setNameError(updateError.message);
@@ -223,6 +226,32 @@ export default function ChildSwitcher({
                   className="rounded-[14px] border px-4 py-2.5 text-sm outline-none"
                   style={{ borderColor: "var(--rule)", background: "var(--card)" }}
                 />
+                <div className="mt-1 grid grid-cols-3 gap-2" role="radiogroup" aria-label="캐릭터">
+                  {AVATAR_OPTIONS.map((opt) => {
+                    const on = avatarDraft === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => setAvatarDraft(opt.value)}
+                        className="flex flex-col items-center gap-1 rounded-[14px] border py-2"
+                        style={{
+                          borderColor: on ? "var(--point)" : "var(--rule)",
+                          background: on ? "rgba(47,168,79,0.08)" : "var(--card)",
+                        }}
+                      >
+                        <span className="flex h-12 items-center justify-center">
+                          <AvatarIllustration avatar={opt.value} height={48} style={{ opacity: on ? 1 : 0.55 }} />
+                        </span>
+                        <span className="d text-xs" style={{ color: on ? "var(--point-deep)" : "var(--ink-2)" }}>
+                          {opt.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
                 {nameError && (
                   <p className="text-xs" style={{ color: "var(--berry)" }}>
                     {nameError}
