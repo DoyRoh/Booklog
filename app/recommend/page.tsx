@@ -107,7 +107,7 @@ export default async function RecommendPage() {
                 <Link href={`/recommend/${group.id}`} className="min-w-0 flex-1">
                   <p className="d truncate text-sm">{group.name}</p>
                   <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                    {group.operator_name && `숲지기 ${group.operator_name} · `}
+                    {group.operator_name && `${group.operator_name} · `}
                     {GROUP_TYPE_LABELS[group.type] ?? group.type}
                   </p>
                 </Link>

@@ -146,12 +146,7 @@ export default async function GroupDetailPage({
             {group.verified && <OfficialBadge />}
           </h1>
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-            {group.operator_name && (
-              <>
-                <span style={{ color: "var(--point-deep)" }}>숲지기 {group.operator_name}</span>
-                {" · "}
-              </>
-            )}
+            {group.operator_name && `${group.operator_name} · `}
             {GROUP_TYPE_LABELS[group.type] ?? group.type}
             {typeof followers === "number" && ` · 팔로워 ${followers}명`}
             {isOperatorMember && !isOperator && " · 내가 운영하는 그룹"}
