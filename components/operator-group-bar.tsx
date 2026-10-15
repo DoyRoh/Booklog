@@ -76,7 +76,7 @@ export default function OperatorGroupBar() {
   );
 
   // 아이들 탭의 첫 화면(그룹 카드 목록)은 그룹을 고르는 화면 자체라 바를 숨긴다.
-  if (!onTab || role !== "operator" || !groups || groups.length <= 1) return null;
+  if (!onTab || role !== "operator" || !groups || groups.length === 0) return null;
 
   const queryGroup = searchParams.get("group");
   const selectedId =

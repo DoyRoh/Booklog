@@ -12,7 +12,7 @@ import {
   type OperatorAssignmentCard as AssignmentCard,
 } from "@/lib/operator-assignments";
 
-// 숲지기의 "숙제" 탭 -- 그룹 하나를 골라(둘 이상일 때만 우측 상단
+// 숲지기의 "숙제" 탭 -- 그룹 하나를 골라(상단 고정 그룹 바에서, 그룹이 하나여도 뜸 --
 // 드롭다운으로) 그 그룹의 숙제만 마감일순으로 본다. 예전엔 모든 그룹의
 // 숙제를 마감일로 한데 묶어 보여줘서 헤딩마다 그룹 이름을 나열해야 했는데,
 // 그룹을 먼저 고르는 구조로 바뀌면서 그 나열이 필요 없어졌다.
@@ -57,7 +57,7 @@ export default async function TeacherAssignmentsPage({
   dueSections.sort((a, b) => a.due.localeCompare(b.due));
   // 그룹 전환 바는 루트 레이아웃의 `OperatorGroupBar`가 그린다 -- 여기선
   // 그만큼 본문 위쪽 여백만 미리 마련한다.
-  const showGroupTiles = sections.length > 1 && !!selected;
+  const showGroupTiles = sections.length > 0 && !!selected;
 
   return (
     <div

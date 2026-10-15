@@ -156,9 +156,9 @@ export default async function TeacherChildrenPage({
   }
 
   // ── 고른 그룹 하나의 아이들과 관리 ──────────────────────────────
-  // 그룹이 둘 이상이면 상단바 아래 고정 그룹 전환 바(`OperatorGroupBar`,
+  // 그룹이 하나라도 있으면 상단바 아래 고정 그룹 전환 바(`OperatorGroupBar`,
   // 루트 레이아웃)가 뜬다 -- 그만큼 본문 위쪽 여백을 미리 마련한다.
-  const showGroupTiles = sections.length > 1;
+  const showGroupTiles = sections.length > 0;
 
   return (
     <div
