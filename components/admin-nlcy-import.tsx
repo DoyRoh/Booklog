@@ -9,12 +9,11 @@ type Result = {
   added: number;
   missed?: string[];
   dryRun: boolean;
-  debug: { startLinks?: { text: string; href: string }[]; tabLinks?: { text: string; href: string }[]; pagesFetched: number; note?: string };
+  debug: { pagesFetched: number; note?: string };
 };
 
 // 운영자 전용: 국립어린이청소년도서관 사서추천도서(2025·2026)를 분류별 그룹에 넣는다.
-// "미리보기"는 읽기만 하고, 못 찾으면 찾은 링크 목록을 보여 줘서 그대로 복사해
-// 알려 주면 읽는 규칙을 고칠 수 있다.
+// 누리집의 "목록다운로드(엑셀)"을 연도별로 받아 읽는다. "미리보기"는 읽기만 한다.
 export default function AdminNlcyImport() {
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -41,8 +40,6 @@ export default function AdminNlcyImport() {
       setBusy(null);
     }
   }
-
-  const links = result?.debug.startLinks ?? result?.debug.tabLinks;
 
   return (
     <div className="flex flex-col gap-2">
@@ -85,7 +82,7 @@ export default function AdminNlcyImport() {
             {!result.dryRun && result.books.length > 0 && ` · 새로 넣음 ${result.added}권`}
           </p>
           <p className="mt-1">
-            월 {result.months.length}개 ({result.months.join(", ") || "없음"}) · 페이지 {result.debug.pagesFetched}개 읽음
+            추천 {result.months.length}회 ({result.months.join(", ") || "없음"})
           </p>
           {result.debug.note && <p className="mt-1">{result.debug.note}</p>}
           {result.missed && result.missed.length > 0 && <p className="mt-1">표지 못 찾음: {result.missed.join(", ")}</p>}
@@ -98,19 +95,6 @@ export default function AdminNlcyImport() {
                 </li>
               ))}
             </ul>
-          )}
-          {result.books.length === 0 && links && (
-            <>
-              <p className="mt-2" style={{ color: "var(--berry)" }}>
-                책을 못 찾았어요. 아래 내용을 길게 눌러 복사해서 알려 주세요.
-              </p>
-              <textarea
-                readOnly
-                value={links.map((l) => `${l.text} | ${l.href}`).join("\n")}
-                className="mt-1 h-40 w-full rounded-[10px] border p-2 text-[10px]"
-                style={{ borderColor: "var(--rule)" }}
-              />
-            </>
           )}
         </div>
       )}
