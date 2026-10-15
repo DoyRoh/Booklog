@@ -2,7 +2,7 @@ name: nlcy-probe
 on:
   push:
     branches: [claude/chaeksup-phase-0-setup-9jzohw]
-    paths: [scripts/nlcy-probe.mts, .github/workflows/nlcy-probe.yml, lib/nlcy-scrape.ts, scripts/nlcy-probe.py]
+    paths: [scripts/nlcy-probe.mts, .github/workflows/nlcy-probe.yml, lib/nlcy-scrape.ts]
   workflow_dispatch:
 jobs:
   probe:
@@ -10,4 +10,6 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: python3 scripts/nlcy-probe.py
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npx -y tsx@4.19.2 scripts/nlcy-probe.mts

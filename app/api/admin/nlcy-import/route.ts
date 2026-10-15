@@ -78,13 +78,20 @@ export async function POST(request: Request) {
     for (let b = queue.shift(); b; b = queue.shift()) {
       let doc: KakaoDoc | null = null;
       if (kakaoKey) {
-        const url = new URL("https://dapi.kakao.com/v3/search/book");
-        url.searchParams.set("query", [b.title, b.author?.split(/[,·]/)[0]].filter(Boolean).join(" "));
-        url.searchParams.set("size", "15");
-        const res = await fetch(url, { headers: { Authorization: `KakaoAK ${kakaoKey}` } });
-        doc = pick(res.ok ? ((await res.json()).documents ?? []) : [], b.title, b.author);
+        // 엑셀에 ISBN이 있으니 ISBN으로 먼저 찾고(정확), 없으면 제목·저자로.
+        const search = async (params: Record<string, string>) => {
+          const url = new URL("https://dapi.kakao.com/v3/search/book");
+          for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+          const res = await fetch(url, { headers: { Authorization: `KakaoAK ${kakaoKey}` } });
+          return res.ok ? (((await res.json()).documents ?? []) as KakaoDoc[]) : [];
+        };
+        if (b.isbn) doc = (await search({ query: b.isbn, target: "isbn" }))[0] ?? null;
+        if (!doc) {
+          const firstAuthor = b.author?.split(/[;,·]/)[0].replace(/^(글|그림|지은이)\s*[:：]\s*/, "").replace(/\s*(글·그림|글|그림|지음|옮김)$/, "").trim();
+          doc = pick(await search({ query: [b.title.split(" : ")[0], firstAuthor].filter(Boolean).join(" "), size: "15" }), b.title, firstAuthor ?? null);
+        }
       }
-      const isbn = (doc?.isbn ?? "").split(" ").find((v) => v.length === 13) ?? null;
+      const isbn = b.isbn ?? (doc?.isbn ?? "").split(" ").find((v) => v.length === 13) ?? null;
       let bookId: string | null = null;
       if (isbn) {
         const { data } = await supabase.from("book_isbns").select("book_id").eq("isbn", isbn).maybeSingle();
@@ -107,7 +114,7 @@ export async function POST(request: Request) {
           id: bookId,
           title: doc?.title ?? b.title,
           author: doc?.authors?.length ? doc.authors.join(", ") : b.author,
-          publisher: doc?.publisher ?? null,
+          publisher: doc?.publisher || b.publisher,
           cover_url: doc?.thumbnail || null,
           introduction: doc?.contents || null,
           source: "nlcy",
