@@ -83,7 +83,11 @@ export default async function AddRecommendBookPage({
           description={
             selected.length > 1
               ? "제목을 검색하거나 바코드를 찍으면, 고른 그룹 모두의 추천도서에 함께 올라가요."
-              : `지금 ${totalBooks ?? 0}권 · 제목을 검색하거나 바코드를 찍어 바로 올려요.`
+              : (
+                <>
+                  <span style={{ color: "var(--point-deep)" }}>지금 {totalBooks ?? 0}권</span> · 제목을 검색하거나 바코드를 찍어 바로 올려요.
+                </>
+              )
           }
           action={
             groups.length > 1 ? (
@@ -102,6 +106,40 @@ export default async function AddRecommendBookPage({
           )}
         </Section>
       )}
+
+      {/* 올리면서 어디까지 올렸는지 바로 보이도록, 그룹별로 올린 책을 최근 순으로 간단히 */}
+      {selected.length > 0 &&
+        selected.map((g, i) => {
+          const books = selectedLists[i]?.books ?? [];
+          if (books.length === 0) return null;
+          return (
+            <Section
+              key={g.id}
+              className="mt-5"
+              title={selected.length > 1 ? `${g.name} · 올린 책` : "올린 책"}
+              description={`${books.length}권 · 최근에 올린 순`}
+              flush
+            >
+              <ol>
+                {books.map((b, idx) => (
+                  <li
+                    key={b.itemId}
+                    className="flex items-baseline gap-3 px-[24px] py-2"
+                    style={idx > 0 ? { borderTop: "1px solid rgba(38,54,43,0.08)" } : undefined}
+                  >
+                    <span className="w-6 flex-none text-right text-xs tabular-nums" style={{ color: "var(--ink-2)" }}>
+                      {books.length - idx}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {b.title}
+                      {b.author && <span style={{ color: "var(--ink-2)" }}> · {b.author}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </Section>
+          );
+        })}
     </div>
   );
 }
