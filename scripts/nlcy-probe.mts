@@ -1,5 +1,6 @@
 // 임시 검사: GitHub Actions에서 국립어린이청소년도서관 누리집을 실제로 읽어 본다.
-import { scrapeNlcyCategory, NLCY_START_URL } from "../lib/nlcy-scrape.ts";
+const mod = await import("../lib/nlcy-scrape.ts");
+const { scrapeNlcyCategory, NLCY_START_URL } = (mod.default ?? mod) as typeof import("../lib/nlcy-scrape.ts");
 
 async function dump(url: string, label: string) {
   const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
