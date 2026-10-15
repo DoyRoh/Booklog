@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { translateAuthError } from "@/lib/auth-errors";
 
 export default function ForgotPasswordPage() {
@@ -16,9 +16,24 @@ export default function ForgotPasswordPage() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
+    // 재설정 메일만은 implicit 방식으로 보낸다. 앱 기본 클라이언트(PKCE)로 보내면 메일 링크를
+    // "요청한 브라우저에서만" 열 수 있어서, 앱에서 요청하고 Gmail → 사파리로 열면 실패한다.
+    // implicit이면 링크가 /reset-password#access_token=... 으로 와서 어느 브라우저에서도 열린다
+    // (Supabase 기본 메일 템플릿 그대로 — 템플릿 수정은 커스텀 SMTP가 있어야 가능).
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          flowType: "implicit",
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      }
+    );
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/confirm?next=/reset-password`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     setLoading(false);

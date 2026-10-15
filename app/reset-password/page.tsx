@@ -18,10 +18,26 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
-      setHasSession(Boolean(data.session));
-      setChecking(false);
-    });
+    // 재설정 메일 링크는 #access_token=...&refresh_token=...&type=recovery 로 온다
+    // (forgot-password가 implicit 방식으로 보냄). 그 토큰으로 이 브라우저에 세션을 만든다.
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = hash.get("access_token");
+    const refreshToken = hash.get("refresh_token");
+    if (window.location.hash) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+    const ready =
+      accessToken && refreshToken
+        ? supabase.auth
+            .setSession({ access_token: accessToken, refresh_token: refreshToken })
+            .then(({ data }) => Boolean(data.session))
+        : supabase.auth.getSession().then(({ data }) => Boolean(data.session));
+    ready
+      .catch(() => false)
+      .then((ok) => {
+        setHasSession(ok);
+        setChecking(false);
+      });
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
