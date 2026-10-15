@@ -62,10 +62,10 @@ export default function GroupFollow({
     run("leave");
   }
 
-  const secondaryBtn = "d rounded-[14px] border px-4 py-2 text-xs disabled:opacity-40";
+  const secondaryBtn = "d whitespace-nowrap rounded-[14px] border px-4 py-2 text-xs disabled:opacity-40";
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="flex flex-none flex-col items-end gap-1">
       {isMember ? (
         <button
           type="button"
@@ -81,7 +81,7 @@ export default function GroupFollow({
           type="button"
           disabled={busy}
           onClick={() => run("follow")}
-          className="d rounded-[14px] px-5 py-2 text-sm text-white disabled:opacity-40"
+          className="d whitespace-nowrap rounded-[14px] px-5 py-2 text-sm text-white disabled:opacity-40"
           style={{ background: "var(--point)" }}
         >
           팔로우
