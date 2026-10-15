@@ -181,23 +181,35 @@ export default function BrowseGroups({
           <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pr-3" style={{ scrollbarWidth: "none" }}>
             {keeper.groups.map((group) => {
               const following = followingIds.includes(group.id);
-              const cover = group.covers?.[0];
+              const covers = (group.covers ?? []).slice(0, 4);
               return (
                 <div key={group.id} className="relative w-[76px] flex-none">
                   <Link href={`/recommend/${group.id}`} className="block">
-                    <div
-                      className="flex h-[100px] w-full items-center justify-center overflow-hidden rounded-[10px]"
-                      style={{ background: "var(--paper)" }}
-                    >
-                      {cover ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={cover} alt="" className="h-full w-full object-cover" />
-                      ) : (
+                    {covers.length > 0 ? (
+                      // 추천도서 표지 최대 4장을 2×2로 — 그룹의 성격이 한눈에 보이게
+                      <div
+                        className="grid h-[100px] w-full grid-cols-2 grid-rows-2 gap-[2px] overflow-hidden rounded-[10px]"
+                        style={{ background: "var(--rule)" }}
+                      >
+                        {[0, 1, 2, 3].map((i) =>
+                          covers[i] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img key={i} src={covers[i]} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <div key={i} style={{ background: "var(--paper)" }} />
+                          ),
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className="flex h-[100px] w-full items-center justify-center overflow-hidden rounded-[10px]"
+                        style={{ background: "var(--paper)" }}
+                      >
                         <span className="d px-2 text-center text-xs" style={{ color: "var(--ink-2)", wordBreak: "keep-all" }}>
                           {GROUP_TYPE_LABELS[group.type] ?? group.type}
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <p
                       className="d mt-1 text-[11px] leading-[14px]"
                       style={{ wordBreak: "keep-all", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
