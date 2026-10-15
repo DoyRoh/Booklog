@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
-import { AGE_BAND_LABELS, ageBandsLabel, groupFitsBand, mainAgeBands, type AgeBand } from "@/lib/age-bands";
+import { AGE_BANDS, AGE_BAND_HINTS, AGE_BAND_LABELS, ageBandsLabel, groupFitsBand, mainAgeBands, type AgeBand } from "@/lib/age-bands";
 
 type OpenGroup = {
   id: string;
@@ -66,10 +66,14 @@ export default function BrowseGroups({
   groups: OpenGroup[];
   followingIds: string[];
   activeChildId: string | null;
-  /** 아이의 연령 구간 -- 있으면 "우리 아이 나이에 맞는 그룹만" 필터가 기본으로 켜진다. */
+  /** 아이의 연령 구간 -- 나이대 칩에서 처음부터 골라 두고 "우리 아이"로 표시. */
   childBand?: AgeBand | null;
 }) {
-  const [onlyFit, setOnlyFit] = useState(true);
+  // 나이대 칩(여러 개 선택). 처음엔 아이 나이로 골라 두고, 아무것도 안 고르면 전체.
+  const [picked, setPicked] = useState<AgeBand[]>(childBand ? [childBand] : []);
+  function togglePicked(band: AgeBand) {
+    setPicked((prev) => AGE_BANDS.filter((b) => (b === band ? !prev.includes(b) : prev.includes(b))));
+  }
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -140,41 +144,49 @@ export default function BrowseGroups({
     );
   }
 
-  // 연령이 정해진 책의 3분의 1 이상이 아이 구간이면 맞는 그룹. 연령 미정 그룹은 거르지 않는다.
+  // 고른 나이대 중 하나라도 그 그룹의 주 연령(연령 정해진 책의 3분의 1 이상)이면 보인다.
+  // 연령 미정 그룹은 거르지 않는다.
   const fits = (g: OpenGroup) =>
-    !childBand || groupFitsBand(g.ages ?? [], g.agedCount ?? 0, childBand) !== false;
-  const filterOn = Boolean(childBand) && onlyFit;
-  const shown = filterOn ? groups.filter(fits) : groups;
+    picked.length === 0 || picked.some((band) => groupFitsBand(g.ages ?? [], g.agedCount ?? 0, band) !== false);
+  const shown = groups.filter(fits);
   const hiddenCount = groups.length - shown.length;
   const keepers = groupByKeeper(shown);
 
   return (
     <div className="flex flex-col gap-3">
-      {childBand && (
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setOnlyFit((v) => !v)}
-            aria-pressed={onlyFit}
-            className="d rounded-full border px-3 py-1 text-xs"
-            style={{
-              borderColor: onlyFit ? "var(--point-deep)" : "var(--rule)",
-              background: onlyFit ? "var(--point-deep)" : "var(--card)",
-              color: onlyFit ? "#fff" : "var(--ink-2)",
-            }}
-          >
-            우리 아이 나이({AGE_BAND_LABELS[childBand]})에 맞는 그룹만
-          </button>
-          {filterOn && hiddenCount > 0 && (
-            <span className="text-[11px]" style={{ color: "var(--ink-2)" }}>
-              다른 나이 그룹 {hiddenCount}개 숨김
-            </span>
-          )}
-        </div>
+      {/* 나이대 -- 가로로 넘기는 칩, 여러 개 고를 수 있다(다시 누르면 해제). */}
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" style={{ scrollbarWidth: "none" }}>
+        {AGE_BANDS.map((band) => {
+          const on = picked.includes(band);
+          return (
+            <button
+              key={band}
+              type="button"
+              onClick={() => togglePicked(band)}
+              aria-pressed={on}
+              className="d flex flex-none flex-col items-center rounded-[14px] border px-3.5 py-1.5 text-xs leading-tight"
+              style={{
+                borderColor: on ? "var(--point-deep)" : "var(--rule)",
+                background: on ? "var(--point-deep)" : "var(--card)",
+                color: on ? "#fff" : "var(--ink-2)",
+              }}
+            >
+              {AGE_BAND_LABELS[band]}
+              <span className="text-[10px]" style={{ opacity: 0.75 }}>
+                {band === childBand ? "우리 아이" : AGE_BAND_HINTS[band]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {picked.length > 0 && hiddenCount > 0 && (
+        <p className="-mt-1 text-[11px]" style={{ color: "var(--ink-2)" }}>
+          다른 나이대 그룹 {hiddenCount}개 숨김 · 연령 미정 그룹은 함께 보여요
+        </p>
       )}
       {keepers.length === 0 && (
         <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-          이 나이에 맞는 그룹이 아직 없어요. 위 버튼을 눌러 전체를 볼 수 있어요.
+          고른 나이대에 맞는 그룹이 아직 없어요. 나이대를 더 고르거나 눌러서 풀어 보세요.
         </p>
       )}
       {error && (
