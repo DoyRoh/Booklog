@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 // 메일 링크(비밀번호 재설정, 가입 확인)가 최종적으로 도착하는 곳. Supabase가 발급한
@@ -8,6 +9,19 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/reset-password";
+  const tokenHash = searchParams.get("token_hash");
+  const type = searchParams.get("type") as EmailOtpType | null;
+
+  // token_hash 방식(메일 템플릿이 {{ .TokenHash }}로 링크를 만들 때): 요청한 기기와
+  // 다른 브라우저에서 열어도 된다. 앱에서 비밀번호 재설정을 요청하고 Gmail → 사파리로
+  // 링크를 열면 아래 code 방식은 교환값이 앱에만 있어 실패하므로 이쪽을 쓴다.
+  if (tokenHash && type) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+  }
 
   if (code) {
     const supabase = await createClient();

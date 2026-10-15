@@ -43,10 +43,6 @@ export default function ResetPasswordPage() {
       return;
     }
     setDone(true);
-    setTimeout(() => {
-      router.replace("/today");
-      router.refresh();
-    }, 1500);
   }
 
   if (checking) {
@@ -72,8 +68,22 @@ export default function ResetPasswordPage() {
       <div className="mx-auto flex max-w-[420px] flex-col px-5 pt-16">
         <h1 className="d text-2xl">책숲</h1>
         <p className="hand mt-4 text-lg" style={{ color: "var(--point-deep)" }}>
-          비밀번호가 바뀌었어요. 이동할게요.
+          비밀번호가 바뀌었어요.
         </p>
+        <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--ink-2)" }}>
+          책숲 앱을 쓰고 있다면 앱으로 돌아가 새 비밀번호로 로그인해 주세요.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            router.replace("/today");
+            router.refresh();
+          }}
+          className="d mt-6 rounded-[14px] py-3 text-white"
+          style={{ background: "var(--point-deep)" }}
+        >
+          웹에서 계속하기
+        </button>
       </div>
     );
   }

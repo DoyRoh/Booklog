@@ -2293,3 +2293,10 @@ App Store 심사 통과(버전 1.0 배포 준비됨). 이어서 두 가지 요�
 
 - **그룹 상세·그룹 찾기 정보 줄**: "숲지기 국립어린이청소년도서관 · 도서관 · 팔로워 0명"처럼 숲지기 이름만 초록색에 "숲지기" 꼬리표가 붙어 따로 놀았습니다. 이제 "국립어린이청소년도서관 · 도서관 · 팔로워 0명" — 이름도 나머지와 같은 회색 글자로 이어집니다(`app/recommend/[groupId]/page.tsx`, `app/recommend/page.tsx`). 신고·차단 문구("숲지기 OO")처럼 사람을 가리키는 문장은 그대로.
 - **프로필·설정의 "그룹 찾기 · 참가" 섹션 삭제**: 하단 "그룹" 탭(그룹 바의 + 타일, 그룹이 없을 땐 빈 화면의 그룹 찾기·둘러보기)에서 같은 일을 하므로 프로필에서는 뺐습니다(`app/more/page.tsx`). `/recommend` 화면 자체는 그대로. DB 변경 없음.
+
+## 비밀번호 재설정 링크가 로그인 화면으로 떨어지던 것 (사용자 신고)
+
+앱에서 "비밀번호 찾기"를 요청하고 Gmail → 사파리로 "Reset password" 링크를 열면 로그인 화면만 떴습니다. 재설정 메일이 PKCE `code` 방식이라, `exchangeCodeForSession`에 필요한 교환값(code_verifier)이 **요청한 쪽(앱 웹뷰)에만** 있어 다른 브라우저에서는 교환이 실패하고 `/login?error=...`로 갔기 때문입니다(가입 확인 메일과 같은 원인).
+- **`app/auth/confirm/route.ts`**: `token_hash` + `type` 파라미터가 오면 `verifyOtp({ type, token_hash })`로 세션을 만듭니다 — 어느 기기·브라우저에서 열어도 됩니다. 기존 `code` 방식도 그대로 둡니다.
+- **Supabase 메일 템플릿을 바꿔야 동작합니다**(사용자 작업): Authentication → Emails → **Reset Password** 템플릿의 링크를 `https://booklog-13xh.vercel.app/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`로.
+- **`app/reset-password/page.tsx`**: 바꾼 뒤 1.5초 만에 `/today`로 넘기던 걸 없애고, "비밀번호가 바뀌었어요 · 책숲 앱을 쓰고 있다면 앱으로 돌아가 새 비밀번호로 로그인해 주세요" + "웹에서 계속하기" 버튼으로 — 사파리에서 열린 경우 앱으로 돌아가야 한다는 걸 알려 줍니다. DB 변경 없음.
