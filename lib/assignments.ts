@@ -1,7 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSignedMediaUrl } from "@/lib/storage";
 import type { TodayAssignment } from "@/components/assignment-today";
-import { isCurrent } from "@/lib/assignment-period";
+import { effectiveRange, isCurrent } from "@/lib/assignment-period";
+
+/** 타임스탬프 → 한국 날짜("YYYY-MM-DD"). */
+function kstDateOf(iso: string): string {
+  return new Date(new Date(iso).getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
 
 type AssignmentRow = {
   id: string;
@@ -33,9 +38,16 @@ async function fetchAssignments(
 ): Promise<TodayAssignment[]> {
   const { data: memberGroupRows } = await supabase
     .from("group_members")
-    .select("group_id")
+    .select("group_id, approved_at, requested_at")
     .eq("child_id", childId)
     .eq("status", "approved");
+  // 그룹마다 이 아이가 들어온 날(한국 날짜) -- 들어오기 전에 이미 마감된 숙제는
+  // "합류 전 숙제"로 따로 접어 둔다(DB 뷰 0035와 같은 기준).
+  const joinedByGroup = new Map<string, string>();
+  for (const row of (memberGroupRows ?? []) as { group_id: string; approved_at: string | null; requested_at: string | null }[]) {
+    const at = row.approved_at ?? row.requested_at;
+    if (at) joinedByGroup.set(row.group_id, kstDateOf(at));
+  }
 
   const groupIds = (memberGroupRows ?? []).map((row) => row.group_id);
   if (groupIds.length === 0) return [];
@@ -146,8 +158,14 @@ async function fetchAssignments(
     )
   );
 
-  return rows.map((row) => ({
+  return rows.map((row) => {
+    const joined = joinedByGroup.get(row.group_id);
+    const beforeJoin = Boolean(
+      joined && effectiveRange({ startDate: row.start_date, endDate: row.end_date, createdAt: row.created_at }).end < joined
+    );
+    return {
     id: row.id,
+    beforeJoin,
     groupId: row.group_id,
     groupName: row.groups?.name ?? "",
     title: row.title,
@@ -168,7 +186,14 @@ async function fetchAssignments(
           title: book.title,
           author: book.author,
           coverUrl: book.cover_url,
-          completed: completedSet.has(`${row.id}:${book.id}`),
+          // 합류 전 숙제는 완료 뷰에 행이 없어서(0035), 내 독서기록으로 직접 판정한다.
+          completed: beforeJoin
+            ? Boolean(
+                record &&
+                  (record.status === "done" ||
+                    (ab.target_page != null && record.pages_read != null && record.pages_read >= ab.target_page))
+              )
+            : completedSet.has(`${row.id}:${book.id}`),
           targetPage: ab.target_page,
           recordId: record?.id ?? null,
           status: record?.status ?? null,
@@ -190,7 +215,8 @@ async function fetchAssignments(
       answerText: answerByMission.get(mission.id) ?? null,
       voiceSignedUrl: voiceSignedUrlByMission.get(mission.id) ?? null,
     })),
-  }));
+    };
+  });
 }
 
 /** 오늘 탭 요약("오늘까지 해야 할 숙제")에서 쓴다. */

@@ -107,6 +107,9 @@ export default async function TeacherChildDetailPage({
   const completedKey = new Set(
     (completionRows ?? []).filter((r) => r.completed).map((r) => `${r.assignment_id}:${r.book_id}`)
   );
+  // 완료 뷰(0035)는 아이가 들어오기 전에 이미 마감된 숙제의 행을 만들지 않는다 --
+  // 책이 있는데 행이 하나도 없으면 "합류 전" 숙제다.
+  const assignmentsWithRows = new Set((completionRows ?? []).map((r) => r.assignment_id));
   const responseByMission = new Map((responseRows ?? []).map((r) => [r.mission_id, r]));
 
   const readCount = books.filter((b) => b.readStatus === "done").length;
@@ -160,6 +163,7 @@ export default async function TeacherChildDetailPage({
               const abooks = assignment.assignment_books ?? [];
               const done = abooks.filter((b) => completedKey.has(`${assignment.id}:${b.book_id}`)).length;
               const allDone = abooks.length > 0 && done === abooks.length;
+              const beforeJoin = abooks.length > 0 && !assignmentsWithRows.has(assignment.id);
               return (
                 <div
                   key={assignment.id}
@@ -176,15 +180,15 @@ export default async function TeacherChildDetailPage({
                     <span
                       className="d flex-none rounded-full px-2 py-0.5 text-xs"
                       style={{
-                        background: allDone ? "rgba(47,168,79,0.12)" : "var(--paper)",
-                        color: allDone ? "var(--point-deep)" : "var(--ink-2)",
+                        background: allDone && !beforeJoin ? "rgba(47,168,79,0.12)" : "var(--paper)",
+                        color: allDone && !beforeJoin ? "var(--point-deep)" : "var(--ink-2)",
                       }}
                     >
-                      {done}/{abooks.length} 완료
+                      {beforeJoin ? "합류 전" : `${done}/${abooks.length} 완료`}
                     </span>
                   </div>
 
-                  {abooks.length > 0 && (
+                  {abooks.length > 0 && !beforeJoin && (
                     <div className="mt-2 flex flex-col gap-1">
                       {abooks.map((b) => {
                         const ok = completedKey.has(`${assignment.id}:${b.book_id}`);

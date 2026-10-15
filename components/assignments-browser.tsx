@@ -28,13 +28,17 @@ export default function AssignmentsBrowser({
   mode: "current" | "past";
 }) {
   const [query, setQuery] = useState("");
+  const [showBeforeJoin, setShowBeforeJoin] = useState(false);
   const searching = query.trim().length > 0;
 
-  const { found, active, overdue, done } = useMemo(() => {
+  const { found, active, overdue, done, beforeJoin } = useMemo(() => {
     const byEnd = (dir: 1 | -1) => (a: TodayAssignment, b: TodayAssignment) =>
       dir * effectiveRange(a).end.localeCompare(effectiveRange(b).end);
-    const base = mode === "past" ? assignments.filter((a) => isPast(a)) : assignments;
+    // 합류 전 숙제는 지금/기한 지남/완료 어디에도 세지 않고 맨 아래에 접어 둔다.
+    const mine = assignments.filter((a) => !a.beforeJoin);
+    const base = mode === "past" ? mine.filter((a) => isPast(a)) : mine;
     return {
+      beforeJoin: assignments.filter((a) => a.beforeJoin).sort(byEnd(-1)),
       found: assignments.filter((a) => matchesQuery(a, query)).sort(byEnd(-1)),
       // 미완료 · 마감 가까운 순(가장 급한 것이 위).
       active: base.filter((a) => !isAssignmentDone(a) && !isPast(a)).sort(byEnd(1)),
@@ -105,6 +109,32 @@ export default function AssignmentsBrowser({
               <p className="d mt-8 text-base">완료한 숙제 · {done.length}개</p>
               <AssignmentToday childId={childId} childName={childName} assignments={done} voiceAllowed={voiceAllowed} />
             </>
+          )}
+
+          {beforeJoin.length > 0 && (
+            <div className="mt-8 rounded-[var(--r)] border px-4 py-3" style={{ borderColor: "var(--rule)" }}>
+              <button
+                type="button"
+                onClick={() => setShowBeforeJoin((v) => !v)}
+                aria-expanded={showBeforeJoin}
+                className="flex w-full items-center justify-between gap-2 text-left"
+              >
+                <span className="d text-sm" style={{ color: "var(--ink-2)" }}>
+                  합류 전 숙제 · {beforeJoin.length}개
+                </span>
+                <span className="text-xs" style={{ color: "var(--ink-2)" }}>
+                  {showBeforeJoin ? "접기" : "펼치기"}
+                </span>
+              </button>
+              <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
+                그룹에 들어오기 전에 끝난 숙제예요. 해도 되고, 안 해도 괜찮아요.
+              </p>
+              {showBeforeJoin && (
+                <div className="mt-3">
+                  <AssignmentToday childId={childId} childName={childName} assignments={beforeJoin} voiceAllowed={voiceAllowed} />
+                </div>
+              )}
+            </div>
           )}
 
           {mode === "current" && (

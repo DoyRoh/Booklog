@@ -7,8 +7,7 @@ import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
 import GroupRemoveButton from "@/components/group-remove-button";
 import Section from "@/components/section";
-import { getHiddenContent, isGroupHidden } from "@/lib/moderation";
-import { getFollowerCounts } from "@/lib/followers";
+import { loadBrowseGroups } from "@/lib/browse-groups";
 
 type GroupRow = {
   id: string;
@@ -36,18 +35,14 @@ export default async function RecommendPage() {
 
   // 서로 무관한 조회 셋(활성 아이, 내가 운영진인 그룹, 공개 그룹 목록)을
   // 동시에 왕복한다.
-  const [{ activeChild, activeProfile }, { data: operatorRows }, { data: openGroupRows }, hidden] = await Promise.all([
+  const [{ activeChild, activeProfile }, { data: operatorRows }, allBrowse] = await Promise.all([
     getProfileSnapshot(supabase, userId),
     supabase
       .from("group_members")
       .select("groups(id, name, type, join_policy, owner_id, operator_name)")
       .eq("user_id", userId)
       .eq("status", "approved"),
-    supabase
-      .from("groups")
-      .select("id, name, type, description, operator_name, owner_id, verified, book_lists(book_list_items(created_at, books(cover_url)))")
-      .eq("join_policy", "open"),
-    getHiddenContent(supabase),
+    loadBrowseGroups(supabase),
   ]);
 
   const { data: memberRows } = activeChild
@@ -73,46 +68,7 @@ export default async function RecommendPage() {
   const myGroupIds = myGroups.map((g) => g.id);
   // 둘러보기에는 아직 안 따라가는 그룹만 -- 내 그룹에 있는 게 아래에 또
   // 뜨면 같은 그룹이 두 번 보인다. 끊기는 그룹 상세의 "팔로잉"에서.
-  type OpenRow = {
-    id: string;
-    name: string;
-    type: string;
-    description: string | null;
-    operator_name: string | null;
-    owner_id: string | null;
-    verified: boolean | null;
-    book_lists: { book_list_items: { created_at: string | null; books: { cover_url: string | null } | null }[] }[] | null;
-  };
-  const openRows = (openGroupRows ?? []) as unknown as OpenRow[];
-  const followerCounts = await getFollowerCounts(
-    supabase,
-    openRows.map((g) => g.id)
-  );
-  const browseGroups = openRows
-    // 신고한 그룹, 차단한 숲지기의 그룹은 둘러보기에서 뺀다(마이그레이션 0030).
-    .filter((g) => !myGroupIds.includes(g.id) && !isGroupHidden(hidden, g))
-    .map((g) => {
-      const items = (g.book_lists ?? [])
-        .flatMap((list) => list.book_list_items ?? [])
-        .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
-      return {
-        id: g.id,
-        name: g.name,
-        type: g.type,
-        description: g.description,
-        operatorName: g.operator_name,
-        verified: Boolean(g.verified),
-        bookCount: items.length,
-        followers: followerCounts.get(g.id) ?? 0,
-        covers: items.map((it) => it.books?.cover_url ?? null).filter((c): c is string => Boolean(c)).slice(0, 4),
-      };
-    })
-    // 책숲 공식 그룹(verified)이 먼저 -- 처음 온 사람도 바로 팔로우할 곳이
-    // 있게. 그다음 팔로워가 많은(인기 있는) 숲지기, 같으면 추천도서가 많은 순.
-    .sort(
-      (a, b) =>
-        Number(b.verified) - Number(a.verified) || b.followers - a.followers || b.bookCount - a.bookCount
-    );
+  const browseGroups = allBrowse.filter((g) => !myGroupIds.includes(g.id));
 
   return (
     <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">

@@ -76,6 +76,8 @@ export type TodayAssignment = {
   createdAt: string;
   books: TodayBook[];
   missions: TodayMission[];
+  /** 그룹에 들어오기 전에 이미 마감된 숙제 -- 해도 되고 안 해도 되는 참고용. */
+  beforeJoin?: boolean;
 };
 
 // 완료 조건 판정 함수(isAssignmentDone)는 lib/assignment-status.ts로 옮겼다 --
@@ -382,7 +384,8 @@ function AssignmentCard({
   const done = isAssignmentDone(assignment);
   // 완료된 숙제는 "오늘까지"/"기한 지남" 같은 급함 배지가 필요 없다 --
   // 완료 배지 하나로 충분하고, 급함 배지와 같이 있으면 오히려 헷갈린다.
-  const badge = done ? null : dueBadge(due);
+  // 합류 전 숙제도 "기한 지남"으로 몰아세우지 않는다.
+  const badge = done || assignment.beforeJoin ? null : dueBadge(due);
   const completedCount = assignment.books.filter((b) => b.completed).length;
   const totalBooks = assignment.books.length;
   const hasQuestion = assignment.missions.some((m) => m.type === "question");

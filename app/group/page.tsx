@@ -1,4 +1,7 @@
 import Link from "next/link";
+import Section from "@/components/section";
+import BrowseGroups from "@/components/browse-groups";
+import { loadBrowseGroups } from "@/lib/browse-groups";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import { getActiveChild } from "@/lib/active-child";
@@ -66,6 +69,7 @@ export default async function GroupPage({
     .filter((g, i, arr) => arr.findIndex((other) => other.id === g.id) === i);
 
   if (myGroups.length === 0) {
+    const browse = await loadBrowseGroups(supabase);
     return (
       <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">
         <div className="flex items-end gap-3">
@@ -84,6 +88,18 @@ export default async function GroupPage({
         >
           그룹 찾기 · 초대 코드로 들어가기
         </Link>
+
+        {/* 아직 어디에도 속하지 않았을 때 -- 따라 걸어 볼 만한 공개 그룹을
+            이 자리에서 바로 둘러보고 팔로우한다(초대 코드는 위 버튼). */}
+        {browse.length > 0 && (
+          <Section
+            className="mt-5"
+            title="둘러보기"
+            description="누구나 따라 걸을 수 있는 공개 그룹이에요. 눌러서 추천도서를 미리 보고, 마음에 들면 팔로우해요."
+          >
+            <BrowseGroups groups={browse} followingIds={[]} activeChildId={activeChild.id} />
+          </Section>
+        )}
       </div>
     );
   }
