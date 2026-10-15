@@ -18,7 +18,27 @@ export default function ScrollToTop() {
   const pathname = usePathname();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // "/more#my-libraries"처럼 주소에 위치(#)가 있으면 맨 위가 아니라 그
+    // 자리로 보낸다(근처 도서관의 "자주 가는 도서관을 정하면…" 링크가 프로필
+    // 맨 위에 떨어져 어디서 정하는지 알 수 없던 문제). 화면이 서버에서
+    // 스트리밍되는 동안엔 그 요소가 아직 없을 수 있어 잠깐 기다리며 찾는다.
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    if (!hash) {
+      window.scrollTo(0, 0);
+      return;
+    }
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const find = () => {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ block: "start" });
+        return;
+      }
+      if (++tries < 40) timer = setTimeout(find, 100);
+    };
+    find();
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   return null;
