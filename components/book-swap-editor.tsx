@@ -28,6 +28,8 @@ export default function BookSwapEditor({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  // 검색에서 고른 책은 바로 바꾸지 않고 여기 담아 두었다가 "이 책으로 바꾸기"를 눌러야 저장한다.
+  const [picked, setPicked] = useState<BookCandidate | null>(null);
 
   async function swapTo(candidate: BookCandidate) {
     if (busy) return;
@@ -111,6 +113,7 @@ export default function BookSwapEditor({
           type="button"
           onClick={() => {
             setMode("closed");
+            setPicked(null);
             setError(null);
           }}
           className="text-xs"
@@ -124,9 +127,59 @@ export default function BookSwapEditor({
           <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
             검색해서 표지가 있는 판을 고르면 이 그룹 추천도서의 책만 바뀌어요. 추천 연령·설명은 그대로 남아요.
           </p>
-          <div className="mt-3" style={{ opacity: busy ? 0.5 : 1 }}>
-            <BookFinder onPick={swapTo} placeholder="바꿀 책 제목으로 검색" />
-          </div>
+          {picked ? (
+            <div className="mt-3">
+              <div className="flex items-center gap-3 rounded-[14px] border p-3" style={{ borderColor: "var(--rule)" }}>
+                {picked.coverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={picked.coverUrl} alt="" className="h-16 w-11 flex-none rounded-md object-cover" />
+                ) : (
+                  <div className="h-16 w-11 flex-none rounded-md" style={{ background: "var(--paper)" }} />
+                )}
+                <div className="min-w-0">
+                  <p className="d text-sm leading-snug">{picked.title}</p>
+                  {picked.author && (
+                    <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                      {picked.author}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPicked(null);
+                    setError(null);
+                  }}
+                  disabled={busy}
+                  className="d flex-1 rounded-[14px] border py-2.5 text-sm"
+                  style={{ borderColor: "var(--rule)", color: "var(--ink-2)" }}
+                >
+                  다시 고르기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => swapTo(picked)}
+                  disabled={busy}
+                  className="d flex-1 rounded-[14px] py-2.5 text-sm text-white disabled:opacity-40"
+                  style={{ background: "var(--point-deep)" }}
+                >
+                  {busy ? "저장하는 중…" : "이 책으로 바꾸기"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <BookFinder
+                onPick={(c) => {
+                  setPicked(c);
+                  setError(null);
+                }}
+                placeholder="바꿀 책 제목으로 검색"
+              />
+            </div>
+          )}
         </>
       ) : (
         <>
