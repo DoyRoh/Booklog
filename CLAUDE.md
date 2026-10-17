@@ -2435,3 +2435,4 @@ Capacitor 설정에는 이 옵션이 없어 네이티브에서 켰습니다 — 
 - **저장 위치 = 계정 메타데이터**(`lib/group-order.ts`, `auth.updateUser({ data: { group_order: { [childId]: groupId[] } } })`): 내 도서관과 같은 방식이라 마이그레이션이 없고, 기기 사이에서 따라오며 세션에서 바로 읽힌다. 아이마다 따로 순서. 순서에 없는 그룹(새로 들어온 그룹)은 원래 순서대로 맨 뒤.
 - **둘러보기의 "내 그룹 관리"**(`components/my-groups-orderable.tsx`, 아이 프로필만): 줄마다 왼쪽 위/아래 화살표(손그림 stroke SVG)로 순서를 바꾸면 바로 저장. 숲지기 프로필의 운영 그룹 목록은 그대로.
 - **그룹 탭 상단 칩**(`components/child-group-bar.tsx`): 저장된 순서대로 정렬하고, `chaeksup:group-order-changed` 이벤트를 들어 순서를 바꾸는 즉시 칩도 따라온다("전체"는 그대로 왼쪽 고정). DB 변경 없음. tsc·eslint 통과.
+- **후속(사용자 요청: "아이들이 쓰는 건데 그림 없이 말고 숲지기 캐릭터도, 핸들로 더 쉽게 순서 조정")**: 둘러보기 → 내 그룹 관리의 줄마다 그 그룹 숲지기의 얼굴(곰/백로, `groups.operator_avatar`, 0028 전이면 컬럼 없이 다시 조회해 곰) 40px 동그라미를 넣고, 위/아래 화살표 대신 왼쪽 **점 여섯 개 손잡이**를 꾹 잡고 위아래로 끌어 순서를 바꿉니다(`components/my-groups-orderable.tsx`, pointer 이벤트 + `touch-action: none`, 옆 줄 높이의 절반을 넘으면 자리 바꿈, 끄는 줄은 살짝 커지고 그림자). 손을 떼면 `saveGroupOrder`로 저장되고 그룹 탭 상단 칩도 같은 순서로 바뀝니다. DB 변경 없음.

@@ -20,6 +20,7 @@ type GroupRow = {
   join_policy: string;
   owner_id?: string;
   operator_name?: string | null;
+  operator_avatar?: string | null;
 };
 
 export default async function RecommendPage() {
@@ -49,18 +50,23 @@ export default async function RecommendPage() {
     loadBrowseGroups(supabase),
   ]);
 
-  const { data: memberRows } = activeChild
-    ? await supabase
-        .from("group_members")
-        .select("groups(id, name, type, join_policy, operator_name)")
-        .eq("child_id", activeChild.id)
-        .eq("status", "approved")
-    : { data: null };
+  // 숲지기 캐릭터(0028 operator_avatar)도 함께 -- 컬럼이 아직 없으면 빼고 다시 읽는다.
+  const loadMemberRows = (withAvatar: boolean) =>
+    supabase
+      .from("group_members")
+      .select(`groups(id, name, type, join_policy, operator_name${withAvatar ? ", operator_avatar" : ""})`)
+      .eq("child_id", activeChild!.id)
+      .eq("status", "approved");
+  let memberRows: unknown[] | null = null;
+  if (activeChild) {
+    const first = await loadMemberRows(true);
+    memberRows = first.error ? (await loadMemberRows(false)).data : first.data;
+  }
 
   const operatorGroups = (operatorRows ?? [])
     .map((row) => row.groups as unknown as GroupRow | null)
     .filter((g): g is GroupRow => Boolean(g));
-  const memberGroups = (memberRows ?? [])
+  const memberGroups = ((memberRows ?? []) as { groups: unknown }[])
     .map((row) => row.groups as unknown as GroupRow | null)
     .filter((g): g is GroupRow => Boolean(g));
 
@@ -110,6 +116,7 @@ export default async function RecommendPage() {
             groups={myGroups.map((g) => ({
               id: g.id,
               name: g.name,
+              avatar: g.operator_avatar === "egret" ? "egret" : "bear",
               sub: `${g.operator_name ? `${g.operator_name} · ` : ""}${GROUP_TYPE_LABELS[g.type] ?? g.type}`,
             }))}
           />
