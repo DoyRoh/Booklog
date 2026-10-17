@@ -332,6 +332,7 @@ export default function BrowseGroups({
                     </p>
                   </Link>
                   {/* 표지 오른쪽 위의 작은 동그라미: + 팔로우 / 체크 = 팔로잉(누르면 끊기) */}
+                  {activeChildId && (
                   <button
                     type="button"
                     disabled={pending === group.id}
@@ -352,6 +353,7 @@ export default function BrowseGroups({
                       )}
                     </svg>
                   </button>
+                  )}
                 </div>
               );
             })}

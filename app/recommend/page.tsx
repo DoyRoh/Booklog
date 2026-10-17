@@ -146,7 +146,7 @@ export default async function RecommendPage() {
         )}
       </Section>
 
-      {activeChild && (
+      {activeChild && activeProfile.type !== "operator" && (
         <Section className="mt-5" title="초대 코드로 참가하기" description="선생님·가족에게 받은 6자리 코드를 넣어요.">
           <JoinByCode activeChildId={activeChild.id} />
         </Section>
@@ -157,7 +157,7 @@ export default async function RecommendPage() {
         title="공개 그룹"
         description="숲지기마다 공개 그룹을 옆으로 넘겨 봐요. 그룹을 누르면 추천도서를 미리 보고, + 를 누르면 팔로우해요."
       >
-        <BrowseGroups groups={browseGroups} followingIds={activeProfile.type === "operator" ? [] : myGroupIds} activeChildId={activeChild?.id ?? null}
+        <BrowseGroups groups={browseGroups} followingIds={activeProfile.type === "operator" ? [] : myGroupIds} activeChildId={activeProfile.type === "operator" ? null : (activeChild?.id ?? null)}
           childBand={activeProfile.type === "operator" ? null : childAgeBand(activeChild?.birthDate)}
         />
       </Section>
