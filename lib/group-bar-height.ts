@@ -14,8 +14,8 @@
 // 넣음)) + 숙제/추천도서 소제목 탭 줄(채워진 알약 세그먼트 컨트롤 + 검색
 // 아이콘). 정적 HTML 복제본을 360px에서 Playwright로 실측(152px)한 값에
 // 실제 폰트(Gowun Dodum) 렌더링 오차를 감안한 여유를 더했다.
-export const CHILD_GROUP_BAR_HEIGHT = 132;
+export const CHILD_GROUP_BAR_HEIGHT = 154;
 export const OPERATOR_GROUP_BAR_HEIGHT = 82;
 // 둘러보기(/recommend)에서는 그룹 칩 줄 없이 탭 줄(추천도서·숙제·둘러보기)만 뜬다.
-export const CHILD_GROUP_TILES_HEIGHT = 64;
+export const CHILD_GROUP_TILES_HEIGHT = 68;
 // (그룹 칩 줄을 48px 카드로 정돈하면서 CHILD_GROUP_BAR_HEIGHT를 160 → 132로 줄였다.)

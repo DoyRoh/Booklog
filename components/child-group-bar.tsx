@@ -161,7 +161,7 @@ export default function ChildGroupBar() {
   const bookCountFor = (groupId: string) => bookCounts[groupId] ?? 0;
   const totalBookCount = Object.values(bookCounts).reduce((s, n) => s + n, 0);
 
-  const chipBase = "flex h-[48px] flex-none flex-col justify-center rounded-[14px] px-3 text-left";
+  const chipBase = "flex h-[64px] flex-none flex-col justify-center rounded-[14px] px-3 text-left";
 
   return (
     // 고정 바 하나 안에 "그룹 칩 줄 + 추천도서·숙제·둘러보기 탭"을 모았다.
@@ -174,15 +174,15 @@ export default function ChildGroupBar() {
             type="button"
             onClick={() => pick(null)}
             aria-current={selectedId === "all" ? "true" : undefined}
-            className={`${chipBase} relative w-[64px] items-center`}
+            className={`${chipBase} relative w-[70px] items-center`}
             style={{
               background: selectedId === "all" ? "var(--point-deep)" : "var(--card)",
               color: selectedId === "all" ? "#fff" : "var(--ink)",
               border: "1px solid " + (selectedId === "all" ? "var(--point-deep)" : "var(--rule)"),
             }}
           >
-            <span className="d text-[14px] leading-tight">전체</span>
-            <span className="text-[10px] leading-tight" style={{ opacity: 0.75 }}>
+            <span className="d text-[16px] leading-tight">전체</span>
+            <span className="mt-0.5 text-[12px] leading-tight" style={{ opacity: 0.75 }}>
               {isAssignmentsTab ? "모든 숙제" : `${totalBookCount}권`}
             </span>
             {isAssignmentsTab && <HomeworkStatusDot status={overallBadge} />}
@@ -198,7 +198,7 @@ export default function ChildGroupBar() {
                   type="button"
                   onClick={() => pick(group.id)}
                   aria-current={active ? "true" : undefined}
-                  className={`${chipBase} relative w-[136px]`}
+                  className={`${chipBase} relative w-[150px]`}
                   style={{
                     background: active ? "var(--point-deep)" : "var(--card)",
                     color: active ? "#fff" : "var(--ink)",
@@ -212,13 +212,13 @@ export default function ChildGroupBar() {
                       src={`/illustrations/face-${group.operator_avatar === "egret" ? "egret" : "bear"}.png`}
                       alt=""
                       title={group.operator_name ?? undefined}
-                      className="h-[26px] w-[26px] flex-none rounded-full"
+                      className="h-[30px] w-[30px] flex-none rounded-full"
                       style={{ background: "#fff" }}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="d block w-full truncate text-[13px] leading-tight">{group.name}</span>
+                      <span className="d block w-full text-[15px] leading-[1.25]" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}>{group.name}</span>
                       {!isAssignmentsTab && bookCountFor(group.id) > 0 && (
-                        <span className="block text-[10px] leading-tight" style={{ opacity: 0.75 }}>
+                        <span className="mt-0.5 block text-[12px] leading-tight" style={{ opacity: 0.75 }}>
                           {bookCountFor(group.id)}권
                         </span>
                       )}
@@ -248,7 +248,7 @@ export default function ChildGroupBar() {
                 key={t.key}
                 href={t.href}
                 aria-current={on ? "page" : undefined}
-                className="d flex-1 py-2.5 text-center text-[14px]"
+                className="d flex-1 py-2.5 text-center text-[16px]"
                 style={{
                   color: on ? "var(--point-deep)" : "var(--ink-2)",
                   fontWeight: on ? 700 : 600,
