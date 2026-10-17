@@ -29,7 +29,7 @@ import { getGroupHomeworkBadges, type HomeworkBadge } from "@/lib/homework-badge
  */
 const GROUP_PATH = "/group";
 const GROUP_TAB_KEY = "chaeksup:group-tab";
-type GroupOption = { id: string; name: string; operator_name: string | null };
+type GroupOption = { id: string; name: string; operator_name: string | null; operator_avatar?: string | null };
 
 // 숙제 상태 점 -- 남은 숙제가 있으면 호박색 점, 전부 끝나면 초록 원 안에
 // 흰색 체크(사용자 스펙: 그냥 색만 다른 점이 아니라 "다 됐다"는 게 모양
@@ -87,10 +87,14 @@ export default function ChildGroupBar() {
     let cancelled = false;
     (async () => {
       const supabase = createClient();
-      const [{ data: groupRows }, { data: childRow }] = await Promise.all([
-        supabase.from("group_members").select("groups(id, name, operator_name)").eq("child_id", childId).eq("status", "approved"),
+      const [groupRes, { data: childRow }] = await Promise.all([
+        supabase.from("group_members").select("groups(id, name, operator_name, operator_avatar)").eq("child_id", childId).eq("status", "approved"),
         supabase.from("children").select("active_group_id").eq("id", childId).single(),
       ]);
+      // 0028(operator_avatar) 전이면 그 컬럼 없이 다시 읽는다.
+      const groupRows = groupRes.error
+        ? (await supabase.from("group_members").select("groups(id, name, operator_name)").eq("child_id", childId).eq("status", "approved")).data
+        : groupRes.data;
       if (cancelled) return;
       const list = ((groupRows as unknown as { groups: GroupOption | null }[] | null) ?? [])
         .map((r) => r.groups)
@@ -194,17 +198,31 @@ export default function ChildGroupBar() {
                   type="button"
                   onClick={() => pick(group.id)}
                   aria-current={active ? "true" : undefined}
-                  className={`${chipBase} relative w-[118px]`}
+                  className={`${chipBase} relative w-[136px]`}
                   style={{
                     background: active ? "var(--point-deep)" : "var(--card)",
                     color: active ? "#fff" : "var(--ink)",
                     border: "1px solid " + (active ? "var(--point-deep)" : "var(--rule)"),
                   }}
                 >
-                  <span className="d block w-full truncate text-[13px] leading-tight">{group.name}</span>
-                  <span className="block w-full truncate text-[10px] leading-tight" style={{ opacity: 0.75 }}>
-                    {group.operator_name || "숲지기"}
-                    {!isAssignmentsTab && bookCountFor(group.id) > 0 ? ` · ${bookCountFor(group.id)}권` : ""}
+                  <span className="flex w-full items-center gap-2">
+                    {/* 숲지기 이름 대신 숲지기 캐릭터(곰/백로)를 작게 왼쪽에 */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/illustrations/face-${group.operator_avatar === "egret" ? "egret" : "bear"}.png`}
+                      alt=""
+                      title={group.operator_name ?? undefined}
+                      className="h-[26px] w-[26px] flex-none rounded-full"
+                      style={{ background: "#fff" }}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="d block w-full truncate text-[13px] leading-tight">{group.name}</span>
+                      {!isAssignmentsTab && bookCountFor(group.id) > 0 && (
+                        <span className="block text-[10px] leading-tight" style={{ opacity: 0.75 }}>
+                          {bookCountFor(group.id)}권
+                        </span>
+                      )}
+                    </span>
                   </span>
                   {isAssignmentsTab && <HomeworkStatusDot status={badge} />}
                 </button>
