@@ -7,6 +7,7 @@ import { getQuestions, addQuestion, type BookQuestion } from "@/lib/questions";
 import { ensureBook, type BookCandidate } from "@/lib/book-catalog";
 import { kstDate } from "@/lib/kst";
 import BookFinder from "@/components/book-finder";
+import CoverArt from "@/components/cover-art";
 
 type BookOption = { id: string; title: string; author?: string | null; coverUrl?: string | null };
 /** 숙제에 넣기로 고른 책(찾아 넣었든 추천도서에서 골랐든). */
@@ -273,7 +274,7 @@ export default function CreateAssignment({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={book.coverUrl} alt="" className="h-10 w-7 flex-none rounded object-cover" />
                 ) : (
-                  <span className="h-10 w-7 flex-none rounded" style={{ background: "var(--paper)" }} />
+                  <CoverArt title={book.title} size="xs" className="h-10 w-7 rounded" />
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">{book.title}</p>

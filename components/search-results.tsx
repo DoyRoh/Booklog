@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { SearchResult } from "@/lib/search";
 import { shortDate } from "@/components/log-row";
+import CoverArt from "@/components/cover-art";
 
 const LABEL_COLOR: Record<string, string> = {
   숙제: "var(--point-deep)",
@@ -25,13 +26,15 @@ export default function SearchResults({ results }: { results: SearchResult[] }) 
           {r.coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={r.coverUrl} alt="" className="h-14 w-10 flex-none rounded object-cover" style={{ border: "1px solid var(--rule)" }} />
-          ) : (
+          ) : r.kind === "group" ? (
             <span
               className="flex h-14 w-10 flex-none items-center justify-center rounded text-[10px]"
               style={{ background: "var(--paper)", color: "var(--ink-2)" }}
             >
-              {r.kind === "group" ? "그룹" : "책"}
+              그룹
             </span>
+          ) : (
+            <CoverArt title={r.title} size="xs" className="h-14 w-10 rounded" />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">

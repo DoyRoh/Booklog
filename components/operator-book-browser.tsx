@@ -10,6 +10,7 @@ import { categoryColor } from "@/lib/categories";
 import type { OperatorBook } from "@/lib/operator-books";
 import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
 import { useCoversPerRow, useSpinesPerRow } from "@/components/use-spines-per-row";
+import CoverArt from "@/components/cover-art";
 
 type ViewMode = "list" | "cover" | "spine";
 
@@ -190,11 +191,7 @@ export default function OperatorBookBrowser({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={book.coverUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <span className="flex h-full items-center justify-center p-2 text-center">
-                        <span className="d text-xs" style={{ color: "var(--ink-2)" }}>
-                          {book.title}
-                        </span>
-                      </span>
+                      <CoverArt title={book.title} className="h-full w-full" />
                     )}
                   </Link>
                 ))}

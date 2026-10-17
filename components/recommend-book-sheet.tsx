@@ -8,6 +8,7 @@ import { setShelved } from "@/lib/quick-read";
 import { categoryColor } from "@/lib/categories";
 import { ageBandsLabel } from "@/lib/age-bands";
 import type { RecommendBook } from "@/lib/recommend-books";
+import CoverArt from "@/components/cover-art";
 
 const STATUS_TEXT = { want: "읽고 싶은 책으로 책장에 있어요", reading: "읽는 중인 책이에요", done: "다 읽은 책이에요" } as const;
 
@@ -93,7 +94,7 @@ export default function RecommendBookSheet({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={book.coverUrl} alt="" className="h-[120px] w-[88px] flex-none rounded-[8px] object-cover" style={{ boxShadow: "0 4px 8px rgba(38,54,43,0.2)" }} />
           ) : (
-            <div className="h-[120px] w-[88px] flex-none rounded-[8px]" style={{ background: "var(--paper)" }} />
+            <CoverArt title={book.title} className="h-[120px] w-[88px] rounded-[8px]" />
           )}
           <div className="min-w-0 flex-1">
             <p className="d text-lg leading-snug" style={{ overflowWrap: "anywhere" }}>

@@ -8,6 +8,7 @@ import { useCoversPerRow } from "@/components/use-spines-per-row";
 import { BOOK_CATEGORIES } from "@/lib/categories";
 import { AGE_BANDS, AGE_BAND_LABELS, type AgeBand } from "@/lib/age-bands";
 import type { RecommendBook } from "@/lib/recommend-books";
+import CoverArt from "@/components/cover-art";
 
 // 아이·부모가 보는 숲길(추천도서) = 서점·도서관 둘러보기. 숙제 목록처럼
 // 날짜·칩·줄로 나열하지 않고, 표지를 선반에 올려 훑어보다가 마음에 드는
@@ -24,14 +25,6 @@ const PLANK_STYLE = {
   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.28), 0 2px 3px rgba(38,54,43,0.22), 0 6px 10px -6px rgba(38,54,43,0.25)",
   borderRadius: 2,
 } as const;
-
-const SPINE_COLORS = ["#6B8F71", "#A6763F", "#D9A441", "#7C9C82", "#B5654A", "#5E7A6B", "#C9A66B"];
-
-function coverColor(title: string) {
-  let hash = 0;
-  for (let i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) >>> 0;
-  return SPINE_COLORS[hash % SPINE_COLORS.length];
-}
 
 function chunk<T>(items: T[], size: number): T[][] {
   const rows: T[][] = [];
@@ -183,7 +176,7 @@ export default function RecommendShelf({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={book.coverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
                   ) : (
-                    <div className="h-11 w-8 flex-none rounded" style={{ background: coverColor(book.title) }} />
+                    <CoverArt title={book.title} size="xs" className="h-11 w-8 rounded" />
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm">{book.title}</p>
@@ -230,7 +223,7 @@ export default function RecommendShelf({
                       aria-label={`${book.title} 자세히 보기`}
                       className="block aspect-[3/4] w-full overflow-hidden rounded-[8px]"
                       style={{
-                        background: book.coverUrl ? "var(--card)" : coverColor(book.title),
+                        background: "var(--card)",
                         border: "1px solid var(--rule)",
                         boxShadow: "0 4px 6px rgba(38,54,43,0.2)",
                       }}
@@ -239,20 +232,7 @@ export default function RecommendShelf({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={book.coverUrl} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <span className="flex h-full items-center justify-center p-2 text-center">
-                          <span
-                            className="d text-sm text-white"
-                            style={{
-                              overflowWrap: "anywhere",
-                              display: "-webkit-box",
-                              WebkitLineClamp: 5,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                            }}
-                          >
-                            {book.title}
-                          </span>
-                        </span>
+                        <CoverArt title={book.title} className="h-full w-full" />
                       )}
                     </button>
                     {activeChildId && (

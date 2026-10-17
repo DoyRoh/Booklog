@@ -7,6 +7,7 @@ import { getVerifiedUserId } from "@/lib/supabase/verified-user";
 import Section from "@/components/section";
 import { AvatarIllustration } from "@/components/illustration";
 import type { ReadingStatus } from "@/lib/reading-status";
+import CoverArt from "@/components/cover-art";
 
 const RANK: Record<ReadingStatus, number> = { want: 0, reading: 1, done: 2 };
 const LABEL: Record<ReadingStatus, string> = { done: "읽었어요", reading: "읽는 중", want: "읽고 싶어요" };
@@ -143,7 +144,7 @@ export default async function TeacherBookDetailPage({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={book.cover_url} alt="" className="h-20 w-14 flex-none rounded-md object-cover" />
         ) : (
-          <div className="h-20 w-14 flex-none rounded-md" style={{ background: "var(--card)" }} />
+          <CoverArt title={book.title} size="sm" className="h-20 w-14 rounded-md" />
         )}
         <div className="min-w-0">
           <h1 className="d text-lg leading-snug">{book.title}</h1>

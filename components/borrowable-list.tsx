@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { loadMyLibraries, type SavedLibrary } from "@/lib/my-libraries";
+import CoverArt from "@/components/cover-art";
 
 export type WantBook = { id: string; title: string; author: string | null; coverUrl: string | null; isbn: string | null };
 
@@ -145,9 +146,11 @@ function Group({
             style={{ borderTop: i ? "1px solid rgba(38,54,43,0.08)" : undefined }}
           >
             <div className="h-11 w-8 flex-none overflow-hidden rounded-[4px]" style={{ background: "var(--paper)" }}>
-              {c.book.coverUrl && (
+              {c.book.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={c.book.coverUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <CoverArt title={c.book.title} size="xs" className="h-full w-full" />
               )}
             </div>
             <div className="min-w-0 flex-1">

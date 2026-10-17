@@ -23,6 +23,7 @@ import { kstDate } from "@/lib/kst";
 import { loadBadges } from "@/lib/badge-data";
 import type { Badge } from "@/lib/badges";
 import BadgeArt from "@/components/badge-art";
+import CoverArt from "@/components/cover-art";
 
 type Step = "form" | "no-child" | "saved";
 type FindMode = "none" | "scan" | "isbn";
@@ -642,10 +643,7 @@ function AddBookForm() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={coverUrl} alt="" className="h-16 w-11 flex-none rounded object-cover" />
                 ) : (
-                  <div
-                    className="h-16 w-11 flex-none rounded"
-                    style={{ background: "var(--paper)" }}
-                  />
+                  <CoverArt title={title || "책"} size="sm" className="h-16 w-11 rounded" />
                 )}
                 <p className="text-xs" style={{ color: "var(--ink-2)" }}>
                   {!bookId

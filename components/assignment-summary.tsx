@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { TodayAssignment } from "@/components/assignment-today";
 import { isAssignmentDone } from "@/lib/assignment-status";
 import { dueBadge, effectiveRange, formatShortMd } from "@/lib/assignment-period";
+import CoverArt from "@/components/cover-art";
 
 const TONE_COLOR: Record<"today" | "tomorrow" | "overdue", string> = {
   today: "var(--lantern)",
@@ -66,7 +67,7 @@ export default function AssignmentSummary({ assignments }: { assignments: TodayA
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={cover} alt="" className="h-11 w-8 flex-none rounded object-cover" style={{ border: "1px solid var(--rule)" }} />
                 ) : (
-                  <span className="block h-11 w-8 flex-none rounded" style={{ background: "var(--paper)" }} />
+                  <CoverArt title={assignment.books[0]?.title ?? assignment.title} size="xs" className="h-11 w-8 rounded" />
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1">

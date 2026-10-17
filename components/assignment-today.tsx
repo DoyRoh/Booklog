@@ -12,6 +12,7 @@ import type { ReadingStatus } from "@/lib/reading-status";
 import { dueBadge, formatDueLong, formatShortMd } from "@/lib/assignment-period";
 import { isAssignmentDone } from "@/lib/assignment-status";
 import { kstDate } from "@/lib/kst";
+import CoverArt from "@/components/cover-art";
 
 export type TodayMission = {
   id: string;
@@ -135,12 +136,7 @@ function HomeworkBookRow({
       style={{ border: "1px solid var(--rule)" }}
     />
   ) : (
-    <span
-      className="flex h-20 w-14 flex-none items-center justify-center rounded-[6px] text-center text-[10px] leading-tight"
-      style={{ background: "var(--paper)", color: "var(--ink-2)" }}
-    >
-      표지 없음
-    </span>
+    <CoverArt title={book.title} size="sm" className="h-20 w-14 rounded-[6px]" />
   );
 
   const titleBlock = (

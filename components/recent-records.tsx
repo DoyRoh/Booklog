@@ -4,6 +4,7 @@ import { useState } from "react";
 import RecordEditModal from "@/components/record-edit-modal";
 import type { ReadingStatus } from "@/lib/reading-status";
 import { feelingLabels } from "@/lib/feelings";
+import CoverArt from "@/components/cover-art";
 
 export type RecentRecord = {
   id: string;
@@ -48,10 +49,7 @@ export default function RecentRecords({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={record.coverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
             ) : (
-              <div
-                className="flex h-11 w-8 flex-none items-center justify-center rounded"
-                style={{ background: "var(--paper)" }}
-              />
+              <CoverArt title={record.title} size="xs" className="h-11 w-8 rounded" />
             )}
             <div className="min-w-0 flex-1">
               <p className="d truncate text-sm">{record.title}</p>

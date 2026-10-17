@@ -63,3 +63,12 @@ export function chunk<T>(items: T[], size: number): T[][] {
   for (let i = 0; i < items.length; i += size) rows.push(items.slice(i, i + size));
   return rows;
 }
+
+// 표지 그림이 없는 책의 앞표지 색 -- 앱의 카테고리 팔레트(--c-*)에서 흰 글자가
+// 잘 읽히는 색만 골라(노랑·하늘은 한 톤 짙게) 제목 해시로 고정 배정한다.
+// 같은 책은 어느 화면에서든 항상 같은 색.
+export const COVER_COLORS = ["#E86D93", "#7C5CF0", "#2E6E63", "#3FAE4E", "#F2913C", "#E8380D", "#3A93B8", "#C98A1E"];
+
+export function coverColor(title: string) {
+  return COVER_COLORS[hashOf(title) % COVER_COLORS.length];
+}

@@ -7,6 +7,7 @@ import BookFinder from "@/components/book-finder";
 import PhotoPicker from "@/components/photo-picker";
 import { ensureBook, type BookCandidate } from "@/lib/book-catalog";
 import { uploadBookCover } from "@/lib/storage";
+import CoverArt from "@/components/cover-art";
 
 // 숲지기 책 상세의 "책 바꾸기": 제목만으로 들어가 표지가 없는 책을
 // (1) 검색해서 표지·ISBN이 있는 판으로 갈아 끼우거나 (2) 표지를 직접 찍어 올린다.
@@ -134,7 +135,7 @@ export default function BookSwapEditor({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={picked.coverUrl} alt="" className="h-16 w-11 flex-none rounded-md object-cover" />
                 ) : (
-                  <div className="h-16 w-11 flex-none rounded-md" style={{ background: "var(--paper)" }} />
+                  <CoverArt title={picked.title} size="sm" className="h-16 w-11 rounded-md" />
                 )}
                 <div className="min-w-0">
                   <p className="d text-sm leading-snug">{picked.title}</p>

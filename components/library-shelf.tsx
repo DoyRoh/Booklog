@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PLANK_STYLE, chunk, spineColor, spineHeight } from "@/lib/shelf-visual";
 import { useCoversPerRow, useSpinesPerRow } from "@/components/use-spines-per-row";
 import { useRouter } from "next/navigation";
+import CoverArt from "@/components/cover-art";
 
 // 같은 책이 여러 그룹의 숙제로 겹쳐서 나올 수 있으므로(child_id+book_id
 // 기준으로 reading_records가 여러 개 있을 수 있다), 책 한 권 = ShelfBook
@@ -587,11 +588,7 @@ export default function LibraryShelf({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={book.coverUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full items-center justify-center p-2 text-center">
-                        <span className="d text-xs" style={{ color: "var(--ink-2)" }}>
-                          {book.title}
-                        </span>
-                      </div>
+                      <CoverArt title={book.title} className="h-full w-full" />
                     )}
                   </button>
                 ))}
@@ -696,7 +693,7 @@ export default function LibraryShelf({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={row.coverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
                       ) : (
-                        <div className="h-11 w-8 flex-none rounded" style={{ background: "var(--paper)" }} />
+                        <CoverArt title={row.title} size="xs" className="h-11 w-8 rounded" />
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="d truncate text-sm">{row.title}</p>
