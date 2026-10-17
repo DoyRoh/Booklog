@@ -20,6 +20,9 @@ import ReadDatePicker from "@/components/read-date-picker";
 import ShelfTagPicker from "@/components/shelf-tag-picker";
 import { BOOK_CATEGORIES, categoryColor } from "@/lib/categories";
 import { kstDate } from "@/lib/kst";
+import { loadBadges } from "@/lib/badge-data";
+import type { Badge } from "@/lib/badges";
+import BadgeArt from "@/components/badge-art";
 
 type Step = "form" | "no-child" | "saved";
 type FindMode = "none" | "scan" | "isbn";
@@ -111,6 +114,9 @@ function AddBookForm() {
   // 책장에 있는 책"이라고 잘못 말했다.
   const [shelfCount, setShelfCount] = useState<number | null>(null);
   const [childAvatar, setChildAvatar] = useState<Avatar | null>(null);
+  // 저장 직후의 축하 -- 몇 번째 발자국인지, 이번 기록으로 새로 딴 배지(사용자 요청: "저장의 기쁨").
+  const [footprintCount, setFootprintCount] = useState<number | null>(null);
+  const [newBadges, setNewBadges] = useState<Badge[]>([]);
   const [shelfTagId, setShelfTagId] = useState<string | null>(null);
   const [coverUploading, setCoverUploading] = useState(false);
   // 분야 태그 -- 숲지기가 추천도서 올릴 때만 되던 걸 부모도 원하면 달 수
@@ -346,6 +352,32 @@ function AddBookForm() {
     setCoverUploading(false);
   }
 
+  // 저장 화면은 바로 띄우고, 축하 정보는 뒤이어 채운다(실패해도 저장엔 영향 없음).
+  async function celebrate(
+    supabase: ReturnType<typeof createClient>,
+    childId: string,
+    badgesBefore: Promise<Badge[] | null>
+  ) {
+    try {
+      const [{ count }, before, after] = await Promise.all([
+        supabase
+          .from("reading_records")
+          .select("id", { count: "exact", head: true })
+          .eq("child_id", childId)
+          .eq("status", "done"),
+        badgesBefore,
+        loadBadges(supabase, childId),
+      ]);
+      if (typeof count === "number") setFootprintCount(count);
+      if (before) {
+        const had = new Set(before.filter((b) => b.achieved).map((b) => b.id));
+        setNewBadges(after.filter((b) => b.achieved && !had.has(b.id)));
+      }
+    } catch {
+      // 축하는 덤 -- 조회가 실패해도 조용히 넘어간다.
+    }
+  }
+
   async function save() {
     if (!title.trim() || savingRef.current) return;
     savingRef.current = true;
@@ -367,6 +399,10 @@ function AddBookForm() {
         setStep("no-child");
         return;
       }
+
+      // 새로 딴 배지를 알아내려면 저장 전 배지가 필요하다 -- 업로드 등과 나란히 미리 불러 둔다.
+      const badgesBefore: Promise<Badge[] | null> =
+        status === "done" ? loadBadges(supabase, activeChild.id).catch(() => null) : Promise.resolve(null);
 
       let finalBookId = bookId;
       if (!finalBookId) {
@@ -439,7 +475,10 @@ function AddBookForm() {
         return;
       }
 
+      setFootprintCount(null);
+      setNewBadges([]);
       setStep("saved");
+      if (status === "done") void celebrate(supabase, activeChild.id, badgesBefore);
       // 폼을 한참 내려 놓은 채 저장하면 발자국 도장 화면이 스크롤 위로
       // 올라가 안 보인다(사용자 지적) -- 맨 위로 올려 준다.
       window.scrollTo({ top: 0, behavior: "auto" });
@@ -831,14 +870,53 @@ function AddBookForm() {
             ) : (
               <AvatarIllustration avatar={childAvatar} height={96} className="flex-none" />
             )}
-            <p className="hand text-2xl" style={{ color: "var(--point-deep)" }}>
-              {status === "done" ? "발자국을 남겼어요!" : "책장에 꽂아 뒀어요!"}
-            </p>
+            <div className="min-w-0">
+              {status === "done" && footprintCount !== null && (
+                <p className="sticker-pop d text-[15px]" style={{ color: "var(--ink-2)" }}>
+                  {childName ? `${childName}의 ` : ""}
+                  <span className="text-[22px] font-bold" style={{ color: "var(--point-deep)" }}>
+                    {footprintCount}번째
+                  </span>
+                </p>
+              )}
+              <p className="hand text-2xl" style={{ color: "var(--point-deep)" }}>
+                {status === "done" ? "발자국을 남겼어요!" : "책장에 꽂아 뒀어요!"}
+              </p>
+            </div>
           </div>
+
+          {/* 이번 기록으로 새로 딴 배지 -- 스티커가 톡 튀어나오며 우리 숲으로 이어진다. */}
+          {newBadges.length > 0 && (
+            <Link
+              href="/forest"
+              className="flex flex-col gap-3 rounded-[var(--r)] border p-4"
+              style={{ borderColor: "var(--lantern)", background: "var(--card)" }}
+            >
+              <p className="d text-sm" style={{ color: "var(--ink)" }}>
+                새 배지를 받았어요{newBadges.length > 1 ? ` · ${newBadges.length}개` : ""}
+              </p>
+              <div className="flex flex-wrap gap-4">
+                {newBadges.slice(0, 4).map((badge, i) => (
+                  <div
+                    key={badge.id}
+                    className="sticker-pop flex w-[76px] flex-col items-center gap-1 text-center"
+                    style={{ animationDelay: `${0.25 + i * 0.15}s` }}
+                  >
+                    <BadgeArt id={badge.id} count={badge.count} avatar={childAvatar} achieved size={64} />
+                    <span className="d text-[13px] leading-tight">{badge.label}</span>
+                  </div>
+                ))}
+              </div>
+              <span className="text-xs" style={{ color: "var(--point-deep)" }}>
+                우리 숲에 가서 보기 ›
+              </span>
+            </Link>
+          )}
+
           <Link
             href="/library"
             className="d rounded-[14px] py-3 text-center text-sm text-white"
-            style={{ background: "var(--point)" }}
+            style={{ background: "var(--point-deep)" }}
           >
             책장으로
           </Link>
