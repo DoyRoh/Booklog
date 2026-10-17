@@ -74,12 +74,12 @@ export default function ChildGroupBar() {
   const [overallBadge, setOverallBadge] = useState<HomeworkBadge>("none");
 
   const onTab = pathname === GROUP_PATH;
-  // 기본 소제목 탭은 숙제(app/group/page.tsx와 같은 규칙).
-  const tab = searchParams.get("tab") === "books" ? "books" : "assignments";
+  // 기본 소제목 탭은 추천도서(app/group/page.tsx와 같은 규칙).
+  const tab = searchParams.get("tab") === "assignments" ? "assignments" : "books";
 
   // 숙제/추천도서 중 마지막으로 본 쪽을 기억해 둔다 -- 하단 "그룹"을 다시
   // 누르면 그쪽이 열리게(components/bottom-nav.tsx). sessionStorage라 앱을
-  // 새로 켜면 지워지고 다시 숙제부터 보인다(할 일을 먼저 보여 준다는 원칙).
+  // 새로 켜면 지워지고 다시 추천도서부터 보인다.
   useEffect(() => {
     if (!onTab) return;
     try {
@@ -148,7 +148,7 @@ export default function ChildGroupBar() {
   const queryGroup = searchParams.get("group");
   const tabHref = (t: "assignments" | "books") => {
     const params = new URLSearchParams();
-    if (t === "books") params.set("tab", "books");
+    if (t === "assignments") params.set("tab", "assignments");
     if (queryGroup) params.set("group", queryGroup);
     else if (activeGroupId) params.set("group", activeGroupId);
     const qs = params.toString();
@@ -242,7 +242,7 @@ export default function ChildGroupBar() {
           );
         })}
 
-        <Link href="/recommend" className="flex w-[64px] flex-none flex-col items-center gap-1" aria-label="다른 그룹 찾기">
+        <Link href="/recommend" className="flex w-[64px] flex-none flex-col items-center gap-1" aria-label="다른 그룹 둘러보기">
           <span
             className="flex h-[56px] w-[56px] items-center justify-center rounded-[16px] border border-dashed"
             style={{ borderColor: "rgba(38,54,43,0.28)", color: "var(--ink-2)" }}
@@ -250,7 +250,7 @@ export default function ChildGroupBar() {
             <PlusIcon width={20} height={20} />
           </span>
           <span className="w-full truncate text-center text-[10px] leading-tight" style={{ color: "var(--ink-2)" }}>
-            그룹 찾기
+            둘러보기
           </span>
         </Link>
       </div>
@@ -265,8 +265,8 @@ export default function ChildGroupBar() {
         <div className="flex flex-1 gap-1 rounded-full p-1" style={{ background: "var(--sprout-pale)" }}>
           {(
             [
-              { key: "assignments", label: "숙제" },
               { key: "books", label: "추천도서" },
+              { key: "assignments", label: "숙제" },
             ] as const
           ).map((t) => {
             const on = t.key === tab;

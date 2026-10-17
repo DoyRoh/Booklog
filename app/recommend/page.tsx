@@ -26,7 +26,7 @@ export default async function RecommendPage() {
   if (!userId) {
     return (
       <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px]">
-        <h1 className="d text-xl">그룹 찾기</h1>
+        <h1 className="d text-xl">둘러보기</h1>
         <Link href="/login" className="mt-4 block text-sm" style={{ color: "var(--point)" }}>
           로그인하기
         </Link>
@@ -78,9 +78,9 @@ export default async function RecommendPage() {
           프로필에서 시작한다 -- 아이 화면과 숲지기 화면에 같은 버튼이 있어
           "누가 그룹을 만드는 건지" 헷갈리던 걸 정리. */}
       {/* 이 화면엔 제목이 아예 없어서 어디로 들어온 건지 알기 어려웠다 --
-          더보기·그룹 타일의 "+"가 부르는 이름("그룹 찾기")과 맞춘다. */}
+          그룹 타일의 "+"가 부르는 이름("둘러보기")과 맞춘다. */}
       <div className="flex items-center justify-between gap-3">
-        <h1 className="d text-xl">그룹 찾기</h1>
+        <h1 className="d text-xl">둘러보기</h1>
         {activeProfile.type === "operator" && (
           <Link
             href="/recommend/create"
@@ -143,7 +143,7 @@ export default async function RecommendPage() {
 
       <Section
         className="mt-5"
-        title="둘러보기"
+        title="공개 그룹"
         description="숲지기마다 공개 그룹을 옆으로 넘겨 봐요. 그룹을 누르면 추천도서를 미리 보고, + 를 누르면 팔로우해요."
       >
         <BrowseGroups groups={browseGroups} followingIds={activeProfile.type === "operator" ? [] : myGroupIds} activeChildId={activeChild?.id ?? null}

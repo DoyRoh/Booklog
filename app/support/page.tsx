@@ -57,7 +57,7 @@ export default function SupportPage() {
               <dt className="font-semibold">선생님·도서관 그룹은 어떻게 만들어요?</dt>
               <dd className="mt-0.5" style={{ color: "var(--ink-2)" }}>
                 프로필·설정 → 숲지기 프로필 → &ldquo;새 그룹 만들기&rdquo;에서 누구나 그룹을 만들어
-                추천도서와 숙제를 올릴 수 있어요. 부모는 초대 코드나 그룹 찾기로 참가합니다.
+                추천도서와 숙제를 올릴 수 있어요. 부모는 초대 코드나 둘러보기로 참가합니다.
               </dd>
             </div>
             <div>

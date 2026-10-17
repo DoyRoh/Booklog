@@ -10,5 +10,5 @@ export default async function TrailRedirectPage({
   searchParams: Promise<{ group?: string }>;
 }) {
   const { group } = await searchParams;
-  redirect(`/group?tab=books${group ? `&group=${group}` : ""}`);
+  redirect(`/group${group ? `?group=${group}` : ""}`);
 }

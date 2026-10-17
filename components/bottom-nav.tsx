@@ -188,16 +188,16 @@ export default function BottomNav() {
             key={href}
             href={href}
             onClick={(e) => {
-              // 그룹 탭은 마지막으로 본 소제목(추천도서)으로 돌아간다 --
+              // 그룹 탭은 마지막으로 본 소제목(숙제)으로 돌아간다 --
               // 기억은 child-group-bar.tsx가 sessionStorage에 남긴다.
               if (href !== "/group") return;
               let last: string | null = null;
               try {
                 last = sessionStorage.getItem("chaeksup:group-tab");
               } catch {}
-              if (last === "books") {
+              if (last === "assignments") {
                 e.preventDefault();
-                router.push("/group?tab=books");
+                router.push("/group?tab=assignments");
               }
             }}
             aria-label={showHomeworkDot ? `${label} · ${homeworkBadge === "done" ? "오늘 숙제 완료" : "오늘 숙제 있음"}` : label}

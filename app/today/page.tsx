@@ -216,7 +216,7 @@ export default async function TodayPage() {
         flush={activeAssignments.length > 0}
         action={
           activeAssignments.length > 0 ? (
-            <Link href="/group" className="text-xs" style={{ color: "var(--ink-2)" }}>
+            <Link href="/group?tab=assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
               전체 보기 ›
             </Link>
           ) : undefined

@@ -29,9 +29,9 @@ export default async function GroupPage({
   searchParams: Promise<{ group?: string; tab?: string }>;
 }) {
   const { group: groupParam, tab: tabParam } = await searchParams;
-  // 기본은 숙제 -- 그룹 탭에 들어오는 가장 흔한 이유가 "오늘 뭐 해야 하지"라서
-  // 할 일을 먼저 보여주고, 둘러보기(추천도서)는 한 번 더 눌러서 본다.
-  const tab: SubTab = tabParam === "books" ? "books" : "assignments";
+  // 기본은 추천도서(사용자 결정: "이 어플 취지에는 추천도서가 먼저인 게 맞다").
+  // 숙제는 한 번 더 눌러서 본다.
+  const tab: SubTab = tabParam === "assignments" ? "assignments" : "books";
   const supabase = await createClient();
   const userId = await getVerifiedUserId();
 
@@ -87,7 +87,7 @@ export default async function GroupPage({
           className="d mt-4 block rounded-[14px] py-3 text-center text-sm text-white"
           style={{ background: "var(--point)" }}
         >
-          그룹 찾기 · 초대 코드로 들어가기
+          둘러보기 · 초대 코드로 들어가기
         </Link>
 
         {/* 아직 어디에도 속하지 않았을 때 -- 따라 걸어 볼 만한 공개 그룹을

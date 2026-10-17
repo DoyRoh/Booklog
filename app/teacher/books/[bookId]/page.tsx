@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BookRecommendEditor from "@/components/book-recommend-editor";
+import BookSwapEditor from "@/components/book-swap-editor";
 import { parseAgeBands } from "@/lib/age-bands";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUserId } from "@/lib/supabase/verified-user";
@@ -156,6 +157,8 @@ export default async function TeacherBookDetailPage({
           </p>
         </div>
       </div>
+
+      {listItem && <BookSwapEditor itemId={listItem.id} groupId={groupId} bookId={bookId} hasCover={Boolean(book.cover_url)} />}
 
       {(assignmentRows ?? []).length > 0 && (
         <p className="mt-3 text-xs" style={{ color: "var(--lantern)" }}>
