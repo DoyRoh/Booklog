@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -34,9 +34,10 @@ type Keeper = {
 
 // 같은 숲지기(그룹장)의 그룹을 한 상자로 묶는다. 들어온 그룹 순서(공식 → 팔로워 → 책 수)를
 // 숲지기 순서로도 쓴다 -- 그 숲지기의 가장 앞 그룹 자리가 상자 자리.
-// 나이대 다섯 + "전체연령"(연령을 따로 붙이지 않은 그룹 -- 나이 구분 없이 누구나).
-type AgeChip = AgeBand | "none";
-const AGE_CHIPS: AgeChip[] = [...AGE_BANDS, "none"];
+// 나이대 다섯. 나이를 아직 안 붙인 그룹은 칩으로 고르지 않고, 나이대를 골라도 늘 함께
+// 보여 주되 맞는 그룹 뒤로 보낸다(모르는 걸 숨기지 않는다 -- 책을 흐리게 하지 않는 원칙과 같음).
+type AgeChip = AgeBand;
+const AGE_CHIPS: AgeChip[] = [...AGE_BANDS];
 
 function groupByKeeper(groups: OpenGroup[]): Keeper[] {
   const keepers = new Map<string, Keeper>();
@@ -73,7 +74,7 @@ export default function BrowseGroups({
   /** 아이의 연령 구간 -- 나이대 칩에서 처음부터 골라 두고 "우리 아이"로 표시. */
   childBand?: AgeBand | null;
 }) {
-  // 맨 앞 "전체"(아무것도 안 고른 상태 = 모든 그룹) + 나이대 칩(여러 개 선택) + "전체연령".
+  // 맨 앞 "전체"(아무것도 안 고른 상태 = 모든 그룹) + 나이대 칩(여러 개 선택).
   // 아직 연령이 붙은 그룹이 적어서 처음엔 전체로 시작한다. 나이대를 다 끄면 다시 전체.
   const [picked, setPicked] = useState<AgeChip[]>([]);
   function togglePicked(chip: AgeChip) {
@@ -150,16 +151,25 @@ export default function BrowseGroups({
     );
   }
 
-  // 고른 나이대 중 하나라도 그 그룹의 주 연령(연령 정해진 책의 3분의 1 이상)이면 보인다.
-  // 전체연령 칩을 고르면 연령이 정해진 책이 하나도 없는 그룹도 보인다.
-  const fits = (g: OpenGroup) => {
-    if (picked.length === 0) return true;
-    if ((g.agedCount ?? 0) === 0) return picked.includes("none");
-    return picked.some((chip) => chip !== "none" && groupFitsBand(g.ages ?? [], g.agedCount ?? 0, chip) === true);
-  };
-  const shown = groups.filter(fits);
+  // 고른 나이대 중 하나라도 그 그룹의 주 연령(연령 정해진 책의 3분의 1 이상)이면 "맞는 그룹".
+  // 나이를 안 붙인 그룹은 숨기지 않고 맞는 그룹 뒤에 둔다. 전체일 땐 원래 순서 그대로.
+  const untagged = (g: OpenGroup) => (g.agedCount ?? 0) === 0;
+  const matches = (g: OpenGroup) =>
+    picked.some((chip) => groupFitsBand(g.ages ?? [], g.agedCount ?? 0, chip) === true);
+  const shown = allOn ? groups : groups.filter((g) => untagged(g) || matches(g));
   const hiddenCount = groups.length - shown.length;
-  const keepers = groupByKeeper(shown);
+  let keepers = groupByKeeper(shown);
+  // 나이대를 골랐으면: 숲지기 상자 안에서도 맞는 그룹을 앞으로, 맞는 그룹이 있는 숲지기를 앞으로.
+  // 나눠 담는 상자를 따로 만들지 않고 한 목록 안에서 순서만 바꾼다(스크롤이 늘지 않게).
+  let firstUntaggedKeeper = -1;
+  if (!allOn) {
+    keepers = keepers.map((k) => ({ ...k, groups: [...k.groups].sort((a, b) => Number(untagged(a)) - Number(untagged(b))) }));
+    const withMatch = keepers.filter((k) => k.groups.some((g) => !untagged(g)));
+    const onlyUntagged = keepers.filter((k) => k.groups.every(untagged));
+    keepers = [...withMatch, ...onlyUntagged];
+    if (withMatch.length > 0 && onlyUntagged.length > 0) firstUntaggedKeeper = withMatch.length;
+  }
+  const matchCount = allOn ? 0 : shown.filter((g) => !untagged(g)).length;
 
   return (
     <div className="flex flex-col gap-3">
@@ -196,22 +206,25 @@ export default function BrowseGroups({
                 color: on ? "#fff" : "var(--ink-2)",
               }}
             >
-              {band === "none" ? "전체연령" : AGE_BAND_LABELS[band]}
+              {AGE_BAND_LABELS[band]}
               <span className="text-[10px]" style={{ opacity: 0.75 }}>
-                {band === "none" ? "나이 구분 없음" : band === childBand ? "우리 아이" : AGE_BAND_HINTS[band]}
+                {band === childBand ? "우리 아이" : AGE_BAND_HINTS[band]}
               </span>
             </button>
           );
         })}
       </div>
-      {!allOn && hiddenCount > 0 && (
+      {/* 칩 아래 한 줄 요약 -- 따로 상자를 만들지 않는다. */}
+      {!allOn && (
         <p className="-mt-1 text-[11px]" style={{ color: "var(--ink-2)" }}>
-          고르지 않은 나이대 그룹 {hiddenCount}개 숨김
+          맞는 그룹 {matchCount}개
+          {shown.length > matchCount && ` · 나이 정보 없는 그룹 ${shown.length - matchCount}개는 뒤에`}
+          {hiddenCount > 0 && ` · ${hiddenCount}개 숨김`}
         </p>
       )}
       {keepers.length === 0 && (
         <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-          고른 나이대에 맞는 그룹이 아직 없어요. 나이대를 더 고르거나 눌러서 풀어 보세요.
+          고른 나이대에 맞는 그룹이 아직 없어요. 나이대를 더 고르거나 전체로 보세요.
         </p>
       )}
       {error && (
@@ -219,9 +232,17 @@ export default function BrowseGroups({
           {error}
         </p>
       )}
-      {keepers.map((keeper) => (
+      {keepers.map((keeper, ki) => (
+        <Fragment key={keeper.key}>
+        {/* 맞는 그룹과 나이 정보 없는 그룹 사이 -- 얇은 선 한 줄만 */}
+        {ki === firstUntaggedKeeper && (
+          <div className="flex items-center gap-2 text-[11px]" style={{ color: "var(--ink-2)" }}>
+            <span className="h-px flex-1" style={{ background: "rgba(38,54,43,0.12)" }} />
+            나이 정보가 아직 없는 그룹
+            <span className="h-px flex-1" style={{ background: "rgba(38,54,43,0.12)" }} />
+          </div>
+        )}
         <div
-          key={keeper.key}
           className="flex gap-2.5 rounded-[18px] border py-2.5 pl-2.5"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         >
@@ -290,8 +311,12 @@ export default function BrowseGroups({
                     {(() => {
                       const main = mainAgeBands(group.ages ?? [], group.agedCount ?? 0);
                       return (
-                        <p className="mt-1 truncate text-[10px] leading-[13px]" style={{ color: "var(--point-deep)" }}>
-                          {main.length > 0 ? ageBandsLabel(main) : "전체연령"}
+                        // 나이 정보가 없으면 같은 자리에 옅게 -- 줄 높이를 지켜 타일 높이가 들쭉날쭉하지 않게.
+                        <p
+                          className="mt-1 truncate text-[10px] leading-[13px]"
+                          style={{ color: main.length > 0 ? "var(--point-deep)" : "var(--ink-2)", opacity: main.length > 0 ? 1 : 0.6 }}
+                        >
+                          {main.length > 0 ? ageBandsLabel(main) : "나이 정보 없음"}
                         </p>
                       );
                     })()}
@@ -332,6 +357,7 @@ export default function BrowseGroups({
             })}
           </div>
         </div>
+        </Fragment>
       ))}
     </div>
   );
