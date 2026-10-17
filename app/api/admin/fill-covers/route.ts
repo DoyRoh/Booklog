@@ -14,9 +14,21 @@ type KakaoDoc = { title?: string; authors?: string[]; publisher?: string; thumbn
 
 const compact = (text: string) => text.replace(/[\s\p{P}\p{S}]/gu, "").toLowerCase();
 
+// "맥 바넷 글 · 존 클라센 그림" → "맥 바넷". 시드의 작가 칸은 글·그림·옮김이 섞여 있어서
+// 통째로 검색어에 넣으면 카카오가 아무것도 못 찾았다(칼데콧 시드 대부분이 표지 없이 남은 원인).
+function firstAuthor(author: string | null) {
+  if (!author) return "";
+  const first = author.split(/[,·/]/)[0] ?? "";
+  return first.replace(/\s*(글|그림|옮김|지음|엮음|글그림|글·그림)\s*$/u, "").trim();
+}
+
+// 이번 버전부터 예전 실패('curated-nomatch')도 한 번 더 시도하고, 그래도 못 찾으면
+// 'curated-nomatch2'로 남겨 다시 안 돈다.
+const PENDING = ["curated", "curated-nomatch"];
+
 function pick(docs: KakaoDoc[], title: string, author: string | null) {
   const t = compact(title);
-  const a = author ? compact(author.split(",")[0]) : "";
+  const a = compact(firstAuthor(author));
   const scored = docs
     .filter((d) => d.thumbnail)
     .map((d) => {
@@ -46,7 +58,7 @@ export async function POST() {
   const { data: books, error } = await supabase
     .from("books")
     .select("id, title, author, publisher")
-    .eq("source", "curated")
+    .in("source", PENDING)
     .is("cover_url", null)
     .order("created_at")
     .limit(BATCH);
@@ -58,16 +70,25 @@ export async function POST() {
 
   async function worker() {
     for (let book = queue.shift(); book; book = queue.shift()) {
-      const url = new URL("https://dapi.kakao.com/v3/search/book");
-      url.searchParams.set("query", [book.title, book.author?.split(",")[0]].filter(Boolean).join(" "));
-      url.searchParams.set("size", "15");
-      const res = await fetch(url, { headers: { Authorization: `KakaoAK ${apiKey}` } });
-      const docs: KakaoDoc[] = res.ok ? ((await res.json()).documents ?? []) : [];
-      const doc = pick(docs, book.title, book.author);
+      // 제목만(제목 대상 검색) → 제목+첫 작가 순으로, 고를 책이 나올 때까지.
+      const author = firstAuthor(book.author);
+      const attempts: [string, string | null][] = [[book.title, "title"], [author ? `${book.title} ${author}` : "", null]];
+      let doc: KakaoDoc | null = null;
+      for (const [query, target] of attempts) {
+        if (!query) continue;
+        const url = new URL("https://dapi.kakao.com/v3/search/book");
+        url.searchParams.set("query", query);
+        url.searchParams.set("size", "20");
+        if (target) url.searchParams.set("target", target);
+        const res = await fetch(url, { headers: { Authorization: `KakaoAK ${apiKey}` } });
+        const docs: KakaoDoc[] = res.ok ? ((await res.json()).documents ?? []) : [];
+        doc = pick(docs, book.title, book.author);
+        if (doc) break;
+      }
       if (!doc) {
         missed.push(book.title);
         // 다음에 다시 안 시도하게 표시만 남긴다(표지 없이 'curated-nomatch').
-        await supabase.from("books").update({ source: "curated-nomatch" }).eq("id", book.id);
+        await supabase.from("books").update({ source: "curated-nomatch2" }).eq("id", book.id);
         continue;
       }
       await supabase
@@ -87,7 +108,7 @@ export async function POST() {
   const { count: remaining } = await supabase
     .from("books")
     .select("id", { count: "exact", head: true })
-    .eq("source", "curated")
+    .in("source", PENDING)
     .is("cover_url", null);
 
   return NextResponse.json({ filled, missed, remaining: remaining ?? 0 });
