@@ -37,9 +37,10 @@ function pick(docs: KakaoDoc[], title: string, author: string | null) {
       const authorHit = a && (d.authors ?? []).some((x) => compact(x).includes(a) || a.includes(compact(x)));
       // 세트·전집(총N권)은 낱권 표지가 아니라서 뒤로.
       const isSet = /세트|전\d+권|총\d+/.test(d.title ?? "");
-      return { d, score: titleScore * 10 + (authorHit ? 5 : 0) - (isSet ? 4 : 0), titleScore };
+      return { d, score: titleScore * 10 + (authorHit ? 5 : 0) - (isSet ? 4 : 0), titleScore, authorHit: !!authorHit };
     })
-    .filter((x) => x.titleScore > 0)
+    // 제목이 정확히 같지 않으면 작가까지 맞아야 고른다(비슷한 제목의 다른 책 표지가 붙던 문제).
+    .filter((x) => x.titleScore === 3 || (x.titleScore > 0 && x.authorHit))
     .sort((x, y) => y.score - x.score);
   return scored[0]?.d ?? null;
 }
@@ -71,6 +72,13 @@ export async function POST() {
   async function worker() {
     for (let book = queue.shift(); book; book = queue.shift()) {
       // 제목만(제목 대상 검색) → 제목+첫 작가 순으로, 고를 책이 나올 때까지.
+      // 전집·시리즈(작가 "여러 작가")는 같은 제목의 낱권·다른 책 표지가 붙기 쉬워 자동으로 채우지 않는다
+      // -- 책 상세의 "다른 책으로 바꾸기"/"표지 사진 올리기"로.
+      if (/^여러\s*작가/.test(book.author ?? "")) {
+        missed.push(book.title);
+        await supabase.from("books").update({ source: "curated-nomatch2" }).eq("id", book.id);
+        continue;
+      }
       const author = firstAuthor(book.author);
       const attempts: [string, string | null][] = [[book.title, "title"], [author ? `${book.title} ${author}` : "", null]];
       let doc: KakaoDoc | null = null;
