@@ -2460,3 +2460,7 @@ Capacitor 설정에는 이 옵션이 없어 네이티브에서 켰습니다 — 
 ## 앱 아이콘 다듬기 — 달·글자 그림자 빼고, 글자 조금 작게·조금 굵게 (사용자 요청: "뭔가 밤티나서")
 
 밤 숲 위 "책숲" 아이콘에서 오른쪽 위 반달과 빛 번짐, 글자 그림자를 없앴습니다. 글자는 화면 폭의 약 82% → 70%로 줄이고, Gowun Batang Regular에 같은 색 외곽선을 얇게 둘러 Regular보다 조금 굵게 했습니다(Bold는 예전에 너무 두껍다고 해서 안 씀). 배경은 원본(`docs/illustrations/icon-forest-src.jpg`)에서 다시 만들었고(`scripts/icon-bg.py`: 위쪽 정사각 크롭 → 2048 → 아래쪽 살짝 밝게 → 하늘에만 별 170개), 글자는 Chromium으로 얹습니다(`scripts/icon-render.js`, 구글 폰트). `assets/icon-only·foreground·background.png`, 웹 `public/icon-*`·`apple-touch-icon.png`, `@capacitor/assets`로 iOS 아이콘과 안드로이드 mipmap 48장을 다시 만들었습니다(스플래시는 잠시 옮겨 두고 돌려 건드리지 않음). iOS 아이콘은 알파 없는 RGB 1024. **맥에서 `git pull` → `npx cap sync ios` → Build 번호 올려 Archive·업로드해야** 앱에 반영됩니다.
+
+## 그룹 가입 방식 기본값 = 공개 + 숲지기 추천도서 표 제목 열 좁히기 (사용자 요청)
+
+그룹 만들기(`app/recommend/create/page.tsx`)의 가입 방식이 승인제가 위에 있고 기본 선택이었던 걸 **공개를 위·기본값**으로 바꿨습니다(그룹 고치기 화면은 원래 공개가 먼저). 숲지기 추천도서 목록 보기 표(`components/book-table.tsx`)의 제목 열이 남는 폭을 다 가져가 너무 넓던 것을 **150px 고정**(제목은 두 줄까지, 작가 한 줄 말줄임)으로 줄였습니다. DB 변경 없음.

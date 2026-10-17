@@ -25,7 +25,7 @@ export default function CreateGroupPage() {
   const [hadOperatorName, setHadOperatorName] = useState(false);
   const [description, setDescription] = useState("");
   const [type, setType] = useState<GroupType>("school");
-  const [joinPolicy, setJoinPolicy] = useState<JoinPolicy>("approval");
+  const [joinPolicy, setJoinPolicy] = useState<JoinPolicy>("open");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const savingRef = useRef(false);
@@ -220,20 +220,6 @@ export default function CreateGroupPage() {
           <div className="mt-2 flex flex-col gap-2">
             <button
               type="button"
-              onClick={() => setJoinPolicy("approval")}
-              className="rounded-[var(--r)] border px-4 py-3 text-left"
-              style={{
-                borderColor: joinPolicy === "approval" ? "var(--point)" : "var(--rule)",
-                background: joinPolicy === "approval" ? "rgba(47,168,79,0.08)" : "var(--card)",
-              }}
-            >
-              <p className="d text-sm">승인제</p>
-              <p className="text-xs" style={{ color: "var(--ink-2)" }}>
-                초대 코드로 신청받고 직접 승인해요. 학급형 그룹에 적합해요.
-              </p>
-            </button>
-            <button
-              type="button"
               onClick={() => setJoinPolicy("open")}
               className="rounded-[var(--r)] border px-4 py-3 text-left"
               style={{
@@ -244,6 +230,20 @@ export default function CreateGroupPage() {
               <p className="d text-sm">공개</p>
               <p className="text-xs" style={{ color: "var(--ink-2)" }}>
                 누구나 승인 없이 바로 팔로우할 수 있어요. 기관·크리에이터에 적합해요.
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setJoinPolicy("approval")}
+              className="rounded-[var(--r)] border px-4 py-3 text-left"
+              style={{
+                borderColor: joinPolicy === "approval" ? "var(--point)" : "var(--rule)",
+                background: joinPolicy === "approval" ? "rgba(47,168,79,0.08)" : "var(--card)",
+              }}
+            >
+              <p className="d text-sm">승인제</p>
+              <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                초대 코드로 신청받고 직접 승인해요. 학급형 그룹에 적합해요.
               </p>
             </button>
           </div>

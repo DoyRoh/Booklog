@@ -241,7 +241,7 @@ export default function BookTable({
                   aria-label="모두 선택"
                 />
               </th>
-              <th className={`${th} sticky left-9 z-[1] min-w-[190px]`} style={{ background: "var(--paper)" }}>
+              <th className={`${th} sticky left-9 z-[1] w-[150px] min-w-[150px] max-w-[150px]`} style={{ background: "var(--paper)" }}>
                 <button type="button" onClick={() => toggleSort("title")}>제목{arrow("title")}</button>
               </th>
               <th className={th}>
@@ -267,7 +267,7 @@ export default function BookTable({
                   <td className="sticky left-0 z-[1] px-2 py-2 align-middle" style={{ ...cellBorder, background: rowBg }}>
                     <input type="checkbox" checked={checked} onChange={() => togglePick(book.itemId)} aria-label={`${book.title} 선택`} />
                   </td>
-                  <td className="sticky left-9 z-[1] px-2 py-2 align-middle" style={{ ...cellBorder, background: rowBg }}>
+                  <td className="sticky left-9 z-[1] w-[150px] max-w-[150px] px-2 py-2 align-middle" style={{ ...cellBorder, background: rowBg }}>
                     <Link href={`/teacher/books/${book.bookId}?group=${groupId}`} className="block">
                       <span className="d block text-[13px] leading-snug" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}>
                         {book.title}
