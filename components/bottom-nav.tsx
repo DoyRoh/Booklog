@@ -36,7 +36,7 @@ const PARENT_TABS = [
   { href: "/today", label: "오늘", Icon: TodayIcon },
   { href: "/library", label: "책장", Icon: LibraryIcon },
   { href: "/library/add", label: "추가", Icon: AddIcon, accent: "highlight" },
-  { href: "/group", label: "그룹", Icon: RecommendIcon },
+  { href: "/recommend", label: "그룹", Icon: RecommendIcon },
 ] as const;
 
 // 숲지기(선생님·기관·인플루언서 통칭) 탭. 예전엔 교사/큐레이터 탭이
@@ -158,8 +158,8 @@ export default function BottomNav() {
   // (/teacher)가 어느 화면에서나 켜져 보였다. 경로가 맞는 탭 중 가장 긴
   // 것 하나만 켠다.
   const activeHref =
-    role !== "operator" && pathname.startsWith("/recommend")
-      ? "/group"
+    role !== "operator" && (pathname.startsWith("/group") || pathname.startsWith("/search"))
+      ? "/recommend"
       : tabs
           .map((t) => t.href)
           .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
@@ -184,7 +184,7 @@ export default function BottomNav() {
         const Icon = "Icon" in tab ? tab.Icon : null;
         const active = href === activeHref;
         const isHighlighted = "accent" in tab && tab.accent === "highlight";
-        const showHomeworkDot = href === "/group" && homeworkBadge !== "none";
+        const showHomeworkDot = href === "/recommend" && homeworkBadge !== "none";
         return (
           <Link
             key={href}

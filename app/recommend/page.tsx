@@ -7,9 +7,11 @@ import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
 import GroupRemoveButton from "@/components/group-remove-button";
+import AssignmentSummary from "@/components/assignment-summary";
+import { getTodayAssignments } from "@/lib/assignments";
 import MyGroupsFold from "@/components/my-groups-fold";
 import Section from "@/components/section";
-import { CHILD_GROUP_TILES_HEIGHT } from "@/lib/group-bar-height";
+import { CHILD_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
 import { loadBrowseGroups } from "@/lib/browse-groups";
 
 type GroupRow = {
@@ -48,13 +50,19 @@ export default async function RecommendPage() {
     loadBrowseGroups(supabase),
   ]);
 
-  const { data: memberRows } = activeChild
-    ? await supabase
-        .from("group_members")
-        .select("groups(id, name, type, join_policy, operator_name)")
-        .eq("child_id", activeChild.id)
-        .eq("status", "approved")
-    : { data: null };
+  const isOperator = activeProfile.type === "operator";
+  const [{ data: memberRows }, todayAssignments] = await Promise.all([
+    activeChild
+      ? supabase
+          .from("group_members")
+          .select("groups(id, name, type, join_policy, operator_name)")
+          .eq("child_id", activeChild.id)
+          .eq("status", "approved")
+      : Promise.resolve({ data: null }),
+    // 아이 프로필이면 오늘 할 숙제를 이 첫 화면에도 보여준다(남은 것만).
+    activeChild && !isOperator ? getTodayAssignments(supabase, activeChild.id) : Promise.resolve([]),
+  ]);
+  const pendingAssignments = todayAssignments.filter((a) => a.books.length === 0 || a.books.some((b) => !b.completed));
 
   const operatorGroups = (operatorRows ?? [])
     .map((row) => row.groups as unknown as GroupRow | null)
@@ -77,7 +85,7 @@ export default async function RecommendPage() {
   const showBar = activeProfile.type !== "operator" && memberGroups.length > 0;
 
   return (
-    <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pb-[16px]" style={{ paddingTop: showBar ? `${20 + CHILD_GROUP_TILES_HEIGHT}px` : "20px" }}>
+    <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pb-[16px]" style={{ paddingTop: showBar ? `${20 + CHILD_GROUP_BAR_HEIGHT}px` : "20px" }}>
       {/* 그룹을 "만드는" 건 숲지기의 일이다. 아이 프로필로 볼 때는 여기서
           그룹을 만들 수 없고(찾기·참가만), 숲지기가 되려면 더보기 → 숲지기
           프로필에서 시작한다 -- 아이 화면과 숲지기 화면에 같은 버튼이 있어
@@ -98,7 +106,21 @@ export default async function RecommendPage() {
       )}
 
 
-      <MyGroupsFold title="내 그룹 관리" className={activeProfile.type === "operator" ? "mt-5" : "mt-0"} count={myGroups.length}>
+      {pendingAssignments.length > 0 && (
+        <Section
+          title="오늘의 숙제"
+          flush
+          action={
+            <Link href="/group?tab=assignments" className="text-xs" style={{ color: "var(--ink-2)" }}>
+              전체 보기 ›
+            </Link>
+          }
+        >
+          <AssignmentSummary assignments={pendingAssignments} />
+        </Section>
+      )}
+
+      <MyGroupsFold title="내 그룹 관리" className={pendingAssignments.length > 0 || isOperator ? "mt-5" : "mt-0"} count={myGroups.length}>
         {myGroups.length === 0 ? (
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 속한 그룹이 없어요. 아래에서 둘러보거나 초대 코드로 참가해 보세요.
