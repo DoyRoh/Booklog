@@ -16,3 +16,5 @@
 // 실제 폰트(Gowun Dodum) 렌더링 오차를 감안한 여유를 더했다.
 export const CHILD_GROUP_BAR_HEIGHT = 160;
 export const OPERATOR_GROUP_BAR_HEIGHT = 82;
+// 둘러보기(/recommend)에서는 그룹 박스 줄만 뜬다(숙제/추천도서 소제목 탭 줄 없음).
+export const CHILD_GROUP_TILES_HEIGHT = 110;

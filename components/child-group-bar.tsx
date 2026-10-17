@@ -73,7 +73,10 @@ export default function ChildGroupBar() {
   const [assignmentBadges, setAssignmentBadges] = useState<Record<string, HomeworkBadge>>({});
   const [overallBadge, setOverallBadge] = useState<HomeworkBadge>("none");
 
-  const onTab = pathname === GROUP_PATH;
+  // 둘러보기(/recommend)에서도 같은 그룹 박스 줄을 보여준다(소제목 탭 줄은 없이).
+  // 박스를 누르면 그 그룹의 /group 화면으로 간다.
+  const onBrowse = pathname === "/recommend";
+  const onTab = pathname === GROUP_PATH || onBrowse;
   // 기본 소제목 탭은 추천도서(app/group/page.tsx와 같은 규칙).
   const tab = searchParams.get("tab") === "assignments" ? "assignments" : "books";
 
@@ -81,11 +84,11 @@ export default function ChildGroupBar() {
   // 누르면 그쪽이 열리게(components/bottom-nav.tsx). sessionStorage라 앱을
   // 새로 켜면 지워지고 다시 추천도서부터 보인다.
   useEffect(() => {
-    if (!onTab) return;
+    if (!onTab || onBrowse) return;
     try {
       sessionStorage.setItem(GROUP_TAB_KEY, tab);
     } catch {}
-  }, [onTab, tab]);
+  }, [onTab, onBrowse, tab]);
 
   useEffect(() => {
     if (role !== "parent" || !onTab || !childId) return;
@@ -134,13 +137,13 @@ export default function ChildGroupBar() {
       if (currentTab) params.set("tab", currentTab);
       if (id) params.set("group", id);
       const qs = params.toString();
-      router.push(qs ? `${pathname}?${qs}` : pathname);
+      router.push(qs ? `${GROUP_PATH}?${qs}` : GROUP_PATH);
       if (childId) {
         const supabase = createClient();
         await supabase.from("children").update({ active_group_id: id }).eq("id", childId);
       }
     },
-    [pathname, router, childId, searchParams]
+    [router, childId, searchParams]
   );
 
   if (!onTab || role !== "parent" || !groups || groups.length === 0) return null;
@@ -154,7 +157,7 @@ export default function ChildGroupBar() {
     const qs = params.toString();
     return qs ? `${GROUP_PATH}?${qs}` : GROUP_PATH;
   };
-  const selectedId =
+  const selectedId = onBrowse ? "none" :
     (queryGroup && groups.some((g) => g.id === queryGroup) && queryGroup) ||
     (activeGroupId && groups.some((g) => g.id === activeGroupId) && activeGroupId) ||
     "all";
@@ -250,7 +253,7 @@ export default function ChildGroupBar() {
           );
         })}
 
-        <Link href="/recommend" className="flex w-[64px] flex-none flex-col items-center gap-1" aria-label="다른 그룹 둘러보기">
+        {!onBrowse && <Link href="/recommend" className="flex w-[64px] flex-none flex-col items-center gap-1" aria-label="다른 그룹 둘러보기">
           <span
             className="flex h-[56px] w-[56px] items-center justify-center rounded-[16px] border border-dashed"
             style={{ borderColor: "rgba(38,54,43,0.28)", color: "var(--ink-2)" }}
@@ -260,7 +263,7 @@ export default function ChildGroupBar() {
           <span className="w-full truncate text-center text-[10px] leading-tight" style={{ color: "var(--ink-2)" }}>
             둘러보기
           </span>
-        </Link>
+        </Link>}
         </div>
       </div>
 
@@ -270,6 +273,7 @@ export default function ChildGroupBar() {
           채우고 선택 안 된 쪽도 진한 글자(--ink, 굵게)로 바꿔 두 라벨 다
           한눈에 읽히게 했다. 오른쪽 끝의 돋보기는 전체 검색(/search,
           핵심 기능)으로. */}
+      {!onBrowse && (
       <div className="mx-auto flex max-w-[520px] md:max-w-[760px] items-center gap-2 px-5 pt-1.5 pb-2.5">
         <div className="flex flex-1 gap-1 rounded-full p-1" style={{ background: "var(--sprout-pale)" }}>
           {(
@@ -306,6 +310,7 @@ export default function ChildGroupBar() {
           <SearchIcon width={19} height={19} />
         </Link>
       </div>
+      )}
     </div>
   );
 }

@@ -7,7 +7,9 @@ import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
 import GroupRemoveButton from "@/components/group-remove-button";
+import MyGroupsFold from "@/components/my-groups-fold";
 import Section from "@/components/section";
+import { CHILD_GROUP_TILES_HEIGHT } from "@/lib/group-bar-height";
 import { loadBrowseGroups } from "@/lib/browse-groups";
 
 type GroupRow = {
@@ -71,8 +73,11 @@ export default async function RecommendPage() {
   // 그룹은 체크 동그라미로 표시한다(눌러서 끊기).
   const browseGroups = allBrowse;
 
+  // 아이 프로필이고 속한 그룹이 있으면 위에 그룹 박스 줄(ChildGroupBar)이 고정으로 뜬다.
+  const showBar = activeProfile.type !== "operator" && memberGroups.length > 0;
+
   return (
-    <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pt-[20px] pb-[16px]">
+    <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pb-[16px]" style={{ paddingTop: showBar ? `${20 + CHILD_GROUP_TILES_HEIGHT}px` : "20px" }}>
       {/* 그룹을 "만드는" 건 숲지기의 일이다. 아이 프로필로 볼 때는 여기서
           그룹을 만들 수 없고(찾기·참가만), 숲지기가 되려면 더보기 → 숲지기
           프로필에서 시작한다 -- 아이 화면과 숲지기 화면에 같은 버튼이 있어
@@ -92,18 +97,7 @@ export default async function RecommendPage() {
         )}
       </div>
 
-      {activeProfile.type !== "operator" && myGroups.length > 0 && (
-        <Link
-          href="/group"
-          className="d mt-4 flex items-center justify-between rounded-[14px] px-5 py-3.5 text-sm text-white"
-          style={{ background: "var(--point-deep)" }}
-        >
-          <span>내 그룹의 추천도서 · 숙제 보기</span>
-          <span aria-hidden>›</span>
-        </Link>
-      )}
-
-      <Section className="mt-5" title="내 그룹" flush={myGroups.length > 0}>
+      <MyGroupsFold className="mt-5" count={myGroups.length}>
         {myGroups.length === 0 ? (
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 속한 그룹이 없어요. 아래에서 둘러보거나 초대 코드로 참가해 보세요.
@@ -144,7 +138,7 @@ export default async function RecommendPage() {
             ))}
           </div>
         )}
-      </Section>
+      </MyGroupsFold>
 
       {activeChild && activeProfile.type !== "operator" && (
         <Section className="mt-5" title="초대 코드로 참가하기" description="선생님·가족에게 받은 6자리 코드를 넣어요.">
