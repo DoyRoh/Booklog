@@ -6,6 +6,7 @@ import ViewToggle from "@/components/view-toggle";
 import RecommendBookSheet from "@/components/recommend-book-sheet";
 import { useCoversPerRow } from "@/components/use-spines-per-row";
 import { BOOK_CATEGORIES } from "@/lib/categories";
+import { AGE_BANDS, AGE_BAND_LABELS, type AgeBand } from "@/lib/age-bands";
 import type { RecommendBook } from "@/lib/recommend-books";
 
 // 아이·부모가 보는 숲길(추천도서) = 서점·도서관 둘러보기. 숙제 목록처럼
@@ -58,6 +59,8 @@ export default function RecommendShelf({
   footnote?: React.ReactNode;
 }) {
   const [filter, setFilter] = useState<"all" | string>("all");
+  // 나이 필터 -- 숲지기가 붙인 추천 나이로 좁혀 본다(다시 누르면 해제).
+  const [age, setAge] = useState<AgeBand | null>(null);
   // 표지 선반(전면) 보기가 기본 -- 책장 탭·숲지기 추천도서 탭과 같은
   // 이유(둘러보기)로 표지가 우선이지만, "목록형으로도 볼 수 있게"라는
   // 요청으로 목록 보기를 추가했다. 마지막 보기 모드는 localStorage에 저장.
@@ -87,9 +90,15 @@ export default function RecommendShelf({
     return [...standard, ...extra];
   }, [books]);
 
+  // 실제로 책에 붙어 있는 나이만 칩으로.
+  const ages = useMemo(() => AGE_BANDS.filter((band) => books.some((b) => b.ageBands.includes(band))), [books]);
+
   const filtered = useMemo(
-    () => (filter === "all" ? books : books.filter((b) => b.categories.includes(filter))),
-    [books, filter]
+    () =>
+      books.filter(
+        (b) => (filter === "all" || b.categories.includes(filter)) && (!age || b.ageBands.includes(age))
+      ),
+    [books, filter, age]
   );
   const doneCount = filtered.filter((b) => b.readStatus === "done").length;
 
@@ -117,6 +126,26 @@ export default function RecommendShelf({
           {categories.map((category) => (
             <button key={category} type="button" onClick={() => setFilter(category)} className="d flex-none rounded-full border px-3.5 py-1.5 text-sm" style={chip(filter === category)}>
               {category}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {ages.length > 0 && (
+        <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1">
+          <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+            나이
+          </span>
+          {ages.map((band) => (
+            <button
+              key={band}
+              type="button"
+              onClick={() => setAge(age === band ? null : band)}
+              aria-pressed={age === band}
+              className="d flex-none rounded-full border px-3.5 py-1.5 text-sm"
+              style={chip(age === band)}
+            >
+              {AGE_BAND_LABELS[band]}
             </button>
           ))}
         </div>

@@ -157,7 +157,7 @@ export default async function GroupPage({
   return (
     // 숙제/추천도서 소제목 탭은 고정 그룹 바(ChildGroupBar) 안으로 옮겼다 --
     // 여기부터는 전부 내용.
-    <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pb-10" style={{ paddingTop: `${20 + CHILD_GROUP_BAR_HEIGHT}px` }}>
+    <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pb-10" style={{ paddingTop: `${4 + CHILD_GROUP_BAR_HEIGHT}px` }}>
       {content}
     </div>
   );
