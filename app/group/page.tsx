@@ -131,7 +131,7 @@ export default async function GroupPage({
           className="mt-[16px] rounded-[var(--r)] border p-4"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}
         >
-          <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} childBand={childAgeBand(activeChild.birthDate)} />
+          <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
         </div>
       </>
     );
