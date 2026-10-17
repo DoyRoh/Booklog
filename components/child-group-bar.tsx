@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/components/profile-context";
 import { SearchIcon } from "@/components/icons/misc-icons";
+import { applyGroupOrder, GROUP_ORDER_CHANGED, loadGroupOrder } from "@/lib/group-order";
 import { getGroupHomeworkBadges, type HomeworkBadge } from "@/lib/homework-badge";
 
 /**
@@ -100,7 +101,7 @@ export default function ChildGroupBar() {
         .map((r) => r.groups)
         .filter((g): g is GroupOption => Boolean(g))
         .filter((g, i, arr) => arr.findIndex((o) => o.id === g.id) === i);
-      setGroups(list);
+      setGroups(applyGroupOrder(list, await loadGroupOrder(supabase, childId)));
       setActiveGroupId(childRow?.active_group_id ?? null);
 
       const groupIds = list.map((g) => g.id);
@@ -122,6 +123,18 @@ export default function ChildGroupBar() {
       cancelled = true;
     };
   }, [role, onTab, childId, pathname]);
+
+  // 내 그룹 관리에서 순서를 바꾸면 칩 순서도 바로 따라온다.
+  useEffect(() => {
+    if (!childId) return;
+    function onOrder() {
+      void loadGroupOrder(createClient(), childId as string).then((order) =>
+        setGroups((prev) => (prev ? applyGroupOrder(prev, order) : prev))
+      );
+    }
+    window.addEventListener(GROUP_ORDER_CHANGED, onOrder);
+    return () => window.removeEventListener(GROUP_ORDER_CHANGED, onOrder);
+  }, [childId]);
 
   const pick = useCallback(
     async (id: string | null) => {

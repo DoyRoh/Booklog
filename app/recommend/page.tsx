@@ -7,6 +7,7 @@ import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import BrowseGroups from "@/components/browse-groups";
 import JoinByCode from "@/components/join-by-code";
 import GroupRemoveButton from "@/components/group-remove-button";
+import MyGroupsOrderable from "@/components/my-groups-orderable";
 import MyGroupsFold from "@/components/my-groups-fold";
 import Section from "@/components/section";
 import { CHILD_GROUP_TILES_HEIGHT } from "@/lib/group-bar-height";
@@ -103,6 +104,15 @@ export default async function RecommendPage() {
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 속한 그룹이 없어요. 아래에서 둘러보거나 초대 코드로 참가해 보세요.
           </p>
+        ) : activeProfile.type !== "operator" && activeChild ? (
+          <MyGroupsOrderable
+            childId={activeChild.id}
+            groups={myGroups.map((g) => ({
+              id: g.id,
+              name: g.name,
+              sub: `${g.operator_name ? `${g.operator_name} · ` : ""}${GROUP_TYPE_LABELS[g.type] ?? g.type}`,
+            }))}
+          />
         ) : (
           <div className="flex flex-col">
             {myGroups.map((group, index) => (
