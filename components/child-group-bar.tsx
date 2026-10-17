@@ -232,9 +232,9 @@ export default function ChildGroupBar() {
         </div>
       )}
 
-      {/* 추천도서 · 숙제 · 둘러보기 -- 채워진 알약 세그먼트. 오른쪽 돋보기는 전체 검색. */}
+      {/* 추천도서 · 숙제 · 둘러보기 -- 밑줄 탭(사용자가 이 모양을 골랐다). 오른쪽 돋보기는 전체 검색. */}
       <div className="mx-auto flex max-w-[520px] md:max-w-[760px] items-center gap-2 px-5 pt-1.5 pb-2.5">
-        <div className="flex flex-1 gap-1 rounded-full p-1" style={{ background: "var(--sprout-pale)" }}>
+        <div className="flex flex-1" style={{ borderBottom: "1px solid rgba(38,54,43,0.12)" }}>
           {(
             [
               { key: "books", label: "추천도서", href: tabHref("books") },
@@ -248,12 +248,11 @@ export default function ChildGroupBar() {
                 key={t.key}
                 href={t.href}
                 aria-current={on ? "page" : undefined}
-                className="d flex-1 rounded-full py-2 text-center text-[14px]"
+                className="d flex-1 py-2.5 text-center text-[14px]"
                 style={{
-                  background: on ? "var(--point-deep)" : "transparent",
-                  color: on ? "#fff" : "var(--ink)",
+                  color: on ? "var(--point-deep)" : "var(--ink-2)",
                   fontWeight: on ? 700 : 600,
-                  boxShadow: on ? "0 2px 6px rgba(27,94,58,0.28)" : "none",
+                  boxShadow: on ? "inset 0 -3px 0 var(--point-deep)" : "none",
                 }}
               >
                 {t.label}
