@@ -16,7 +16,7 @@ import { pickActiveChildGroupId } from "@/lib/active-child-group";
 import GroupIntro from "@/components/group-intro";
 import Illustration from "@/components/illustration";
 
-type FilterGroup = { id: string; name: string; description?: string | null; operator_name?: string | null; operator_avatar?: string | null };
+type FilterGroup = { id: string; name: string; description?: string | null };
 type SubTab = "books" | "assignments";
 
 // 그룹 탭 -- 숲길(추천도서)과 숙제를 하나로 합쳤다(사용자 요청: "숲길과
@@ -59,15 +59,11 @@ export default async function GroupPage({
     );
   }
 
-  // 0028(operator_avatar) 전이면 그 컬럼 없이 다시 읽는다.
-  const loadMemberGroups = (withAvatar: boolean) =>
-    supabase
-      .from("group_members")
-      .select(`groups(id, name, description, operator_name${withAvatar ? ", operator_avatar" : ""})`)
-      .eq("child_id", activeChild.id)
-      .eq("status", "approved");
-  const firstTry = await loadMemberGroups(true);
-  const memberGroupRows = firstTry.error ? (await loadMemberGroups(false)).data : firstTry.data;
+  const { data: memberGroupRows } = await supabase
+    .from("group_members")
+    .select("groups(id, name, description)")
+    .eq("child_id", activeChild.id)
+    .eq("status", "approved");
 
   const myGroups: FilterGroup[] = (memberGroupRows ?? [])
     .map((row) => row.groups as unknown as FilterGroup | null)
@@ -126,12 +122,20 @@ export default async function GroupPage({
       .sort((a, b) => b.addedAt.localeCompare(a.addedAt))
       .filter((b) => (seen.has(b.bookId) ? false : (seen.add(b.bookId), true)));
     content = (
-      <div
-        className="rounded-[var(--r)] border p-4"
-        style={{ borderColor: "var(--rule)", background: "var(--card)" }}
-      >
-        <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
-      </div>
+      <>
+        {/* 시안대로 그룹 이름만 제목으로(이미 "추천도서" 탭 안이라 제목에도
+            카드 머리에도 "추천도서"를 또 쓰지 않는다 -- 사용자 지적). 제목은
+            카드 왼쪽 끝과 같은 자리에서 시작하고, 위(20px)·아래(16px) 여백을
+            비슷하게 맞춘다. */}
+        <h1 className="d text-[19px] leading-[26px]">{selectedGroup ? selectedGroup.name : "모든 그룹"}</h1>
+        {selectedGroup?.description && <GroupIntro text={selectedGroup.description} className="mt-[10px]" />}
+        <div
+          className="mt-[16px] rounded-[var(--r)] border p-4"
+          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+        >
+          <RecommendShelf groupId={selectedGroup?.id ?? groupsToLoad[0].id} books={books} activeChildId={activeChild.id} />
+        </div>
+      </>
     );
   } else {
     const [assignments, voiceAllowed] = await Promise.all([
@@ -154,66 +158,6 @@ export default async function GroupPage({
     // 숙제/추천도서 소제목 탭은 고정 그룹 바(ChildGroupBar) 안으로 옮겼다 --
     // 여기부터는 전부 내용.
     <div className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pb-10" style={{ paddingTop: `${20 + CHILD_GROUP_BAR_HEIGHT}px` }}>
-      {/* 고른 그룹의 카드 -- 이름·숲지기·소개와, 이 그룹의 추천도서/숙제를 고르는
-          탭이 한 카드에 있어서 "이 그룹 안의 것"으로 읽힌다. */}
-      <div className="mb-4 overflow-hidden rounded-[var(--r)] border" style={{ borderColor: "var(--rule)", background: "var(--card)" }}>
-        <div className="flex items-center gap-3 px-[20px] pt-[16px] pb-[12px]">
-          {selectedGroup ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`/illustrations/face-${selectedGroup.operator_avatar === "egret" ? "egret" : "bear"}.png`}
-              alt=""
-              className="h-[40px] w-[40px] flex-none rounded-full"
-              style={{ background: "var(--paper)" }}
-            />
-          ) : (
-            <span className="d flex h-[40px] w-[40px] flex-none items-center justify-center rounded-full text-sm" style={{ background: "var(--sprout-pale)", color: "var(--point-deep)" }}>
-              {myGroups.length}
-            </span>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="d truncate text-[18px] leading-[24px]">{selectedGroup ? selectedGroup.name : "모든 그룹"}</p>
-            <p className="truncate text-[12px]" style={{ color: "var(--ink-2)" }}>
-              {selectedGroup ? (selectedGroup.operator_name ?? "숲지기") : `속한 그룹 ${myGroups.length}개`}
-            </p>
-          </div>
-          {selectedGroup && (
-            <Link href={`/recommend/${selectedGroup.id}`} className="flex-none text-xs" style={{ color: "var(--ink-2)" }}>
-              그룹 정보 ›
-            </Link>
-          )}
-        </div>
-        {selectedGroup?.description && <GroupIntro text={selectedGroup.description} className="px-[20px] pb-[12px]" />}
-        <div className="flex" style={{ borderTop: "1px solid rgba(38,54,43,0.08)" }}>
-          {(
-            [
-              { key: "books", label: "추천도서" },
-              { key: "assignments", label: "숙제" },
-            ] as const
-          ).map((t) => {
-            const on = t.key === tab;
-            const params = new URLSearchParams();
-            if (t.key === "assignments") params.set("tab", "assignments");
-            if (selectedGroup) params.set("group", selectedGroup.id);
-            const qs = params.toString();
-            return (
-              <Link
-                key={t.key}
-                href={qs ? `/group?${qs}` : "/group"}
-                aria-current={on ? "page" : undefined}
-                className="d flex-1 py-3 text-center text-[14px]"
-                style={{
-                  color: on ? "var(--point-deep)" : "var(--ink-2)",
-                  fontWeight: on ? 700 : 600,
-                  boxShadow: on ? "inset 0 -3px 0 var(--point-deep)" : "none",
-                }}
-              >
-                {t.label}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
       {content}
     </div>
   );

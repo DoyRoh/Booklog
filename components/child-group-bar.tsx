@@ -28,6 +28,7 @@ import { getGroupHomeworkBadges, type HomeworkBadge } from "@/lib/homework-badge
  * export하면 서버 컴포넌트엔 숫자가 아니라 클라이언트 참조가 넘어간다.
  */
 const GROUP_PATH = "/group";
+const GROUP_TAB_KEY = "chaeksup:group-tab";
 type GroupOption = { id: string; name: string; operator_name: string | null; operator_avatar?: string | null };
 
 // 숙제 상태 점 -- 남은 숙제가 있으면 호박색 점, 전부 끝나면 초록 원 안에
@@ -57,14 +58,29 @@ export default function ChildGroupBar() {
   const router = useRouter();
   const [groups, setGroups] = useState<GroupOption[] | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  // 추천도서 탭의 "큰 숫자" -- 그룹별 책 권수.
   const [bookCounts, setBookCounts] = useState<Record<string, number>>({});
-  // 그룹별(+ 전체) 오늘 숙제 상태 점 -- 남은 숙제 호박색, 전부 끝 초록 체크.
+  // 숙제 탭은 숫자 대신 상태 점("그룹에 2는 뭐야?"라는 질문을 받아, 개수
+  // 대신 진행 중(호박색)·완료(초록) 점으로 바꿨다) -- 그룹별 + "전체" 합산.
   const [assignmentBadges, setAssignmentBadges] = useState<Record<string, HomeworkBadge>>({});
   const [overallBadge, setOverallBadge] = useState<HomeworkBadge>("none");
 
-  // 둘러보기(/recommend)가 그룹 탭의 첫 화면이고, 칩을 누르면 그 그룹(/group)으로 간다.
+  // 둘러보기(/recommend)에서도 같은 그룹 박스 줄을 보여준다(소제목 탭 줄은 없이).
+  // 박스를 누르면 그 그룹의 /group 화면으로 간다.
   const onBrowse = pathname === "/recommend";
   const onTab = pathname === GROUP_PATH || onBrowse;
+  // 기본 소제목 탭은 추천도서(app/group/page.tsx와 같은 규칙).
+  const tab = searchParams.get("tab") === "assignments" ? "assignments" : "books";
+
+  // 숙제/추천도서 중 마지막으로 본 쪽을 기억해 둔다 -- 하단 "그룹"을 다시
+  // 누르면 그쪽이 열리게(components/bottom-nav.tsx). sessionStorage라 앱을
+  // 새로 켜면 지워지고 다시 추천도서부터 보인다.
+  useEffect(() => {
+    if (!onTab || onBrowse) return;
+    try {
+      sessionStorage.setItem(GROUP_TAB_KEY, tab);
+    } catch {}
+  }, [onTab, onBrowse, tab]);
 
   useEffect(() => {
     if (role !== "parent" || !onTab || !childId) return;
@@ -107,13 +123,14 @@ export default function ChildGroupBar() {
     };
   }, [role, onTab, childId, pathname]);
 
-  // 칩을 누르면 그 그룹을 저장하고 /group으로(보던 추천도서/숙제 탭은 유지).
   const pick = useCallback(
     async (id: string | null) => {
       setActiveGroupId(id);
-      const params = new URLSearchParams();
+      // 추천도서/숙제 중 어느 소제목 탭을 보고 있었는지(tab=)는 그대로
+      // 유지한 채 그룹만 바꾼다.
       const currentTab = searchParams.get("tab");
-      if (!onBrowse && currentTab) params.set("tab", currentTab);
+      const params = new URLSearchParams();
+      if (currentTab) params.set("tab", currentTab);
       if (id) params.set("group", id);
       const qs = params.toString();
       router.push(qs ? `${GROUP_PATH}?${qs}` : GROUP_PATH);
@@ -122,76 +139,129 @@ export default function ChildGroupBar() {
         await supabase.from("children").update({ active_group_id: id }).eq("id", childId);
       }
     },
-    [router, childId, searchParams, onBrowse]
+    [router, childId, searchParams]
   );
 
   if (!onTab || role !== "parent" || !groups || groups.length === 0) return null;
 
   const queryGroup = searchParams.get("group");
-  const selectedId = onBrowse
-    ? "browse"
-    : (queryGroup && groups.some((g) => g.id === queryGroup) && queryGroup) ||
-      (activeGroupId && groups.some((g) => g.id === activeGroupId) && activeGroupId) ||
-      "all";
+  const tabHref = (t: "assignments" | "books") => {
+    const params = new URLSearchParams();
+    if (t === "assignments") params.set("tab", "assignments");
+    if (queryGroup) params.set("group", queryGroup);
+    else if (activeGroupId) params.set("group", activeGroupId);
+    const qs = params.toString();
+    return qs ? `${GROUP_PATH}?${qs}` : GROUP_PATH;
+  };
+  const selectedId = onBrowse ? "none" :
+    (queryGroup && groups.some((g) => g.id === queryGroup) && queryGroup) ||
+    (activeGroupId && groups.some((g) => g.id === activeGroupId) && activeGroupId) ||
+    "all";
+  const isAssignmentsTab = tab === "assignments";
+  const bookCountFor = (groupId: string) => bookCounts[groupId] ?? 0;
   const totalBookCount = Object.values(bookCounts).reduce((s, n) => s + n, 0);
 
-  // 칩 공통 모양 -- 반경 14px(앱의 버튼·입력과 같은 값).
-  const chip = (on: boolean) => ({
-    background: on ? "var(--point-deep)" : "var(--card)",
-    color: on ? "#fff" : "var(--ink)",
-    border: "1px solid " + (on ? "var(--point-deep)" : "var(--rule)"),
-  });
-  const chipBase = "relative flex h-[48px] flex-none flex-col justify-center rounded-[14px] px-3 text-left";
+  const chipBase = "flex h-[48px] flex-none flex-col justify-center rounded-[14px] px-3 text-left";
 
   return (
-    // 그룹을 고르는 줄 하나만 고정한다. 추천도서/숙제 선택은 고른 그룹의 카드
-    // 안(app/group/page.tsx)에 있어 "이 그룹의 것"으로 읽힌다.
+    // 고정 바 하나 안에 "그룹 칩 줄 + 추천도서·숙제·둘러보기 탭"을 모았다.
+    // 칩은 작은 카드(그룹명 위, 숲지기 이름 아래)로 정돈하고, 둘러보기에서는
+    // 탭만 남는다. 바 배경은 페이지 배경과 같은 --paper(불투명).
     <div className="no-print fixed inset-x-0 z-40" style={{ top: "calc(52px + var(--st))", background: "var(--paper)" }}>
-      <div className="mx-auto flex max-w-[520px] md:max-w-[760px] items-center gap-2 px-5 pt-2.5 pb-3">
-        {/* 둘러보기는 왼쪽 고정 */}
-        <Link href="/recommend" aria-current={onBrowse ? "page" : undefined} className={`${chipBase} w-[78px] items-center`} style={chip(onBrowse)}>
-          <span className="d text-[14px] leading-tight">둘러보기</span>
-          <span className="text-[10px] leading-tight" style={{ opacity: 0.75 }}>
-            새 그룹
-          </span>
-        </Link>
-
-        <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pr-1" style={{ scrollbarWidth: "none" }}>
-          <button type="button" onClick={() => pick(null)} aria-current={selectedId === "all" ? "true" : undefined} className={`${chipBase} w-[64px] items-center`} style={chip(selectedId === "all")}>
+      {!onBrowse && (
+        <div className="mx-auto flex max-w-[520px] md:max-w-[760px] gap-2 px-5 pt-2.5 pb-1">
+          <button
+            type="button"
+            onClick={() => pick(null)}
+            aria-current={selectedId === "all" ? "true" : undefined}
+            className={`${chipBase} relative w-[64px] items-center`}
+            style={{
+              background: selectedId === "all" ? "var(--point-deep)" : "var(--card)",
+              color: selectedId === "all" ? "#fff" : "var(--ink)",
+              border: "1px solid " + (selectedId === "all" ? "var(--point-deep)" : "var(--rule)"),
+            }}
+          >
             <span className="d text-[14px] leading-tight">전체</span>
             <span className="text-[10px] leading-tight" style={{ opacity: 0.75 }}>
-              {totalBookCount}권
+              {isAssignmentsTab ? "모든 숙제" : `${totalBookCount}권`}
             </span>
-            <HomeworkStatusDot status={overallBadge} />
+            {isAssignmentsTab && <HomeworkStatusDot status={overallBadge} />}
           </button>
-          {groups.map((group) => {
-            const active = group.id === selectedId;
-            return (
-              <button key={group.id} type="button" onClick={() => pick(group.id)} aria-current={active ? "true" : undefined} className={`${chipBase} w-[136px]`} style={chip(active)}>
-                <span className="flex w-full items-center gap-2">
-                  {/* 숲지기 캐릭터(곰/백로)를 작게 왼쪽에 */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/illustrations/face-${group.operator_avatar === "egret" ? "egret" : "bear"}.png`}
-                    alt=""
-                    title={group.operator_name ?? undefined}
-                    className="h-[26px] w-[26px] flex-none rounded-full"
-                    style={{ background: "#fff" }}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="d block w-full truncate text-[13px] leading-tight">{group.name}</span>
-                    <span className="block text-[10px] leading-tight" style={{ opacity: 0.75 }}>
-                      {bookCounts[group.id] ?? 0}권
+
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pr-1" style={{ scrollbarWidth: "none" }}>
+            {groups.map((group) => {
+              const active = group.id === selectedId;
+              const badge = assignmentBadges[group.id] ?? "none";
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  onClick={() => pick(group.id)}
+                  aria-current={active ? "true" : undefined}
+                  className={`${chipBase} relative w-[136px]`}
+                  style={{
+                    background: active ? "var(--point-deep)" : "var(--card)",
+                    color: active ? "#fff" : "var(--ink)",
+                    border: "1px solid " + (active ? "var(--point-deep)" : "var(--rule)"),
+                  }}
+                >
+                  <span className="flex w-full items-center gap-2">
+                    {/* 숲지기 이름 대신 숲지기 캐릭터(곰/백로)를 작게 왼쪽에 */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/illustrations/face-${group.operator_avatar === "egret" ? "egret" : "bear"}.png`}
+                      alt=""
+                      title={group.operator_name ?? undefined}
+                      className="h-[26px] w-[26px] flex-none rounded-full"
+                      style={{ background: "#fff" }}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="d block w-full truncate text-[13px] leading-tight">{group.name}</span>
+                      {!isAssignmentsTab && bookCountFor(group.id) > 0 && (
+                        <span className="block text-[10px] leading-tight" style={{ opacity: 0.75 }}>
+                          {bookCountFor(group.id)}권
+                        </span>
+                      )}
                     </span>
                   </span>
-                </span>
-                <HomeworkStatusDot status={assignmentBadges[group.id] ?? "none"} />
-              </button>
+                  {isAssignmentsTab && <HomeworkStatusDot status={badge} />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 추천도서 · 숙제 · 둘러보기 -- 채워진 알약 세그먼트. 오른쪽 돋보기는 전체 검색. */}
+      <div className="mx-auto flex max-w-[520px] md:max-w-[760px] items-center gap-2 px-5 pt-1.5 pb-2.5">
+        <div className="flex flex-1 gap-1 rounded-full p-1" style={{ background: "var(--sprout-pale)" }}>
+          {(
+            [
+              { key: "books", label: "추천도서", href: tabHref("books") },
+              { key: "assignments", label: "숙제", href: tabHref("assignments") },
+              { key: "browse", label: "둘러보기", href: "/recommend" },
+            ] as const
+          ).map((t) => {
+            const on = onBrowse ? t.key === "browse" : t.key === tab;
+            return (
+              <Link
+                key={t.key}
+                href={t.href}
+                aria-current={on ? "page" : undefined}
+                className="d flex-1 rounded-full py-2 text-center text-[14px]"
+                style={{
+                  background: on ? "var(--point-deep)" : "transparent",
+                  color: on ? "#fff" : "var(--ink)",
+                  fontWeight: on ? 700 : 600,
+                  boxShadow: on ? "0 2px 6px rgba(27,94,58,0.28)" : "none",
+                }}
+              >
+                {t.label}
+              </Link>
             );
           })}
         </div>
-
-        <Link href="/search" aria-label="숙제·추천도서 검색" className="flex flex-none items-center justify-center pl-0.5" style={{ color: "var(--ink-2)" }}>
+        <Link href="/search" aria-label="숙제·추천도서 검색" className="flex flex-none items-center justify-center" style={{ color: "var(--ink-2)" }}>
           <SearchIcon width={19} height={19} />
         </Link>
       </div>
