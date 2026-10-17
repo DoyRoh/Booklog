@@ -173,7 +173,10 @@ export default function AssignmentTable({ groupId, rows }: { groupId: string; ro
       {picked.size > 0 && (
         <div className="sticky z-10 mt-3 flex flex-wrap items-center gap-2 rounded-[14px] border px-3 py-2" style={{ top: "calc(52px + var(--st) + 82px)", borderColor: "var(--point)", background: "var(--card)" }}>
           <span className="d text-xs">{picked.size}개 선택</span>
-          <input type="date" value={bulkDate} onChange={(e) => setBulkDate(e.target.value)} min={today} aria-label="일괄 마감일" className="rounded-[8px] border px-2 py-1 text-xs" style={{ borderColor: "var(--rule)" }} />
+          <label className="d relative flex h-8 w-[112px] items-center justify-center rounded-full border text-xs" style={{ borderColor: "var(--rule)", background: "var(--card)", color: bulkDate ? "var(--ink)" : "var(--ink-2)" }}>
+            {bulkDate ? shortMd(bulkDate) : "날짜 선택"}
+            <input type="date" value={bulkDate} onChange={(e) => setBulkDate(e.target.value)} min={today} aria-label="일괄 마감일" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" style={{ minHeight: 0 }} />
+          </label>
           <button type="button" disabled={!bulkDate || busy} onClick={bulkSetDue} className="d rounded-full px-3 py-1 text-[11px] text-white disabled:opacity-40" style={{ background: "var(--point-deep)" }}>
             마감일 바꾸기
           </button>
@@ -253,7 +256,7 @@ export default function AssignmentTable({ groupId, rows }: { groupId: string; ro
                         key={`${r.id}:${r.due}`}
                         onBlur={(e) => void saveDue(r.id, r.due, e.target.value)}
                         className="rounded-[8px] border border-transparent bg-transparent px-1.5 py-1 text-[12px] outline-none focus:border-[color:var(--point)] focus:bg-white"
-                        style={{ color: overdue ? "var(--berry)" : "var(--ink)", width: 128 }}
+                        style={{ color: overdue ? "var(--berry)" : "var(--ink)", width: 128, minHeight: 0, height: 32, lineHeight: "32px" }}
                       />
                     </td>
                     <td className="whitespace-nowrap px-2 py-2 align-middle text-[11px]" style={{ ...cellBorder, color: "var(--ink-2)" }}>
