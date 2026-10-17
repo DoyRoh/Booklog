@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/components/profile-context";
-import { SearchIcon } from "@/components/icons/misc-icons";
 import { applyGroupOrder, GROUP_ORDER_CHANGED, loadGroupOrder } from "@/lib/group-order";
 import { getGroupHomeworkBadges, type HomeworkBadge } from "@/lib/homework-badge";
 
@@ -219,15 +218,21 @@ export default function ChildGroupBar() {
                   }}
                 >
                   <span className="flex w-full items-center gap-2">
-                    {/* 숲지기 이름 대신 숲지기 캐릭터(곰/백로)를 작게 왼쪽에 */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/illustrations/face-${group.operator_avatar === "egret" ? "egret" : "bear"}.png`}
-                      alt=""
-                      title={group.operator_name ?? undefined}
-                      className="h-[30px] w-[30px] flex-none rounded-full"
-                      style={{ background: "#fff" }}
-                    />
+                    {/* 숲지기 캐릭터(곰/백로) + 그 아래 숲지기 이름 */}
+                    <span className="flex w-[44px] flex-none flex-col items-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/illustrations/face-${group.operator_avatar === "egret" ? "egret" : "bear"}.png`}
+                        alt=""
+                        className="h-[30px] w-[30px] rounded-full"
+                        style={{ background: "#fff" }}
+                      />
+                      {group.operator_name && (
+                        <span className="mt-0.5 block w-full truncate text-center text-[10px] leading-tight" style={{ opacity: 0.8 }}>
+                          {group.operator_name}
+                        </span>
+                      )}
+                    </span>
                     <span className="min-w-0 flex-1">
                       <span className="d block w-full text-[15px] leading-[1.25]" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}>{group.name}</span>
                       {!isAssignmentsTab && bookCountFor(group.id) > 0 && (
@@ -245,7 +250,7 @@ export default function ChildGroupBar() {
         </div>
       )}
 
-      {/* 추천도서 · 숙제 · 둘러보기 -- 밑줄 탭(사용자가 이 모양을 골랐다). 오른쪽 돋보기는 전체 검색. */}
+      {/* 추천도서 · 숙제 · 둘러보기 -- 밑줄 탭(사용자가 이 모양을 골랐다). 전체 검색 돋보기는 추천도서 제목 줄로 옮김. */}
       <div className="mx-auto flex max-w-[520px] md:max-w-[760px] items-center gap-2 px-5 pt-1.5 pb-2.5">
         <div className="flex flex-1" style={{ borderBottom: "1px solid rgba(38,54,43,0.12)" }}>
           {(
@@ -273,9 +278,6 @@ export default function ChildGroupBar() {
             );
           })}
         </div>
-        <Link href="/search" aria-label="숙제·추천도서 검색" className="flex flex-none items-center justify-center" style={{ color: "var(--ink-2)" }}>
-          <SearchIcon width={19} height={19} />
-        </Link>
       </div>
     </div>
   );

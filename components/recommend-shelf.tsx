@@ -112,7 +112,10 @@ export default function RecommendShelf({
   return (
     <div>
       {categories.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <span className="d flex-none text-xs" style={{ color: "var(--ink-2)" }}>
+            분야
+          </span>
           <button type="button" onClick={() => setFilter("all")} className="d flex-none rounded-full border px-3.5 py-1.5 text-sm" style={chip(filter === "all")}>
             전체
           </button>

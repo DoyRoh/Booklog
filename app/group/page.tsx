@@ -1,5 +1,6 @@
 import { childAgeBand } from "@/lib/age-bands";
 import Link from "next/link";
+import { SearchIcon } from "@/components/icons/misc-icons";
 import Section from "@/components/section";
 import BrowseGroups from "@/components/browse-groups";
 import { loadBrowseGroups } from "@/lib/browse-groups";
@@ -127,7 +128,14 @@ export default async function GroupPage({
             카드 머리에도 "추천도서"를 또 쓰지 않는다 -- 사용자 지적). 제목은
             카드 왼쪽 끝과 같은 자리에서 시작하고, 위(20px)·아래(16px) 여백을
             비슷하게 맞춘다. */}
-        <h1 className="d text-[19px] leading-[26px]">{selectedGroup ? selectedGroup.name : "모든 그룹"}</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="d min-w-0 text-[19px] leading-[26px]">{selectedGroup ? selectedGroup.name : "모든 그룹"}</h1>
+          {/* 책을 찾는 돋보기는 책장 바로 위에(예전엔 탭 줄 오른쪽 끝) */}
+          <Link href="/search" aria-label="책 찾기" className="d flex flex-none items-center gap-1 text-[13px]" style={{ color: "var(--ink-2)" }}>
+            <SearchIcon width={18} height={18} />
+            책 찾기
+          </Link>
+        </div>
         {selectedGroup?.description && <GroupIntro text={selectedGroup.description} className="mt-[10px]" />}
         <div
           className="mt-[16px] rounded-[var(--r)] border p-4"
