@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/components/profile-context";
-import { PlusIcon, SearchIcon } from "@/components/icons/misc-icons";
+import { SearchIcon } from "@/components/icons/misc-icons";
 import { getGroupHomeworkBadges, type HomeworkBadge } from "@/lib/homework-badge";
 
 /**
@@ -29,14 +29,6 @@ import { getGroupHomeworkBadges, type HomeworkBadge } from "@/lib/homework-badge
  */
 const GROUP_PATH = "/group";
 const GROUP_TAB_KEY = "chaeksup:group-tab";
-const TILE_COLORS = ["#6B8F71", "#A6763F", "#D9A441", "#7C9C82", "#B5654A", "#5E7A6B", "#C9A66B"];
-
-function tileColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-  return TILE_COLORS[hash % TILE_COLORS.length];
-}
-
 type GroupOption = { id: string; name: string; operator_name: string | null };
 
 // 숙제 상태 점 -- 남은 숙제가 있으면 호박색 점, 전부 끝나면 초록 원 안에
@@ -165,128 +157,78 @@ export default function ChildGroupBar() {
   const bookCountFor = (groupId: string) => bookCounts[groupId] ?? 0;
   const totalBookCount = Object.values(bookCounts).reduce((s, n) => s + n, 0);
 
+  const chipBase = "flex h-[48px] flex-none flex-col justify-center rounded-[14px] px-3 text-left";
+
   return (
-    // 시안처럼 흰 패널 없이 배경(세이지)과 이어지게 둔다(사용자 지적:
-    // "숙제·추천도서 선택 메뉴 흰색 배경 없애라"). 고정 바라 배경색은
-    // 불투명해야 아래 내용이 비치지 않으므로 --paper를 그대로 쓴다.
+    // 고정 바 하나 안에 "그룹 칩 줄 + 추천도서·숙제·둘러보기 탭"을 모았다.
+    // 칩은 작은 카드(그룹명 위, 숲지기 이름 아래)로 정돈하고, 둘러보기에서는
+    // 탭만 남는다. 바 배경은 페이지 배경과 같은 --paper(불투명).
     <div className="no-print fixed inset-x-0 z-40" style={{ top: "calc(52px + var(--st))", background: "var(--paper)" }}>
-      <div className="mx-auto flex max-w-[520px] md:max-w-[760px] gap-3 px-5 pt-2.5 pb-3">
-        <button
-          type="button"
-          onClick={() => pick(null)}
-          aria-current={selectedId === "all" ? "true" : undefined}
-          className="flex w-[64px] flex-none flex-col items-center gap-1"
-        >
-          <span
-            className="d relative flex h-[60px] w-[60px] flex-col items-center justify-center rounded-[16px]"
+      {!onBrowse && (
+        <div className="mx-auto flex max-w-[520px] md:max-w-[760px] gap-2 px-5 pt-2.5 pb-1">
+          <button
+            type="button"
+            onClick={() => pick(null)}
+            aria-current={selectedId === "all" ? "true" : undefined}
+            className={`${chipBase} relative w-[64px] items-center`}
             style={{
-              // 바 자체가 세이지 배경이라, 안 켜진 타일은 --paper면 묻힌다 → 옅은 초록 판.
-              background: selectedId === "all" ? "var(--point-deep)" : "var(--sprout-pale)",
+              background: selectedId === "all" ? "var(--point-deep)" : "var(--card)",
               color: selectedId === "all" ? "#fff" : "var(--ink)",
-              border: selectedId === "all" ? "2px solid var(--point-deep)" : "1px solid transparent",
-              boxShadow: selectedId === "all" ? "0 4px 10px rgba(27,94,58,0.28)" : "none",
+              border: "1px solid " + (selectedId === "all" ? "var(--point-deep)" : "var(--rule)"),
             }}
           >
-            <span className="text-[13px] leading-none">전체</span>
-            {!isAssignmentsTab && <span className="mt-1 text-[17px] font-bold leading-none">{totalBookCount}</span>}
+            <span className="d text-[14px] leading-tight">전체</span>
+            <span className="text-[10px] leading-tight" style={{ opacity: 0.75 }}>
+              {isAssignmentsTab ? "모든 숙제" : `${totalBookCount}권`}
+            </span>
             {isAssignmentsTab && <HomeworkStatusDot status={overallBadge} />}
-          </span>
-          <span
-            className="w-full truncate text-center text-[10px] leading-tight"
-            style={{ color: selectedId === "all" ? "var(--point-deep)" : "var(--ink-2)", fontWeight: selectedId === "all" ? 600 : 400 }}
-          >
-            모든 그룹
-          </span>
-        </button>
+          </button>
 
-        {/* 전체는 왼쪽에 고정, 나머지 그룹만 가로로 넘겨 본다(사용자 요청). */}
-        <div className="flex min-w-0 flex-1 gap-3 overflow-x-auto pr-1" style={{ scrollbarWidth: "none" }}>
-        {groups.map((group) => {
-          const active = group.id === selectedId;
-          const bookCount = bookCountFor(group.id);
-          const badge = assignmentBadges[group.id] ?? "none";
-          return (
-            <button
-              key={group.id}
-              type="button"
-              onClick={() => pick(group.id)}
-              aria-current={active ? "true" : undefined}
-              className="flex w-[64px] flex-none flex-col items-center gap-1"
-            >
-              {/* 이미지(색 상자 + 이니셜)와 배지를 한 타일에 -- 선택
-                  상태는 초록 테두리 + 배경 톤 변화로 명확히 구분. 배지는
-                  추천도서 탭이면 권수 숫자, 숙제 탭이면 진행 상태 점. */}
-              <span
-                className="d relative flex h-[60px] w-[60px] items-center justify-center rounded-[16px] px-1 text-white"
-                style={{
-                  background: tileColor(group.name),
-                  border: active ? "2px solid var(--point-deep)" : "2px solid transparent",
-                  boxShadow: active ? "0 4px 10px rgba(27,94,58,0.28)" : "0 1px 2px rgba(38,54,43,0.15)",
-                  opacity: active ? 1 : 0.72,
-                }}
-              >
-                {/* 박스 안에는 그룹 이름(넘치면 ...), 박스 아래에는 숲지기 이름 */}
-                <span
-                  className="w-full text-center text-[12px] leading-tight"
-                  style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pr-1" style={{ scrollbarWidth: "none" }}>
+            {groups.map((group) => {
+              const active = group.id === selectedId;
+              const badge = assignmentBadges[group.id] ?? "none";
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  onClick={() => pick(group.id)}
+                  aria-current={active ? "true" : undefined}
+                  className={`${chipBase} relative w-[118px]`}
+                  style={{
+                    background: active ? "var(--point-deep)" : "var(--card)",
+                    color: active ? "#fff" : "var(--ink)",
+                    border: "1px solid " + (active ? "var(--point-deep)" : "var(--rule)"),
+                  }}
                 >
-                  {group.name}
-                </span>
-                {isAssignmentsTab
-                  ? <HomeworkStatusDot status={badge} />
-                  : bookCount > 0 && (
-                      <span
-                        className="d absolute -bottom-1.5 -right-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1 text-[12px] font-bold"
-                        style={{ background: "#fff", color: "var(--point-deep)", border: "1.5px solid var(--point-deep)" }}
-                      >
-                        {bookCount > 99 ? "99+" : bookCount}
-                      </span>
-                    )}
-              </span>
-              <span
-                className="w-full truncate text-center text-[10px] leading-tight"
-                style={{ color: active ? "var(--point-deep)" : "var(--ink-2)", fontWeight: active ? 600 : 400 }}
-              >
-                {group.operator_name || "숲지기"}
-              </span>
-            </button>
-          );
-        })}
-
-        {!onBrowse && <Link href="/recommend" className="flex w-[64px] flex-none flex-col items-center gap-1" aria-label="다른 그룹 둘러보기">
-          <span
-            className="flex h-[56px] w-[56px] items-center justify-center rounded-[16px] border border-dashed"
-            style={{ borderColor: "rgba(38,54,43,0.28)", color: "var(--ink-2)" }}
-          >
-            <PlusIcon width={20} height={20} />
-          </span>
-          <span className="w-full truncate text-center text-[10px] leading-tight" style={{ color: "var(--ink-2)" }}>
-            둘러보기
-          </span>
-        </Link>}
+                  <span className="d block w-full truncate text-[13px] leading-tight">{group.name}</span>
+                  <span className="block w-full truncate text-[10px] leading-tight" style={{ opacity: 0.75 }}>
+                    {group.operator_name || "숲지기"}
+                    {!isAssignmentsTab && bookCountFor(group.id) > 0 ? ` · ${bookCountFor(group.id)}권` : ""}
+                  </span>
+                  {isAssignmentsTab && <HomeworkStatusDot status={badge} />}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* 숙제 / 추천도서 소제목 탭 -- 채워진 알약 세그먼트 컨트롤. 예전
-          밑줄 탭은 선택 안 된 쪽 글자가 옅어서 "탭 자체가 잘 안 보인다"는
-          지적을 받아, 옅은 초록 트랙 위에 선택된 쪽만 짙은 초록 알약으로
-          채우고 선택 안 된 쪽도 진한 글자(--ink, 굵게)로 바꿔 두 라벨 다
-          한눈에 읽히게 했다. 오른쪽 끝의 돋보기는 전체 검색(/search,
-          핵심 기능)으로. */}
-      {!onBrowse && (
+      {/* 추천도서 · 숙제 · 둘러보기 -- 채워진 알약 세그먼트. 오른쪽 돋보기는 전체 검색. */}
       <div className="mx-auto flex max-w-[520px] md:max-w-[760px] items-center gap-2 px-5 pt-1.5 pb-2.5">
         <div className="flex flex-1 gap-1 rounded-full p-1" style={{ background: "var(--sprout-pale)" }}>
           {(
             [
-              { key: "books", label: "추천도서" },
-              { key: "assignments", label: "숙제" },
+              { key: "books", label: "추천도서", href: tabHref("books") },
+              { key: "assignments", label: "숙제", href: tabHref("assignments") },
+              { key: "browse", label: "둘러보기", href: "/recommend" },
             ] as const
           ).map((t) => {
-            const on = t.key === tab;
+            const on = onBrowse ? t.key === "browse" : t.key === tab;
             return (
               <Link
                 key={t.key}
-                href={tabHref(t.key)}
+                href={t.href}
                 aria-current={on ? "page" : undefined}
                 className="d flex-1 rounded-full py-2 text-center text-[14px]"
                 style={{
@@ -301,16 +243,10 @@ export default function ChildGroupBar() {
             );
           })}
         </div>
-        <Link
-          href="/search"
-          aria-label="숙제·추천도서 검색"
-          className="flex flex-none items-center justify-center"
-          style={{ color: "var(--ink-2)" }}
-        >
+        <Link href="/search" aria-label="숙제·추천도서 검색" className="flex flex-none items-center justify-center" style={{ color: "var(--ink-2)" }}>
           <SearchIcon width={19} height={19} />
         </Link>
       </div>
-      )}
     </div>
   );
 }

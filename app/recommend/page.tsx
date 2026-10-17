@@ -84,9 +84,9 @@ export default async function RecommendPage() {
           "누가 그룹을 만드는 건지" 헷갈리던 걸 정리. */}
       {/* 이 화면엔 제목이 아예 없어서 어디로 들어온 건지 알기 어려웠다 --
           그룹 타일의 "+"가 부르는 이름("둘러보기")과 맞춘다. */}
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="d text-xl">둘러보기</h1>
-        {activeProfile.type === "operator" && (
+      {activeProfile.type === "operator" && (
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="d text-xl">둘러보기</h1>
           <Link
             href="/recommend/create"
             className="d flex-none rounded-[14px] px-4 py-2 text-sm text-white"
@@ -94,10 +94,20 @@ export default async function RecommendPage() {
           >
             + 그룹 만들기
           </Link>
-        )}
-      </div>
+        </div>
+      )}
 
-      <MyGroupsFold className="mt-5" count={myGroups.length}>
+      <Section
+        className={activeProfile.type === "operator" ? "mt-5" : "mt-0"}
+        title="공개 그룹"
+        description="숲지기마다 공개 그룹을 옆으로 넘겨 봐요. 그룹을 누르면 추천도서를 미리 보고, + 를 누르면 팔로우해요."
+      >
+        <BrowseGroups groups={browseGroups} followingIds={activeProfile.type === "operator" ? [] : myGroupIds} activeChildId={activeProfile.type === "operator" ? null : (activeChild?.id ?? null)}
+          childBand={activeProfile.type === "operator" ? null : childAgeBand(activeChild?.birthDate)}
+        />
+      </Section>
+
+      <MyGroupsFold title="내 그룹 관리" className="mt-5" count={myGroups.length}>
         {myGroups.length === 0 ? (
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
             아직 속한 그룹이 없어요. 아래에서 둘러보거나 초대 코드로 참가해 보세요.
@@ -146,15 +156,6 @@ export default async function RecommendPage() {
         </Section>
       )}
 
-      <Section
-        className="mt-5"
-        title="공개 그룹"
-        description="숲지기마다 공개 그룹을 옆으로 넘겨 봐요. 그룹을 누르면 추천도서를 미리 보고, + 를 누르면 팔로우해요."
-      >
-        <BrowseGroups groups={browseGroups} followingIds={activeProfile.type === "operator" ? [] : myGroupIds} activeChildId={activeProfile.type === "operator" ? null : (activeChild?.id ?? null)}
-          childBand={activeProfile.type === "operator" ? null : childAgeBand(activeChild?.birthDate)}
-        />
-      </Section>
     </div>
   );
 }

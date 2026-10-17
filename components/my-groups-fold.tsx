@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 
 // "내 그룹"은 늘어날 수 있어서 기본은 접어 두고, 펴면 높이를 제한해 안에서 스크롤한다.
-export default function MyGroupsFold({ count, className = "", children }: { count: number; className?: string; children: ReactNode }) {
+export default function MyGroupsFold({ count, title = "내 그룹", className = "", children }: { count: number; title?: string; className?: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <section className={`overflow-hidden rounded-[var(--r)] border ${className}`} style={{ borderColor: "var(--rule)", background: "var(--card)" }}>
@@ -14,7 +14,7 @@ export default function MyGroupsFold({ count, className = "", children }: { coun
         className="flex w-full items-center justify-between gap-3 px-[24px] py-[16px] text-left"
       >
         <span className="d text-[18px] font-semibold leading-[24px]">
-          내 그룹 <span className="text-[15px]" style={{ color: "var(--ink-2)" }}>{count}</span>
+          {title} <span className="text-[15px]" style={{ color: "var(--ink-2)" }}>{count}</span>
         </span>
         <span aria-hidden className="text-sm" style={{ color: "var(--ink-2)", transform: open ? "rotate(180deg)" : undefined }}>
           ⌄

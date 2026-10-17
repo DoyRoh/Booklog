@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useProfile } from "@/components/profile-context";
 import { isChromeHidden } from "@/lib/nav";
 import { createClient } from "@/lib/supabase/client";
@@ -132,7 +132,6 @@ function useHomeworkBadge(role: string | null, childId: string | null, pathname:
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
   const { role, loading, childId, childAvatar, operatorAvatar } = useProfile();
   const hidden = useHideOnScroll();
   const homeworkBadge = useHomeworkBadge(role, childId, pathname);
@@ -190,14 +189,6 @@ export default function BottomNav() {
           <Link
             key={href}
             href={href}
-            onClick={(e) => {
-              // 그룹 탭의 첫 화면은 둘러보기(/recommend: 내 그룹 + 책숲의 그룹)
-              // -- 사용자 요청. 이미 그룹 화면 안에 있으면 그대로 둔다.
-              if (href !== "/group" || role === "operator") return;
-              if (pathname === "/group" || pathname.startsWith("/recommend")) return;
-              e.preventDefault();
-              router.push("/recommend");
-            }}
             aria-label={showHomeworkDot ? `${label} · ${homeworkBadge === "done" ? "오늘 숙제 완료" : "오늘 숙제 있음"}` : label}
             aria-current={active ? "page" : undefined}
             className="flex flex-1 flex-col items-center justify-center gap-[3px] rounded-[20px] py-[6px] transition-colors"
