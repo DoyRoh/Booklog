@@ -48,14 +48,12 @@ export default async function TeacherBooksPage({
       className="mx-auto max-w-[520px] md:max-w-[760px] px-5 pb-10"
       style={{ paddingTop: showGroupTiles ? `${20 + OPERATOR_GROUP_BAR_HEIGHT}px` : "20px" }}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="d text-xl">추천도서</h1>
+      {/* 제목은 그룹명(아래 탭이 이미 "추천도서"라 같은 말을 또 쓰지 않는다 --
+          그룹 바의 잘린 이름도 여기서 전체로 보인다). */}
+      <div className="flex items-start justify-between gap-3">
+        <h1 className="d min-w-0 text-xl" style={{ overflowWrap: "anywhere" }}>{selected ? selected.name : "추천도서"}</h1>
         {selected && selected.books.length > 0 && <PrintExportLink href={`/teacher/export?group=${selected.id}&type=books`} />}
       </div>
-      <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-        그룹마다 책 서랍이 하나씩 있어요. 보기 방식을 바꾸거나 분야로 좁혀 볼 수 있고, 목록 보기는 엑셀처럼 칸을
-        눌러 추천 연령·분야·메모를 바로 고칠 수 있어요.
-      </p>
 
       {!selected ? (
         <div className="mt-6">

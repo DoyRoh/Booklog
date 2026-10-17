@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SearchIcon } from "@/components/icons/misc-icons";
 
@@ -15,7 +16,7 @@ export default function SearchBar({ groups }: { groups: GroupOption[] }) {
   const searchParams = useSearchParams();
   const initialQ = searchParams.get("q") ?? "";
   const [q, setQ] = useState(initialQ);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // 다른 화면에서 뒤로가기 등으로 q가 바뀌어 돌아오면(예: 검색 결과 →
   // 뒤로가기) 입력창도 같이 맞춘다. URL(서버가 준 초기값)을 신뢰 소스로
@@ -35,10 +36,13 @@ export default function SearchBar({ groups }: { groups: GroupOption[] }) {
     router.replace(qs ? `${pathname}?${qs}` : pathname);
   }
 
-  function onChangeQuery(value: string) {
-    setQ(value);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => pushWith({ q: value || null }), 300);
+  // 타이핑할 때마다 검색하지 않고 "검색"(키보드 검색 키 포함)을 눌렀을 때만.
+  // 예전엔 0.3초마다 주소를 바꿔 다시 그렸는데, 그 사이 더 친 글자가
+  // 직전 주소 값으로 덮여 지워지고 한글 조합도 끊겼다.
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    pushWith({ q: q.trim() || null });
+    inputRef.current?.blur();
   }
 
   const groupValue = searchParams.get("group") ?? "";
@@ -47,8 +51,9 @@ export default function SearchBar({ groups }: { groups: GroupOption[] }) {
 
   return (
     <div>
+      <form onSubmit={submit} className="flex items-center gap-2">
       <label
-        className="flex items-center gap-2 rounded-[14px] border px-3 py-3"
+        className="flex min-w-0 flex-1 items-center gap-2 rounded-[14px] border px-3 py-3"
         style={{ borderColor: "var(--rule)", background: "var(--card)" }}
       >
         <SearchIcon width={18} height={18} style={{ color: "var(--ink-2)" }} />
@@ -56,11 +61,17 @@ export default function SearchBar({ groups }: { groups: GroupOption[] }) {
           type="search"
           autoFocus
           value={q}
-          onChange={(e) => onChangeQuery(e.target.value)}
+          ref={inputRef}
+          enterKeyHint="search"
+          onChange={(e) => setQ(e.target.value)}
           placeholder="숙제나 책 찾기 (제목·작가·질문·설명·그룹명)"
           className="min-w-0 flex-1 bg-transparent text-[15px] outline-none"
         />
       </label>
+        <button type="submit" className="d flex-none rounded-[14px] px-4 py-3 text-sm text-white" style={{ background: "var(--point-deep)" }}>
+          검색
+        </button>
+      </form>
 
       <div className="mt-2.5 flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
         <select
