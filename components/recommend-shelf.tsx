@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { ShelfBookmark } from "@/components/read-toggles";
 import ViewToggle from "@/components/view-toggle";
+import RecommendBookSheet from "@/components/recommend-book-sheet";
 import { useCoversPerRow } from "@/components/use-spines-per-row";
 import { BOOK_CATEGORIES } from "@/lib/categories";
 import type { RecommendBook } from "@/lib/recommend-books";
@@ -15,7 +15,7 @@ import type { RecommendBook } from "@/lib/recommend-books";
 // 목록은 recommend-book-list.tsx(manage) 그대로.
 //
 // 추천도서는 숙제가 아니라서 "완료"를 요구하지 않는다(사용자 요청) --
-// 표지 = "읽어보기"(기록 화면으로 이동), 책갈피 = 담아두기(탐색 중
+// 표지 = 책 정보 창(숲지기 메모·분야 → 기록 남기기/책장에 꽂기), 책갈피 = 담아두기(탐색 중
 // 흥미로운 책을 표시)만 남기고, 완료 체크(ReadCheck)는 뺐다.
 const PLANK_STYLE = {
   height: 5,
@@ -62,6 +62,8 @@ export default function RecommendShelf({
   // 이유(둘러보기)로 표지가 우선이지만, "목록형으로도 볼 수 있게"라는
   // 요청으로 목록 보기를 추가했다. 마지막 보기 모드는 localStorage에 저장.
   const [mode, setMode] = useState<ShelfMode>("cover");
+  // 책을 누르면 바로 기록 화면으로 가지 않고, 숲지기 메모·분야를 보여 주는 창부터.
+  const [selected, setSelected] = useState<RecommendBook | null>(null);
   const { ref: coverShelfRef, perRow: coversPerRow } = useCoversPerRow();
 
   useEffect(() => {
@@ -137,7 +139,6 @@ export default function RecommendShelf({
         <div className="mt-4">
           {filtered.map((book, index) => {
             const bookGroupId = book.groupId ?? groupId;
-            const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(bookGroupId)}`;
             return (
               <div
                 key={book.itemId}
@@ -148,7 +149,7 @@ export default function RecommendShelf({
                   ...(index === 0 ? {} : { borderTop: "1px solid rgba(38,54,43,0.08)" }),
                 }}
               >
-                <Link href={href} aria-label={`${book.title} 읽어보기`} className="flex min-w-0 flex-1 items-center gap-2.5">
+                <button type="button" onClick={() => setSelected(book)} aria-label={`${book.title} 자세히 보기`} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
                   {book.coverUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={book.coverUrl} alt="" className="h-11 w-8 flex-none rounded object-cover" />
@@ -163,7 +164,7 @@ export default function RecommendShelf({
                       </p>
                     )}
                   </div>
-                </Link>
+                </button>
                 {activeChildId && (
                   <ShelfBookmark
                     childId={activeChildId}
@@ -187,7 +188,6 @@ export default function RecommendShelf({
             <div className="grid gap-4 px-3" style={{ gridTemplateColumns: `repeat(${coversPerRow}, minmax(0, 1fr))` }}>
               {row.map((book) => {
                 const bookGroupId = book.groupId ?? groupId;
-                const href = `/library/add?bookId=${encodeURIComponent(book.bookId)}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author ?? "")}&cover=${encodeURIComponent(book.coverUrl ?? "")}&groupId=${encodeURIComponent(bookGroupId)}`;
                 return (
                   <div
                     key={book.itemId}
@@ -195,10 +195,11 @@ export default function RecommendShelf({
                     className="relative"
                     style={{ scrollMarginTop: "calc(190px + var(--st))" }}
                   >
-                    <Link
-                      href={href}
-                      aria-label={`${book.title} 읽어보기`}
-                      className="block aspect-[3/4] overflow-hidden rounded-[8px]"
+                    <button
+                      type="button"
+                      onClick={() => setSelected(book)}
+                      aria-label={`${book.title} 자세히 보기`}
+                      className="block aspect-[3/4] w-full overflow-hidden rounded-[8px]"
                       style={{
                         background: book.coverUrl ? "var(--card)" : coverColor(book.title),
                         border: "1px solid var(--rule)",
@@ -224,7 +225,7 @@ export default function RecommendShelf({
                           </span>
                         </span>
                       )}
-                    </Link>
+                    </button>
                     {activeChildId && (
                       <span className="absolute -top-1 -right-1">
                         <ShelfBookmark childId={activeChildId} bookId={book.bookId} groupId={bookGroupId} status={book.readStatus} size={16} className={OVERLAY_BTN} />
@@ -255,6 +256,14 @@ export default function RecommendShelf({
           </div>
         ))}
       </div>
+      )}
+      {selected && (
+        <RecommendBookSheet
+          book={selected}
+          groupId={selected.groupId ?? groupId}
+          activeChildId={activeChildId}
+          onClose={() => setSelected(null)}
+        />
       )}
       {footnote && (
         <p className="mt-2 text-center text-xs" style={{ color: "var(--ink-2)" }}>
