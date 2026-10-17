@@ -22,6 +22,8 @@ export default function AddBookToList({ bookListIds }: { bookListIds: string[] }
   const [pendingCategories, setPendingCategories] = useState<Set<string>>(new Set());
   // 추천 연령은 직전에 고른 값으로 미리 채운다 -- 같은 연령 책을 연달아 올릴 때 손댈 필요가 없게.
   const [pendingAges, setPendingAges] = useState<AgeBand[]>([]);
+  // 숲지기의 추천 메모(0039 note) -- 아이·부모가 추천도서를 누르면 뜨는 책 정보 창에 보인다.
+  const [pendingNote, setPendingNote] = useState("");
 
   function pickCandidate(candidate: BookCandidate) {
     setPending(candidate);
@@ -31,6 +33,7 @@ export default function AddBookToList({ bookListIds }: { bookListIds: string[] }
       last = parseAgeBands(JSON.parse(window.localStorage.getItem(LAST_AGES_KEY) ?? "[]"));
     } catch {}
     setPendingAges(last);
+    setPendingNote("");
     setError(null);
   }
 
@@ -66,19 +69,30 @@ export default function AddBookToList({ bookListIds }: { bookListIds: string[] }
     // 여러 그룹을 동시에 골랐으면 그룹마다(=목록마다) 한 줄씩. 이미 있는
     // 목록엔 조용히 건너뛴다(마이그레이션 0014의 book_list_id+book_id 유니크
     // 제약을 그대로 이용 -- upsert 한 번으로 중복 걱정 없이 처리).
-    const upsertItems = (withAge: boolean) =>
+    const note = pendingNote.trim().slice(0, 500) || null;
+    const upsertItems = (withAge: boolean, withNote: boolean) =>
       supabase.from("book_list_items").upsert(
         bookListIds.map((bookListId) => ({
           book_list_id: bookListId,
           book_id: bookId,
           required: false,
           ...(withAge ? { age_bands: pendingAges.length ? pendingAges : null } : {}),
+          ...(withNote && note ? { note } : {}),
         })),
         { onConflict: "book_list_id,book_id", ignoreDuplicates: true }
       );
-    let { error: itemError } = await upsertItems(true);
-    // 마이그레이션 0038(age_bands) 전이면 연령 없이 -- 책 올리기 자체는 막지 않는다.
-    if (itemError && /age_bands/.test(itemError.message)) ({ error: itemError } = await upsertItems(false));
+    let withAge = true;
+    let withNote = true;
+    let { error: itemError } = await upsertItems(withAge, withNote);
+    // 마이그레이션 0039(note)·0038(age_bands) 전이면 그 칸 없이 -- 책 올리기 자체는 막지 않는다.
+    if (itemError && /note/.test(itemError.message)) {
+      withNote = false;
+      ({ error: itemError } = await upsertItems(withAge, withNote));
+    }
+    if (itemError && /age_bands/.test(itemError.message)) {
+      withAge = false;
+      ({ error: itemError } = await upsertItems(withAge, withNote));
+    }
     if (itemError) {
       setError(itemError.message);
       setAdding(false);
@@ -141,6 +155,19 @@ export default function AddBookToList({ bookListIds }: { bookListIds: string[] }
             </button>
           ))}
         </div>
+
+        <p className="d mt-3 text-xs" style={{ color: "var(--ink-2)" }}>
+          추천 이유·메모 (선택 · 아이와 부모가 책을 누르면 보여요)
+        </p>
+        <textarea
+          value={pendingNote}
+          onChange={(e) => setPendingNote(e.target.value)}
+          maxLength={500}
+          rows={3}
+          placeholder="예: 겨울에 읽기 좋은 따뜻한 이야기예요. 반복되는 문장을 같이 읽어 보세요."
+          className="mt-1.5 w-full rounded-[14px] border px-3 py-2 text-sm"
+          style={{ borderColor: "var(--rule)", background: "var(--card)" }}
+        />
 
         {error && (
           <p className="mt-2 text-sm" style={{ color: "var(--berry)" }}>
