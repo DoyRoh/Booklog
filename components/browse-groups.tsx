@@ -34,7 +34,7 @@ type Keeper = {
 
 // 같은 숲지기(그룹장)의 그룹을 한 상자로 묶는다. 들어온 그룹 순서(공식 → 팔로워 → 책 수)를
 // 숲지기 순서로도 쓴다 -- 그 숲지기의 가장 앞 그룹 자리가 상자 자리.
-// 나이대 다섯 + "미정"(연령을 아직 안 붙인 그룹).
+// 나이대 다섯 + "전체연령"(연령을 따로 붙이지 않은 그룹 -- 나이 구분 없이 누구나).
 type AgeChip = AgeBand | "none";
 const AGE_CHIPS: AgeChip[] = [...AGE_BANDS, "none"];
 
@@ -73,12 +73,13 @@ export default function BrowseGroups({
   /** 아이의 연령 구간 -- 나이대 칩에서 처음부터 골라 두고 "우리 아이"로 표시. */
   childBand?: AgeBand | null;
 }) {
-  // 나이대 칩(여러 개 선택) + "미정"(연령을 아직 안 붙인 그룹). 처음엔 아이 나이와 미정을
-  // 골라 두고(미정 그룹이 처음부터 사라지지 않게), 아무것도 안 고르면 전체.
-  const [picked, setPicked] = useState<AgeChip[]>(childBand ? [childBand, "none"] : []);
+  // 맨 앞 "전체"(아무것도 안 고른 상태 = 모든 그룹) + 나이대 칩(여러 개 선택) + "전체연령".
+  // 아직 연령이 붙은 그룹이 적어서 처음엔 전체로 시작한다. 나이대를 다 끄면 다시 전체.
+  const [picked, setPicked] = useState<AgeChip[]>([]);
   function togglePicked(chip: AgeChip) {
     setPicked((prev) => AGE_CHIPS.filter((c) => (c === chip ? !prev.includes(c) : prev.includes(c))));
   }
+  const allOn = picked.length === 0;
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -150,7 +151,7 @@ export default function BrowseGroups({
   }
 
   // 고른 나이대 중 하나라도 그 그룹의 주 연령(연령 정해진 책의 3분의 1 이상)이면 보인다.
-  // 미정 칩을 고르면 연령이 정해진 책이 하나도 없는 그룹도 보인다.
+  // 전체연령 칩을 고르면 연령이 정해진 책이 하나도 없는 그룹도 보인다.
   const fits = (g: OpenGroup) => {
     if (picked.length === 0) return true;
     if ((g.agedCount ?? 0) === 0) return picked.includes("none");
@@ -164,6 +165,22 @@ export default function BrowseGroups({
     <div className="flex flex-col gap-3">
       {/* 나이대 -- 가로로 넘기는 칩, 여러 개 고를 수 있다(다시 누르면 해제). */}
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" style={{ scrollbarWidth: "none" }}>
+        <button
+          type="button"
+          onClick={() => setPicked([])}
+          aria-pressed={allOn}
+          className="d flex flex-none flex-col items-center rounded-[14px] border px-3.5 py-1.5 text-xs leading-tight"
+          style={{
+            borderColor: allOn ? "var(--point-deep)" : "var(--rule)",
+            background: allOn ? "var(--point-deep)" : "var(--card)",
+            color: allOn ? "#fff" : "var(--ink-2)",
+          }}
+        >
+          전체
+          <span className="text-[10px]" style={{ opacity: 0.75 }}>
+            모든 그룹
+          </span>
+        </button>
         {AGE_CHIPS.map((band) => {
           const on = picked.includes(band);
           return (
@@ -179,15 +196,15 @@ export default function BrowseGroups({
                 color: on ? "#fff" : "var(--ink-2)",
               }}
             >
-              {band === "none" ? "미정" : AGE_BAND_LABELS[band]}
+              {band === "none" ? "전체연령" : AGE_BAND_LABELS[band]}
               <span className="text-[10px]" style={{ opacity: 0.75 }}>
-                {band === "none" ? "연령 미정" : band === childBand ? "우리 아이" : AGE_BAND_HINTS[band]}
+                {band === "none" ? "나이 구분 없음" : band === childBand ? "우리 아이" : AGE_BAND_HINTS[band]}
               </span>
             </button>
           );
         })}
       </div>
-      {picked.length > 0 && hiddenCount > 0 && (
+      {!allOn && hiddenCount > 0 && (
         <p className="-mt-1 text-[11px]" style={{ color: "var(--ink-2)" }}>
           고르지 않은 나이대 그룹 {hiddenCount}개 숨김
         </p>
@@ -274,7 +291,7 @@ export default function BrowseGroups({
                       const main = mainAgeBands(group.ages ?? [], group.agedCount ?? 0);
                       return (
                         <p className="mt-1 truncate text-[10px] leading-[13px]" style={{ color: "var(--point-deep)" }}>
-                          {main.length > 0 ? ageBandsLabel(main) : "연령 미정"}
+                          {main.length > 0 ? ageBandsLabel(main) : "전체연령"}
                         </p>
                       );
                     })()}
