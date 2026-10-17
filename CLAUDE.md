@@ -2387,3 +2387,14 @@ App Store 심사 통과(버전 1.0 배포 준비됨). 이어서 두 가지 요�
 ## 아이폰 앱에서 왼쪽 끝을 오른쪽으로 쓸면 이전 화면 (사용자 요청)
 
 Capacitor 설정에는 이 옵션이 없어 네이티브에서 켰습니다 — `ios/App/App/SceneDelegate.swift`가 기본 `CAPBridgeViewController` 대신 그 하위 클래스 `MainViewController`를 루트로 쓰고, `capacitorDidLoad()`에서 `webView.allowsBackForwardNavigationGestures = true`. Next.js 화면 이동은 pushState라 웹뷰 히스토리에 쌓여 쓸어 넘기기가 `history.back()`처럼 동작합니다. 새 swift 파일을 만들면 Xcode 프로젝트(pbxproj)에 등록해야 해서 같은 파일 안에 클래스를 뒀습니다. 안드로이드는 원래 시스템 뒤로 제스처가 웹뷰 뒤로 가기로 동작하고, 웹(사파리)도 원래 됩니다. **네이티브 변경이라 맥에서 `git pull` → `npx cap sync ios` → Xcode에서 다시 빌드해야 하고, 스토어 배포는 새 빌드 심사가 필요합니다.** 이 환경에선 iOS 빌드를 못 돌려 컴파일은 확인 못 했습니다(Capacitor 8.5.2의 `open func capacitorDidLoad()` 시그니처는 확인).
+
+## 숲지기 엑셀형 관리 표 + 그룹 가입 방식 변경 + 그룹 탭 개편 (사용자 요청 6건)
+
+- **그룹 고치기에서 가입 방식(공개/승인제) 변경**(`components/group-intro-editor.tsx`): 이름·유형·소개와 함께 공개/승인제 두 칸을 고른다. 승인제 → 공개로 바꾸면 기다리던 신청(`pending`)을 모두 승인하고, 공개 → 승인제는 이미 들어온 아이는 그대로 둔다(둘러보기 노출만 달라짐). 기존 "owners update own groups" 정책으로 충분해 DB 변경 없음.
+- **아이 그룹 바**(`components/child-group-bar.tsx`): "전체"는 왼쪽에 고정, 나머지 그룹만 가로 스크롤. 타일 안에 그룹 이름(두 줄, 넘치면 …), 타일 아래에 숲지기 이름(`groups.operator_name`). 타일 60px로 키워 `CHILD_GROUP_BAR_HEIGHT` 160.
+- **가입 시 자동 팔로우를 한 그룹으로**(마이그레이션 0041): 0040의 "공식 공개 그룹 전부 자동 팔로우"가 너무 많아 `follow_official_groups()`를 이름이 "작은 마음에 오래 남는 그림책"으로 시작하는 공식·공개 그룹 하나만 팔로우하도록 바꿨다. **SQL Editor에서 실행 필요.** (그 그룹이 책곰 공식 계정에서 verified·공개여야 한다 -- 필요하면 운영자 계정으로 verified를 켠다.)
+- **아이의 그룹 탭 첫 화면 = 둘러보기**: 하단 "그룹"을 누르면 `/recommend`(내 그룹 + 공개 그룹 둘러보기)로 가고(이미 그룹 화면 안이면 그대로), 맨 위 "내 그룹의 추천도서 · 숙제 보기" 버튼이 `/group`으로 간다. `/recommend`도 그룹 탭이 켜진 것으로 표시. 마지막에 본 소제목 기억 로직(bottom-nav의 sessionStorage 이동)은 걷어냈다.
+- **그룹 소개글 보이기**(`components/group-intro.tsx`): 길면 세 줄까지만 보이고 "더 보기"로 펼침. `/group` 추천도서 탭(그룹을 하나 골랐을 때) 책장 위와 그룹 상세(`/recommend/[groupId]`)에 쓴다.
+- **숲지기 추천도서 목록 보기 = 엑셀형 표**(`components/book-table.tsx`): 가로로 넘기는 표(체크·제목은 왼쪽 고정). 추천 연령 칸의 작은 버튼(0~3·4~7·저·고·청)을 누르면 즉시 저장, 분야 칸을 누르면 칩이 펼쳐져 바로 추가/삭제(`book_categories`), 추천 메모는 칸에 바로 쓰고 벗어나면 저장(0039 `note`), 제목/읽음/올린 날/연령으로 정렬, 체크한 여러 권에 연령을 한꺼번에 붙이거나 빼고 일괄 삭제. 맨 위 "+ 책 바로 추가"는 화면을 떠나지 않고 `AddBookToList`를 펼친다(`OperatorBookSection.listId`, `OperatorBook.note` 추가 -- 0038/0039 전엔 컬럼을 하나씩 빼고 다시 조회).
+- **숲지기 숙제 = 엑셀형 표**(`components/assignment-table.tsx`): 제목·마감일을 칸에서 바로 고침(벗어나면 저장), 마감 지난 미완료는 붉게, 완료 N/M명 + 진행 막대, 진행 중/지난 숙제/전체 칩, 제목/마감일/완료순 정렬, 체크한 숙제의 마감일 일괄 변경·일괄 삭제. 새 숙제는 책·미션을 고르는 기존 화면("+ 숙제 만들기"). 아이별 현황은 행의 링크로.
+- DB 변경: 0041 한 개. tsc·eslint 통과.

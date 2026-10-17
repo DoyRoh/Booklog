@@ -19,15 +19,25 @@ export type OperatorBook = {
   addedAt: string;
   readCount: number;
   inAssignment: boolean;
+  /** 숲지기의 추천 메모(0039). */
+  note: string;
 };
 
-export type OperatorBookSection = { id: string; name: string; memberCount: number; books: OperatorBook[] };
+export type OperatorBookSection = {
+  id: string;
+  name: string;
+  /** 그룹의 추천도서 목록(book_lists) id -- 표에서 바로 책을 올릴 때 쓴다. */
+  listId: string | null;
+  memberCount: number;
+  books: OperatorBook[];
+};
 
 type ItemRow = {
   id: string;
   book_id: string;
   created_at: string;
   age_bands: string[] | null;
+  note?: string | null;
   books: {
     id: string;
     title: string;
@@ -39,7 +49,7 @@ type ItemRow = {
 type GroupRow = {
   id: string;
   name: string;
-  book_lists: { book_list_items: ItemRow[] | null }[] | null;
+  book_lists: { id: string; book_list_items: ItemRow[] | null }[] | null;
   members: { child_id: string | null; status: string }[] | null;
   reading_records: { child_id: string; book_id: string }[] | null;
   assignments: {
@@ -60,19 +70,20 @@ export async function loadOperatorBookSections(
   userId: string,
   groupId?: string
 ): Promise<OperatorBookSection[]> {
-  const run = (withAge: boolean) => {
+  const run = (withAge: boolean, withNote: boolean) => {
     let query = operatorGroupsQuery(
       supabase,
       userId,
-      `book_lists(book_list_items(id, book_id, created_at, ${withAge ? "age_bands, " : ""}books(id, title, author, cover_url, book_categories(category)))), members:group_members(child_id, status), reading_records(child_id, book_id), assignments(start_date, end_date, created_at, assignment_books(book_id))`
+      `book_lists(id, book_list_items(id, book_id, created_at, ${withAge ? "age_bands, " : ""}${withNote ? "note, " : ""}books(id, title, author, cover_url, book_categories(category)))), members:group_members(child_id, status), reading_records(child_id, book_id), assignments(start_date, end_date, created_at, assignment_books(book_id))`
     ).eq("reading_records.status", "done");
     if (groupId) query = query.eq("id", groupId);
     return query.overrideTypes<GroupRow[], { merge: false }>();
   };
   // 마이그레이션 0038(age_bands) 전이면 그 컬럼 없이 다시 -- 조회 실패를
   // "운영하는 그룹이 없어요"로 위장하지 않게(실제로 그렇게 보였던 버그).
-  let { data, error } = await run(true);
-  if (error) ({ data, error } = await run(false));
+  let { data, error } = await run(true, true);
+  if (error) ({ data, error } = await run(true, false));
+  if (error) ({ data, error } = await run(false, false));
   if (error) throw error;
 
   return (data ?? []).map((group) => {
@@ -103,11 +114,12 @@ export async function loadOperatorBookSections(
         addedAt: item.created_at,
         readCount: readersByBook.get(item.books!.id)?.size ?? 0,
         inAssignment: assigned.has(item.books!.id),
+        note: item.note ?? "",
       }))
       // 최근에 올린 책이 위(육아 기록 앱의 목록처럼 날짜순).
       .sort((a, b) => b.addedAt.localeCompare(a.addedAt));
     const memberCount = (group.members ?? []).filter((m) => m.status === "approved" && m.child_id).length;
-    return { id: group.id, name: group.name, memberCount, books };
+    return { id: group.id, name: group.name, listId: group.book_lists?.[0]?.id ?? null, memberCount, books };
   });
 }
 

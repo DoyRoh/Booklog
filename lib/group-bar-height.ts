@@ -14,5 +14,5 @@
 // 넣음)) + 숙제/추천도서 소제목 탭 줄(채워진 알약 세그먼트 컨트롤 + 검색
 // 아이콘). 정적 HTML 복제본을 360px에서 Playwright로 실측(152px)한 값에
 // 실제 폰트(Gowun Dodum) 렌더링 오차를 감안한 여유를 더했다.
-export const CHILD_GROUP_BAR_HEIGHT = 156;
+export const CHILD_GROUP_BAR_HEIGHT = 160;
 export const OPERATOR_GROUP_BAR_HEIGHT = 82;

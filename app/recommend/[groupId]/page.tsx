@@ -7,6 +7,7 @@ import { GROUP_TYPE_LABELS } from "@/lib/group-labels";
 import { getRecommendBooks } from "@/lib/recommend-books";
 import GroupApprovals from "@/components/group-approvals";
 import GroupFollow from "@/components/group-follow";
+import GroupIntro from "@/components/group-intro";
 import GroupIntroEditor from "@/components/group-intro-editor";
 import GroupRemoveButton from "@/components/group-remove-button";
 import Section from "@/components/section";
@@ -169,11 +170,12 @@ export default async function GroupDetailPage({
             initialName={group.name}
             initialType={group.type}
             initial={group.description}
+            initialPolicy={group.join_policy}
           />
         </div>
       ) : (
         group.description && (
-          <p className="mt-4 whitespace-pre-line text-sm">{group.description}</p>
+          <GroupIntro text={group.description} className="mt-4" />
         )
       )}
 

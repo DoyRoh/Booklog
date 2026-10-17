@@ -92,6 +92,17 @@ export default async function RecommendPage() {
         )}
       </div>
 
+      {activeProfile.type !== "operator" && myGroups.length > 0 && (
+        <Link
+          href="/group"
+          className="d mt-4 flex items-center justify-between rounded-[14px] px-5 py-3.5 text-sm text-white"
+          style={{ background: "var(--point-deep)" }}
+        >
+          <span>내 그룹의 추천도서 · 숙제 보기</span>
+          <span aria-hidden>›</span>
+        </Link>
+      )}
+
       <Section className="mt-5" title="내 그룹" flush={myGroups.length > 0}>
         {myGroups.length === 0 ? (
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>

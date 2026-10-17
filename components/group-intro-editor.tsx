@@ -19,17 +19,20 @@ export default function GroupIntroEditor({
   initialName,
   initialType,
   initial,
+  initialPolicy,
 }: {
   groupId: string;
   initialName: string;
   initialType: string;
   initial: string | null;
+  initialPolicy: string;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(initialName);
   const [type, setType] = useState(initialType);
   const [text, setText] = useState(initial ?? "");
+  const [policy, setPolicy] = useState(initialPolicy);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +40,7 @@ export default function GroupIntroEditor({
     setName(initialName);
     setType(initialType);
     setText(initial ?? "");
+    setPolicy(initialPolicy);
     setEditing(false);
     setError(null);
   }
@@ -48,13 +52,22 @@ export default function GroupIntroEditor({
     const supabase = createClient();
     const { error: updateError } = await supabase
       .from("groups")
-      .update({ name: name.trim(), type, description: text.trim() || null })
+      .update({ name: name.trim(), type, description: text.trim() || null, join_policy: policy })
       .eq("id", groupId);
-    setSaving(false);
     if (updateError) {
+      setSaving(false);
       setError(updateError.message);
       return;
     }
+    // 승인제 → 공개로 바꾸면 승인을 기다리던 신청은 더 기다릴 이유가 없어 함께 승인한다.
+    if (initialPolicy === "approval" && policy === "open") {
+      await supabase
+        .from("group_members")
+        .update({ status: "approved", approved_at: new Date().toISOString() })
+        .eq("group_id", groupId)
+        .eq("status", "pending");
+    }
+    setSaving(false);
     setEditing(false);
     // 상단바·숲지기 프로필 목록의 그룹 이름도 다시 읽게 한다.
     window.dispatchEvent(new Event("chaeksup:profile-changed"));
@@ -112,6 +125,43 @@ export default function GroupIntroEditor({
             );
           })}
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="d text-sm">가입 방식</span>
+        <div className="flex gap-2">
+          {(
+            [
+              ["open", "공개", "누구나 바로 팔로우"],
+              ["approval", "승인제", "신청하면 내가 승인"],
+            ] as const
+          ).map(([value, label, hint]) => {
+            const selected = policy === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPolicy(value)}
+                aria-pressed={selected}
+                className="flex-1 rounded-[14px] border px-3 py-2 text-left"
+                style={{
+                  borderColor: selected ? "var(--point)" : "var(--rule)",
+                  background: selected ? "rgba(47,168,79,0.08)" : "var(--card)",
+                }}
+              >
+                <span className="d block text-sm" style={{ color: selected ? "var(--point-deep)" : "var(--ink)" }}>{label}</span>
+                <span className="block text-xs" style={{ color: "var(--ink-2)" }}>{hint}</span>
+              </button>
+            );
+          })}
+        </div>
+        {policy !== initialPolicy && (
+          <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+            {policy === "open"
+              ? "공개로 바꾸면 기다리던 신청이 모두 승인되고, 둘러보기에 노출돼요."
+              : "승인제로 바꾸면 새로 들어오는 사람은 승인을 받아야 하고, 둘러보기에서는 숨겨져요. 이미 들어온 아이는 그대로예요."}
+          </p>
+        )}
       </div>
 
       <label className="flex flex-col gap-1.5">

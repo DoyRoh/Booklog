@@ -4,8 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ViewToggle from "@/components/view-toggle";
 import { AGE_BANDS, AGE_BAND_LABELS, type AgeBand } from "@/lib/age-bands";
-import ManagedLogList, { type ManagedRow } from "@/components/managed-log-list";
-import { shortMd } from "@/components/log-row";
+import BookTable from "@/components/book-table";
 import Illustration from "@/components/illustration";
 import { categoryColor } from "@/lib/categories";
 import type { OperatorBook } from "@/lib/operator-books";
@@ -24,10 +23,12 @@ const STORAGE_KEY = "chaeksup:teacher-books-view";
  */
 export default function OperatorBookBrowser({
   groupId,
+  listId,
   memberCount,
   books,
 }: {
   groupId: string;
+  listId: string | null;
   memberCount: number;
   books: OperatorBook[];
 }) {
@@ -82,23 +83,6 @@ export default function OperatorBookBrowser({
       ),
     [books, category, age]
   );
-
-  const rows: ManagedRow[] = filtered.map((book, index) => {
-    const [firstCategory, secondCategory] = book.categories;
-    return {
-      id: book.itemId,
-      index: index + 1,
-      href: `/teacher/books/${book.bookId}?group=${groupId}`,
-      dateTop: shortMd(book.addedAt),
-      hideDate: index > 0 && filtered[index - 1].addedAt.slice(0, 10) === book.addedAt.slice(0, 10),
-      chip: { label: firstCategory ?? "책", color: categoryColor(firstCategory), sub: secondCategory },
-      title: book.title,
-      subtitle: book.author ?? undefined,
-      lantern: book.inAssignment,
-      right: `${book.readCount}/${memberCount}명`,
-      rightTone: book.readCount > 0 ? "good" : "muted",
-    };
-  });
 
   return (
     <div>
@@ -184,18 +168,7 @@ export default function OperatorBookBrowser({
           {books.length === 0 ? "아직 추천도서가 없어요. ‘+ 책 추가’로 올려 주세요." : "조건에 맞는 책이 없어요."}
         </p>
       ) : mode === "list" ? (
-        <div className="mt-[12px]">
-          <ManagedLogList
-            heading="추천도서"
-            headingSub={`${filtered.length}권`}
-            addHref={`/teacher/books/add?group=${groupId}`}
-            addLabel="+ 책 추가"
-            rows={rows}
-            emptyText="아직 추천도서가 없어요. ‘+ 책 추가’로 올려 주세요."
-            table="book_list_items"
-            deleteNoun="추천도서에서 뺄까요? (아이들의 기록은 남아요)"
-          />
-        </div>
+        <BookTable groupId={groupId} listId={listId} memberCount={memberCount} books={filtered} />
       ) : mode === "cover" ? (
         <div ref={coverShelfRef} className="mt-[16px] flex flex-col gap-2">
           {chunk(filtered, coversPerRow).map((row, rowIndex) => (

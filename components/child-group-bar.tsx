@@ -37,7 +37,7 @@ function tileColor(name: string): string {
   return TILE_COLORS[hash % TILE_COLORS.length];
 }
 
-type GroupOption = { id: string; name: string };
+type GroupOption = { id: string; name: string; operator_name: string | null };
 
 // 숙제 상태 점 -- 남은 숙제가 있으면 호박색 점, 전부 끝나면 초록 원 안에
 // 흰색 체크(사용자 스펙: 그냥 색만 다른 점이 아니라 "다 됐다"는 게 모양
@@ -93,7 +93,7 @@ export default function ChildGroupBar() {
     (async () => {
       const supabase = createClient();
       const [{ data: groupRows }, { data: childRow }] = await Promise.all([
-        supabase.from("group_members").select("groups(id, name)").eq("child_id", childId).eq("status", "approved"),
+        supabase.from("group_members").select("groups(id, name, operator_name)").eq("child_id", childId).eq("status", "approved"),
         supabase.from("children").select("active_group_id").eq("id", childId).single(),
       ]);
       if (cancelled) return;
@@ -167,7 +167,7 @@ export default function ChildGroupBar() {
     // "숙제·추천도서 선택 메뉴 흰색 배경 없애라"). 고정 바라 배경색은
     // 불투명해야 아래 내용이 비치지 않으므로 --paper를 그대로 쓴다.
     <div className="no-print fixed inset-x-0 z-40" style={{ top: "calc(52px + var(--st))", background: "var(--paper)" }}>
-      <div className="mx-auto flex max-w-[520px] md:max-w-[760px] gap-3 overflow-x-auto px-5 pt-2.5 pb-3" style={{ scrollbarWidth: "none" }}>
+      <div className="mx-auto flex max-w-[520px] md:max-w-[760px] gap-3 px-5 pt-2.5 pb-3">
         <button
           type="button"
           onClick={() => pick(null)}
@@ -175,7 +175,7 @@ export default function ChildGroupBar() {
           className="flex w-[64px] flex-none flex-col items-center gap-1"
         >
           <span
-            className="d relative flex h-[56px] w-[56px] flex-col items-center justify-center rounded-[16px]"
+            className="d relative flex h-[60px] w-[60px] flex-col items-center justify-center rounded-[16px]"
             style={{
               // 바 자체가 세이지 배경이라, 안 켜진 타일은 --paper면 묻힌다 → 옅은 초록 판.
               background: selectedId === "all" ? "var(--point-deep)" : "var(--sprout-pale)",
@@ -192,10 +192,12 @@ export default function ChildGroupBar() {
             className="w-full truncate text-center text-[10px] leading-tight"
             style={{ color: selectedId === "all" ? "var(--point-deep)" : "var(--ink-2)", fontWeight: selectedId === "all" ? 600 : 400 }}
           >
-            전체
+            모든 그룹
           </span>
         </button>
 
+        {/* 전체는 왼쪽에 고정, 나머지 그룹만 가로로 넘겨 본다(사용자 요청). */}
+        <div className="flex min-w-0 flex-1 gap-3 overflow-x-auto pr-1" style={{ scrollbarWidth: "none" }}>
         {groups.map((group) => {
           const active = group.id === selectedId;
           const bookCount = bookCountFor(group.id);
@@ -212,7 +214,7 @@ export default function ChildGroupBar() {
                   상태는 초록 테두리 + 배경 톤 변화로 명확히 구분. 배지는
                   추천도서 탭이면 권수 숫자, 숙제 탭이면 진행 상태 점. */}
               <span
-                className="d relative flex h-[56px] w-[56px] items-center justify-center rounded-[16px] text-xl text-white"
+                className="d relative flex h-[60px] w-[60px] items-center justify-center rounded-[16px] px-1 text-white"
                 style={{
                   background: tileColor(group.name),
                   border: active ? "2px solid var(--point-deep)" : "2px solid transparent",
@@ -220,7 +222,13 @@ export default function ChildGroupBar() {
                   opacity: active ? 1 : 0.72,
                 }}
               >
-                {group.name.trim().charAt(0)}
+                {/* 박스 안에는 그룹 이름(넘치면 ...), 박스 아래에는 숲지기 이름 */}
+                <span
+                  className="w-full text-center text-[12px] leading-tight"
+                  style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}
+                >
+                  {group.name}
+                </span>
                 {isAssignmentsTab
                   ? <HomeworkStatusDot status={badge} />
                   : bookCount > 0 && (
@@ -236,7 +244,7 @@ export default function ChildGroupBar() {
                 className="w-full truncate text-center text-[10px] leading-tight"
                 style={{ color: active ? "var(--point-deep)" : "var(--ink-2)", fontWeight: active ? 600 : 400 }}
               >
-                {group.name}
+                {group.operator_name || "숲지기"}
               </span>
             </button>
           );
@@ -253,6 +261,7 @@ export default function ChildGroupBar() {
             둘러보기
           </span>
         </Link>
+        </div>
       </div>
 
       {/* 숙제 / 추천도서 소제목 탭 -- 채워진 알약 세그먼트 컨트롤. 예전

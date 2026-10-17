@@ -53,8 +53,8 @@ export default async function TeacherBooksPage({
         {selected && selected.books.length > 0 && <PrintExportLink href={`/teacher/export?group=${selected.id}&type=books`} />}
       </div>
       <p className="mt-1 text-sm" style={{ color: "var(--ink-2)" }}>
-        그룹마다 책 서랍이 하나씩 있어요. 보기 방식을 바꾸거나 분야로 좁혀 볼 수 있고, 목록 보기의 ‘선택’으로
-        여러 권을 한 번에 뺄 수 있어요.
+        그룹마다 책 서랍이 하나씩 있어요. 보기 방식을 바꾸거나 분야로 좁혀 볼 수 있고, 목록 보기는 엑셀처럼 칸을
+        눌러 추천 연령·분야·메모를 바로 고칠 수 있어요.
       </p>
 
       {!selected ? (
@@ -68,7 +68,7 @@ export default async function TeacherBooksPage({
         </div>
       ) : (
         <>
-          <OperatorBookBrowser groupId={selected.id} memberCount={selected.memberCount} books={selected.books} />
+          <OperatorBookBrowser groupId={selected.id} listId={selected.listId} memberCount={selected.memberCount} books={selected.books} />
           {sections.length > 1 && (
             <Link
               href="/teacher/books/add"

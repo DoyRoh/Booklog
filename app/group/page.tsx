@@ -13,9 +13,10 @@ import RecommendShelf from "@/components/recommend-shelf";
 import AssignmentsBrowser from "@/components/assignments-browser";
 import { CHILD_GROUP_BAR_HEIGHT } from "@/lib/group-bar-height";
 import { pickActiveChildGroupId } from "@/lib/active-child-group";
+import GroupIntro from "@/components/group-intro";
 import Illustration from "@/components/illustration";
 
-type FilterGroup = { id: string; name: string };
+type FilterGroup = { id: string; name: string; description?: string | null };
 type SubTab = "books" | "assignments";
 
 // 그룹 탭 -- 숲길(추천도서)과 숙제를 하나로 합쳤다(사용자 요청: "숲길과
@@ -60,7 +61,7 @@ export default async function GroupPage({
 
   const { data: memberGroupRows } = await supabase
     .from("group_members")
-    .select("groups(id, name)")
+    .select("groups(id, name, description)")
     .eq("child_id", activeChild.id)
     .eq("status", "approved");
 
@@ -127,6 +128,7 @@ export default async function GroupPage({
             카드 왼쪽 끝과 같은 자리에서 시작하고, 위(20px)·아래(16px) 여백을
             비슷하게 맞춘다. */}
         <h1 className="d text-[19px] leading-[26px]">{selectedGroup ? selectedGroup.name : "모든 그룹"}</h1>
+        {selectedGroup?.description && <GroupIntro text={selectedGroup.description} className="mt-[10px]" />}
         <div
           className="mt-[16px] rounded-[var(--r)] border p-4"
           style={{ borderColor: "var(--rule)", background: "var(--card)" }}

@@ -158,10 +158,13 @@ export default function BottomNav() {
   // 숲지기 탭은 /teacher 아래에 전부 있어서 단순 startsWith로는 "대시보드"
   // (/teacher)가 어느 화면에서나 켜져 보였다. 경로가 맞는 탭 중 가장 긴
   // 것 하나만 켠다.
-  const activeHref = tabs
-    .map((t) => t.href)
-    .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
-    .sort((a, b) => b.length - a.length)[0];
+  const activeHref =
+    role !== "operator" && pathname.startsWith("/recommend")
+      ? "/group"
+      : tabs
+          .map((t) => t.href)
+          .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
+          .sort((a, b) => b.length - a.length)[0];
 
   return (
     <nav
@@ -188,17 +191,12 @@ export default function BottomNav() {
             key={href}
             href={href}
             onClick={(e) => {
-              // 그룹 탭은 마지막으로 본 소제목(숙제)으로 돌아간다 --
-              // 기억은 child-group-bar.tsx가 sessionStorage에 남긴다.
-              if (href !== "/group") return;
-              let last: string | null = null;
-              try {
-                last = sessionStorage.getItem("chaeksup:group-tab");
-              } catch {}
-              if (last === "assignments") {
-                e.preventDefault();
-                router.push("/group?tab=assignments");
-              }
+              // 그룹 탭의 첫 화면은 둘러보기(/recommend: 내 그룹 + 책숲의 그룹)
+              // -- 사용자 요청. 이미 그룹 화면 안에 있으면 그대로 둔다.
+              if (href !== "/group" || role === "operator") return;
+              if (pathname === "/group" || pathname.startsWith("/recommend")) return;
+              e.preventDefault();
+              router.push("/recommend");
             }}
             aria-label={showHomeworkDot ? `${label} · ${homeworkBadge === "done" ? "오늘 숙제 완료" : "오늘 숙제 있음"}` : label}
             aria-current={active ? "page" : undefined}
