@@ -27,9 +27,10 @@ const SLIDES = {
   library: { title: "우리 아이 책장, 한눈에", sub: "읽은 책, 읽고 싶은 책을 나무 선반에 꽂아요", art: "tree-bushy.png" },
   record: { title: "책 한 권, 30초면 기록 끝", sub: "별점과 기분 스티커로 아이와 함께 남겨요", art: "star-rating.png" },
   homework: { title: "선생님 숙제도 한곳에서", sub: "마감일과 읽을 책을 한눈에, 다 읽으면 숙제 완료", art: "lantern-on.png" },
-  profile: { title: "아이도, 숲지기도 한 계정으로", sub: "아이가 여럿이어도, 선생님 프로필도 손쉽게 바꿔요", art: "rabbit.png" },
-  forest: { title: "읽을수록 숲이 자라요", sub: "나무와 별, 등불이 모여 나만의 숲이 돼요", art: "tree-pine.png" },
-  group: { title: "선생님·도서관이 골라 준 책", sub: "숲지기의 추천도서를 팔로우하고 책장에 담아요", art: "bird-letter.png" },
+  // blur: 캡처에서 가릴 곳(이메일 등) -- 캡처 폭·높이에 대한 비율 [x, y, w, h]
+  profile: { title: "아이도, 숲지기도 한 계정으로", sub: "아이가 여럿이어도, 선생님 프로필도 손쉽게 바꿔요", art: "rabbit.png", blur: [[0.165, 0.128, 0.17, 0.03]] },
+  forest: { title: "읽을수록 숲이 자라요", sub: "배지를 모으면 나무와 별, 등불이 우리 숲에 심겨요", art: "tree-pine.png" },
+  group: { title: "선생님·도서관이 골라 준 책", sub: "숲지기의 추천도서를 둘러보고 팔로우해요", art: "bird-letter.png" },
   library2: { title: "근처 도서관에 있을까?", sub: "자주 가는 도서관의 대출 가능 여부를 바로 봐요", art: "tent.png" },
 };
 
@@ -42,18 +43,20 @@ function html(d, slide, shot) {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap">
 <style>
   html,body{margin:0;width:${d.width}px;height:${d.height}px;overflow:hidden}
-  body{position:relative;background:linear-gradient(180deg,#D3E6C6 0%,#E4EFDB 55%,#EAF0E5 100%);font-family:"Gowun Dodum",sans-serif;color:#1F3527}
+  body{position:relative;background:#1B5E3A;font-family:"Gowun Dodum",sans-serif;color:#fff}
   .head{position:absolute;left:0;right:0;top:${d.top}px;text-align:center}
-  h1{margin:0;font-size:${d.title}px;line-height:1.22;font-weight:400;letter-spacing:-0.02em;-webkit-text-stroke:${Math.round(d.title / 42)}px #1F3527;word-break:keep-all}
-  p{margin:${Math.round(d.sub * 0.7)}px auto 0;max-width:86%;font-size:${d.sub}px;line-height:1.45;color:#56705C;word-break:keep-all}
-  .art{position:absolute;height:${Math.round(d.title * 1.6)}px;z-index:2}
+  h1{margin:0;font-size:${d.title}px;line-height:1.22;font-weight:400;letter-spacing:-0.02em;-webkit-text-stroke:${Math.round(d.title / 42)}px #fff;word-break:keep-all}
+  p{margin:${Math.round(d.sub * 0.7)}px auto 0;max-width:86%;font-size:${d.sub}px;line-height:1.45;color:rgba(255,255,255,.82);word-break:keep-all}
+  .art{position:absolute;max-height:${Math.round(d.title * 1.6)}px;max-width:${Math.round(d.title * 1.5)}px;z-index:2}
   .card{position:absolute;left:50%;transform:translateX(-50%);bottom:${Math.round(d.height * 0.045)}px;width:${Math.round(d.width * d.shotWidth)}px;
-    padding:${d.frame}px;background:#fff;border-radius:${d.radius + d.frame}px;box-shadow:0 30px 70px rgba(31,53,39,.22),0 6px 18px rgba(31,53,39,.12)}
+    padding:${d.frame}px;background:#fff;border-radius:${d.radius + d.frame}px;box-shadow:0 30px 80px rgba(0,0,0,.30),0 6px 18px rgba(0,0,0,.18)}
+  .shot{position:relative}
+  .blur{position:absolute;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);background:rgba(255,255,255,.55);border-radius:12px}
   .card img{display:block;width:100%;border-radius:${d.radius}px}
 </style></head><body>
   ${art ? `<img class="art" src="${art}">` : ""}
   <div class="head"><h1>${slide.title}</h1><p>${slide.sub}</p></div>
-  <div class="card"><img src="${dataUrl(shot)}"></div>
+  <div class="card"><div class="shot"><img src="${dataUrl(shot)}">${(slide.blur ?? []).map(([x, y, w, h]) => `<div class="blur" style="left:${x * 100}%;top:${y * 100}%;width:${w * 100}%;height:${h * 100}%"></div>`).join("")}</div></div>
 </body></html>`;
 }
 
@@ -77,7 +80,9 @@ for (const [i, f] of files.entries()) {
   await page.evaluate(() => {
     const head = document.querySelector(".head").getBoundingClientRect();
     const card = document.querySelector(".card");
-    const room = window.innerHeight * 0.955 - head.bottom - 90;
+    const artH = document.querySelector(".art")?.getBoundingClientRect().height ?? 0;
+    // 캐릭터가 설명과 카드 사이에 들어갈 자리를 남긴다.
+    const room = window.innerHeight * 0.955 - head.bottom - Math.max(90, artH * 0.75 + 30);
     const r = card.getBoundingClientRect();
     if (r.height > room) card.style.width = `${(r.width * room) / r.height}px`;
     // 캐릭터는 카드 오른쪽 위 모서리에 걸터앉게(긴 제목과 겹치지 않도록).
@@ -85,8 +90,9 @@ for (const [i, f] of files.entries()) {
     if (art) {
       const c = card.getBoundingClientRect();
       const a = art.getBoundingClientRect();
-      art.style.left = `${c.right - a.width * 0.85}px`;
-      art.style.top = `${c.top - a.height * 0.78}px`;
+      art.style.left = `${Math.min(c.right - a.width * 0.85, window.innerWidth - a.width - 20)}px`;
+      // 설명 글자와 겹치지 않게 머리글 아래에서 시작.
+      art.style.top = `${Math.max(c.top - a.height * 0.78, head.bottom + 16)}px`;
     }
   });
   const out = join(outDir, `${String(i + 1).padStart(2, "0")}-${key}.png`);
